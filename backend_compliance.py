@@ -140,7 +140,7 @@ def limpar_t() -> None:
     for d in T_DIRS:
         if d.exists():
             for f in d.iterdir():
-                if f.is_file():
+                if f.is_file() and f.name != ".gitkeep":
                     try:
                         f.unlink()
                     except Exception:
