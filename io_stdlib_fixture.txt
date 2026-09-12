@@ -1,0 +1,1 @@
+conteudo fixture io_stdlib

@@ -1,0 +1,42 @@
+keyword: literal inteiro (integer_literal)
+category: Literal Numérico
+description: Literais numéricos inteiros na base decimal. São formados por sequências de dígitos de 0 a 9. O sinal negativo
+  é um operador unário de prefixo, não fazendo parte do literal. O tipo padrão inferido é int64, a menos que a declaração
+  especifique outro tipo inteiro.
+syntax: '<dígitos>         # Ex: 42
+
+  0                 # Zero
+
+  <dígito_1-9>{dígitos}  # Números sem zeros à esquerda'
+pseudocode: n := 42   // inteiro decimal, com sinal
+usages:
+- name: Literais inteiros básicos
+  description: Inteiros decimais nas declarações.
+  examples:
+  - code: 'mut as int8: valor= -8
+
+      mut as int16: contador= -1600
+
+      mut as int32: indice= 32000
+
+      mut as int64: total= 64000'
+- name: Inteiros sem sinal
+  description: Valores inteiros não-negativos.
+  examples:
+  - code: 'mut as uint8: byte= 255
+
+      mut as uint64: endereco= 999999999'
+- name: Inferência de tipo
+  description: Sem tipo explícito, o literal é int64.
+  examples:
+  - code: 'mut as int64: x = 42        # literal decimal, tipo int64
+
+      mut as int64: zero = 0      # zero, tipo int64'
+restrictions:
+- 'Não há sufixo de tipo no literal (ex: 42i32) — o tipo é determinado pela declaração.'
+- 'Zero à esquerda não é permitido em literais inteiros (ex: 007 é inválido).'
+- 'Sinal negativo: semanticamente é operador unário prefixo; no lexer, o sinal é incorporado ao lexema do literal (ex: -42
+  é um token INT_LIT "-42").'
+- Apenas a base decimal é suportada nesta versão (sem suporte a hex, bin ou oct em v0.1).
+- 'Ver também KW_TYPE_int.yaml (tipo) — tipos e literais são arquivos espelhados: TYPES descreve a forma na declaração, LITERAL
+  descreve a sintaxe do valor.'

@@ -1,0 +1,25 @@
+keyword: route
+category: Controle de Fluxo Condicional
+description: Avalia condições em ordem e executa o bloco correspondente ao primeiro braço cuja condição seja verdadeira. O
+  braço wildcard (`_`) captura qualquer valor não coberto pelos braços anteriores. Pode substituir cadeias de if/else if/else.
+syntax: "route {\n      <condição> ==> <ação>\n      <condição> ==> <ação>\n      _          ==> <fallback>\n}"
+pseudocode: "ROTA:\n    CASO cond1: bloco1\n    CASO cond2: bloco2\n    PADRAO: bloco_fallback\n// equivalente a cadeias de\
+  \ se/ entao / senao"
+usages:
+- name: Rota com condição verdadeira
+  description: Executa o braço cuja condição é verdadeira.
+  examples:
+  - code: "route {\n      true  ==> { print(\"Verdadeiro\") }\n      false ==> { print(\"Falso\") }\n}"
+- name: Rota com wildcard
+  description: O braço wildcard (`_`) executa quando nenhuma condição anterior é verdadeira.
+  examples:
+  - code: "route {\n      false ==> { print(\"Nao Executa\") }\n      _     ==> { print(\"Fallback\") }\n}"
+- name: Rota com múltiplos braços
+  description: Apenas o primeiro braço verdadeiro é executado.
+  examples:
+  - code: "route {\n      1 == 1 ==> { print(\"um\") }\n      2 == 2 ==> { print(\"dois\") }\n      _      ==> { print(\"\
+      nenhum\") }\n}"
+restrictions:
+- Braços são avaliados de cima para baixo; o primeiro verdadeiro é executado.
+- O wildcard (`_`) deve ser o último braço, se usado.
+- Se nenhum braço for verdadeiro e não houver wildcard, nada é executado.

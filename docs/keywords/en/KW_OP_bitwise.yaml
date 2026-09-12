@@ -1,0 +1,51 @@
+keyword: '&, |, ^, ~, <<, >>, >>>'
+category: Bitwise Operator
+description: Operators de manipulação bitwise para integers. Incluem AND, OR, XOR, NOT bitwise, deslocamento à esquerda (<<),
+  à direita com sinal (>>) e à direita com preenchimento zero (>>>).
+syntax: '<expr> & <expr>     # AND bitwise
+
+  <expr> | <expr>     # OR bitwise
+
+  <expr> ^ <expr>     # XOR bitwise
+
+  ~ <expr>            # NOT bitwise (complemento)
+
+  <expr> << <expr>    # Deslocamento à esquerda
+
+  <expr> >> <expr>    # Deslocamento à direita (com sinal)
+
+  <expr> >>> <expr>   # Deslocamento à direita (zero-fill)'
+pseudocode: 'mascra := 0b1100
+
+  resp   := mascra & 0b1010'
+usages:
+- name: Operations bitwise básicas
+  description: AND, OR, XOR e NOT em integers.
+  examples:
+  - code: 'mut as int64: a= 12  # 1100
+
+      mut as int64: b= 10  # 1010
+
+      print(a & b)   # 8  (1000)
+
+      print(a | b)   # 14 (1110)
+
+      print(a ^ b)   # 6  (0110)
+
+      print(~(-5))   # 4'
+- name: Deslocamentos (shifts)
+  description: Deslocamento de bits à esquerda e à direita.
+  examples:
+  - code: 'mut as int64: a= 12
+
+      print(a << 2)   # 48 (1100 << 2 = 110000)
+
+      print(a >> 2)   # 3  (1100 >> 2 = 11)
+
+      print((-8) >>> 1)  # 9223372036854775804 (zero-fill)'
+restrictions:
+- Operators bitwise operam apenas em types integers.
+- '>>> (zero-fill right shift) sempre preenche com 0 à esquerda.'
+- '>> (signed right shift) preserva o bit de sinal (extensão de sinal).'
+- ~ é o operator NOT bitwise (complemento de um).
+- 'Precedência: <<, >>, >>> (48); & (34); ^ (33); | (32); ~ (prefixo 80).'

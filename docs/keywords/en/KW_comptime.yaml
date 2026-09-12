@@ -1,0 +1,22 @@
+keyword: comptime
+category: Metaprogramção
+description: Evaluates uma expression ou block de código at compile time. O resultado é resolvido ou dobrado antes da execução
+  em runtime. Útil para pré-computação de expressions constantes e geração estática de dados.
+syntax: 'comptime <expression>
+
+  comptime { <bloco> }'
+pseudocode: valor := TEMPO_DE_COMPILACAO(1 + 2)   // evaluatesdo e dobrado na compilacao
+usages:
+- name: Comptime com expression
+  description: Evaluates uma expression aritmética at compile time.
+  examples:
+  - code: 'mut as int64: x = comptime (10 * 4) + 2'
+- name: Comptime com block
+  description: Evaluates um block de código com variables locais at compile time.
+  examples:
+  - code: "mut as int64: y = comptime {\n      mut as int64: temp = 10\n      temp = temp * 10\n      temp\n}"
+restrictions:
+- Expressions comptime são resolvidas at compile time ou during initialization.
+- O resultado do block ou expression substitui o nó comptime correspondente.
+- quote cannot be used dentro de comptime.
+- Suportado de forma transparente em todos os 5 backends (Interpreter, VM, LLVM, WASM, WAT).

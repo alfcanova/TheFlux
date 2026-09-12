@@ -1,0 +1,44 @@
+keyword: print
+category: Instrução de Saída
+description: Imprime o valor de uma expressão na saída padrão. Pode ser usado como instrução (`print(...)`) ou como sink em
+  um pipeline de dataflow (`--> print`), onde encerra a cadeia.
+syntax: 'print(<expressão>)
+
+  <expressão> --> print'
+pseudocode: 'EXIBIR("Hello, World!")
+
+  EXIBIR("valor: " + total)
+
+  // como terminal de pipeline: dobro(x) → EXIBIR'
+usages:
+- name: '`print` como instrução'
+  description: Imprime o valor de uma expressão na saída padrão.
+  examples:
+  - code: print("Hello, World!")
+  - code: 'print("Contador: " + contador)'
+  - code: print(42)
+- name: '`print` como sink em dataflow'
+  description: '`print` como destino de um pipeline usando -->.'
+  examples:
+  - code: dobro(10) --> print
+  - code: 'mut as string: texto = "12.5"
+
+      print(texto as float64)'
+  - code: 'mut as list of int64: xs = [1, 2, 3, 4, 5]
+
+      xs --> print'
+- name: '`print` com string interpolada'
+  description: 'Imprime strings com interpolação de expressões usando #{...}.'
+  examples:
+  - code: 'print("Ola, #{ nome }!")'
+  - code: 'print("soma: #{ a + b }")'
+  - code: 'print("Ano: #{ ANO }")'
+- name: '`print` dos campos do resultado de função'
+  description: Imprime os campos `.sta`, `.val` e `.msg` do struct de resultado de uma chamada de função.
+  examples:
+  - code: "function (calc) (teste: int64) as int64 {\n      emit(nice, teste, \"ok\")\n}\n\nimut as int64: r = calc(5)\nprint(r.sta)\
+      \     # \"nice\"\nprint(r.val)     # 5\nprint(r.msg)     # \"ok\""
+restrictions:
+- Quando usado como instrução (`print(...)`), `print` executa imediatamente.
+- Como sink, `print` consome o valor recebido e encerra a cadeia de dataflow.
+- Como sink (`--> print`), nenhuma etapa pode ser encadeada após `print`.

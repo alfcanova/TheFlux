@@ -1,0 +1,45 @@
+keyword: op
+category: Operation Declaration
+description: 'Declara uma operation dentro de um agent (agent) em files .fdsl ou uma assinatura de operation dentro de um
+  contract (contract). Operations são functions encapsuladas no agent com return optional (via `as <type_return>`). Parameters
+  são immutable (`imut`) por pattern quando o modificador de mutabilidade for omitido (ex: `as <type>: <identifier>`); para
+  permitir reassignment ao parameter no scope local, declare-o explicitamente como `mut as <type>: <identifier>`. O body da
+  operation deve terminar com um `emit` terminal que devolve um struct implícito de resultado (.sta, .val, .msg). O nome da
+  operation deve estar em camelCase.'
+syntax: "# Op com corpo — dentro de agent; parâmetros no formato ([mut | imut | as] <type>: <identifier>, ...);\n# retorno\
+  \ opcional com [as <tipo_retorno>] e bloco de corpo com ==>.\nop <nome_camelCase> ([mut | imut | as] <type>: <identifier>\
+  \ [, [mut | imut | as] <type>: <identifier> ...]) [as <tipo_retorno>] ==> {\n      <instruções>\n      emit(nice | fail,\
+  \ <identifier>, \"<mensagem>\")\n}\nop <nome_camelCase> ==> {\n      <instruções>\n}  # sem parâmetros nem retorno explícito\n\
+  \n# Assinatura sem corpo — dentro de contract; parâmetros com tipo e identificador.\nop <nome_camelCase> ([mut | imut |\
+  \ as] <type>: <identifier> [, [mut | imut | as] <type>: <identifier> ...]) [as <tipo_retorno>]"
+pseudocode: "AGENTE Conversor:\n    OPERACAO dobrar(x):\n        RETURN x * 2"
+usages:
+- name: Operation com parameters e return
+  description: 'Operation completa em um agent. Parameters nomeados ([mut | imut | as] <type>: <id>); return com [as <type>]
+    e block com ==>.'
+  examples:
+  - code: "op dobro (as int64: x) as int64 ==> {\n      mut as int64: resultado = x * 2\n      emit(nice, resultado, \"ok\"\
+      )\n}"
+- name: Operation com parameter mutable local
+  description: Parameters declarados com `mut as <type>:` can be reatribuídos dentro do body da operation.
+  examples:
+  - code: "op acumular (mut as int64: total, as int64: incremento) as int64 ==> {\n      total =+ incremento\n      emit(nice,\
+      \ total, \"acumulado com sucesso\")\n}"
+- name: Operation sem parameters nem return
+  description: Operation simplificada sem parameters.
+  examples:
+  - code: "op printNome ==> {\n      print(\"Andre Luiz Fassone Canova\")\n}"
+- name: Assinatura em contract
+  description: Operation como assinatura dentro de um contract (sem body). Parameters com type e identifier.
+  examples:
+  - code: "contract CalculadoraContrato {\n      op dobro (as int64: valor) as int64\n      op soma (as int64: lhs, as int64:\
+      \ rhs) as int64\n}"
+restrictions:
+- 'O nome da operation deve estar em camelCase: `op nomeDaOperation`.'
+- 'Parameters seguem a convenção `[mut | imut | as] <type>: <identifier>` e identifiers devem estar em snake_case.'
+- 'Parameters são immutable (`imut`) por pattern quando declarados com `as <type>: <id>`; para permitir reassignment local,
+  declare como `mut as <type>: <id>`.'
+- Op com body é válida dentro do body de um agent (`agent`) e utiliza `==> { <body> }`.
+- Op sem body é válida dentro de um contract (`contract`).
+- O body deve terminar obrigatoriamente com um comando `emit` terminal quando possuir return.
+- '`emit` é válido apenas dentro do body de uma function (`function`) ou operation (`op`).'

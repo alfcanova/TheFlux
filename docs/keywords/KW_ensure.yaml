@@ -1,0 +1,24 @@
+keyword: ensure
+category: Execução Garantida
+description: Operador de cleanup que garante que um bloco de código sempre execute, independentemente de sucesso ou falha
+  da expressão alvo. Preserva o valor original ou re-lança a falha após a execução do bloco.
+syntax: '''<expressão> ensure { <bloco_cleanup> }
+
+  '''
+pseudocode: "operacao_principal(x)\nGARANTIR:               // sempre executa\n    liberar_recursos()"
+usages:
+- name: Ensure com sucesso
+  description: Bloco de cleanup executado após sucesso, mantendo o valor.
+  examples:
+  - code: '"falhaControlada() ensure {\n    print(\"cleanup executado\")\n} catch 9\n"'
+- name: Ensure com fallback
+  description: Ensure executado antes do fallback em caso de falha.
+  examples:
+  - code: "mut as int64: n_par = 4\nmut as int64: res_par = avaliaNumero(n_par) fallback {\n      (n_par + 1)\n} ensure {\n\
+      \      print(\"Ensure sempre executado\")\n}"
+restrictions:
+- O bloco ensure sempre executa, independente de sucesso ou falha.
+- Ensure preserva o valor original em caso de sucesso.
+- Ensure re-lança a falha se o bloco não a tratar.
+- Tipo do resultado = tipo da expressão alvo (bloco não tipa a expressão).
+- break/continue dentro de ensure só afetam loops declarados dentro do próprio ensure.

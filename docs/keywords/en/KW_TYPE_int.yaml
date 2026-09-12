@@ -1,0 +1,49 @@
+keyword: int8, int16, int32, int64, uint8, uint16, uint32, uint64
+category: Numeric Type - Integer
+description: Types integers de width fixa com sinal e sem sinal (int8, int16, int32, int64, uint8, uint16, uint32, uint64).
+syntax: 'mut as <type>: <var> = <value>     # tipo obrigatório na declaração
+
+  mut as int8: <var> = <value>      # -128 a 127
+
+  mut as int16: <var> = <value>     # -32768 a 32767
+
+  mut as int32: <var> = <value>     # -2147483648 a 2147483647
+
+  mut as int64: <var> = <value>     # -9223372036854775808 a 9223372036854775807
+
+  mut as uint8: <var> = <value>     # 0 a 255
+
+  mut as uint16: <var> = <value>    # 0 a 65535
+
+  mut as uint32: <var> = <value>    # 0 a 4294967295
+
+  mut as uint64: <var> = <value>    # 0 a 18446744073709551615'
+pseudocode: 'i : INTEIRO64 = 42   // int8..uint64, com/sem sinal'
+usages:
+- name: Integers com sinal
+  description: Declaration de todos os types integers com sinal.
+  examples:
+  - code: 'mut as int8: byte = -8
+
+      mut as int16: small = -1600
+
+      mut as int32: medium = -32000
+
+      mut as int64: large = -64000'
+- name: Integers sem sinal
+  description: Declaration de todos os types integers sem sinal.
+  examples:
+  - code: 'mut as uint8: u_byte = 8
+
+      mut as uint16: u_small = 1600
+
+      mut as uint32: u_medium = 32000
+
+      mut as uint64: u_large = 64000'
+restrictions:
+- Values fora da range suportada pelo type são rejeitados at compile time (SEM001).
+- Os types genéricos int e uint foram removidos; a especificação exata da width é required.
+- There is no literais com sufixo de type; the type comes from the declaration explícita.
+- A divisão inteira utiliza /i e o resto utiliza /r (/f é reservado para divisão decimal).
+- 'Ver também KW_LITERAL_integer.yaml (literal) — types e literais são files espelhados: TYPES descreve a forma in the declaration,
+  LITERAL descreve a sintaxe do value.'

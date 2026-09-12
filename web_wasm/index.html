@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="glass">
+<head>
+<meta charset="utf-8">
+<title>TheFlux — Terminal WASM 80x25</title>
+<!-- Folhas de Estilo Modulares dos Temas -->
+<link rel="stylesheet" href="css/variaveis.css">
+<link rel="stylesheet" href="css/glass.css">
+<link rel="stylesheet" href="css/aqua.css">
+<link rel="stylesheet" href="css/aurora.css">
+<link rel="stylesheet" href="css/bento.css">
+<link rel="stylesheet" href="css/clay.css">
+<link rel="stylesheet" href="css/forest.css">
+<link rel="stylesheet" href="css/light.css">
+<link rel="stylesheet" href="css/neumorphism.css">
+<link rel="stylesheet" href="css/sunset.css">
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, var(--bg-start, #0f0c29), var(--bg-mid, #302b63), var(--bg-end, #24243e));
+    background-attachment: fixed;
+    color: var(--text, #e8eaf6);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    user-select: none;
+    overflow: hidden;
+    transition: background 0.5s ease, color 0.5s ease;
+  }
+
+  /* Orbs Animados de Fundo */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    z-index: 0;
+    pointer-events: none;
+    animation: orbFloat 20s ease-in-out infinite alternate;
+  }
+  body::before {
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, var(--orb1, rgba(74,144,217,0.5)), transparent 70%);
+    top: -100px; left: -100px;
+  }
+  body::after {
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, var(--orb2, rgba(147,51,234,0.4)), transparent 70%);
+    bottom: -80px; right: -80px;
+    animation-delay: -10s;
+  }
+  @keyframes orbFloat {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(50px, 30px) scale(1.08); }
+    100% { transform: translate(-30px, 60px) scale(0.95); }
+  }
+
+  /* Header Superior (Limpo, Minimalista e Dinâmico) */
+  header {
+    background: var(--glass-bg-strong, rgba(255, 255, 255, 0.12));
+    backdrop-filter: var(--glass-blur-strong, blur(20px));
+    -webkit-backdrop-filter: var(--glass-blur-strong, blur(20px));
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.18));
+    box-shadow: var(--glass-shadow-sm, 0 4px 16px rgba(0,0,0,0.2));
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--primary-light, #64b5f6), var(--primary, #4a90d9));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 1.2px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+    text-align: center;
+    margin: 0 auto;
+    transition: all 0.35s ease;
+  }
+  header h1 span {
+    font-weight: 500;
+    color: var(--text, #ffffff);
+    -webkit-text-fill-color: var(--text, #ffffff);
+    opacity: 0.9;
+    transition: color 0.35s ease;
+  }
+  header .spacer { display: none; }
+  #status {
+    position: absolute;
+    right: 20px;
+    font-size: 13px;
+    color: var(--text-muted, rgba(255,255,255,0.6));
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+  #status::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted, #888);
+  }
+  #status.running { color: var(--primary-light, #4f8cff); }
+  #status.running::before { background: var(--primary-light, #4f8cff); box-shadow: 0 0 8px var(--primary-light, #4f8cff); }
+  #status.done { color: var(--success, #2ecc71); }
+  #status.done::before { background: var(--success, #2ecc71); box-shadow: 0 0 8px var(--success, #2ecc71); }
+  #status.error { color: var(--accent, #e74c3c); }
+  #status.error::before { background: var(--accent, #e74c3c); box-shadow: 0 0 8px var(--accent, #e74c3c); }
+
+  /* Layout Principal em 3 Colunas */
+  main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Coluna Esquerda: Arquivos */
+  section#files {
+    width: 260px;
+    min-width: 210px;
+    border-right: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+    backdrop-filter: var(--glass-blur, blur(16px));
+    -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 12px 14px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid var(--glass-border-light, rgba(255, 255, 255, 0.08));
+  }
+  .sidebar-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sidebar-title-row h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, rgba(255, 255, 255, 0.5));
+    font-weight: 700;
+  }
+  .sidebar-title-row .count {
+    font-size: 11px;
+    color: var(--text-muted, rgba(255, 255, 255, 0.6));
+    background: var(--glass-bg-strong, rgba(255, 255, 255, 0.1));
+    padding: 1px 7px;
+    border-radius: 10px;
+  }
+  #file-filter {
+    background: var(--select-bg, rgba(0, 0, 0, 0.25));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    border-radius: var(--radius-xs, 6px);
+    color: var(--text, #fff);
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  #file-filter:focus {
+    border-color: var(--primary-light, #4a90d9);
+    box-shadow: 0 0 10px var(--glow-primary, rgba(74, 144, 217, 0.3));
+  }
+  #file-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+    overflow-y: auto;
+    flex: 1;
+  }
+  #file-list li {
+    padding: 7px 14px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    font-size: 13px;
+    font-family: "Cascadia Mono", Consolas, monospace;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.15s ease;
+    color: var(--text-light, rgba(255, 255, 255, 0.8));
+  }
+  #file-list li:hover {
+    background: var(--glass-bg-hover, rgba(255, 255, 255, 0.12));
+    color: #fff;
+  }
+  #file-list li.selected {
+    background: var(--glass-bg-strong, rgba(74, 144, 217, 0.25));
+    border-left-color: var(--primary-light, #4a90d9);
+    color: #fff;
+    font-weight: 600;
+  }
+  #file-list li.disabled {
+    color: var(--text-muted, rgba(255, 255, 255, 0.3));
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Coluna Central: Terminal Centralizado */
+  section#terminal-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow: auto;
+    min-width: 0;
+  }
+
+  .terminal-box {
+    display: flex;
+    flex-direction: column;
+    background: #0a0c10;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
+    border-radius: var(--radius, 12px);
+    box-shadow: var(--glass-shadow, 0 16px 40px rgba(0, 0, 0, 0.6)), var(--glow-primary, 0 0 25px rgba(74,144,217,0.15));
+    overflow: hidden;
+    max-width: 100%;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .terminal-box.input-active {
+    border-color: var(--primary-light, #4a90d9);
+    box-shadow: var(--glass-shadow, 0 16px 40px rgba(0, 0, 0, 0.6)), 0 0 25px var(--glow-primary, rgba(74,144,217,0.4));
+  }
+
+  /* Barra de Título Exclusiva do Terminal */
+  .terminal-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #141720;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text-muted, #888);
+  }
+  .window-controls {
+    display: flex;
+    gap: 6px;
+  }
+  .window-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .window-dot.red { background: #ff5f56; }
+  .window-dot.yellow { background: #ffbd2e; }
+  .window-dot.green { background: #27c93f; }
+  .terminal-title {
+    font-family: "Cascadia Mono", Consolas, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .terminal-actions {
+    font-size: 11px;
+    color: var(--text-muted, #777);
+  }
+
+  /* Grid 80x25 do Terminal */
+  #terminal-screen {
+    background: #0a0c10;
+    color: #d7dae0;
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.35;
+    padding: 12px 14px;
+    width: calc(80ch + 28px);
+    max-width: calc(80ch + 28px);
+    height: calc(25 * 1.35em + 24px);
+    max-height: calc(25 * 1.35em + 24px);
+    overflow: hidden;
+    white-space: pre;
+    user-select: text;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  #terminal-screen.scroll-mode {
+    overflow-y: auto;
+    height: calc(25 * 1.35em + 24px);
+    max-height: 70vh;
+  }
+
+  .term-row {
+    height: 1.35em;
+    min-height: 1.35em;
+    display: block;
+    white-space: pre;
+  }
+
+  /* Cursor */
+  .term-cursor {
+    display: inline-block;
+    background: var(--term-cursor-bg, #4f8cff);
+    color: var(--term-cursor-fg, #0a0c10) !important;
+    animation: term-blink 1s step-start infinite;
+  }
+
+  /* Seleção de Texto no Terminal */
+  #terminal-screen::selection,
+  #terminal-screen *::selection {
+    background: var(--term-cursor-bg, #4f8cff) !important;
+    color: var(--term-cursor-fg, #0a0c10) !important;
+  }
+
+  @keyframes term-blink {
+    50% { background: transparent; color: inherit !important; }
+  }
+
+  /* Status Bar do Terminal */
+  .terminal-statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #11141c;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 5px 14px;
+    font-size: 11px;
+    color: #88909e;
+    font-family: "Cascadia Mono", Consolas, monospace;
+  }
+  .terminal-statusbar .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .terminal-statusbar .badge-mode {
+    background: rgba(74, 144, 217, 0.2);
+    color: var(--primary-light, #64b5f6);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-weight: 600;
+  }
+
+  /* Barra de Funções / Ações do Terminal na Base da Janela */
+  .terminal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #12151e;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 8px 14px;
+  }
+  .btn {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.07));
+    backdrop-filter: var(--glass-blur, blur(16px));
+    -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+    color: var(--text, #e8eaf6);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.18));
+    border-radius: var(--radius-xs, 6px);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: var(--glass-shadow-sm, 0 2px 8px rgba(0,0,0,0.2));
+    transition: all 0.2s ease;
+  }
+  .btn:hover {
+    background: var(--glass-bg-hover, rgba(255, 255, 255, 0.18));
+    border-color: var(--primary-light, #64b5f6);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: var(--glow-primary, 0 0 15px rgba(74,144,217,0.3));
+  }
+
+  /* Coluna Direita: Seletor de Estilos & Temas com Abas */
+  section#themes {
+    width: 270px;
+    min-width: 220px;
+    border-left: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+    backdrop-filter: var(--glass-blur, blur(16px));
+    -webkit-backdrop-filter: var(--glass-blur, blur(16px));
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .theme-header {
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid var(--glass-border-light, rgba(255, 255, 255, 0.08));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .theme-title-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .theme-title-row h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted, rgba(255, 255, 255, 0.5));
+    font-weight: 700;
+    text-align: center;
+  }
+  .theme-tabs {
+    display: flex;
+    background: var(--select-bg, rgba(0, 0, 0, 0.25));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-xs, 6px);
+    padding: 2px;
+    gap: 2px;
+  }
+  .theme-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, rgba(255, 255, 255, 0.6));
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+  }
+  .theme-tab-btn:hover {
+    color: var(--text, #fff);
+  }
+  .theme-tab-btn.active {
+    background: var(--glass-bg-strong, rgba(74, 144, 217, 0.3));
+    color: #fff;
+    box-shadow: 0 0 8px var(--glow-primary, rgba(74,144,217,0.3));
+  }
+
+  #theme-list, #palette-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px 10px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .theme-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--glass-border-light, rgba(255, 255, 255, 0.08));
+    border-radius: var(--radius-xs, 8px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .theme-card:hover {
+    background: var(--glass-bg-hover, rgba(255, 255, 255, 0.12));
+    border-color: var(--primary-light, #4a90d9);
+    transform: translateX(-2px);
+  }
+  .theme-card.active {
+    background: var(--glass-bg-strong, rgba(255, 255, 255, 0.15));
+    border-color: var(--primary-light, #4a90d9);
+    box-shadow: var(--glow-primary, 0 0 12px rgba(74, 144, 217, 0.3));
+  }
+  .theme-preview-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+  }
+  .theme-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+  .theme-check {
+    font-size: 11px;
+    color: var(--primary-light, #64b5f6);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .theme-card.active .theme-check {
+    opacity: 1;
+  }
+
+  /* Painel de Cores Customizadas (Color Picker) */
+  #custom-palette-panel {
+    margin: 4px 10px 10px;
+    padding: 10px 12px;
+    background: var(--glass-bg-strong, rgba(255, 255, 255, 0.08));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
+    border-radius: var(--radius-xs, 8px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: var(--glass-shadow-sm, 0 4px 12px rgba(0,0,0,0.2));
+  }
+  .custom-palette-header {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary-light, #64b5f6);
+    margin-bottom: 2px;
+  }
+  .custom-color-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text, #fff);
+  }
+  .color-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .color-input-wrapper input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.3));
+    border-radius: 4px;
+    width: 28px;
+    height: 24px;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+  .color-input-wrapper input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+  }
+  .color-hex {
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+    color: var(--text-muted, rgba(255, 255, 255, 0.7));
+    min-width: 58px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+<!-- Header Global Limpo e Dinâmico -->
+<header>
+  <h1>TheFlux <span>Runner WebAssembly</span></h1>
+  <span class="spacer"></span>
+  <span id="status">pronto</span>
+</header>
+
+<main>
+  <!-- Coluna 1: Sidebar de Arquivos (Esquerda) -->
+  <section id="files">
+    <div class="sidebar-header">
+      <div class="sidebar-title-row">
+        <h2>t_wasm-1.0</h2>
+        <span id="file-count" class="count">0 arquivos</span>
+      </div>
+      <input type="text" id="file-filter" placeholder="Filtrar exemplos (ex: input, sort)...">
+    </div>
+    <ul id="file-list"></ul>
+  </section>
+
+  <!-- Coluna 2: Container Central do Terminal -->
+  <section id="terminal-container">
+    <div class="terminal-box">
+      <!-- Barra de Título Exclusiva da Janela do Terminal -->
+      <div class="terminal-titlebar">
+        <div class="window-controls">
+          <div class="window-dot red"></div>
+          <div class="window-dot yellow"></div>
+          <div class="window-dot green"></div>
+        </div>
+        <div class="terminal-title" id="terminal-active-file">TheFlux Terminal 80x25</div>
+        <div class="terminal-actions">
+          <span>VT100 / ANSI</span>
+        </div>
+      </div>
+
+      <!-- Tela 80x25 -->
+      <div id="terminal-screen" tabindex="0"></div>
+
+      <!-- Barra de Status do Terminal -->
+      <div class="terminal-statusbar">
+        <div class="stat-item">
+          <span class="badge-mode" id="stat-mode">80x25 FIXO</span>
+        </div>
+        <div class="stat-item">
+          <span id="stat-cursor">L: 01/25  C: 01/80</span>
+        </div>
+        <div class="stat-item">
+          <span id="stat-chars">0 caracteres</span>
+        </div>
+      </div>
+
+      <!-- Barra de Funções / Controles na Base do Terminal -->
+      <div class="terminal-toolbar">
+        <button id="btn-reload" class="btn" title="Atualizar lista de binários WASM">🔄 Recarregar</button>
+        <button id="btn-clear" class="btn" title="Limpar terminal e resetar cursor">🧹 Limpar</button>
+        <button id="btn-copy" class="btn" title="Copiar conteúdo do terminal">📋 Copiar</button>
+        <button id="btn-toggle-mode" class="btn" title="Alternar entre modo fixo 80x25 e scrollback">📐 Modo: 80x25 Fixo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coluna 3: Seletor de Estilos & Temas (Direita) -->
+  <section id="themes">
+    <div class="theme-header">
+      <div class="theme-title-row">
+        <h2>Estilos & Temas</h2>
+      </div>
+      <div class="theme-tabs">
+        <button class="theme-tab-btn active" id="tab-themes">🎨 Temas Web (9)</button>
+        <button class="theme-tab-btn" id="tab-palettes">🖥️ Terminal (12)</button>
+      </div>
+    </div>
+    <ul id="theme-list"></ul>
+    <ul id="palette-list" style="display: none;"></ul>
+
+    <!-- Painel de Seleção de Cores Customizadas -->
+    <div id="custom-palette-panel" style="display: none;">
+      <div class="custom-palette-header">⚙️ Cores Personalizadas</div>
+      <div class="custom-color-row">
+        <span>Fundo:</span>
+        <div class="color-input-wrapper">
+          <input type="color" id="picker-bg" value="#121214">
+          <span id="label-bg" class="color-hex">#121214</span>
+        </div>
+      </div>
+      <div class="custom-color-row">
+        <span>Texto:</span>
+        <div class="color-input-wrapper">
+          <input type="color" id="picker-fg" value="#d7dae0">
+          <span id="label-fg" class="color-hex">#d7dae0</span>
+        </div>
+      </div>
+      <div class="custom-color-row">
+        <span>Cursor:</span>
+        <div class="color-input-wrapper">
+          <input type="color" id="picker-cursor" value="#4f8cff">
+          <span id="label-cursor" class="color-hex">#4f8cff</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+// Lista dos 9 temas da interface web (em web_wasm/css/)
+const THEMES = [
+  { id: "glass", name: "Glassmorphism", desc: "Vidro Fosco & Azul", dot: "linear-gradient(135deg, #4a90d9, #2563eb)" },
+  { id: "aqua", name: "Liquid Aqua", desc: "Ciano & Azul Oceano", dot: "linear-gradient(135deg, #22d3ee, #0891b2)" },
+  { id: "aurora", name: "Aurora Boreal", desc: "Iridescente & Violeta", dot: "linear-gradient(135deg, #a855f7, #ec4899)" },
+  { id: "bento", name: "Bento Dark Tech", desc: "Verde Neon Minimalista", dot: "linear-gradient(135deg, #00ff88, #00cc6a)" },
+  { id: "clay", name: "Claymorphism 3D", desc: "Massinha & Cores Pastel", dot: "linear-gradient(135deg, #ff6b6b, #ffa8a8)" },
+  { id: "forest", name: "Deep Forest", desc: "Floresta Noturna & Musgo", dot: "linear-gradient(135deg, #52d681, #1e8449)" },
+  { id: "light", name: "Clean Light", desc: "Claro Minimalista", dot: "linear-gradient(135deg, #3498db, #e8eaed)" },
+  { id: "neumorphism", name: "Soft Neumorphism", desc: "Soft UI & Relevo Suave", dot: "linear-gradient(135deg, #6c5ce7, #a29bfe)" },
+  { id: "sunset", name: "Sunset Glow", desc: "Pôr do Sol & Laranja", dot: "linear-gradient(135deg, #f5a623, #d35400)" }
+];
+
+// ANSI Standard Colors (16-color RGB palette suavizada)
+const ANSI_COLORS_DEFAULT = [
+  "#12141a", "#e06c75", "#3ddc84", "#e5c07b", "#61afef", "#c678dd", "#56b6c2", "#d7dae0",
+  "#5c6370", "#ff7b86", "#4ade80", "#ffd782", "#7fc1ff", "#e092f7", "#6ee2f0", "#ffffff"
+];
+
+// Paleta Borland C++ / Turbo (Branco 15 / Azul Escuro 1)
+const ANSI_COLORS_BORLAND = [
+  "#001a80", "#ff6666", "#55ff55", "#ffff55", "#6688ff", "#ff66ff", "#55ffff", "#ffffff",
+  "#4466aa", "#ff8888", "#77ff77", "#ffff77", "#88aaff", "#ff88ff", "#77ffff", "#ffffff"
+];
+
+// Paleta Matriz Otimizada (Verde Claro 10 / Azul Escuro 1)
+const ANSI_COLORS_MATRIZ = [
+  "#001440", "#f87171", "#4ade80", "#facc15", "#60a5fa", "#c084fc", "#38bdf8", "#4ade80",
+  "#002870", "#ef4444", "#22c55e", "#eab308", "#3b82f6", "#a855f7", "#06b6d4", "#86efac"
+];
+
+// Paleta Terminal Moderno (Cinza Claro 7 / Preto Suavizado 0)
+const ANSI_COLORS_MODERN = [
+  "#121214", "#f87171", "#34d399", "#fbbf24", "#60a5fa", "#c084fc", "#38bdf8", "#d1d5db",
+  "#4b5563", "#ef4444", "#10b981", "#f59e0b", "#3b82f6", "#8b5cf6", "#06b6d4", "#f3f4f6"
+];
+
+// Paleta Ciano Técnico (Ciano Claro 11 / Preto Suavizado 0)
+const ANSI_COLORS_CYAN = [
+  "#0d131a", "#f87171", "#34d399", "#fbbf24", "#38bdf8", "#c084fc", "#22d3ee", "#e0f2fe",
+  "#1e293b", "#ef4444", "#10b981", "#f59e0b", "#0284c7", "#8b5cf6", "#06b6d4", "#ffffff"
+];
+
+// Paleta Âmbar Amarelo (Amarelo 14 / Preto Suave 0)
+const ANSI_COLORS_AMBER_YELLOW = [
+  "#120f06", "#d48800", "#e69900", "#ffaa00", "#ffbb00", "#ffcc00", "#ffdd33", "#ffee66",
+  "#553a00", "#ff9900", "#ffaa00", "#ffbb00", "#ffcc00", "#ffdd33", "#ffee66", "#ffff99"
+];
+
+// Paleta Âmbar Marrom (Marrom 6 / Preto Suave 0)
+const ANSI_COLORS_AMBER_BROWN = [
+  "#100a04", "#8c4400", "#a65200", "#bf6000", "#d97706", "#e08a1e", "#e69c35", "#f0b360",
+  "#401c00", "#b35900", "#cc6600", "#d97706", "#e68519", "#f29933", "#f7ad4d", "#ffd299"
+];
+
+// Paleta Fósforo Verde (Verde Menta Suave 10 / Preto Suave 0)
+const ANSI_COLORS_GREEN = [
+  "#0a140d", "#008822", "#00aa33", "#00cc44", "#22c55e", "#3ddc84", "#4ade80", "#86efac",
+  "#003d10", "#00bb2f", "#00dd38", "#3ddc84", "#4ade80", "#86efac", "#bbf7d0", "#f0fdf4"
+];
+
+// Paleta Fósforo Verde Claro (Fundo Verde CRT com Verde Fósforo Suave)
+const ANSI_COLORS_GREEN_LIGHT = [
+  "#0f331b", "#009926", "#00bb33", "#00dd44", "#22c55e", "#3ddc84", "#4ade80", "#86efac",
+  "#004d14", "#00cc33", "#00ee3d", "#3ddc84", "#4ade80", "#86efac", "#bbf7d0", "#ffffff"
+];
+
+// Paleta Preto no Branco Puro
+const ANSI_COLORS_PAPER_WHITE = [
+  "#ffffff", "#b30000", "#006600", "#996600", "#0033cc", "#660099", "#006699", "#222222",
+  "#cccccc", "#cc0000", "#008800", "#cc8800", "#0055ff", "#8800cc", "#0088cc", "#000000"
+];
+
+// Paleta Preto no Cinza Claro (Paper White Clássico)
+const ANSI_COLORS_PAPER_GRAY = [
+  "#e5e7eb", "#991b1b", "#166534", "#854d0e", "#1e40af", "#6b21a8", "#0e7490", "#1f2937",
+  "#cbd5e1", "#dc2626", "#15803d", "#a16207", "#2563eb", "#7e22ce", "#0891b2", "#030712"
+];
+
+// Cores Personalizadas (Carregadas do LocalStorage)
+let customColors = { bg: "#12141a", fg: "#d7dae0", cursor: "#4f8cff" };
+try {
+  const savedCustom = localStorage.getItem("theflux_custom_colors");
+  if (savedCustom) {
+    customColors = Object.assign(customColors, JSON.parse(savedCustom));
+  }
+} catch (e) {}
+
+// Lista das 12 paletas do Terminal 80x25 (Ordenadas Alfabeticamente)
+const PALETTES = [
+  {
+    id: "amber-yellow",
+    name: "Âmbar Amarelo",
+    dot: "linear-gradient(135deg, #fbbf24, #120f06)",
+    bg: "#120f06",
+    fg: "#fbbf24",
+    cursorBg: "#fbbf24",
+    cursorFg: "#120f06",
+    ansi: ANSI_COLORS_AMBER_YELLOW
+  },
+  {
+    id: "amber-brown",
+    name: "Âmbar Marrom",
+    dot: "linear-gradient(135deg, #d97706, #100a04)",
+    bg: "#100a04",
+    fg: "#d97706",
+    cursorBg: "#d97706",
+    cursorFg: "#100a04",
+    ansi: ANSI_COLORS_AMBER_BROWN
+  },
+  {
+    id: "borland",
+    name: "Borland C++ / Turbo",
+    dot: "linear-gradient(135deg, #ffffff, #001a80)",
+    bg: "#001a80",
+    fg: "#ffffff",
+    cursorBg: "#ffff55",
+    cursorFg: "#001a80",
+    ansi: ANSI_COLORS_BORLAND
+  },
+  {
+    id: "cyan",
+    name: "Ciano Técnico (CAD)",
+    dot: "linear-gradient(135deg, #38bdf8, #0d131a)",
+    bg: "#0d131a",
+    fg: "#38bdf8",
+    cursorBg: "#38bdf8",
+    cursorFg: "#0d131a",
+    ansi: ANSI_COLORS_CYAN
+  },
+  {
+    id: "dynamic",
+    name: "Dinâmico (Tema da Página)",
+    dot: "linear-gradient(135deg, var(--primary-light), var(--primary), var(--bg-start))",
+    bg: "var(--bg-start)",
+    fg: "var(--text)",
+    cursorBg: "var(--primary-light)",
+    cursorFg: "var(--bg-start)",
+    ansi: ANSI_COLORS_DEFAULT
+  },
+  {
+    id: "green",
+    name: "Fósforo Verde (IBM 3270)",
+    dot: "linear-gradient(135deg, #3ddc84, #0a140d)",
+    bg: "#0a140d",
+    fg: "#3ddc84",
+    cursorBg: "#3ddc84",
+    cursorFg: "#0a140d",
+    ansi: ANSI_COLORS_GREEN
+  },
+  {
+    id: "green-light",
+    name: "Fósforo Verde Claro",
+    dot: "linear-gradient(135deg, #4ade80, #0f331b)",
+    bg: "#0f331b",
+    fg: "#4ade80",
+    cursorBg: "#4ade80",
+    cursorFg: "#0f331b",
+    ansi: ANSI_COLORS_GREEN_LIGHT
+  },
+  {
+    id: "matriz",
+    name: "Matriz Otimizada (AS/400)",
+    dot: "linear-gradient(135deg, #4ade80, #001440)",
+    bg: "#001440",
+    fg: "#4ade80",
+    cursorBg: "#4ade80",
+    cursorFg: "#001440",
+    ansi: ANSI_COLORS_MATRIZ
+  },
+  {
+    id: "custom",
+    name: "Padrão ANSI / RGB",
+    dot: `linear-gradient(135deg, ${customColors.fg}, ${customColors.bg})`,
+    bg: customColors.bg,
+    fg: customColors.fg,
+    cursorBg: customColors.cursor,
+    cursorFg: customColors.bg,
+    ansi: ANSI_COLORS_DEFAULT
+  },
+  {
+    id: "paper-white",
+    name: "Preto no Branco Puro",
+    dot: "linear-gradient(135deg, #000000, #ffffff)",
+    bg: "#ffffff",
+    fg: "#000000",
+    cursorBg: "#000000",
+    cursorFg: "#ffffff",
+    ansi: ANSI_COLORS_PAPER_WHITE
+  },
+  {
+    id: "paper-gray",
+    name: "Preto no Cinza Claro",
+    dot: "linear-gradient(135deg, #1f2937, #e5e7eb)",
+    bg: "#e5e7eb",
+    fg: "#111827",
+    cursorBg: "#111827",
+    cursorFg: "#e5e7eb",
+    ansi: ANSI_COLORS_PAPER_GRAY
+  },
+  {
+    id: "modern",
+    name: "Terminal Moderno",
+    dot: "linear-gradient(135deg, #d1d5db, #121214)",
+    bg: "#121214",
+    fg: "#d1d5db",
+    cursorBg: "#60a5fa",
+    cursorFg: "#121214",
+    ansi: ANSI_COLORS_MODERN
+  }
+];
+
+class Terminal80x25 {
+  constructor(screenEl, statusCursorEl, statusCharsEl) {
+    this.screenEl = screenEl;
+    this.statusCursorEl = statusCursorEl;
+    this.statusCharsEl = statusCharsEl;
+    this.COLS = 80;
+    this.ROWS = 25;
+
+    this.cursorRow = 0;
+    this.cursorCol = 0;
+    this.totalChars = 0;
+
+    // Palette Configuration
+    this.paletteId = "dynamic";
+    this.currentPalette = PALETTES.find(p => p.id === "dynamic") || PALETTES[0];
+    this.ansiColors = this.currentPalette.ansi;
+
+    // Current Style Attributes
+    this.fg = null;
+    this.bg = null;
+    this.bold = false;
+    this.dim = false;
+    this.underline = false;
+    this.inverse = false;
+
+    this.scrollMode = false;
+    this.scrollback = [];
+
+    this.initGrid();
+    this.setPalette("dynamic");
+  }
+
+  setPalette(paletteId) {
+    const pal = PALETTES.find(p => p.id === paletteId) || PALETTES[0];
+    this.paletteId = pal.id;
+
+    if (pal.id === "dynamic") {
+      const styles = window.getComputedStyle(document.documentElement);
+      const primary = styles.getPropertyValue("--primary").trim() || "#4a90d9";
+      const primaryLight = styles.getPropertyValue("--primary-light").trim() || "#64b5f6";
+      const text = styles.getPropertyValue("--text").trim() || "#e8eaf6";
+      const bgStart = styles.getPropertyValue("--bg-start").trim() || "#0f0c29";
+
+      this.currentPalette = {
+        id: "dynamic",
+        name: "Dinâmico (Tema da Página)",
+        dot: "linear-gradient(135deg, var(--primary-light), var(--primary), var(--bg-start))",
+        bg: bgStart,
+        fg: text,
+        cursorBg: primaryLight,
+        cursorFg: bgStart,
+        ansi: [
+          bgStart, "#ef4444", "#22c55e", "#f59e0b", primary, "#a855f7", primaryLight, text,
+          "#6b7280", "#f87171", "#4ade80", "#fbbf24", primaryLight, "#c084fc", "#38bdf8", "#ffffff"
+        ]
+      };
+    } else if (pal.id === "custom") {
+      this.currentPalette = {
+        id: "custom",
+        name: "Padrão ANSI / RGB",
+        dot: `linear-gradient(135deg, ${customColors.fg}, ${customColors.bg})`,
+        bg: customColors.bg,
+        fg: customColors.fg,
+        cursorBg: customColors.cursor,
+        cursorFg: customColors.bg,
+        ansi: ANSI_COLORS_DEFAULT
+      };
+    } else {
+      this.currentPalette = pal;
+    }
+
+    this.ansiColors = this.currentPalette.ansi;
+    this.applyPaletteColors();
+    this.render();
+  }
+
+  applyPaletteColors() {
+    this.screenEl.style.backgroundColor = this.currentPalette.bg;
+    this.screenEl.style.color = this.currentPalette.fg;
+    document.documentElement.style.setProperty("--term-cursor-bg", this.currentPalette.cursorBg);
+    document.documentElement.style.setProperty("--term-cursor-fg", this.currentPalette.cursorFg);
+  }
+
+  initGrid() {
+    this.grid = [];
+    for (let r = 0; r < this.ROWS; r++) {
+      this.grid.push(this.createEmptyRow());
+    }
+    this.cursorRow = 0;
+    this.cursorCol = 0;
+  }
+
+  createEmptyRow() {
+    const row = [];
+    for (let c = 0; c < this.COLS; c++) {
+      row.push({ ch: " ", fg: null, bg: null, bold: false, dim: false, underline: false });
+    }
+    return row;
+  }
+
+  clear() {
+    this.scrollback = [];
+    this.totalChars = 0;
+    this.resetAttributes();
+    this.initGrid();
+    this.render();
+  }
+
+  resetAttributes() {
+    this.fg = null;
+    this.bg = null;
+    this.bold = false;
+    this.dim = false;
+    this.underline = false;
+    this.inverse = false;
+  }
+
+  setScrollMode(enabled) {
+    this.scrollMode = enabled;
+    if (enabled) {
+      this.screenEl.classList.add("scroll-mode");
+    } else {
+      this.screenEl.classList.remove("scroll-mode");
+    }
+    this.render();
+  }
+
+  newline() {
+    this.cursorCol = 0;
+    this.cursorRow++;
+    if (this.cursorRow >= this.ROWS) {
+      const topRow = this.grid.shift();
+      this.scrollback.push(topRow);
+      this.grid.push(this.createEmptyRow());
+      this.cursorRow = this.ROWS - 1;
+    }
+  }
+
+  carriageReturn() {
+    this.cursorCol = 0;
+  }
+
+  backspace() {
+    if (this.cursorCol > 0) {
+      this.cursorCol--;
+    }
+  }
+
+  deleteBack() {
+    if (this.cursorCol > 0) {
+      this.cursorCol--;
+      const cell = this.grid[this.cursorRow][this.cursorCol];
+      cell.ch = " ";
+      cell.fg = null;
+      cell.bg = null;
+      cell.bold = false;
+      cell.dim = false;
+      cell.underline = false;
+      if (this.totalChars > 0) this.totalChars--;
+      this.render();
+    }
+  }
+
+  tab() {
+    const nextTabStop = Math.min(this.COLS - 1, (this.cursorCol + 8) & ~7);
+    this.cursorCol = nextTabStop;
+  }
+
+  putChar(c) {
+    if (this.cursorCol >= this.COLS) {
+      this.newline();
+    }
+    const cell = this.grid[this.cursorRow][this.cursorCol];
+    cell.ch = c;
+    cell.fg = this.inverse ? (this.bg || this.currentPalette.bg) : this.fg;
+    cell.bg = this.inverse ? (this.fg || this.currentPalette.fg) : this.bg;
+    cell.bold = this.bold;
+    cell.dim = this.dim;
+    cell.underline = this.underline;
+
+    this.cursorCol++;
+    this.totalChars++;
+  }
+
+  write(text) {
+    let i = 0;
+    const len = text.length;
+
+    while (i < len) {
+      const ch = text[i];
+
+      if (ch === "\x1b" && text[i + 1] === "[") {
+        let j = i + 2;
+        while (j < len && !/[a-zA-Z]/.test(text[j])) {
+          j++;
+        }
+        if (j < len) {
+          const cmd = text[j];
+          const argsStr = text.slice(i + 2, j);
+          this.handleAnsiSequence(cmd, argsStr);
+          i = j + 1;
+          continue;
+        }
+      }
+
+      if (ch === "\n") {
+        this.newline();
+      } else if (ch === "\r") {
+        this.carriageReturn();
+      } else if (ch === "\b") {
+        this.backspace();
+      } else if (ch === "\t") {
+        this.tab();
+      } else if (ch >= " " || ch === "\u00A0") {
+        this.putChar(ch);
+      }
+      i++;
+    }
+
+    this.render();
+  }
+
+  handleAnsiSequence(cmd, argsStr) {
+    const args = argsStr ? argsStr.split(";").map(n => parseInt(n, 10) || 0) : [];
+
+    switch (cmd) {
+      case "m":
+        if (args.length === 0) {
+          this.resetAttributes();
+          break;
+        }
+        for (const code of args) {
+          if (code === 0) {
+            this.resetAttributes();
+          } else if (code === 1) {
+            this.bold = true;
+          } else if (code === 2) {
+            this.dim = true;
+          } else if (code === 4) {
+            this.underline = true;
+          } else if (code === 7) {
+            this.inverse = true;
+          } else if (code === 22) {
+            this.bold = false;
+            this.dim = false;
+          } else if (code === 24) {
+            this.underline = false;
+          } else if (code === 27) {
+            this.inverse = false;
+          } else if (code >= 30 && code <= 37) {
+            this.fg = this.ansiColors[code - 30];
+          } else if (code === 39) {
+            this.fg = null;
+          } else if (code >= 40 && code <= 47) {
+            this.bg = this.ansiColors[code - 40];
+          } else if (code === 49) {
+            this.bg = null;
+          } else if (code >= 90 && code <= 97) {
+            this.fg = this.ansiColors[code - 90 + 8];
+          } else if (code >= 100 && code <= 107) {
+            this.bg = this.ansiColors[code - 100 + 8];
+          }
+        }
+        break;
+
+      case "H":
+      case "f":
+        const row = Math.max(0, Math.min(this.ROWS - 1, (args[0] || 1) - 1));
+        const col = Math.max(0, Math.min(this.COLS - 1, (args[1] || 1) - 1));
+        this.cursorRow = row;
+        this.cursorCol = col;
+        break;
+
+      case "A":
+        this.cursorRow = Math.max(0, this.cursorRow - (args[0] || 1));
+        break;
+      case "B":
+        this.cursorRow = Math.min(this.ROWS - 1, this.cursorRow + (args[0] || 1));
+        break;
+      case "C":
+        this.cursorCol = Math.min(this.COLS - 1, this.cursorCol + (args[0] || 1));
+        break;
+      case "D":
+        this.cursorCol = Math.max(0, this.cursorCol - (args[0] || 1));
+        break;
+
+      case "J":
+        const modeJ = args[0] || 0;
+        if (modeJ === 2) {
+          this.initGrid();
+        } else if (modeJ === 0) {
+          for (let c = this.cursorCol; c < this.COLS; c++) {
+            this.grid[this.cursorRow][c] = { ch: " ", fg: null, bg: null, bold: false, dim: false, underline: false };
+          }
+          for (let r = this.cursorRow + 1; r < this.ROWS; r++) {
+            this.grid[r] = this.createEmptyRow();
+          }
+        }
+        break;
+
+      case "K":
+        const modeK = args[0] || 0;
+        if (modeK === 0) {
+          for (let c = this.cursorCol; c < this.COLS; c++) {
+            this.grid[this.cursorRow][c] = { ch: " ", fg: null, bg: null, bold: false, dim: false, underline: false };
+          }
+        } else if (modeK === 1) {
+          for (let c = 0; c <= this.cursorCol; c++) {
+            this.grid[this.cursorRow][c] = { ch: " ", fg: null, bg: null, bold: false, dim: false, underline: false };
+          }
+        } else if (modeK === 2) {
+          this.grid[this.cursorRow] = this.createEmptyRow();
+        }
+        break;
+    }
+  }
+
+  render() {
+    if (!this.grid || this.grid.length === 0) return;
+    const fragment = document.createDocumentFragment();
+
+    if (this.scrollMode && this.scrollback.length > 0) {
+      for (let r = 0; r < this.scrollback.length; r++) {
+        const rowEl = document.createElement("div");
+        rowEl.className = "term-row";
+        this.renderRowTo(this.scrollback[r], rowEl, false, -1);
+        fragment.appendChild(rowEl);
+      }
+    }
+
+    for (let r = 0; r < this.ROWS; r++) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "term-row";
+      const isCursorRow = (r === this.cursorRow);
+      this.renderRowTo(this.grid[r], rowEl, isCursorRow, this.cursorCol);
+      fragment.appendChild(rowEl);
+    }
+
+    this.screenEl.innerHTML = "";
+    this.screenEl.appendChild(fragment);
+
+    if (this.scrollMode) {
+      this.screenEl.scrollTop = this.screenEl.scrollHeight;
+    }
+
+    if (this.statusCursorEl) {
+      const cr = String(this.cursorRow + 1).padStart(2, "0");
+      const cc = String(this.cursorCol + 1).padStart(2, "0");
+      this.statusCursorEl.textContent = `L: ${cr}/25  C: ${cc}/80`;
+    }
+    if (this.statusCharsEl) {
+      this.statusCharsEl.textContent = `${this.totalChars} caracteres`;
+    }
+  }
+
+  renderRowTo(rowCells, container, isCursorRow, cursorCol) {
+    let currentSpan = null;
+    let currentStyleKey = "";
+
+    for (let c = 0; c < this.COLS; c++) {
+      const cell = rowCells[c];
+      const isCursor = isCursorRow && (c === cursorCol);
+
+      if (isCursor) {
+        if (currentSpan) {
+          container.appendChild(currentSpan);
+          currentSpan = null;
+          currentStyleKey = "";
+        }
+        const cursorSpan = document.createElement("span");
+        cursorSpan.className = "term-cursor";
+        cursorSpan.textContent = cell.ch === " " ? " " : cell.ch;
+        container.appendChild(cursorSpan);
+        continue;
+      }
+
+      const styleKey = `${cell.fg || ""}_${cell.bg || ""}_${cell.bold}_${cell.dim}_${cell.underline}`;
+      if (!currentSpan || currentStyleKey !== styleKey) {
+        if (currentSpan) container.appendChild(currentSpan);
+        currentSpan = document.createElement("span");
+        currentStyleKey = styleKey;
+        if (cell.fg) currentSpan.style.color = cell.fg;
+        if (cell.bg) currentSpan.style.backgroundColor = cell.bg;
+        if (cell.bold) currentSpan.style.fontWeight = "bold";
+        if (cell.dim) currentSpan.style.opacity = "0.65";
+        if (cell.underline) currentSpan.style.textDecoration = "underline";
+      }
+      currentSpan.textContent += cell.ch;
+    }
+
+    if (currentSpan) {
+      container.appendChild(currentSpan);
+    }
+  }
+
+  getAllText() {
+    let fullText = "";
+    if (this.scrollback.length > 0) {
+      for (const row of this.scrollback) {
+        const line = row.map(cell => cell.ch).join("").replace(/\s+$/, "");
+        fullText += line + "\n";
+      }
+    }
+    for (const row of this.grid) {
+      const line = row.map(cell => cell.ch).join("").replace(/\s+$/, "");
+      fullText += line + "\n";
+    }
+    return fullText.trimEnd();
+  }
+}
+
+// UI Elements
+const fileList = document.getElementById("file-list");
+const fileCountEl = document.getElementById("file-count");
+const fileFilter = document.getElementById("file-filter");
+const screenEl = document.getElementById("terminal-screen");
+const statusEl = document.getElementById("status");
+const statusCursorEl = document.getElementById("stat-cursor");
+const statusCharsEl = document.getElementById("stat-chars");
+const statModeEl = document.getElementById("stat-mode");
+const activeFileEl = document.getElementById("terminal-active-file");
+const themeListEl = document.getElementById("theme-list");
+const paletteListEl = document.getElementById("palette-list");
+const customPanelEl = document.getElementById("custom-palette-panel");
+const pickerBg = document.getElementById("picker-bg");
+const pickerFg = document.getElementById("picker-fg");
+const pickerCursor = document.getElementById("picker-cursor");
+const labelBg = document.getElementById("label-bg");
+const labelFg = document.getElementById("label-fg");
+const labelCursor = document.getElementById("label-cursor");
+const tabThemesBtn = document.getElementById("tab-themes");
+const tabPalettesBtn = document.getElementById("tab-palettes");
+const btnReload = document.getElementById("btn-reload");
+const btnClear = document.getElementById("btn-clear");
+const btnCopy = document.getElementById("btn-copy");
+const btnToggleMode = document.getElementById("btn-toggle-mode");
+
+const terminal = new Terminal80x25(screenEl, statusCursorEl, statusCharsEl);
+
+let allFiles = [];
+let selectedName = null;
+let running = false;
+let scrollModeActive = false;
+let activeTheme = localStorage.getItem("theflux_theme") || "glass";
+let activePalette = localStorage.getItem("theflux_term_palette") || "dynamic";
+let currentTab = localStorage.getItem("theflux_sidebar_tab") || "palettes";
+
+terminal.setPalette(activePalette);
+
+// Gerenciamento de Abas da Sidebar Direita
+function setSidebarTab(tab) {
+  currentTab = tab;
+  localStorage.setItem("theflux_sidebar_tab", tab);
+  if (tab === "themes") {
+    tabThemesBtn.classList.add("active");
+    tabPalettesBtn.classList.remove("active");
+    themeListEl.style.display = "flex";
+    paletteListEl.style.display = "none";
+    if (customPanelEl) customPanelEl.style.display = "none";
+  } else {
+    tabPalettesBtn.classList.add("active");
+    tabThemesBtn.classList.remove("active");
+    themeListEl.style.display = "none";
+    paletteListEl.style.display = "flex";
+    if (customPanelEl) {
+      customPanelEl.style.display = (activePalette === "custom") ? "flex" : "none";
+    }
+  }
+}
+
+tabThemesBtn.addEventListener("click", () => setSidebarTab("themes"));
+tabPalettesBtn.addEventListener("click", () => setSidebarTab("palettes"));
+
+// Aplicação de Tema da Interface Web
+function applyTheme(themeId) {
+  activeTheme = themeId;
+  document.documentElement.setAttribute("data-theme", themeId);
+  document.body.setAttribute("data-theme", themeId);
+  localStorage.setItem("theflux_theme", themeId);
+  if (activePalette === "dynamic") {
+    terminal.setPalette("dynamic");
+  }
+  renderThemeList();
+  renderPaletteList();
+}
+
+function renderThemeList() {
+  themeListEl.innerHTML = "";
+  for (const theme of THEMES) {
+    const li = document.createElement("li");
+    li.className = "theme-card" + (theme.id === activeTheme ? " active" : "");
+    li.innerHTML = `
+      <span class="theme-preview-dot" style="background: ${theme.dot}"></span>
+      <span class="theme-name">${theme.name}</span>
+      <span class="theme-check">✓</span>
+    `;
+    li.addEventListener("click", () => {
+      applyTheme(theme.id);
+    });
+    themeListEl.appendChild(li);
+  }
+}
+
+// Aplicação de Paleta do Terminal CRT
+function applyPalette(paletteId) {
+  activePalette = paletteId;
+  localStorage.setItem("theflux_term_palette", paletteId);
+  terminal.setPalette(paletteId);
+  renderPaletteList();
+}
+
+function renderPaletteList() {
+  paletteListEl.innerHTML = "";
+  for (const pal of PALETTES) {
+    const li = document.createElement("li");
+    li.className = "theme-card" + (pal.id === activePalette ? " active" : "");
+    const dotStyle = pal.id === "custom" 
+      ? `linear-gradient(135deg, ${customColors.fg}, ${customColors.bg})`
+      : pal.dot;
+    li.innerHTML = `
+      <span class="theme-preview-dot" style="background: ${dotStyle}"></span>
+      <span class="theme-name">${pal.name}</span>
+      <span class="theme-check">✓</span>
+    `;
+    li.addEventListener("click", () => {
+      applyPalette(pal.id);
+    });
+    paletteListEl.appendChild(li);
+  }
+
+  if (customPanelEl) {
+    customPanelEl.style.display = (activePalette === "custom" && currentTab === "palettes") ? "flex" : "none";
+    if (pickerBg) pickerBg.value = customColors.bg;
+    if (pickerFg) pickerFg.value = customColors.fg;
+    if (pickerCursor) pickerCursor.value = customColors.cursor;
+    if (labelBg) labelBg.textContent = customColors.bg;
+    if (labelFg) labelFg.textContent = customColors.fg;
+    if (labelCursor) labelCursor.textContent = customColors.cursor;
+  }
+}
+
+function initCustomColorPickers() {
+  function onColorChange() {
+    customColors.bg = pickerBg.value;
+    customColors.fg = pickerFg.value;
+    customColors.cursor = pickerCursor.value;
+    labelBg.textContent = customColors.bg;
+    labelFg.textContent = customColors.fg;
+    labelCursor.textContent = customColors.cursor;
+
+    localStorage.setItem("theflux_custom_colors", JSON.stringify(customColors));
+
+    const customPal = PALETTES.find(p => p.id === "custom");
+    if (customPal) {
+      customPal.bg = customColors.bg;
+      customPal.fg = customColors.fg;
+      customPal.cursorBg = customColors.cursor;
+      customPal.cursorFg = customColors.bg;
+      customPal.dot = `linear-gradient(135deg, ${customColors.fg}, ${customColors.bg})`;
+    }
+
+    if (activePalette === "custom") {
+      terminal.setPalette("custom");
+      const customCardDot = paletteListEl.querySelector(".theme-card.active .theme-preview-dot");
+      if (customCardDot) {
+        customCardDot.style.background = `linear-gradient(135deg, ${customColors.fg}, ${customColors.bg})`;
+      }
+    }
+  }
+
+  if (pickerBg) pickerBg.addEventListener("input", onColorChange);
+  if (pickerFg) pickerFg.addEventListener("input", onColorChange);
+  if (pickerCursor) pickerCursor.addEventListener("input", onColorChange);
+}
+initCustomColorPickers();
+
+function setStatus(text, cls) {
+  statusEl.textContent = text;
+  statusEl.className = cls || "";
+}
+
+function renderList() {
+  const query = fileFilter.value.toLowerCase().trim();
+  const filtered = allFiles.filter(f => f.toLowerCase().includes(query));
+  fileCountEl.textContent = `${filtered.length} de ${allFiles.length}`;
+
+  fileList.innerHTML = "";
+  for (const name of filtered) {
+    const li = document.createElement("li");
+    li.textContent = name;
+    if (name === selectedName) li.classList.add("selected");
+    if (!name.endsWith(".wasm")) {
+      li.classList.add("disabled");
+    } else {
+      li.addEventListener("click", () => {
+        selectedName = name;
+        renderList();
+        runWasm(name);
+      });
+    }
+    fileList.appendChild(li);
+  }
+}
+
+async function loadFiles() {
+  try {
+    const res = await fetch("/api/files", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const files = await res.json();
+    if (!Array.isArray(files)) throw new Error("resposta inesperada");
+    allFiles = files;
+    renderList();
+  } catch (err) {
+    setStatus("erro ao listar: " + err.message, "error");
+  }
+}
+
+fileFilter.addEventListener("input", renderList);
+
+btnClear.addEventListener("click", () => {
+  if (currentWorker) {
+    try {
+      currentWorker.terminate();
+    } catch (e) {}
+    currentWorker = null;
+  }
+  running = false;
+  setInputActive(false);
+  currentInputLine = "";
+  terminal.clear();
+  setStatus("pronto", "");
+});
+
+btnCopy.addEventListener("click", async () => {
+  try {
+    const text = terminal.getAllText();
+    await navigator.clipboard.writeText(text);
+    const oldText = btnCopy.textContent;
+    btnCopy.textContent = "✅ Copiado!";
+    setTimeout(() => { btnCopy.textContent = oldText; }, 1500);
+  } catch (err) {
+    alert("Erro ao copiar para a área de transferência.");
+  }
+});
+
+btnToggleMode.addEventListener("click", () => {
+  scrollModeActive = !scrollModeActive;
+  terminal.setScrollMode(scrollModeActive);
+  if (scrollModeActive) {
+    btnToggleMode.textContent = "📜 Modo: Scrollback";
+    statModeEl.textContent = "SCROLLBACK";
+  } else {
+    btnToggleMode.textContent = "📐 Modo: 80x25 Fixo";
+    statModeEl.textContent = "80x25 FIXO";
+  }
+});
+
+btnReload.addEventListener("click", loadFiles);
+
+// Gerenciamento de Execução Não-Bloqueante (Web Worker + SharedArrayBuffer)
+let currentWorker = null;
+let sharedControlBuffer = null;
+let sharedInt32View = null;
+let sharedUint8View = null;
+let isWaitingInput = false;
+let currentInputLine = "";
+
+const hasSharedArrayBuffer = (typeof SharedArrayBuffer !== "undefined");
+if (hasSharedArrayBuffer) {
+  try {
+    sharedControlBuffer = new SharedArrayBuffer(1024 * 64);
+    sharedInt32View = new Int32Array(sharedControlBuffer);
+    sharedUint8View = new Uint8Array(sharedControlBuffer, 16);
+  } catch (e) {
+    console.warn("SharedArrayBuffer não disponível:", e);
+  }
+}
+
+function setInputActive(active) {
+  isWaitingInput = active;
+  currentInputLine = "";
+  const terminalBox = document.querySelector(".terminal-box");
+  if (active) {
+    if (terminalBox) terminalBox.classList.add("input-active");
+    if (screenEl) screenEl.focus();
+    setStatus("⌨️ Digite sua resposta e pressione Enter", "running");
+  } else {
+    if (terminalBox) terminalBox.classList.remove("input-active");
+  }
+}
+
+if (screenEl) {
+  screenEl.addEventListener("click", () => {
+    if (isWaitingInput && screenEl) {
+      screenEl.focus();
+    }
+  });
+}
+
+// Envia entrada de texto para o Web Worker compartilhado
+function sendInputToWorker(textToSend) {
+  if (sharedInt32View && sharedUint8View) {
+    const encoded = new TextEncoder().encode(textToSend);
+    for (let i = 0; i < encoded.length; i++) {
+      sharedUint8View[i] = encoded[i];
+    }
+    Atomics.store(sharedInt32View, 1, encoded.length);
+    Atomics.store(sharedInt32View, 0, 1); // 1 = INPUT_READY
+    Atomics.notify(sharedInt32View, 0, 1);
+  }
+}
+
+// Interrupção de Execução (^C)
+function interruptExecution() {
+  terminal.write("^C\n");
+  setInputActive(false);
+  currentInputLine = "";
+  if (currentWorker) {
+    try {
+      currentWorker.terminate();
+    } catch (e) {}
+    currentWorker = null;
+  }
+  running = false;
+  setStatus("⚠️ Execução interrompida (^C)", "error");
+}
+
+// Inserção de Texto Colado (Control+V / Paste)
+function handlePastedText(text) {
+  if (!isWaitingInput) return;
+  const clean = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  if (!clean.includes("\n")) {
+    currentInputLine += clean;
+    terminal.write(clean);
+    return;
+  }
+  // Se contiver nova linha, submete a primeira linha
+  const lines = clean.split("\n");
+  const firstLine = lines[0];
+  currentInputLine += firstLine;
+  terminal.write(firstLine + "\n");
+  const toSend = currentInputLine + "\n";
+  currentInputLine = "";
+  setInputActive(false);
+  setStatus("executando...", "running");
+  sendInputToWorker(toSend);
+}
+
+// Ouvinte de evento nativo de Colar (Paste)
+window.addEventListener("paste", (e) => {
+  if (!isWaitingInput) return;
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+  if (text) {
+    handlePastedText(text);
+  }
+});
+
+// Captura de Teclado Contínua e Atalhos no Terminal
+function handleInputKey(e) {
+  // Tratamento de Control+C / Cmd+C (Copiar seleção ou Interromper execução)
+  if ((e.ctrlKey || e.metaKey) && (e.key === "c" || e.key === "C")) {
+    const sel = window.getSelection() ? window.getSelection().toString() : "";
+    if (sel.length > 0) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sel).catch(() => {});
+      }
+      setStatus("📋 Texto copiado para a área de transferência", "done");
+      return; // Permite copiar sem interromper
+    }
+    if (running || isWaitingInput) {
+      e.preventDefault();
+      interruptExecution();
+      return;
+    }
+  }
+
+  // Deixa o evento nativo de colar (paste) do navegador processar diretamente sem prompt
+  if ((e.ctrlKey || e.metaKey) && (e.key === "v" || e.key === "V")) {
+    return;
+  }
+
+  if (!isWaitingInput) return;
+
+  if (e.key === "F12" || e.key === "F5" || (e.ctrlKey && e.key === "r")) return;
+
+  if (e.key === "Backspace" || e.key === "Enter" || e.key === " " || e.key === "Tab" ||
+      e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    e.preventDefault();
+  }
+
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const textToSend = currentInputLine + "\n";
+    terminal.write("\n");
+    setInputActive(false);
+    setStatus("executando...", "running");
+
+    sendInputToWorker(textToSend);
+    currentInputLine = "";
+    return;
+  }
+
+  if (e.key === "Backspace") {
+    e.preventDefault();
+    if (currentInputLine.length > 0) {
+      currentInputLine = currentInputLine.slice(0, -1);
+      terminal.deleteBack();
+    }
+    return;
+  }
+
+  if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    e.preventDefault();
+    currentInputLine += e.key;
+    terminal.write(e.key);
+  }
+}
+
+window.addEventListener("keydown", handleInputKey);
+
+// WASI Shim Fallback síncrono (caso Worker não seja suportado)
+function makeWasiShim() {
+  let instance = null;
+  const decoder = new TextDecoder("utf-8");
+  const encoder = new TextEncoder();
+  let inputQueue = [];
+  let lastPrompt = "";
+
+  return {
+    wasi_snapshot_preview1: {
+      fd_write: (fd, iovsPtr, iovsLen, nwrittenPtr) => {
+        if (fd !== 1 && fd !== 2) return 8;
+        const mem = new Uint8Array(instance.exports.memory.buffer);
+        const view = new DataView(mem.buffer);
+        let out = "";
+        let total = 0;
+        for (let i = 0; i < iovsLen; i++) {
+          const ptr = view.getUint32(iovsPtr + i * 8, true);
+          const len = view.getUint32(iovsPtr + i * 8 + 4, true);
+          out += decoder.decode(mem.subarray(ptr, ptr + len));
+          total += len;
+        }
+        view.setUint32(nwrittenPtr, total, true);
+        lastPrompt = out;
+        terminal.write(out);
+        return 0;
+      },
+      fd_read: (fd, iovsPtr, iovsLen, nreadPtr) => {
+        if (fd !== 0) return 8;
+        if (inputQueue.length === 0) {
+          const cleanPrompt = lastPrompt.replace(/\x1b\[[0-9;]*m/g, "").trim();
+          const answer = window.prompt(cleanPrompt || "Entrada de dados:") || "";
+          terminal.write(answer + "\n");
+          inputQueue = Array.from(encoder.encode(answer + "\n"));
+        }
+        const mem = new Uint8Array(instance.exports.memory.buffer);
+        const view = new DataView(mem.buffer);
+        let totalRead = 0;
+        for (let i = 0; i < iovsLen && inputQueue.length > 0; i++) {
+          const ptr = view.getUint32(iovsPtr + i * 8, true);
+          const len = view.getUint32(iovsPtr + i * 8 + 4, true);
+          const toCopy = Math.min(len, inputQueue.length);
+          for (let j = 0; j < toCopy; j++) {
+            mem[ptr + j] = inputQueue.shift();
+          }
+          totalRead += toCopy;
+        }
+        view.setUint32(nreadPtr, totalRead, true);
+        return 0;
+      },
+    },
+    _setInstance: (i) => {
+      instance = i;
+      inputQueue = [];
+      lastPrompt = "";
+    },
+  };
+}
+
+async function runWasm(name) {
+  if (currentWorker) {
+    try {
+      currentWorker.terminate();
+    } catch (e) {}
+    currentWorker = null;
+  }
+
+  running = true;
+  setInputActive(false);
+  currentInputLine = "";
+  activeFileEl.textContent = `TheFlux Terminal 80x25 — ${name}`;
+  setStatus(`executando ${name}...`, "running");
+  terminal.clear();
+
+  const started = performance.now();
+  try {
+    const res = await fetch("/t_wasm-1.0/" + encodeURIComponent(name), { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const bytes = await res.arrayBuffer();
+
+    if (window.Worker && sharedControlBuffer) {
+      currentWorker = new Worker("wasi_worker.js");
+
+      Atomics.store(sharedInt32View, 0, 0);
+      Atomics.store(sharedInt32View, 1, 0);
+
+      currentWorker.onmessage = (e) => {
+        const msg = e.data;
+        if (msg.type === "write") {
+          terminal.write(msg.text);
+        } else if (msg.type === "wait_input") {
+          setInputActive(true);
+        } else if (msg.type === "wait_input_fallback") {
+          const answer = (window.prompt("Entrada de dados:") || "") + "\n";
+          terminal.write(answer);
+        } else if (msg.type === "done" || msg.type === "exit") {
+          const ms = Math.round(performance.now() - started);
+          setStatus(`concluído em ${ms} ms`, "done");
+          running = false;
+          setInputActive(false);
+        } else if (msg.type === "error") {
+          const ms = Math.round(performance.now() - started);
+          terminal.write(`\x1b[91mErro: ${msg.message}\x1b[0m\n`);
+          setStatus("erro na execução", "error");
+          running = false;
+          setInputActive(false);
+        }
+      };
+
+      currentWorker.onerror = (err) => {
+        const ms = Math.round(performance.now() - started);
+        terminal.write(`\x1b[91mErro no worker (${ms} ms): ${err.message}\x1b[0m\n`);
+        setStatus("erro na execução", "error");
+        running = false;
+        setInputActive(false);
+      };
+
+      currentWorker.postMessage({
+        type: "start",
+        wasmBytes: bytes,
+        sharedBuffer: sharedControlBuffer
+      });
+    } else {
+      const shim = makeWasiShim();
+      const result = await WebAssembly.instantiate(bytes, shim);
+      shim._setInstance(result.instance);
+      result.instance.exports._start();
+      const ms = Math.round(performance.now() - started);
+      setStatus(`concluído em ${ms} ms`, "done");
+      running = false;
+    }
+  } catch (err) {
+    const ms = Math.round(performance.now() - started);
+    terminal.write(`\x1b[91mErro ao executar ${name} (${ms} ms): ${err.message}\x1b[0m\n`);
+    setStatus("erro na execução", "error");
+    running = false;
+    setInputActive(false);
+  }
+}
+
+// Inicialização
+applyTheme(activeTheme);
+applyPalette(activePalette);
+setSidebarTab(currentTab);
+loadFiles();
+setInterval(loadFiles, 3000);
+</script>
+</body>
+</html>

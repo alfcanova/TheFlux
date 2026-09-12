@@ -1,0 +1,55 @@
+keyword: enum
+category: Type Declaration
+description: Declara um type enum (união discriminada) inspirado em Rust. Um enum representa um conjunto fechado de variants,
+  onde cada variant can be unitária (sem payload) ou conter fields nomeados (payload). Variantes com payload utilizam a mesma
+  sintaxe de fields nomeados das structs (dot required, fields em linhas separadas), permitindo construção e desestruturação
+  simétricas através do pattern matching. O discriminante (identifier numérico interno da variant) é sempre gerado automaticamente
+  pelo compilador, na ordem de declaration, e cannot be controlado pelo programdor.
+syntax: "enum (<NomePascalCase>) {\n\n    <VariantePascalCase>\n\n    <VariantePascalCase>(\n\n        .<campo_snake_case>:\
+  \ <type>\n\n        ...\n\n    )\n\n    ...\n\n}"
+pseudocode: "TIPO CORES:\n    VERMELHO\n    VERDE\n    AZUL (intensidade)\n// uniao discriminada: conjunto fechado de variants"
+usages:
+- name: Enum with unit variants
+  description: Declara variants sem payload.
+  examples:
+  - code: "enum (Estado) {\n\n    Aberto\n    Fechado\n    Suspenso\n\n}"
+- name: Enum with payload
+  description: Declara variants contendo fields nomeados, um por linha.
+  examples:
+  - code: "enum (Resultado) {\n\n    Ok(\n\n        .valor: int64\n\n    )\n\n    Erro(\n\n        .mensagem: string\n\n \
+      \   )\n\n}"
+- name: Variant initialization
+  description: Constrói variants utilizando fields nomeados prefixados por dot. Todos os fields declarados must be fornecidos.
+  examples:
+  - code: "enum (Estado) {\n      Aberto\n}\nprogram (T) {\n      mut as Estado: estado = Estado::Aberto\n      print(estado)\n\
+      }"
+  - code: "enum (Resultado) {\n      Ok(\n            .valor: int64\n      )\n      Erro(\n            .mensagem: string\n\
+      \      )\n}\nprogram (T) {\n      mut as Resultado: resposta = Resultado::Ok(\n            .valor: 42\n      )\n   \
+      \   print(resposta)\n}"
+  - code: "enum (Mensagem) {\n      Texto(\n            .conteudo: string\n      )\n}\nprogram (T) {\n      mut as Mensagem:\
+      \ msg = Mensagem::Texto(\n            .conteudo: \"Ola Mundo\"\n      )\n      print(msg)\n}"
+- name: Pattern matching
+  description: Variants são desestruturadas utilizando exatamente a mesma sintaxe empregada durante sua construção. O pattern
+    pode selecionar um subconjunto dos fields (os demais são ignorados), com bind de nome, literal ou wildcard (_).
+  examples:
+  - code: "enum (Resultado) {\n      Ok(\n            .valor: int64\n      )\n      Erro(\n            .mensagem: string\n\
+      \      )\n}\nprogram (T) {\n      mut as Resultado: resposta = Resultado::Ok(.valor: 1)\n      match resposta {\n  \
+      \          Resultado::Ok(.valor: valor) ==> print(valor)\n            Resultado::Erro(.mensagem: mensagem) ==> print(mensagem)\n\
+      \            _ ==> print(\"desconhecido\")\n      }\n}"
+restrictions:
+- The enum name must be in PascalCase.
+- O keyword enum é escrito em lowercase.
+- Os nomes das variants devem estar em PascalCase.
+- Os nomes dos fields devem utilizar snake_case.
+- Todo field é obrigatoriamente prefixado por dot (.), tanto in the declaration quanto na construção e desestruturação.
+- Cada field ocupa uma linha própria; fields são separados por quebra de linha (EOL), nunca por comma.
+- O enum deve possuir pelo menos uma variant.
+- Os nomes das variants must be únicos.
+- Os nomes dos fields must be únicos dentro de cada variant.
+- Variants unitárias não utilizam parentheses.
+- Variants são acessadas utilizando o operator ::.
+- Variants com payload são inicializadas utilizando fields nomeados prefixados por dot.
+- A ordem dos fields durante a inicialização é irrelevante.
+- Todos os fields declarados must be fornecidos na construção.
+- Patterns de match podem selecionar um subconjunto dos fields; fields não mencionados são ignorados.
+- A construção e a desestruturação utilizam exatamente a mesma estrutura sintática.

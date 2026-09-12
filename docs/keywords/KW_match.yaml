@@ -1,0 +1,68 @@
+keyword: match
+category: Pattern Matching
+description: Realiza casamento de padrões (pattern matching) sobre uma expressão. O match é uma expressão e retorna o valor
+  produzido pelo primeiro braço cujo padrão corresponda ao valor analisado e cuja guarda (guard), quando presente, seja verdadeira.
+  A sintaxe de desestruturação reutiliza exatamente a mesma forma utilizada na construção de structs e variantes de enum,
+  tornando construção e desconstrução operações simétricas. Para enums, o compilador verifica exaustividade e detecta braços
+  inalcançáveis.
+syntax: "match (<expressao>) {\n\n    <padrao> ==> <expressao>\n\n    <padrao> (<expressao_booleana>)\n        ==> <expressao>\n\
+  \n    ...\n\n}"
+pseudocode: "ESCOLHER(expressao):\n    CASO padrao_1: resultado_1\n    CASO padrao_2: resultado_2\n    PADRAO: resultado_fallback"
+usages:
+- name: Match com literais
+  description: Seleciona um braço com base em valores literais.
+  examples:
+  - code: "match (valor) {\n\n    1 ==> \"um\"\n\n    2 ==> \"dois\"\n\n    _ ==> \"outro\"\n\n}"
+- name: Match com enum
+  description: Desestrutura variantes de enum utilizando a mesma sintaxe empregada durante sua construção.
+  examples:
+  - code: "match (resposta) {\n\n    Resultado::Ok(\n        .valor: valor\n    ) ==> valor\n\n    Resultado::Erro(\n    \
+      \    .mensagem: mensagem\n    ) ==> mensagem\n\n}"
+- name: Match com struct
+  description: Desestrutura structs utilizando exatamente a mesma sintaxe utilizada durante sua construção.
+  examples:
+  - code: "match (evento) {\n\n    Evento(\n\n        .nome: nome\n\n        .quando: quando\n\n        .contador: contador\n\
+      \n    ) ==> contador\n\n}"
+- name: Match com registro
+  description: Desestrutura registros anônimos por nome de campo.
+  examples:
+  - code: "match (registro) {\n\n    {\n\n        .tipo: \"sensor\"\n\n        .valor: valor\n\n    } ==> valor\n\n    {\n\
+      \n        .tipo: tipo\n\n    } ==> tipo\n\n    _ ==> \"desconhecido\"\n\n}"
+- name: Match com guard
+  description: Executa o braço apenas quando o padrão corresponde e a condição booleana é verdadeira.
+  examples:
+  - code: "match (resultado) {\n\n    Resultado::Ok(\n        .valor: valor\n    ) (valor >= 0) ==> \"positivo\"\n\n    Resultado::Ok(\n\
+      \        .valor: valor\n    ) ==> \"negativo\"\n\n    Resultado::Erro(\n        .mensagem: msg\n    ) ==> msg\n\n}"
+- name: Match aninhado
+  description: Permite desestruturar estruturas compostas em um único padrão.
+  examples:
+  - code: "match (usuario) {\n\n    Usuario::Ativo(\n\n        .pessoa:\n\n            Pessoa(\n\n                .nome: nome\n\
+      \n                .idade: idade\n\n            )\n\n    ) ==> nome\n\n    Usuario::Bloqueado(\n\n        .motivo: motivo\n\
+      \n    ) ==> motivo\n\n}"
+restrictions:
+- Match é uma expressão.
+- O match retorna o valor produzido pelo primeiro braço correspondente.
+- Deve existir pelo menos um braço.
+- Os braços são avaliados na ordem em que aparecem.
+- O primeiro padrão correspondente cuja guarda seja verdadeira encerra a avaliação.
+- A guarda é opcional e é escrita como expressão booleana entre parênteses após o padrão.
+- 'A guarda não é um padrão: um braço precisa de um padrão (braços somente com guarda são erro de parse).'
+- Guards são avaliados somente após o padrão correspondente ser satisfeito.
+- 'Um braço com guarda não cobre incondicionalmente o padrão: variantes/wildcards guardados não tornam o match exaustivo nem
+  marcam braços seguintes como inalcançáveis.'
+- O padrão _ corresponde a qualquer valor.
+- Todo campo é obrigatoriamente prefixado por ponto (.) e ocupa uma linha própria; campos são separados por quebra de linha
+  (EOL), nunca por vírgula.
+- Padrões de struct verificam nominalmente o tipo.
+- Padrões de enum verificam nominalmente o enum e a variante.
+- A correspondência dos campos ocorre pelo nome, nunca pela posição.
+- Campos podem ser ignorados utilizando _.
+- A construção e a desestruturação utilizam exatamente a mesma estrutura sintática.
+- Em backends tipados (LLVM, WASM/WAT), todos os braços devem produzir tipos compatíveis.
+- Quando a expressão analisada possuir um tipo enum, o compilador deve verificar a exaustividade do match.
+- Um match é considerado exaustivo quando todas as variantes do enum são cobertas explicitamente ou quando existe um braço
+  wildcard (_).
+- Para structs, o pattern matching é naturalmente exaustivo, pois existe apenas um construtor possível.
+- O compilador deve detectar braços inalcançáveis.
+- Um braço cujo padrão nunca possa ser selecionado constitui erro semântico.
+- Padrões de listas ainda não são suportados; o parser deve emitir PAR001.

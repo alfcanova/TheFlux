@@ -1,0 +1,51 @@
+keyword: input
+category: Instrução de Entrada
+description: 'Reads a line from standard input (stdin) and assigns it to the declared variable. Exibe um prompt optional antes
+  da leitura. A declaration de type é required em TheFlux; o type declarado na variable define o type esperado do value digitado.
+
+  A verificação de tipagem ocorre depois de pressionar Enter. Se o value digitado for incompatível com o type declarado, o
+  prompt volta e escreve em cinza "Digite um <type>, como: <example>".
+
+  '
+syntax: 'input()
+
+  input(<prompt_expression>)
+
+  mut as <type>: <variable> = input()
+
+  mut as <type>: <variable> = input(<prompt_expression>)
+
+  '
+pseudocode: 'READ("Idade: ")
+
+  // IF digitado inválido para int64: RE-ASK "Digite um integer, como: 35"
+
+  READ("Nome: ")
+
+  // IF digitado inválido para string: sempre válido'
+usages:
+- name: Input typed as int64
+  description: 'Reads an integer. After Enter, validates that the value is int64; if not, returns to prompt with "Digite um
+    integer, como: 35".'
+  examples:
+  - code: 'mut as int64: idade = input("Introduza a sua idade: ")'
+  - code: 'mut as int64: quantidade = input()'
+- name: Input typed as string
+  description: Reads text. Any typed value is accepted as a string.
+  examples:
+  - code: 'mut as string: nome = input("Introduza o seu nome: ")'
+  - code: 'mut as string: comando = input()'
+- name: Input typed with other builtins
+  description: The declared type defines the expected type; other builtins work the same way.
+  examples:
+  - code: 'mut as float64: preco = input("Preco: ")'
+  - code: 'mut as complex128: c = input("Numero complexo: ")'
+  - code: 'mut as char: ch = input("Caractere: ")'
+  - code: 'mut as bool: ativo = input("Ativo? ")'
+  - code: 'mut as datetime: data = input("Data: ")'
+restrictions:
+- A declaration de type é required; `input` assume o type declarado na variable (`as <type>`).
+- Type checking occurs only after pressing Enter.
+- 'If the typed value is incompatible with the declared type, the prompt returns and writes in gray `Digite um <type>, como:
+  <example>`.'
+- The read value is compatible with the variable type; it can be cast to other types using as.

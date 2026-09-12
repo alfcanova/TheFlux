@@ -1,0 +1,33 @@
+keyword: =&, =|, =^, =~, =<<, =>>, =>>>
+category: Bitwise Assignment Operator
+description: Operators de assignment composta bitwise. Combinam operation bitwise (AND, OR, XOR, NOT, shifts) com assignment,
+  e suportam apenas identifiers simples.
+syntax: '<alvo> =& <expr>             # Atribuição com AND bitwise
+
+  <alvo> =| <expr>             # Atribuição com OR bitwise
+
+  <alvo> =^ <expr>             # Atribuição com XOR bitwise
+
+  <alvo> =~ <expr>             # Atribuição com NOT bitwise
+
+  <alvo> =<< <expr>            # Atribuição com shift left
+
+  <alvo> =>> <expr>            # Atribuição com shift right
+
+  <alvo> =>>> <expr>           # Atribuição com shift right zero-fill'
+pseudocode: 'flags := 0b0000
+
+  flags =| 0b0010
+
+  flags =& 0b1110'
+usages:
+- name: Assignment composta bitwise
+  description: Operation bitwise com assignment.
+  examples:
+  - code: 'flags =& 0xFF      # flags = flags & 0xFF
+
+      valor =<< 2        # valor = valor << 2'
+restrictions:
+- Assignment composta bitwise suporta apenas identifiers simples.
+- Assignment a imut (constantes) é rejeitada at compile time.
+- '=~ (NOT bitwise) não usa o operando da direita: alvo = ~alvo.'

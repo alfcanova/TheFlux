@@ -1,0 +1,34 @@
+keyword: mut
+category: Declaração de Variável
+description: 'Declara uma variável mutável, com valor inicial explícito opcional. Sem valor inicial, a variável recebe o valor
+  padrão do tipo (0, 0.0, false, string vazia etc.). Múltiplas variáveis podem ser declaradas com vírgulas na forma principal
+  (`mut as <tipo>: a, b = 42`).'
+syntax: 'mut as <tipo>: <identificador> [, <identificador> ...] [= <expressão>]'
+pseudocode: 'VARIAVEL contador := 0
+
+  contador := contador + 1    // reatribuivel'
+usages:
+- name: Declaração com tipo e valor inicial
+  description: Declara uma variável mutável com tipo explícito e valor inicial.
+  examples:
+  - code: 'mut as int64: contador = 0
+
+      mut as string: nome = "TheFlux"'
+- name: Declaração com valor padrão do tipo
+  description: Sem valor inicial, a variável recebe o valor padrão do tipo.
+  examples:
+  - code: 'mut as int64: contador
+
+      mut as string: nome'
+- name: Declaração múltipla em linha
+  description: Várias variáveis na forma principal, separadas por vírgula; tipo e valor inicial são compartilhados entre todas.
+  examples:
+  - code: 'mut as int64: a, b = 42'
+restrictions:
+- Os identificadores devem seguir snake_case; a implementação emite uma sugestão (SUG) quando o nome não segue a convenção
+  (não é erro).
+- 'Variáveis mutáveis podem ser reatribuídas com `=` e com operadores compostos: =+, =-, =*, =/i, =/r, =/f, =^e, =^r, =^,
+  =&, =|, =~, =<<, =>>, =>>>.'
+- O tipo é obrigatório após `as` (não há forma sem tipo).
+- 'Múltiplas variáveis em uma única declaração são aceitas apenas na forma principal, com vírgulas entre os identificadores
+  (`mut as <tipo>: a, b = 42`); o tipo e o valor inicial são compartilhados. Valores diferentes exigem declarações separadas.'

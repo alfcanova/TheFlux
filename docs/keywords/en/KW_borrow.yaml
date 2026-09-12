@@ -1,0 +1,58 @@
+keyword: borrow
+category: Ownership
+description: Borrowing the values of an identifier without transferring its ownership. borrow() é immutable — multiple simultaneous
+  borrows are allowed. borrow_mut() é exclusive — blocks other borrows, moves, and external writes.
+syntax: 'borrow(<identifier>)
+
+  borrow_mut(<identifier>)
+
+  '
+pseudocode: 'x  ← 42
+
+  leitura := BORROW(x)      // borrow immutable, shared
+
+  outra   := BORROW(x)      // permitido: varias leituras simultaneas
+
+  escrita := BORROW_MUT(x)  // exclusive: bloqueia outros borrows'
+usages:
+- name: Borrow immutable múltiplo
+  description: Multiple simultaneous immutable borrows are allowed.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r1 = borrow(x)
+
+      mut as int64: r2 = borrow(x)
+
+      print(r1 + r2)
+
+      '
+- name: Borrow mutable exclusive
+  description: borrow_mut() blocks other borrows, moves, and writes externas.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: ref = borrow_mut(x)
+
+      ref = 100
+
+      print(ref)
+
+      '
+- name: Value original preservado
+  description: Operations on references do not modify the original value.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r = borrow(x)
+
+      print(r)
+
+      print(x)
+
+      '
+restrictions:
+- 'borrow() immutable: múltiplos simultâneos OK.'
+- 'borrow_mut() exclusive: blocks other borrows, moves, and writes.'
+- Reading a variable under borrow_mut via a different reference → errorr.
+- Reassigning ref via borrow_mut() is allowed.

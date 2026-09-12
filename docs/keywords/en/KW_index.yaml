@@ -1,0 +1,405 @@
+title: TheFlux Language - Documentation Index
+version: v0.1
+updated: '2026-07-03'
+total_entries: 74
+categories:
+- name: Entry Point
+  count: 1
+  entries:
+  - keyword: program
+    file: KW_program.yaml
+    description: Declara o dot de entrada required de um file.
+- name: Variable Declaration
+  count: 1
+  entries:
+  - keyword: mut
+    file: KW_mut.yaml
+    description: Declara uma variable mutable, com value inicial explícito optional.
+- name: Immutable Variable Declaration
+  count: 1
+  entries:
+  - keyword: imut
+    file: KW_imut.yaml
+    description: Declara uma constante immutable com value inicial required.
+- name: Type Declaration
+  count: 2
+  entries:
+  - keyword: enum
+    file: KW_enum.yaml
+    description: Declara um type enum (união discriminada) inspirado em Rust.
+  - keyword: struct
+    file: KW_struct.yaml
+    description: Declara um type struct (registro) composto por um conjunto fixo de fields nomeados.
+- name: Function Declaration
+  count: 1
+  entries:
+  - keyword: function
+    file: KW_function.yaml
+    description: Declara uma function nomeada e reutilizável com parameters tipados e return optional (via `as <type_return>`).
+- name: Operation Declaration
+  count: 1
+  entries:
+  - keyword: op
+    file: KW_op.yaml
+    description: Declara uma operation dentro de um agent (agent) em files.
+- name: Agent Declaration
+  count: 1
+  entries:
+  - keyword: agent
+    file: KW_agent.yaml
+    description: Declara um agent em files.
+- name: Contract Declaration
+  count: 1
+  entries:
+  - keyword: contract
+    file: KW_contract.yaml
+    description: Declara um contract que define um conjunto de assinaturas de operations (op) que um agent (agent) pode implementar.
+- name: Contract Implementation
+  count: 1
+  entries:
+  - keyword: impl
+    file: KW_impl.yaml
+    description: Cláusula usada in the declaration de um agent (agent) para indicar que ele implementa um ou mais contracts
+      (contract).
+- name: Import Declaration
+  count: 1
+  entries:
+  - keyword: use
+    file: KW_use.yaml
+    description: Importa agents ou operations de agents de outros modules.
+- name: Type Composition
+  count: 1
+  entries:
+  - keyword: of
+    file: KW_of.yaml
+    description: Operator de composição de type para coleções e tensores (`list of <type>`, `set of <type>`, `tensor[.
+- name: Loop Structure
+  count: 1
+  entries:
+  - keyword: infinite
+    file: KW_infinite.yaml
+    description: Cria um loop de repetição infinito.
+- name: Loop Control
+  count: 2
+  entries:
+  - keyword: break
+    file: KW_break.yaml
+    description: Interrormpe imediatamente o loop `infinite` mais interno, transferindo o controle para a instrução seguinte
+      ao block do loop.
+  - keyword: continue
+    file: KW_continue.yaml
+    description: Pula o restante da iteration atual do loop `infinite` mais interno e continua na próxima iteration (reevaluatesndo
+      a condition, se houver).
+- name: Conditional Flow Control
+  count: 1
+  entries:
+  - keyword: route
+    file: KW_route.yaml
+    description: Evaluates conditions em ordem e executes o block correspondente ao primeiro branch cuja condition seja verdadeira.
+- name: Pattern Matching
+  count: 2
+  entries:
+  - keyword: match
+    file: KW_match.yaml
+    description: Realiza casamento de patterns (pattern matching) sobre uma expression.
+  - keyword: _
+    file: KW_underscore.yaml
+    description: O character underscore (`_`) atua como curinga (wildcard) universal e pattern de descarte na linguagem TheFlux.
+- name: Stateful Conditional Handling
+  count: 1
+  entries:
+  - keyword: '?'
+    file: KW_short_circuit.yaml
+    description: Block short-circuit que evaluates uma expression.
+- name: Iteration
+  count: 1
+  entries:
+  - keyword: in
+    file: KW_in.yaml
+    description: 'O operator `in` é usado em loops `infinite (variable in coleção)` para iterar sobre os elementos de uma
+      coleção: range numérico, lista, set ou string.'
+- name: Guaranteed Execution
+  count: 1
+  entries:
+  - keyword: ensure
+    file: KW_ensure.yaml
+    description: Operator de cleanup que garante que um block de código sempre execute, independentemente de success ou failure
+      da expression alvo.
+- name: Return Instruction
+  count: 1
+  entries:
+  - keyword: emit
+    file: KW_emit.yaml
+    description: 'Encerra a function atual devolvendo um struct implícito de resultado com três fields sempre definidos: `.'
+- name: Return Status
+  count: 2
+  entries:
+  - keyword: fail
+    file: KW_fail.yaml
+    description: Status de failure usado na instrução `emit(fail,.
+  - keyword: nice
+    file: KW_nice.yaml
+    description: Status de success usado na instrução `emit(nice,.
+- name: Output Instruction
+  count: 1
+  entries:
+  - keyword: print
+    file: KW_print.yaml
+    description: Imprime o value de uma expression na standard output.
+- name: Arithmetic Operator
+  count: 1
+  entries:
+  - keyword: +, -, *, /f, /i, /r, ^e, ^r
+    file: KW_OP_arithmetic.yaml
+    description: Operatores aritméticos da linguagem TheFlux.
+- name: Arithmetic Assignment Operator
+  count: 1
+  entries:
+  - keyword: =, =+, =-, =*, =/f, =/i, =/r, =^e, =^r
+    file: KW_OP_assignment_arithmetic.yaml
+    description: Operators de assignment simples e composta aritmética.
+- name: Bitwise Assignment Operator
+  count: 1
+  entries:
+  - keyword: =&, =|, =^, =~, =<<, =>>, =>>>
+    file: KW_OP_assignment_bitwise.yaml
+    description: Operators de assignment composta bitwise.
+- name: Bitwise Operator
+  count: 1
+  entries:
+  - keyword: '&, |, ^, ~, <<, >>, >>>'
+    file: KW_OP_bitwise.yaml
+    description: Operators de manipulação bitwise para integers.
+- name: Comparison Operator
+  count: 1
+  entries:
+  - keyword: ==, !=, <, >, <=, >=
+    file: KW_OP_comparison.yaml
+    description: Operators relacionais que comparam dois values e return um booleano.
+- name: Logical Operator
+  count: 4
+  entries:
+  - keyword: and, or, not
+    file: KW_OP_logical.yaml
+    description: Operadores lógicos para composição de expressions booleanas.
+  - keyword: and
+    file: KW_and.yaml
+    description: Operator de conjunção lógica com evaluatesção de curto-circuito.
+  - keyword: not
+    file: KW_not.yaml
+    description: Operator unário de negação lógica.
+  - keyword: or
+    file: KW_or.yaml
+    description: Operator de disjunção lógica com evaluatesção de curto-circuito.
+- name: Dataflow Operator
+  count: 1
+  entries:
+  - keyword: --> (dataflow), ==> (lambda), split, join
+    file: KW_OP_dataflow.yaml
+    description: Operators de fluxo de dados para pipelines e transformações.
+- name: Range / Slice Operator
+  count: 2
+  entries:
+  - keyword: ..
+    file: KW_OP_range_slice.yaml
+    description: O operator.
+  - keyword: slices
+    file: KW_slices.yaml
+    description: Slices extraem slices de coleções e strings usando o operator de range.
+- name: Cast Operator / Import Alias
+  count: 1
+  entries:
+  - keyword: as
+    file: KW_as.yaml
+    description: Converte (cast) um value de um type para outro.
+- name: Primitive Scalar Type
+  count: 1
+  entries:
+  - keyword: char, bool, datetime, string
+    file: KW_TYPE_scalar.yaml
+    description: 'Tipos escalares nativos que não são numéricos: char (code point Unicode UTF-32), bool (booleano), datetime
+      (timestamp ISO 8601), string (string de texto).'
+- name: Character Type
+  count: 1
+  entries:
+  - keyword: char
+    file: KW_TYPE_char.yaml
+    description: 'Tipo character: representa exatamente um code point Unicode (U+0000.'
+- name: String Type
+  count: 1
+  entries:
+  - keyword: string, string(N)
+    file: KW_TYPE_string.yaml
+    description: Types de texto.
+- name: Numeric Type - Integer
+  count: 1
+  entries:
+  - keyword: int8, int16, int32, int64, uint8, uint16, uint32, uint64
+    file: KW_TYPE_int.yaml
+    description: Types integers de width fixa com sinal e sem sinal (int8, int16, int32, int64, uint8, uint16, uint32, uint64).
+- name: Numeric Type - Floating Point
+  count: 1
+  entries:
+  - keyword: float16, float32, float64, fp8_e4m3, fp8_e5m2, bf16_e8m7, tf32_e8m10
+    file: KW_TYPE_float.yaml
+    description: Types de dot flutuante com precisão definida e formatos especiais para IA/ML (float16, float32, float64,
+      fp8_e4m3, fp8_e5m2, bf16_e8m7, tf32_e8m10).
+- name: Numeric Type - Complex
+  count: 2
+  entries:
+  - keyword: literal complexo (complex_literal)
+    file: KW_LITERAL_complex.yaml
+    description: Literais complexos representam numbers complexos.
+  - keyword: complex32, complex64, complex128
+    file: KW_TYPE_complex.yaml
+    description: Types numéricos complexos com partes real e imaginária (complex32, complex64, complex128).
+- name: Collection Type - Data
+  count: 1
+  entries:
+  - keyword: data
+    file: KW_TYPE_data.yaml
+    description: Lista de elementos heterogêneos acessíveis por indexação (1-based).
+- name: Collection Type - List
+  count: 1
+  entries:
+  - keyword: list
+    file: KW_TYPE_list.yaml
+    description: Sequência homogênea com index 1-based e assignment por index.
+- name: Collection Type - Map
+  count: 1
+  entries:
+  - keyword: map
+    file: KW_TYPE_map.yaml
+    description: Dicionário com braces string e acesso dinâmico; ausente returns none.
+- name: Collection Type - Set
+  count: 1
+  entries:
+  - keyword: set
+    file: KW_TYPE_set.yaml
+    description: Elementos únicos sem ordem; suporta o operator in.
+- name: Tensor Type
+  count: 1
+  entries:
+  - keyword: tensor
+    file: KW_TYPE_tensor.yaml
+    description: Tipo multidimensional (matriz, vetor) com forma estática, armazenado em buffer plano (flat) na ordem row-major
+      e indexado por strides.
+- name: Literal
+  count: 3
+  entries:
+  - keyword: literal caractere (char_literal)
+    file: KW_LITERAL_char.yaml
+    description: Literais character (char) representam um único code point Unicode entre single quotes.
+  - keyword: none (valor nulo)
+    file: KW_LITERAL_none.yaml
+    description: Representa a ausência de value (nulo/nil/None).
+  - keyword: literal string (string_literal)
+    file: KW_LITERAL_string.yaml
+    description: Literais string representam strings de texto entre double quotes.
+- name: Boolean Literal
+  count: 1
+  entries:
+  - keyword: True, False
+    file: KW_LITERAL_bool.yaml
+    description: Literais booleanos.
+- name: Datetime Literal
+  count: 1
+  entries:
+  - keyword: datetime (literal ISO 8601)
+    file: KW_LITERAL_datetime.yaml
+    description: Literais de data e hora no formato ISO 8601.
+- name: Numeric Literal
+  count: 3
+  entries:
+  - keyword: literal float (float_literal)
+    file: KW_LITERAL_float.yaml
+    description: Literais de dot flutuante representam numbers reais com precisão definida e formatos especiais (float16,
+      float32, float64, fp8, bf16, tf32).
+  - keyword: literal imaginário puro (imaginary_literal)
+    file: KW_LITERAL_imaginary.yaml
+    description: Literais imaginários representam a componente imaginária pura de um number complexo (ou seja, a forma bi
+      onde a parte real a = 0).
+  - keyword: literal inteiro (integer_literal)
+    file: KW_LITERAL_integer.yaml
+    description: Integer numeric literals in decimal base.
+- name: String Interpolation
+  count: 1
+  entries:
+  - keyword: '#{ }'
+    file: KW_string_interpolation.yaml
+    description: Interpolação de expressions dentro de strings delimitadas por double quotes.
+- name: Comment / Documentation
+  count: 1
+  entries:
+  - keyword: '#L, #B ... B#, #D ... D#'
+    file: KW_comments.yaml
+    description: 'Três formas de comentário na linguagem TheFlux: `#L` para comentários de linha, `#B.'
+- name: Instrução de Entrada
+  count: 1
+  entries:
+  - keyword: input
+    file: KW_input.yaml
+    description: Reads a line from standard input (stdin) and assigns it to the declared variable.
+- name: Metaprogramção
+  count: 4
+  entries:
+  - keyword: comptime
+    file: KW_comptime.yaml
+    description: Evaluates uma expression ou block de código at compile time.
+  - keyword: lift
+    file: KW_lift.yaml
+    description: Cria uma representação de código (árvore sintática / AST) sem avaliá-la imediatamente at runtime (estágio
+      de elevação / lifting).
+  - keyword: lower
+    file: KW_lower.yaml
+    description: Rebaixa (desempacota/injeta) o nó ou expression correspondente dentro de um block `lift {.
+  - keyword: meta
+    file: KW_meta.yaml
+    description: Declara uma meta-function de metaprogramção (`meta`) que gera e transforma código at compile time.
+- name: Operators de Acesso
+  count: 1
+  entries:
+  - keyword: ., ::, [], ..
+    file: KW_accessors.yaml
+    description: 'Operators fundamentais para acesso a membros, resolução de scope, indexação e slicemento em TheFlux:
+
+      - `.'
+- name: Ownership
+  count: 3
+  entries:
+  - keyword: borrow
+    file: KW_borrow.yaml
+    description: Borrowing the values of an identifier without transferring its ownership.
+  - keyword: keep
+    file: KW_keep.yaml
+    description: Inibe a liberação automática do Eager Flow Disposal, estendendo o tempo de vida do dado.
+  - keyword: move
+    file: KW_move.yaml
+    description: Transfere explicitamente a ownership (ownership) de um identifier para outro.
+- name: Tarefas Assíncronas (Future / Green Thread)
+  count: 3
+  entries:
+  - keyword: async
+    file: KW_async.yaml
+    description: Modifier that turns a function into a non-blocking operation that returns a Future.
+  - keyword: await
+    file: KW_await.yaml
+    description: Linear synchronization point that suspends the synchronous pipeline until a Future resolves.
+  - keyword: spawn
+    file: KW_spawn.yaml
+    description: 'Gatilho de execução assíncrona: autoriza e despacha um nó ou o caminho do dataflow para o runtime, que o
+      executes como uma green thread cooperativa.'
+- name: Telemetry/Debug
+  count: 1
+  entries:
+  - keyword: spy
+    file: KW_spy.yaml
+    description: Emits detailed diagnostic telemetry of an expression's value for runtime inspection and debugging without
+      altering the dataflow.
+- name: Unsafe Block
+  count: 1
+  entries:
+  - keyword: unsafe
+    file: KW_unsafe.yaml
+    description: Desativa as proteções de memória do Kernel para manipulação de ponteiros e chamadas C-ABI, APIs, ler e gravar
+      Raw Pointers, acessar ou modificar variables globais, implementar contracts não checados, bounds checking e equivalentes.

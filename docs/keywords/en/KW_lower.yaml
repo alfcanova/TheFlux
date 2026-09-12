@@ -1,0 +1,18 @@
+keyword: lower
+category: Metaprogramção
+description: Rebaixa (desempacota/injeta) o nó ou expression correspondente dentro de um block `lift { ... }`. Evaluates o
+  parameter da meta e insere o nó de código resultante na árvore gerada.
+syntax: lower(<expression>)
+pseudocode: 'bloco := ELEVAR { soma := 2 + 3 }
+
+  REBAIXAR(bloco)   // injeta o codigo gerado no dot de usage'
+usages:
+- name: Injeção de parameter via lower
+  description: Injeta os values dos parameters no cálculo sintetizado dentro de lift.
+  examples:
+  - code: "meta areaTrapezio(bmaior, bmenor, altura) {\n      lift {\n            mut as float64: area = ((lower(bmaior) +\
+      \ lower(bmenor)) * lower(altura)) /f 2\n      }\n}"
+restrictions:
+- Só can be utilizado dentro de um block lift { ... }.
+- Cannot be utilizado diretamente fora de contextos de metaprogramção (lift).
+- Injeta a expression ou nó evaluatesdo no código gerado pelo lift.

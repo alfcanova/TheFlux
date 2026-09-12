@@ -1,0 +1,41 @@
+keyword: spy
+category: Telemetry/Debug
+description: >-
+  Emits detailed diagnostic telemetry of an expression's value for runtime inspection and debugging without altering the dataflow.
+  Preserves the original value as a transparent tap/tee, allowing spy to be used on operands, intermediate expressions, and inside dataflow pipelines.
+
+  The structured telemetry output details the AST origin node, data sample/rank, typing and coercion, hardware dispatch, variable liveness, and memory management.
+syntax: |
+  spy(<expression>)
+
+  <variable> = spy(<operand>) + <expression>
+
+  <variable> = spy(<compound_expression>)
+
+  <source> --> <transformation> --> spy --> <destination>
+pseudocode: |
+  INSPECT_TELEMETRY(origin, value)
+  RETURN value // transparent, preserves dataflow
+usages:
+  - name: 1. Spying on a Specific Operand
+    description: Inspects a variable or operand before an operation, reporting memory access, rank, typing, and immutability/preservation rules.
+    examples:
+      - code: |
+          mut as int64: a = 10
+          mut as float64: b = 5.5
+          mut as float64: sum = spy(a) + b
+  - name: 2. Spying on an Operation Result
+    description: Inspects the resulting value after evaluating an intermediate operation, detecting automatic type promotions (widening), latency, and buffer allocations.
+    examples:
+      - code: |
+          mut as float64: total = spy(a + b)
+  - name: 3. Topology Metrics and Liveness in Dataflow
+    description: Acts as a transparent pass-through tap in a dataflow pipeline, inspecting function/agent outputs, liveness out-degree, and ABI transformations.
+    examples:
+      - code: |
+          dados --> preverTendencia --> spy --> print
+          dobro(10) --> spy --> print
+restrictions:
+  - The spy operator is transparent and preserves the original value without consuming it (read-only borrow).
+  - Can be used both as an enclosing function/expression and as an intermediary node in dataflow chains (-->).
+  - Emits a structured diagnostic tree covering Origin, Data/Rank, Typing, Hardware Dispatch, Latency, and Memory.

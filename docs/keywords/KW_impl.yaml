@@ -1,0 +1,34 @@
+keyword: impl
+category: Implementação de Contrato
+description: 'Cláusula usada na declaração de um agente (agent) para indicar que ele implementa um ou mais contratos (contract).
+  O agente deve fornecer uma operação (op) para cada assinatura definida nos contratos, com aridade, parâmetros e tipo de
+  retorno correspondentes.
+
+  Suporta múltiplos contratos separados por vírgula. Válido apenas em arquivos .fdsl. '
+syntax: "agent (<Nome_PascalCase>) impl <Contrato1>, <Contrato2>, ... {\n      op <nome> ([params]) [as <tipo>] ==> {\n  \
+  \          <corpo>\n      }\n      ...\n}\n"
+pseudocode: "AGENTE Motor IMPLEMENTA Operavel:\n    OPERACAO ligar: ...     // corpo concreto da assinatura\n    OPERACAO\
+  \ desligar: ...\n// clausula impl declara os contratos implementados pelo agente"
+usages:
+- name: Implementação de um contrato
+  description: Agente que implementa um único contrato.
+  examples:
+  - code: "agent (AgentOfCalculadora) impl OperacoesBasicas {\n      op somar (as int64: a, as int64: b) as int64 ==> {\n\
+      \            mut as int64: resultado = a + b\n            emit(nice, resultado, \"Soma concluida\")\n      }\n     \
+      \ op subtrair (as int64: a, as int64: b) as int64 ==> {\n            mut as int64: resultado = a - b\n            emit(nice,\
+      \ resultado, \"Subtracao concluida\")\n      }\n}\n"
+- name: Implementação de múltiplos contratos
+  description: Agente que implementa dois contratos simultaneamente com ops separadas.
+  examples:
+  - code: "agent (DualAgent) impl ReadOp, WriteOp {\n      op read () as int64 ==> {\n            emit(nice, 42, \"read\"\
+      )\n      }\n      op write () as int64 ==> {\n            emit(nice, 99, \"write\")\n      }\n}\n"
+- name: Contrato verificado semânticamente
+  description: O verificador semântico checa que todas as ops do contrato estão implementadas com aridade e tipos corretos.
+  example: "contract (Readable) { op read () as int64 }\nagent (MyAgent) impl Readable {\n      op read () as int64 ==> {\
+    \ emit(nice, 42, \"ok\") }\n}\n# OK: agente implementa todas as ops do contrato.\n"
+restrictions:
+- O nome do agente deve estar em PascalCase.
+- Nomes de contratos repetidos no mesmo impl são erro semântico.
+- Cada operação de cada contrato deve ser implementada com aridade e tipos correspondentes.
+- Agentes podem ter ops adicionais além das exigidas pelo contrato (ops extras são permitidas).
+- A cláusula `impl` não pode ser usada em arquivos .flux (apenas .fdsl).

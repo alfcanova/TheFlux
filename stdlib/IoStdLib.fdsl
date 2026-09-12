@@ -1,0 +1,173 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Modulo nativo para operacoes de Entrada e Saida (I/O)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (IoPrintContract) {
+      op echo (as string: text) as string
+      op printLn (as data: value) as data
+      op printLine (as data: value) as data
+      op printErr (as data: value) as data
+}
+
+contract (IoInputContract) {
+      op readLn (as string: prompt) as string
+      op readLine (as string: prompt) as string
+}
+
+contract (IoFileContract) {
+      op readFile (as string: path) as string
+      op writeFile (as string: path, as string: content) as string
+      op appendFile (as string: path, as string: content) as string
+      op deleteFile (as string: path) as bool
+      op copyFile (as string: src, as string: dst) as bool
+      op moveFile (as string: src, as string: dst) as bool
+}
+
+contract (IoFileInspectionContract) {
+      op fileExists (as string: path) as bool
+      op fileSize (as string: path) as int64
+      op fileIsEmpty (as string: path) as bool
+}
+
+contract (IoFileLineContract) {
+      op readLines (as string: path) as list of data
+      op writeLines (as string: path, as list of data: lines) as string
+      op appendLines (as string: path, as list of data: lines) as string
+}
+
+contract (IoDirectoryContract) {
+      op dirExists (as string: path) as bool
+      op createDir (as string: path) as bool
+      op removeDir (as string: path) as bool
+      op listDir (as string: path) as list of data
+}
+
+contract (IoPathContract) {
+      op pathBaseName (as string: path) as string
+      op pathDirName (as string: path) as string
+      op pathExtension (as string: path) as string
+      op pathJoin (as string: dir, as string: file) as string
+}
+
+agent (IoStdLib) impl IoPrintContract, IoInputContract, IoFileContract, IoFileInspectionContract, IoFileLineContract, IoDirectoryContract, IoPathContract {
+
+      #L -- IoPrintContract -------------------------------------------
+      op echo (as string: text) as string ==> {
+            print(text)
+            emit(nice, text, "ok")
+      }
+
+      op printLn (as data: value) as data ==> {
+            print(value)
+            emit(nice, value, "ok")
+      }
+
+      op printLine (as data: value) as data ==> {
+            print(value)
+            emit(nice, value, "ok")
+      }
+
+      op printErr (as data: value) as data ==> {
+            stdIoPrintErr(value)
+            emit(nice, value, "ok")
+      }
+
+      #L -- IoInputContract -------------------------------------------
+      op readLn (as string: prompt) as string ==> {
+            mut as string: line = input(prompt)
+            emit(nice, line, "ok")
+      }
+
+      op readLine (as string: prompt) as string ==> {
+            mut as string: line = input(prompt)
+            emit(nice, line, "ok")
+      }
+
+      #L -- IoFileContract --------------------------------------------
+      op readFile (as string: path) as string ==> {
+            emit(nice, stdIoReadFile(path), "ok")
+      }
+
+      op writeFile (as string: path, as string: content) as string ==> {
+            emit(nice, stdIoWriteFile(path, content), "ok")
+      }
+
+      op appendFile (as string: path, as string: content) as string ==> {
+            emit(nice, stdIoAppendFile(path, content), "ok")
+      }
+
+      op deleteFile (as string: path) as bool ==> {
+            emit(nice, stdIoDeleteFile(path), "ok")
+      }
+
+      op copyFile (as string: src, as string: dst) as bool ==> {
+            emit(nice, stdIoCopyFile(src, dst), "ok")
+      }
+
+      op moveFile (as string: src, as string: dst) as bool ==> {
+            emit(nice, stdIoMoveFile(src, dst), "ok")
+      }
+
+      #L -- IoFileInspectionContract ----------------------------------
+      op fileExists (as string: path) as bool ==> {
+            emit(nice, stdIoFileExists(path), "ok")
+      }
+
+      op fileSize (as string: path) as int64 ==> {
+            emit(nice, stdIoFileSize(path), "ok")
+      }
+
+      op fileIsEmpty (as string: path) as bool ==> {
+            mut as int64: sz = stdIoFileSize(path)
+            emit(nice, sz == 0, "ok")
+      }
+
+      #L -- IoFileLineContract ----------------------------------------
+      op readLines (as string: path) as list of data ==> {
+            emit(nice, stdIoReadLines(path), "ok")
+      }
+
+      op writeLines (as string: path, as list of data: lines) as string ==> {
+            emit(nice, stdIoWriteLines(path, lines), "ok")
+      }
+
+      op appendLines (as string: path, as list of data: lines) as string ==> {
+            emit(nice, stdIoAppendLines(path, lines), "ok")
+      }
+
+      #L -- IoDirectoryContract ---------------------------------------
+      op dirExists (as string: path) as bool ==> {
+            emit(nice, stdIoDirExists(path), "ok")
+      }
+
+      op createDir (as string: path) as bool ==> {
+            emit(nice, stdIoCreateDir(path), "ok")
+      }
+
+      op removeDir (as string: path) as bool ==> {
+            emit(nice, stdIoRemoveDir(path), "ok")
+      }
+
+      op listDir (as string: path) as list of data ==> {
+            emit(nice, stdIoListDir(path), "ok")
+      }
+
+      #L -- IoPathContract --------------------------------------------
+      op pathBaseName (as string: path) as string ==> {
+            emit(nice, stdIoPathBaseName(path), "ok")
+      }
+
+      op pathDirName (as string: path) as string ==> {
+            emit(nice, stdIoPathDirName(path), "ok")
+      }
+
+      op pathExtension (as string: path) as string ==> {
+            emit(nice, stdIoPathExtension(path), "ok")
+      }
+
+      op pathJoin (as string: dir, as string: file) as string ==> {
+            emit(nice, stdIoPathJoin(dir, file), "ok")
+      }
+}

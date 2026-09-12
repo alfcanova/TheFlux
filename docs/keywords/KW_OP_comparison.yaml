@@ -1,0 +1,36 @@
+keyword: ==, !=, <, >, <=, >=
+category: Operador de Comparação
+description: Operadores relacionais que comparam dois valores e retornam um booleano. Usados em condições de route, expressões
+  booleanas e qualquer contexto que exija avaliação de ordem ou igualdade.
+syntax: '<expr> == <expr>   # Igual a
+
+  <expr> != <expr>   # Diferente de
+
+  <expr> <  <expr>   # Menor que
+
+  <expr> >  <expr>   # Maior que
+
+  <expr> <= <expr>   # Menor ou igual a
+
+  <expr> >= <expr>   # Maior ou igual a'
+pseudocode: "SE saldo >= 100:\n    liberar()\n// == != < > <= >="
+usages:
+- name: Comparações numéricas
+  description: Compara valores numéricos em condições.
+  examples:
+  - code: "route (idade) {\n    < 0 --> { print(\"Erro: idade negativa\") }\n    >= 18 --> { print(\"Adulto\") }\n    _ -->\
+      \ { print(\"Menor de idade\") }\n}"
+- name: Igualdade em route with subject
+  description: Comparação de igualdade com sujeito e literais.
+  examples:
+  - code: "route (comando) {\n    \"start\" --> { print(\"Iniciando...\") }\n    \"stop\"  --> { print(\"Parando...\") }\n\
+      \    _ --> { print(\"Desconhecido\") }\n}"
+- name: Comparação em expressão
+  description: Comparações em expressões booleanas.
+  examples:
+  - code: "route {\n    nota >= 7.0 and frequencia >= 75.0 --> { print(\"Aprovado\") }\n    _ --> { print(\"Reprovado\") }\n\
+      }"
+restrictions:
+- == compara igualdade de valor, não identidade de referência.
+- Operadores relacionais podem ser encadeados em expressões.
+- Em route with subject, operadores relacionais são aplicados ao sujeito automaticamente.

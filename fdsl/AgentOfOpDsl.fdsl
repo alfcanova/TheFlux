@@ -1,0 +1,9 @@
+agent (AgentOfOpDsl) {
+      op dot (as int64: lhs, as int64: rhs) as int64 ==> {
+            print(lhs + rhs)
+      }
+
+      op normalizarNome ==> {
+            print("normalizacao declarada no dominio semantico do DSL")
+      }
+}

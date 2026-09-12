@@ -1,0 +1,19 @@
+keyword: break
+category: Controle de Loop
+description: Interrompe imediatamente o loop `infinite` mais interno, transferindo o controle para a instrução seguinte ao
+  bloco do loop.
+syntax: break
+pseudocode: "REPETIR PARA SEMPRE:\n    corpo...\n    SE pronto: INTERROMPER   // break sai do loop mais interno"
+usages:
+- name: Break simples
+  description: Sai do loop infinito imediatamente.
+  examples:
+  - code: "infinite {\n      print(\"rodei\")\n      break\n}"
+- name: Break após condição
+  description: Break condicional dentro do loop.
+  examples:
+  - code: "mut as int64: i = 0\ninfinite {\n      i = i + 1\n      route {\n            i == 3 ==> { break }\n           \
+      \ _ ==> { print(i) }\n      }\n}"
+restrictions:
+- Só pode ser usado dentro de um bloco `infinite`.
+- Break encerra apenas o loop mais interno.

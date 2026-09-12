@@ -1,0 +1,42 @@
+keyword: literal complexo (complex_literal)
+category: Numeric Type - Complex
+description: Literais complexos representam numbers complexos. O literal imaginário é formado por um literal integer ou float
+  seguido do sufixo i (ou j, aceito como alias do lexer). Para um number complexo completo, combina-se parte real com parte
+  imaginária usando o operator + (ou -). O type pattern inferido é complex64; o type explícito (complex32/64/128) quantiza
+  cada componente.
+syntax: '<literal_inteiro>i          # Ex: 2i
+
+  <literal_float>i            # Ex: 2.5i
+
+  <parte_real> + <parte_imag>i  # Número complexo completo
+
+  <parte_real> - <parte_imag>i  # Parte imaginária negativa'
+pseudocode: numero := 3 + 4i   // parte real + parte imaginaria
+usages:
+- name: Complex types with real and imaginary parts
+  description: Types numéricos complexos com partes real e imaginária.
+  examples:
+  - code: 'mut as complex32: c32 = -1.5 + -2.5i
+
+      mut as complex64: c64 = 64.125 + -8.5i
+
+      mut as complex128: c128 = 1.5 + 2.5i'
+- name: Pure imaginary part
+  description: Value imaginário sem parte real explícita.
+  examples:
+  - code: 'mut as complex64: imag = 2i
+
+      mut as complex64: negativo = -3.5i'
+- name: Type inference
+  description: Without explicit complex type, inferred type is complex64.
+  examples:
+  - code: 'mut as complex64: onda = 1.0 + 2i   # onda é complex64'
+restrictions:
+- O sufixo i identifica o literal como imaginário; j também é aceito pelo lexer.
+- Parte real e imaginária são combinadas com + ou -.
+- complex32 usa componentes float16; complex64 usa float32; complex128 usa float64.
+- complex16 foi removido (inexistente).
+- 'Implementação: interpreter e vm suportam complexo completo (operations aritméticas, round por componente). Backends compilados
+  (llvm, wasm, wat) rejeitam literal complexo com error claro.'
+- 'Ver também KW_TYPE_complex.yaml (type) — types e literais são files espelhados: TYPES descreve a forma in the declaration,
+  LITERAL descreve a sintaxe do value.'

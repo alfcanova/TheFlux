@@ -1,0 +1,45 @@
+keyword: struct
+category: Type Declaration
+description: Declara um type struct (registro) composto por um conjunto fixo de fields nomeados. Cada field can be mutable
+  (mut) ou immutable (imut). Uma struct representa um único formato de dados e possui exatamente um construtor nominal. A
+  mesma sintaxe utilizada para construir uma struct é reutilizada pelo pattern matching para desestruturá-la, tornando construção
+  e desconstrução operations simétricas. O nome da struct deve estar em PascalCase.
+syntax: "struct (<NomePascalCase>) {\n\n    mut: .<campo_snake_case>: <type>\n\n    imut: .<CAMPO_SCREAMING_SNAKE_CASE>: <type>\n\
+  \n    ...\n\n}"
+pseudocode: "REGISTRO Pessoa:\n    campo nome: string\n    campo idade: int64\n// values nomeados, conjunto fixo de fields"
+usages:
+- name: Struct with mutable and immutable fields
+  description: Declara uma struct contendo fields mutable e immutable.
+  examples:
+  - code: "struct (Evento) {\n\n    mut: .nome: string\n\n    imut: .DATA: datetime\n\n    mut: .contador: int64\n\n}"
+- name: Struct initialization
+  description: Inicializa uma struct utilizando fields nomeados. A correspondência dos arguments ocorre pelo nome dos fields
+    e não pela posição. Cada field é escrito em uma linha própria, separado por quebra de linha (EOL); o dot is required.
+  examples:
+  - code: Inicializacao
+- name: Field access
+  description: Acessa fields utilizando a notação de dot.
+  examples:
+  - code: print(evento.nome)
+  - code: evento.contador = evento.contador + 1
+- name: Pattern matching
+  description: 'Desestrutura uma struct utilizando exatamente a mesma sintaxe empregada durante sua construção: cada field
+    em uma linha própria, prefixado por dot.'
+  examples:
+  - code: "match (evento) {\n\n    Evento(\n\n        .nome: nome\n\n        .quando: quando\n\n        .contador: contador\n\
+      \n    ) ==> contador\n\n}"
+restrictions:
+- O nome da struct deve estar em PascalCase.
+- O keyword struct é escrito em lowercase.
+- Todo field é obrigatoriamente prefixado por dot (.), tanto in the declaration quanto na construção e desestruturação.
+- Cada field ocupa uma linha própria; fields são separados por quebra de linha (EOL), nunca por comma.
+- Fields mutable devem utilizar snake_case.
+- Fields immutable devem utilizar SCREAMING_SNAKE_CASE.
+- Os nomes dos fields must be únicos dentro da struct.
+- Uma struct deve possuir pelo menos um field.
+- Structs possuem exatamente um construtor.
+- Fields são inicializados utilizando arguments nomeados prefixados por dot.
+- A ordem dos fields durante a inicialização é irrelevante; a correspondência ocorre pelo nome.
+- Todos os fields requireds must be inicializados.
+- Fields declarados como immutable não podem receivesr assignment após a construção da instância.
+- A construção e a desestruturação utilizam exatamente a mesma estrutura sintática.

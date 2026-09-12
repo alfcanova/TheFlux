@@ -1,0 +1,56 @@
+keyword: =, =+, =-, =*, =/f, =/i, =/r, =^e, =^r
+category: Arithmetic Assignment Operator
+description: Operators de assignment simples e composta aritmética. A assignment simples (=) suporta identifiers, acesso a
+  fields, indexs e multi-indexs. Assignments compostas aritméticas (=+, =-, =*, =/f, =/i, =/r, =^e, =^r) combinam operation
+  aritmética com assignment, e suportam apenas identifiers simples.
+syntax: '<alvo> = <expr>              # Atribuição simples
+
+  <alvo> =+ <expr>             # Atribuição com adição (alvo = alvo + expr)
+
+  <alvo> =- <expr>             # Atribuição com subtração
+
+  <alvo> =* <expr>             # Atribuição com multiplicação
+
+  <alvo> =/f <expr>            # Atribuição com divisão decimal
+
+  <alvo> =/i <expr>            # Atribuição com divisão inteira
+
+  <alvo> =/r <expr>            # Atribuição com resto
+
+  <alvo> =^e <expr>            # Atribuição com potência
+
+  <alvo> =^r <expr>            # Atribuição com raiz'
+pseudocode: 'n := 10
+
+  n =+ 5     // n vira 15
+
+  n =* 2     // n vira 30
+
+  n =/i 3    // n vira 10'
+usages:
+- name: Assignment simples
+  description: Atribui um value a uma variable, field ou index.
+  examples:
+  - code: 'contador = 5
+
+      evento_atual.contador = 2
+
+      valores[1] = 15
+
+      payload.amostras[2] = 0.25'
+- name: Assignment composta aritmética
+  description: Operation aritmética e assignment em um único operator.
+  examples:
+  - code: 'soma =+ 3          # soma = soma + 3
+
+      subtracao =- 4     # subtracao = subtracao - 4
+
+      multiplicacao =* 7 # multiplicacao = multiplicacao * 7
+
+      resto =/r 4        # resto = resto /r 4
+
+      potencia =^e 3     # potencia = potencia ^e 3'
+restrictions:
+- 'Assignment simples (=) suporta: identifier, field, index e multi-index.'
+- Assignment composta aritmética suporta apenas identifiers simples.
+- Assignment a imut (constantes) é rejeitada at compile time.

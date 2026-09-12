@@ -1,0 +1,52 @@
+keyword: float16, float32, float64, fp8_e4m3, fp8_e5m2, bf16_e8m7, tf32_e8m10
+category: Numeric Type - Floating Point
+description: Types de dot flutuante com precisão definida e formatos especiais para IA/ML (float16, float32, float64, fp8_e4m3,
+  fp8_e5m2, bf16_e8m7, tf32_e8m10).
+syntax: 'mut as <type>: <var> = <value>   # tipo obrigatório na declaração
+
+  mut as float16: <var> = <value>   # IEEE 754 half-precision (16 bits)
+
+  mut as float32: <var> = <value>   # IEEE 754 single-precision (32 bits)
+
+  mut as float64: <var> = <value>   # IEEE 754 double-precision (64 bits)
+
+  mut as fp8_e4m3: <var> = <value>  # 8-bit fp8 (4 exponent, 3 mantissa)
+
+  mut as fp8_e5m2: <var> = <value>  # 8-bit fp8 (5 exponent, 2 mantissa)
+
+  mut as bf16_e8m7: <var> = <value> # Bfloat16 (8 exponent, 7 mantissa)
+
+  mut as tf32_e8m10: <var> = <value> # TF32 (8 exponent, 10 mantissa)'
+pseudocode: 'pesado : FLOAT64       = 3.14
+
+  preciso: FLOAT32       = 2.5
+
+  // fp8_e4m3, fp8_e5m2, bf16_e8m7, tf32_e8m10 (IA/ML)'
+usages:
+- name: Floats tradicionais
+  description: Declaration de floats IEEE 754 pattern.
+  examples:
+  - code: 'mut as float16: meia_precisao = -1.5
+
+      mut as float32: simples = -32.25
+
+      mut as float64: dupla = -64.125'
+- name: Floats especiais para ML/AI
+  description: Declaration de types float especializados para machine learning.
+  examples:
+  - code: 'mut as fp8_e4m3: fp8_1 = 0.98
+
+      mut as fp8_e5m2: fp8_2 = 0.98
+
+      mut as bf16_e8m7: bf16_val = 0.98046875
+
+      mut as tf32_e8m10: tf32_val = 0.97998046875'
+restrictions:
+- Todos os formatos são implementados no interpretador e nos backends wat/wasm.
+- A redução de precisão utiliza round-to-nearest-even em literais, assignments e operations aritméticas.
+- Overflow aritmético produces ±inf; fp8_e4m3 satura no pattern NaN.
+- Os backends llvm e vm possuem suporte completo aos types float pattern (float32/64).
+- O type genérico float foi removido; o type exato is required in the declaration.
+- There is no literais com sufixo; the type comes from the declaration.
+- 'Ver também KW_LITERAL_float.yaml (literal) — types e literais são files espelhados: TYPES descreve a forma in the declaration,
+  LITERAL descreve a sintaxe do value.'

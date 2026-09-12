@@ -1,0 +1,682 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Modulo nativo para manipulacao de conjuntos finitos ordenados (sets)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L 
+#L ==============================================================================
+
+contract (SetBasicContract) {
+      op setLength (as set of data: items) as int64
+      op setIsEmpty (as set of data: items) as bool
+      op setIsNotEmpty (as set of data: items) as bool
+      op setContains (as set of data: items, as data: item) as bool
+      op setContainsAny (as set of data: lhs, as set of data: rhs) as bool
+      op setContainsAll (as set of data: lhs, as set of data: rhs) as bool
+      op setClearAll (as set of data: items) as set of data
+      op setSingleton (as data: value) as set of data
+      op setSingletonInt (as int64: value) as set of data
+      op setSingletonString (as string: value) as set of data
+      op setClone (as set of data: items) as set of data
+      op setToList (as set of data: items) as list of data
+      op setToSet (as data: value) as set of data
+      op setToMap (as set of data: value) as map
+      op setToString (as set of data: items) as string
+      op setFromList (as list of data: items) as set of data
+      op setFromSet (as set of data: items) as set of data
+      op setFromString (as string: text) as set of data
+}
+
+contract (SetAccessContract) {
+      op setGetFirst (as set of data: items) as data
+      op setGetAt (as set of data: items, as int64: index) as data
+      op setGetLast (as set of data: items) as data
+      op setGetLeft (as set of data: items, as int64: n) as set of data
+      op setGetRight (as set of data: items, as int64: n) as set of data
+      op setGetCenter (as set of data: items, as int64: n) as set of data
+      op setSlice (as set of data: items, as int64: start, as int64: end) as set of data
+}
+
+contract (SetMutationContract) {
+      op setInclude (as set of data: items, as data: item) as set of data
+      op setIncludeAll (as set of data: items, as set of data: other) as set of data
+      op setExclude (as set of data: items, as data: item) as set of data
+      op setExcludeAll (as set of data: items, as set of data: other) as set of data
+}
+
+contract (SetTransformContract) {
+      op setUnionAll (as list of data: sets) as set of data
+      op setIntersectAll (as list of data: sets) as set of data
+      op setCartesianProduct (as set of data: lhs, as set of data: rhs) as list of data
+      op setPowerSet (as set of data: items) as list of data
+}
+
+contract (SetSearchContract) {
+      op setContains (as set of data: items, as data: item) as bool
+      op setContainsAny (as set of data: lhs, as set of data: rhs) as bool
+      op setContainsAll (as set of data: lhs, as set of data: rhs) as bool
+      op setIndexOf (as set of data: items, as data: item) as int64
+      op setCount (as set of data: items, as data: item) as int64
+}
+
+contract (SetSelectionContract) {
+      op setTake (as set of data: items, as int64: n) as set of data
+      op setDrop (as set of data: items, as int64: n) as set of data
+      op setTakeLast (as set of data: items, as int64: n) as set of data
+      op setDropLast (as set of data: items, as int64: n) as set of data
+      op setFilter (as set of data: items, as list of data: allowed_items) as set of data
+      op setOmit (as set of data: items, as list of data: omitted_items) as set of data
+}
+
+contract (SetUtilityContract) {
+      op setEquals (as set of data: lhs, as set of data: rhs) as bool
+      op setJoin (as set of data: items, as string: separator) as string
+      op setSwap (as set of data: items, as data: old_val, as data: new_val) as set of data
+}
+
+contract (SetAggregateContract) {
+      op setMin (as set of data: items) as data
+      op setMax (as set of data: items) as data
+      op setSum (as set of data: items) as data
+      op setProduct (as set of data: items) as data
+      op setAverage (as set of data: items) as float64
+      op setCountValues (as set of data: items, as data: value) as int64
+}
+
+contract (SetRelationContract) {
+      op setIsSubset (as set of data: lhs, as set of data: rhs) as bool
+      op setIsSuperset (as set of data: lhs, as set of data: rhs) as bool
+      op setIsDisjoint (as set of data: lhs, as set of data: rhs) as bool
+      op setIsProperSubset (as set of data: lhs, as set of data: rhs) as bool
+      op setIsProperSuperset (as set of data: lhs, as set of data: rhs) as bool
+}
+
+contract (SetAlgebraContract) {
+      op setUnion (as set of data: lhs, as set of data: rhs) as set of data
+      op setIntersect (as set of data: lhs, as set of data: rhs) as set of data
+      op setDifference (as set of data: lhs, as set of data: rhs) as set of data
+      op setSymmetricDifference (as set of data: lhs, as set of data: rhs) as set of data
+}
+
+agent (SetStdLib) impl SetBasicContract, SetAccessContract, SetMutationContract, SetTransformContract, SetSearchContract, SetAlgebraContract, SetRelationContract, SetAggregateContract, SetSelectionContract, SetUtilityContract {
+      #L -- SetBasicContract ------------------------------------------
+      op setLength (as set of data: items) as int64 ==> {
+            emit(nice, stdCollectionLength(items), "ok")
+      }
+
+      op setIsEmpty (as set of data: items) as bool ==> {
+            emit(nice, stdCollectionIsEmpty(items), "ok")
+      }
+
+      op setIsNotEmpty (as set of data: items) as bool ==> {
+            emit(nice, not stdCollectionIsEmpty(items), "ok")
+      }
+
+      op setContains (as set of data: items, as data: item) as bool ==> {
+            emit(nice, stdCollectionContains(items, item), "ok")
+      }
+
+      op setContainsAny (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, not stdSetIsDisjoint(lhs, rhs), "ok")
+      }
+
+      op setContainsAll (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsSubset(rhs, lhs), "ok")
+      }
+
+      op setClearAll (as set of data: items) as set of data ==> {
+            emit(nice, stdCollectionClearAll(items), "ok")
+      }
+
+      op setSingleton (as data: value) as set of data ==> {
+            emit(nice, stdSetToSet([value]), "ok")
+      }
+
+      op setSingletonInt (as int64: value) as set of data ==> {
+            emit(nice, stdSetToSet([value]), "ok")
+      }
+
+      op setSingletonString (as string: value) as set of data ==> {
+            emit(nice, stdSetToSet([value]), "ok")
+      }
+
+      op setClone (as set of data: items) as set of data ==> {
+            emit(nice, stdSetToSet(items), "ok")
+      }
+
+      op setToList (as set of data: items) as list of data ==> {
+            emit(nice, stdSetToList(items), "ok")
+      }
+
+      op setToSet (as data: value) as set of data ==> {
+            emit(nice, stdSetToSet(value), "ok")
+      }
+
+      op setToMap (as set of data: value) as map ==> {
+            emit(nice, stdListToMap(stdSetToList(value)), "ok")
+      }
+
+      op setToString (as set of data: items) as string ==> {
+            emit(nice, setJoin(items, ", "), "ok")
+      }
+
+      op setFromList (as list of data: items) as set of data ==> {
+            emit(nice, stdSetToSet(items), "ok")
+      }
+
+      op setFromSet (as set of data: items) as set of data ==> {
+            emit(nice, stdSetToSet(items), "ok")
+      }
+
+      op setFromString (as string: text) as set of data ==> {
+            mut as list of data: l = []
+            mut as int64: idx = 0
+            infinite (c in text) {
+                  idx = idx + 1
+                  l[idx] = c
+            }
+            emit(nice, stdSetToSet(l), "ok")
+      }
+
+      #L -- SetAccessContract -----------------------------------------
+      op setGetFirst (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            emit(nice, l[1], "ok")
+      }
+
+      op setGetLast (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: len_l = stdCollectionLength(l)
+            emit(nice, l[len_l], "ok")
+      }
+
+      op setGetAt (as set of data: items, as int64: index) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            emit(nice, l[index], "ok")
+      }
+
+      op setGetLeft (as set of data: items, as int64: n) as set of data ==> {
+            emit(nice, setTake(items, n), "ok")
+      }
+
+      op setGetRight (as set of data: items, as int64: n) as set of data ==> {
+            emit(nice, setTakeLast(items, n), "ok")
+      }
+
+      op setGetCenter (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: total = stdCollectionLength(l)
+            route {
+                  total == 0 or n < 0 ==> {
+                        emit(nice, stdSetToSet([]), "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> { start_idx = 1 }
+            }
+            route {
+                  end_idx > total ==> { end_idx = total }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, stdSetToSet([]), "ok")
+                  }
+            }
+            emit(nice, setSlice(items, start_idx, end_idx), "ok")
+      }
+
+      op setSlice (as set of data: items, as int64: start, as int64: end) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        curr >= start and curr <= end ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      #L -- SetMutationContract ---------------------------------------
+      op setInclude (as set of data: items, as data: item) as set of data ==> {
+            emit(nice, stdSetInclude(items, item), "ok")
+      }
+
+      op setIncludeAll (as set of data: items, as set of data: other) as set of data ==> {
+            emit(nice, stdSetUnion(items, other), "ok")
+      }
+
+      op setExclude (as set of data: items, as data: item) as set of data ==> {
+            emit(nice, stdSetExclude(items, item), "ok")
+      }
+
+      op setExcludeAll (as set of data: items, as set of data: other) as set of data ==> {
+            emit(nice, stdSetDifference(items, other), "ok")
+      }
+
+      #L -- SetAlgebraContract ----------------------------------------
+      op setUnion (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetUnion(lhs, rhs), "ok")
+      }
+
+      op setIntersect (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetIntersect(lhs, rhs), "ok")
+      }
+
+      op setDifference (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetDifference(lhs, rhs), "ok")
+      }
+
+      op setSymmetricDifference (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetSymmetricDifference(lhs, rhs), "ok")
+      }
+
+      #L -- SetRelationContract ---------------------------------------
+      op setIsSubset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsSubset(lhs, rhs), "ok")
+      }
+
+      op setIsSuperset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsSuperset(lhs, rhs), "ok")
+      }
+
+      op setIsDisjoint (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsDisjoint(lhs, rhs), "ok")
+      }
+
+      op setIsProperSubset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            mut as int64: len_l = setLength(lhs)
+            mut as int64: len_r = setLength(rhs)
+            mut as bool: res = false
+            route {
+                  len_l < len_r ==> {
+                        res = stdSetIsSubset(lhs, rhs)
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setIsProperSuperset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, setIsProperSubset(rhs, lhs), "ok")
+      }
+
+      #L -- SetAggregateContract --------------------------------------
+      op setMin (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: total = stdCollectionLength(l)
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = l[0]
+                  }
+            }
+            mut as data: min_val = l[1]
+            infinite (x in l) {
+                  route {
+                        x < min_val ==> {
+                              min_val = x
+                        }
+                  }
+            }
+            emit(nice, min_val, "ok")
+      }
+
+      op setMax (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: total = stdCollectionLength(l)
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = l[0]
+                  }
+            }
+            mut as data: max_val = l[1]
+            infinite (x in l) {
+                  route {
+                        x > max_val ==> {
+                              max_val = x
+                        }
+                  }
+            }
+            emit(nice, max_val, "ok")
+      }
+
+      op setSum (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as data: acc = 0
+            infinite (x in l) {
+                  acc = acc + x
+            }
+            emit(nice, acc, "ok")
+      }
+
+      op setProduct (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as data: acc = 1
+            infinite (x in l) {
+                  acc = acc * x
+            }
+            emit(nice, acc, "ok")
+      }
+
+      op setAverage (as set of data: items) as float64 ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: count = 0
+            mut as float64: sum_val = 0.0
+            infinite (x in l) {
+                  count = count + 1
+                  sum_val = sum_val + (x as float64)
+            }
+            route {
+                  count == 0 ==> {
+                        mut as data: trigger_err = l[0]
+                  }
+            }
+            mut as float64: avg = sum_val /f (count as float64)
+            emit(nice, avg, "ok")
+      }
+
+      op setCountValues (as set of data: items, as data: value) as int64 ==> {
+            emit(nice, setCount(items, value), "ok")
+      }
+
+      #L -- SetSelectionContract --------------------------------------
+      op setTake (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            route {
+                  n > 0 ==> {
+                        mut as int64: curr = 1
+                        infinite (x in l) {
+                              route {
+                                    curr <= n ==> {
+                                          rlen = rlen + 1
+                                          res_l[rlen] = x
+                                    }
+                                    curr > n ==> {
+                                          break
+                                    }
+                              }
+                              curr = curr + 1
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setDrop (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        curr > n ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setTakeLast (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            route {
+                  n > 0 ==> {
+                        mut as int64: total = stdCollectionLength(l)
+                        mut as int64: start_idx = total - n + 1
+                        route {
+                              start_idx < 1 ==> {
+                                    start_idx = 1
+                              }
+                        }
+                        mut as int64: curr = 1
+                        infinite (x in l) {
+                              route {
+                                    curr >= start_idx ==> {
+                                          rlen = rlen + 1
+                                          res_l[rlen] = x
+                                    }
+                              }
+                              curr = curr + 1
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setDropLast (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            route {
+                  n <= 0 ==> {
+                        emit(nice, stdSetToSet(l), "ok")
+                  }
+            }
+            mut as int64: total = stdCollectionLength(l)
+            mut as int64: keep_count = total - n
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        curr <= keep_count ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setCount (as set of data: items, as data: item) as int64 ==> {
+            mut as bool: has_item = stdCollectionContains(items, item)
+            route {
+                  has_item ==> {
+                        mut as int64: one = 1
+                        emit(nice, one, "ok")
+                  }
+                  not has_item ==> {
+                        mut as int64: zero = 0
+                        emit(nice, zero, "ok")
+                  }
+            }
+      }
+
+      op setFilter (as set of data: items, as list of data: allowed_items) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            infinite (elem in l) {
+                  mut as bool: should_keep = false
+                  infinite (item_allowed in allowed_items) {
+                        route {
+                              elem == item_allowed ==> {
+                                    should_keep = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        should_keep ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = elem
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setOmit (as set of data: items, as list of data: omitted_items) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            infinite (elem in l) {
+                  mut as bool: should_omit = false
+                  infinite (item_omitted in omitted_items) {
+                        route {
+                              elem == item_omitted ==> {
+                                    should_omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not should_omit ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = elem
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      #L -- SetTransformContract --------------------------------------
+      op setUnionAll (as list of data: sets) as set of data ==> {
+            mut as set of data: res = stdSetToSet([])
+            infinite (set_item in sets) {
+                  res = stdSetUnion(res, set_item as set of data)
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setIntersectAll (as list of data: sets) as set of data ==> {
+            mut as set of data: res = stdSetToSet([])
+            mut as bool: first = true
+            infinite (set_item in sets) {
+                  route {
+                        first ==> {
+                              res = set_item as set of data
+                              first = false
+                        }
+                        not first ==> {
+                              res = stdSetIntersect(res, set_item as set of data)
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setCartesianProduct (as set of data: lhs, as set of data: rhs) as list of data ==> {
+            mut as list of data: l1 = stdSetToList(lhs)
+            mut as list of data: l2 = stdSetToList(rhs)
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (el1 in l1) {
+                  infinite (el2 in l2) {
+                        count = count + 1
+                        res[count] = [el1, el2]
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setPowerSet (as set of data: items) as list of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: current_powerset = [stdSetToSet([])]
+            infinite (el in l) {
+                  mut as list of data: new_sets = []
+                  mut as int64: new_len = 0
+                  infinite (curr_s in current_powerset) {
+                        new_len = new_len + 1
+                        new_sets[new_len] = stdSetInclude(curr_s, el)
+                  }
+                  infinite (ns in new_sets) {
+                        mut as int64: clen = 0
+                        infinite (k in current_powerset) { clen = clen + 1 }
+                        current_powerset[clen + 1] = ns
+                  }
+            }
+            emit(nice, current_powerset, "ok")
+      }
+
+      #L -- SetSearchContract -----------------------------------------
+      op setIndexOf (as set of data: items, as data: item) as int64 ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: idx = -1
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        x == item ==> {
+                              idx = curr
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            imut as int64: res = idx
+            emit(nice, res, "ok")
+      }
+
+      #L -- SetUtilityContract ----------------------------------------
+      op setEquals (as set of data: lhs, as set of data: rhs) as bool ==> {
+            mut as int64: len_l = setLength(lhs)
+            mut as int64: len_r = setLength(rhs)
+            mut as bool: eq = false
+            route {
+                  len_l == len_r ==> {
+                        eq = stdSetIsSubset(lhs, rhs)
+                  }
+            }
+            emit(nice, eq, "ok")
+      }
+
+      op setJoin (as set of data: items, as string: separator) as string ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as string: text = ""
+            mut as bool: first = true
+            infinite (x in l) {
+                  route {
+                        first ==> {
+                              text = "" + x
+                              first = false
+                        }
+                        not first ==> {
+                              text = text + separator + x
+                        }
+                  }
+            }
+            emit(nice, text, "ok")
+      }
+
+      op setSwap (as set of data: items, as data: old_val, as data: new_val) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            infinite (x in l) {
+                  rlen = rlen + 1
+                  route {
+                        x == old_val ==> {
+                              res_l[rlen] = new_val
+                        }
+                        x != old_val ==> {
+                              res_l[rlen] = x
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+}

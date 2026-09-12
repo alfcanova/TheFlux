@@ -1,0 +1,23 @@
+keyword: infinite
+category: Estrutura de Loop
+description: Cria um laço de repetição infinito. O loop executa o corpo repetidamente até que uma instrução `break` interrompa
+  a execução. Opcionalmente pode receber uma condição booleana que, quando falsa, encerra o loop.
+syntax: "infinite {\n      <instruções>\n}\n\ninfinite (<condição>) {\n      <instruções>\n}"
+pseudocode: "REPETIR PARA SEMPRE:\n    corpo...\n    SE condicao_saida: INTERROMPER"
+usages:
+- name: Loop infinito com break
+  description: Executa o corpo até encontrar `break`.
+  examples:
+  - code: "infinite {\n      print(\"executou\")\n      break\n}"
+- name: Loop com condição
+  description: Executa enquanto a condição for verdadeira.
+  examples:
+  - code: "mut as bool: flag = true\ninfinite (flag) {\n      print(\"rodando\")\n      flag = false\n}"
+- name: Loop com break após ação
+  description: Break sai do loop após uma ação.
+  examples:
+  - code: "infinite {\n      print(\"Uma vez\")\n      break\n}\nprint(\"Depois do loop\")"
+restrictions:
+- Sem `break`, o loop nunca termina.
+- A condição é opcional; sem ela, o loop é infinito.
+- '`break` e `continue` só podem ser usados dentro de `infinite`.'

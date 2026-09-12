@@ -1,0 +1,52 @@
+keyword: move
+category: Ownership
+description: 'Transfere explicitamente a ownership (ownership) de um identifier para outro. Após move(x), a variable x é invalidada
+  e não pode mais ser usada até receivesr um novo value. Revivificação: basta atribuir um novo value a x para torná-lo válido
+  novamente.'
+syntax: 'move(<identifier>)
+
+  '
+pseudocode: 'x   := 42
+
+  dest := MOVE(x)   // transfere ownership: x fica invalido
+
+  x   := 200         // revivificacao: novo value torna x valido'
+usages:
+- name: Move básico
+  description: Transfere ownership do value, invalidando a origem.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r = move(x)
+
+      print(r)
+
+      '
+- name: Revivificação
+  description: Variable movida can be revivida com nova assignment.
+  examples:
+  - code: 'mut as int64: x = 10
+
+      mut as int64: r = move(x)
+
+      x = 200
+
+      print(x)
+
+      '
+- name: Move em block aninhado
+  description: Move dentro de block aninhado propaga estado.
+  examples:
+  - code: 'mut as int64: x = 7
+
+      mut as int64: r = move(x)
+
+      print(r)
+
+      '
+restrictions:
+- After move(x), x remains MOVED until reassigned.
+- Reading x after move without reassignment → errorr SEM001.
+- 'Revivification: x = new_value makes x valid again.'
+- Move is statically verified by the borrow checker.
+- Use unsafe { } to disable verification.

@@ -1,0 +1,16 @@
+keyword: continue
+category: Loop Control
+description: Pula o restante da iteration atual do loop `infinite` mais interno e continua na próxima iteration (reevaluatesndo
+  a condition, se houver).
+syntax: continue
+pseudocode: "FOR CADA item DENTRO DE colecao:\n    IF invalido(item): CONTINUAR    // pula para a proxima iteration\n    processar(item)"
+usages:
+- name: Continue simples
+  description: Pula a iteration atual e continua na próxima.
+  examples:
+  - code: "mut as int64: i = 0\ninfinite {\n      i = i + 1\n      route {\n            i == 3 ==> { continue }\n        \
+      \    _ ==> { print(i) }\n      }\n      route {\n            i == 5 ==> { break }\n            _ ==> { print(\"ainda\"\
+      ) }\n      }\n}"
+restrictions:
+- Só can be used dentro de um block `infinite`.
+- Continue pula apenas a iteration atual do loop mais interno.

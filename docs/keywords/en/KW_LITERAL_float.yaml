@@ -1,0 +1,42 @@
+keyword: literal float (float_literal)
+category: Numeric Literal
+description: Literais de dot flutuante representam numbers reais com precisão definida e formatos especiais (float16, float32,
+  float64, fp8, bf16, tf32).
+syntax: '<dígitos>.<dígitos> [e<expoente>]    # Ex: 3.14, 2.5e3
+
+  .<dígitos> [e<expoente>]              # Ex: .5, .5e-2
+
+  <dígitos>. [e<expoente>]              # Ex: 42.'
+pseudocode: 'real  := 3.14
+
+  cient := 2.5e3'
+usages:
+- name: Floats tradicionais
+  description: Declaration with float types of defined precision.
+  examples:
+  - code: 'mut as float16: meia= -1.5
+
+      mut as float32: simples= 32.25
+
+      mut as float64: dupla= -64.125'
+- name: Notação científica
+  description: Usa expoente com e/E para values grandes ou pequenos.
+  examples:
+  - code: 'mut as float64: grande= 2.5e3     # 2500.0
+
+      mut as float64: pequeno= 1.5e-4   # 0.00015'
+- name: Type inference
+  description: Without explicit type, float literal is float64.
+  examples:
+  - code: 'mut as float64: pi = 3.14159     # pi é float64
+
+      mut as float64: metade = .5      # metade é float64'
+restrictions:
+- O dot decimal is required para diferenciar de integer (3 vs 3.0).
+- Ponto final (42.) é aceito quando o próximo character não é dot (para evitar conflito com range 1..5), dígito ou letra;
+  42.e3 também é válido.
+- O expoente can be positivo (e+) ou negativo (e-).
+- float16/32/64 e types especiais (fp8, bf16, tf32) compartilham a mesma sintaxe literal.
+- 'O value literal é quantizado para o type alvo especificado (ex: float16 perde precisão).'
+- 'Ver também KW_TYPE_float.yaml (type) — types e literais são files espelhados: TYPES descreve a forma in the declaration,
+  LITERAL descreve a sintaxe do value.'

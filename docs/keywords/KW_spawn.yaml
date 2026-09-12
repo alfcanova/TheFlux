@@ -1,0 +1,31 @@
+keyword: spawn
+category: Tarefas Assíncronas (Future / Green Thread)
+description: 'Gatilho de execução assíncrona: autoriza e despacha um nó ou o caminho do dataflow para o runtime, que o executa
+  como uma green thread cooperativa. Diferente de async (que apenas marca a função como não-bloqueante), o spawn já inicia
+  a execução no runtime, e o await coleta o resultado posteriormente.
+
+  '
+syntax: 'spawn <expressão>
+
+  '
+usages:
+- name: Despacho de pipeline para o runtime
+  description: Autoriza e despacha um caminho do dataflow como green thread; o resultado é coletado com await.
+  examples:
+  - code: 'mut g = spawn (dobro(20 + 1) --> print)
+
+      print(await g)
+
+      '
+- name: Despacho de nó do dataflow
+  description: Despacha um nó isolado do grafo de fluxo para execução assíncrona no runtime.
+  examples:
+  - code: 'mut n = spawn dobro(42)
+
+      print(await n)
+
+      '
+restrictions:
+- O spawn autoriza e despacha o nó ou caminho do dataflow para o runtime como green thread.
+- A execução ocorre de forma cooperativa e não-bloqueante; o resultado é coletado com await.
+- Só pode envolver valores assíncronos (Future) ou pipelines despacháveis.

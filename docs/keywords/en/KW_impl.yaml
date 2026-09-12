@@ -1,0 +1,33 @@
+keyword: impl
+category: Contract Implementation
+description: 'Cláusula usada in the declaration de um agent (agent) para indicar que ele implementa um ou mais contracts (contract).
+  O agent deve fornecer uma operation (op) para cada assinatura definida nos contracts, com aridade, parameters e type de
+  return correspondentes.
+
+  Suporta múltiplos contracts separados por comma. Válido apenas em files .fdsl. '
+syntax: "agent (<Nome_PascalCase>) impl <Contrato1>, <Contrato2>, ... {\n      op <name> ([params]) [as <type>] ==> {\n  \
+  \          <body>\n      }\n      ...\n}\n"
+pseudocode: "AGENTE Motor IMPLEMENTA Operavel:\n    OPERACAO ligar: ...     // body concreto da assinatura\n    OPERACAO desligar:\
+  \ ...\n// clausula impl declara os contracts implementados pelo agent"
+usages:
+- name: Implementação de um contract
+  description: Agent que implementa um único contract.
+  examples:
+  - code: "agent (AgentOfCalculadora) impl OperacoesBasicas {\n      op somar (as int64: a, as int64: b) as int64 ==> {\n\
+      \            mut as int64: resultado = a + b\n            emit(nice, resultado, \"Soma concluida\")\n      }\n     \
+      \ op subtrair (as int64: a, as int64: b) as int64 ==> {\n            mut as int64: resultado = a - b\n            emit(nice,\
+      \ resultado, \"Subtracao concluida\")\n      }\n}\n"
+- name: Implementação de múltiplos contracts
+  description: Agent que implementa dois contracts simultaneamente com ops separadas.
+  examples:
+  - code: "agent (DualAgent) impl ReadOp, WriteOp {\n      op read () as int64 ==> {\n            emit(nice, 42, \"read\"\
+      )\n      }\n      op write () as int64 ==> {\n            emit(nice, 99, \"write\")\n      }\n}\n"
+- name: Contract verificado semânticamente
+  description: O verificador semântico checa que todas as ops do contract estão implementadas com aridade e types corretos.
+  examples: []
+restrictions:
+- O nome do agent deve estar em PascalCase.
+- Nomes de contracts repetidos no mesmo impl são error semântico.
+- Cada operation de cada contract must be implementada com aridade e types correspondentes.
+- Agents podem ter ops adicionais além das exigidas pelo contract (ops extras são permitidas).
+- A cláusula `impl` cannot be used em files .flux (apenas .fdsl).

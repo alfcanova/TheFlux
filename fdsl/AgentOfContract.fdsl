@@ -1,0 +1,14 @@
+contract (MathContract) {
+      op dot (as int64: lhs, as int64: rhs) as int64
+      op normalizarNome (as string: nome) as string
+}
+
+agent (AgentOfContract) impl MathContract {
+      op dot (as int64: lhs, as int64: rhs) as int64 ==> {
+            print(lhs + rhs)
+      }
+
+      op normalizarNome (as string: nome) as string ==> {
+            print(nome)
+      }
+}

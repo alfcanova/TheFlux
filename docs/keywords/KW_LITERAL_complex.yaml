@@ -1,0 +1,42 @@
+keyword: literal complexo (complex_literal)
+category: Tipo Numérico - Complexo
+description: Literais complexos representam números complexos. O literal imaginário é formado por um literal inteiro ou float
+  seguido do sufixo i (ou j, aceito como alias do lexer). Para um número complexo completo, combina-se parte real com parte
+  imaginária usando o operador + (ou -). O tipo padrão inferido é complex64; o tipo explícito (complex32/64/128) quantiza
+  cada componente.
+syntax: '<literal_inteiro>i          # Ex: 2i
+
+  <literal_float>i            # Ex: 2.5i
+
+  <parte_real> + <parte_imag>i  # Número complexo completo
+
+  <parte_real> - <parte_imag>i  # Parte imaginária negativa'
+pseudocode: numero := 3 + 4i   // parte real + parte imaginaria
+usages:
+- name: Tipos complexos com partes real e imaginária
+  description: Tipos numéricos complexos com partes real e imaginária.
+  examples:
+  - code: 'mut as complex32: c32 = -1.5 + -2.5i
+
+      mut as complex64: c64 = 64.125 + -8.5i
+
+      mut as complex128: c128 = 1.5 + 2.5i'
+- name: Parte imaginária pura
+  description: Valor imaginário sem parte real explícita.
+  examples:
+  - code: 'mut as complex64: imag = 2i
+
+      mut as complex64: negativo = -3.5i'
+- name: Inferência de tipo
+  description: Sem tipo complexo explícito, o tipo inferido é complex64.
+  examples:
+  - code: 'mut as complex64: onda = 1.0 + 2i   # onda é complex64'
+restrictions:
+- O sufixo i identifica o literal como imaginário; j também é aceito pelo lexer.
+- Parte real e imaginária são combinadas com + ou -.
+- complex32 usa componentes float16; complex64 usa float32; complex128 usa float64.
+- complex16 foi removido (inexistente).
+- 'Implementação: interpreter e vm suportam complexo completo (operações aritméticas, round por componente). Backends compilados
+  (llvm, wasm, wat) rejeitam literal complexo com erro claro.'
+- 'Ver também KW_TYPE_complex.yaml (tipo) — tipos e literais são arquivos espelhados: TYPES descreve a forma na declaração,
+  LITERAL descreve a sintaxe do valor.'

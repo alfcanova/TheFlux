@@ -1,0 +1,49 @@
+keyword: +, -, *, /f, /i, /r, ^e, ^r
+category: Arithmetic Operator
+description: Operatores aritméticos da linguagem TheFlux. Diferencia divisão decimal (/f), divisão inteira (/i) e resto de
+  divisão (/r), assim como exponenciação (^e) e radiciação (^r). Os operators seguem a precedência matemática pattern.
+syntax: '<expr> + <expr>    # Adição
+
+  <expr> - <expr>    # Subtração
+
+  <expr> * <expr>    # Multiplicação
+
+  <expr> /f <expr>   # Divisão decimal (resultado float)
+
+  <expr> /i <expr>   # Divisão inteira (resultado int)
+
+  <expr> /r <expr>   # Resto da divisão (módulo)
+
+  <expr> ^e <expr>   # Exponenciação (potência)
+
+  <expr> ^r <expr>   # Radiciação (raiz)'
+pseudocode: r := a + b - c * d /f e   // + - * /f /i /r ^e ^r
+usages:
+- name: Operations básicas
+  description: Soma, subtração e multiplicação.
+  examples:
+  - code: 'mut as int64: soma= 2 + 3
+
+      mut as int64: sub= 10 - 4
+
+      mut as int64: mult= 6 * 7'
+- name: Divisão especializada
+  description: Três formas de divisão para diferentes necessidades.
+  examples:
+  - code: 'mut as int64: div_int= 7 /i 2     # 3 (divisão inteira)
+
+      mut as float64: div_dec= 7 /f 2   # 3.5 (divisão decimal)
+
+      mut as int64: resto= 7 /r 2       # 1 (resto da divisão)'
+- name: Potência e raiz
+  description: Exponenciação e radiciação como operators infixos.
+  examples:
+  - code: 'mut as int64: pot= 2 ^e 3         # 8 (2³)
+
+      mut as float64: raiz= 27 ^r 3     # 3.0 (raiz cúbica de 27)'
+restrictions:
+- /i requer operandos integers e returns integer (truncado em direção a zero).
+- /f converte operandos para float antes da divisão.
+- /r é o operator de module (resto da divisão inteira).
+- '^e é exponenciação: base^e expoente.'
+- '^r é radiciação: base^r index_raiz (ex: 27^r3 = raiz cúbica).'

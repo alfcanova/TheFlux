@@ -1,0 +1,43 @@
+keyword: unsafe
+category: Bloco Inseguro
+description: Desativa as proteções de memória do Kernel para manipulação de ponteiros e chamadas C-ABI, APIs, ler e gravar
+  Raw Pointers, acessar ou modificar variáveis globais, implementar contratos não checados, bounds checking e equivalentes.
+syntax: "unsafe {\n    <declarações e operações>\n}\n"
+pseudocode: "ZONA_INSEGURA:\n    ponteiro  := &(x)             // ponteiro bruto\n    valor     := *(ponteiro)      // desreferencia\n\
+  \    *(ponteiro) := 99             // escrita via ponteiro\n    extern \"C\" { assinatura_fn }  // C-ABI simulada\n    static\
+  \ mut contador := 0      // estado global\n    SE dentro_do_limite(colecao, i):   // bounds check explicito\n        acessar(colecao,\
+  \ i)\nFIM ZONA_INSEGURA"
+usages:
+- name: Bypass de verificação
+  description: Desativa ownership, borrow e disposal checking.
+  examples:
+  - code: "unsafe {\n    mut as int64: x = 42\n    print(x)\n}\n"
+- name: Acesso a variáveis de escopo externo
+  description: Variáveis de escopo externo são acessíveis e modificáveis.
+  examples:
+  - code: "mut as int64: a = 10\nunsafe {\n    print(a)\n    a = 20\n    print(a)\n}\n"
+- name: Raw Pointers (simulação)
+  description: Declaração e uso de ponteiros brutos via arena virtual.
+  examples:
+  - code: "unsafe {\n    mut as int64: x = 42\n    mut as int64: ptr = &(x)\n    mut as int64: val = *(ptr)\n    print(val)\n\
+      \    *(ptr) = 100\n}\n"
+- name: C-ABI (simulação)
+  description: Declaração de funções externas C.
+  examples:
+  - code: "unsafe {\n    extern \"C\" {\n        fn strlen(as *const char: ptr) as int64\n    }\n}\n"
+- name: Variáveis globais
+  description: Variáveis estáticas mutáveis de lifetime do programa.
+  examples:
+  - code: "unsafe {\n    static mut as int64: counter = 0\n    counter = counter + 1\n}\n"
+- name: Bounds checking
+  description: Verificação explícita de limites de array.
+  examples:
+  - code: "unsafe {\n    mut as list of int64: arr = [10, 20, 30]\n    bounds(arr, 1)\n}\n"
+restrictions:
+- Ponteiros são simulados (arena virtual sobre bytearray).
+- 'Apenas escalares int: "&(x)" copia o valor (snapshot); "*(ptr) = v" não altera a variável original.'
+- '*mut permite leitura e escrita; *const só leitura (não checado no runtime de simulação).'
+- bounds check fora de range -> InterpreterError.
+- unsafe desativa ownership checking E disposal checking.
+- Variáveis globais (static mut) persistem durante todo o programa.
+- Os 4 backends de código nativo (VM/LLVM/WAT/WASM) emitem erro de compilação claro.

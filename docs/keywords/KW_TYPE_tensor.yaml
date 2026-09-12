@@ -1,0 +1,33 @@
+keyword: tensor
+category: Tipo Tensor
+description: 'Tipo multidimensional (vetor, matriz, tensor N-D) com forma estatica, armazenado em buffer plano (flat) e indexado por strides (com offset e strides lineares). Suporta transposição, permutação, sub-visões (slicing) e broadcasting em tempo e memória O(1) através do modelo de strides. Declarado com as dimensões e o tipo dos elementos (ex.: tensor[2, 2] of int32) ou operado dinamicamente via LinAlgStdLib.'
+syntax: 'mut as tensor[<dim1>, <dim2>, ...] of <tipo_elemento>: <var1>, ... [= <valores>]'
+pseudocode: 'm : TENSOR[2, 3] DE int32   // forma estatica, mapeamento por strides'
+usages:
+- name: Vetor unidimensional
+  description: Vetor com tipo de elemento explícito.
+  examples:
+  - code: 'mut as tensor[3] of float32: t1 = [1.5, 2.5, 3.5]'
+- name: Matriz bidimensional
+  description: Matriz com acesso multi-índice 1-based.
+  examples:
+  - code: "mut as tensor[2, 2] of int32: t2 = [\n    [10, 20],\n    [30, 40]\n]\nprint(t2[2, 2])   # 40"
+- name: Atribuição por multi-índice (Index-assign)
+  description: Modificação de elemento por coordenadas N-D.
+  examples:
+  - code: "mut as tensor[2, 2] of int64: t = [[10, 20], [30, 40]]\nt[2, 1] = 99\nprint(t)   # [[10, 20], [99, 40]]"
+- name: Operações e manipulação por Strides (LinAlgStdLib)
+  description: Transposição O(1), slicing zero-copy, broadcasting de stride zero e janelas deslizantes via biblioteca padrão.
+  examples:
+  - code: "use LinAlgStdLib\n# Matriz Fortran / Column-Major com strides customizados [1, 2]\nmut as map: mat_f = tensorNewWithStrides([2, 2], [1, 2], 1, [10.0, 20.0, 30.0, 40.0])\n# Janela deslizante O(1) sobre buffer 1D (im2col/patches)\nmut as map: win = tensorAsStrided(mat_f, [2, 2], [1, 1], 1)\n# Broadcast virtual sem copia com stride 0\nmut as map: bcast = tensorBroadcastTo(row_vec, [4, 3])"
+restrictions:
+- O nome do tipo é minúsculo (tensor, não Tensor); sem forma capitalizada.
+- "A forma deve ser totalmente estática (ex: [3, 4]); dimensões inteiras positivas."
+- O tipo do elemento deve ser um tipo numérico implementado.
+- Índices são 1-based em todas as dimensões na fonte; o backend traduz automaticamente para offset 0-based (`linear_index = offset + sum((i_k - 1) * stride_k)`).
+- Layout runtime nativo é buffer flat com strides canônicos row-major (`S_último=8`, `S_k = d_{k+1} * S_{k+1}` bytes); elemento ocupa exatamente 8 bytes (float bitcast, string como FAT `(ptr<<32)|len`).
+- Header do bloco contém `[rank, d0..d{rank-1}]` para print genérico e debug.
+- Literal initializer deve ser retangular e compatível com a shape declarada (ragged/mismatch é erro em semantic e runtime).
+- A leitura preserva o tipo do elemento declarado (não força float64).
+- Operações de escrita validam bounds de todas as dimensões percorridas.
+- Print/concat usam formato aninhado `[[10, 20], [99, 40]]`.

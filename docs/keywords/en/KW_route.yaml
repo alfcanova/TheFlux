@@ -1,0 +1,26 @@
+keyword: route
+category: Conditional Flow Control
+description: Evaluates conditions em ordem e executes o block correspondente ao primeiro branch cuja condition seja verdadeira.
+  O branch wildcard (`_`) captura qualquer value não coberto pelos branches anteriores. Pode substituir strings de if/else
+  if/else.
+syntax: "route {\n      <condition> ==> <ação>\n      <condition> ==> <ação>\n      _          ==> <fallback>\n}"
+pseudocode: "ROTA:\n    CASE cond1: bloco1\n    CASE cond2: bloco2\n    PADRAO: bloco_fallback\n// equivalente a strings de\
+  \ se/ entao / senao"
+usages:
+- name: Rota com condition verdadeira
+  description: Executes o branch cuja condition é verdadeira.
+  examples:
+  - code: "route {\n      true  ==> { print(\"Verdadeiro\") }\n      false ==> { print(\"Falso\") }\n}"
+- name: Rota com wildcard
+  description: O branch wildcard (`_`) executes quando nenhuma condition anterior é verdadeira.
+  examples:
+  - code: "route {\n      false ==> { print(\"Nao Executa\") }\n      _     ==> { print(\"Fallback\") }\n}"
+- name: Rota com múltiplos branches
+  description: Apenas o primeiro branch verdadeiro é executesdo.
+  examples:
+  - code: "route {\n      1 == 1 ==> { print(\"um\") }\n      2 == 2 ==> { print(\"dois\") }\n      _      ==> { print(\"\
+      nenhum\") }\n}"
+restrictions:
+- Branches são evaluatesdos de cima para baixo; o primeiro verdadeiro é executesdo.
+- O wildcard (`_`) must be o último branch, se usado.
+- Se nenhum branch for verdadeiro e não houver wildcard, nada é executesdo.

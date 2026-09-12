@@ -1,0 +1,18 @@
+keyword: lift
+category: Metaprogramção
+description: Cria uma representação de código (árvore sintática / AST) sem avaliá-la imediatamente at runtime (estágio de
+  elevação / lifting). Utilizado dentro de definições `meta` para encapsular blocks de código gerados. O código contido dentro
+  de `lift` pode receivesr injeções dinâmicas de nós sintáticos ou expressions por meio de `lower()`.
+syntax: "lift {\n      <bloco_de_código>\n}"
+pseudocode: "codigo := ELEVAR {              // vira AST, nao executes\n    soma := 2 + 3\n}"
+usages:
+- name: Block lift em meta-function
+  description: Encapsula o block de código que será sintetizado e returnsdo pela meta.
+  examples:
+  - code: "meta dobraNumero(num) {\n      lift {\n            mut as int64: res = lower(num) * 2\n      }\n}"
+  - code: "meta areaTrapezio(bmaior, bmenor, altura) {\n      lift {\n            mut as float64: area = ((lower(bmaior) +\
+      \ lower(bmenor)) * lower(altura)) /f 2\n      }\n}"
+restrictions:
+- Must be utilizado dentro de definições meta ou contextos de geração estática de código.
+- O código dentro de lift não é executesdo imediatamente no dot de definição.
+- lower() injeta nós e expressions evaluatesdas na árvore gerada por lift.

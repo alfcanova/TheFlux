@@ -1,0 +1,39 @@
+keyword: literal imaginário puro (imaginary_literal)
+category: Numeric Literal
+description: Literais imaginários representam a componente imaginária pura de um number complexo (ou seja, a forma bi onde
+  a parte real a = 0). São formados por um literal numérico integer ou de dot flutuante imediatamente seguido pelo sufixo
+  i (ou j, aceito como alias pelo lexer). Sem uma parte real combinada, o value representa um dot puramente sobre o eixo imaginário
+  (0.0 + bi).
+syntax: '<literal_inteiro>i          # Ex: 2i
+
+  <literal_float>i            # Ex: 2.5i
+
+  -<literal_float>i           # Ex: -3.5i
+
+  <literal_cientifico>i       # Ex: 1.25e-3i'
+pseudocode: imag := 4i   // componente imaginaria pura
+usages:
+- name: Declaration com types complexos explícitos
+  description: Atribui literais imaginários puros a variables dos types complex32, complex64 ou complex128.
+  examples:
+  - code: 'mut as complex32: imag32 = 2.5i
+
+      mut as complex64: imag64 = 64.125i
+
+      mut as complex128: imag128 = -8.5i'
+- name: Pure imaginary part e numbers negativos
+  description: Values imaginários puros positivos e negativos sem componente real explícita.
+  examples:
+  - code: 'mut as complex64: positivo = 2i
+
+      mut as complex64: negativo = -3.5i'
+- name: Default type inference
+  description: Sem anotação explícita de type complexo, um literal imaginário puro infere o type pattern complex64.
+  examples:
+  - code: 'mut as complex64: oscilacao = 5.0i   # oscilacao possui tipo complex64 (0.0 + 5.0i)'
+restrictions:
+- O sufixo i identifica o literal numérico como puramente imaginário (j também é aceito como alias).
+- Representa o number complexo com parte real a = 0 (0.0 + bi).
+- 'Types válidos: complex32 (float16), complex64 (float32) e complex128 (float64). O type complex16 não existe.'
+- Para combinar parte real com parte imaginária (a + bi), consulte KW_LITERAL_complex.yaml.
+- Suportado no interpretador e na máquina virtual (FVMBc).

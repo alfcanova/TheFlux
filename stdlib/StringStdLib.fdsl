@@ -1,0 +1,1293 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Modulo nativo para manipulacao de strings (cadeias de caracteres)
+#L Implementacao 100% nativa em TheFlux (sem intrinsicos)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (StringBasicContract) {
+      op stringLength (as string: text) as int64
+      op stringIsEmpty (as string: text) as bool
+      op stringIsNotEmpty (as string: text) as bool
+      op stringContains (as string: text, as string: needle) as bool
+      op stringContainsAny (as string: text, as list of data: needles) as bool
+      op stringContainsAll (as string: text, as list of data: needles) as bool
+      op stringClearAll (as string: text) as string
+      op stringSingleton (as string: char) as string
+      op stringSingletonInt (as int64: value) as string
+      op stringSingletonString (as string: value) as string
+      op stringClone (as string: text) as string
+      op stringToList (as string: text) as list of data
+      op stringToSet (as string: text) as set of data
+      op stringToMap (as string: text) as map
+      op stringToString (as string: text) as string
+      op stringFromList (as list of data: chars) as string
+      op stringFromSet (as set of data: chars) as string
+      op stringFromString (as string: text) as string
+}
+
+contract (StringAccessContract) {
+      op stringGetFirst (as string: text) as string
+      op stringGetAt (as string: text, as int64: index) as string
+      op stringGetLast (as string: text) as string
+      op stringGetLeft (as string: text, as int64: n) as string
+      op stringGetRight (as string: text, as int64: n) as string
+      op stringGetCenter (as string: text, as int64: n) as string
+      op stringSlice (as string: text, as int64: start, as int64: end) as string
+}
+
+contract (StringMutationContract) {
+      op stringPushFront (as string: text, as string: char) as string
+      op stringPushBack (as string: text, as string: char) as string
+      op stringPrepend (as string: text, as string: prefix) as string
+      op stringAppend (as string: text, as string: suffix) as string
+      op stringInsertFirst (as string: text, as string: insert_text) as string
+      op stringInsertAt (as string: text, as int64: index, as string: insert_text) as string
+      op stringInsertLast (as string: text, as string: insert_text) as string
+      op stringInsert (as string: text, as int64: index, as string: insert_text) as string
+      op stringRemoveFirst (as string: text) as string
+      op stringRemoveAt (as string: text, as int64: index) as string
+      op stringRemoveLast (as string: text) as string
+      op stringRemove (as string: text, as string: target) as string
+      op stringRemoveAll (as string: text, as string: target) as string
+}
+
+contract (StringTransformContract) {
+      op stringUpper (as string: text) as string
+      op stringLower (as string: text) as string
+      op stringCapitalize (as string: text) as string
+      op stringTrim (as string: text) as string
+      op stringTrimStart (as string: text) as string
+      op stringTrimEnd (as string: text) as string
+      op stringReplace (as string: text, as string: target, as string: replacement) as string
+      op stringReplaceFirst (as string: text, as string: target, as string: replacement) as string
+      op stringReverse (as string: text) as string
+      op stringRepeat (as string: text, as int64: count) as string
+      op stringConcat (as string: left, as string: right) as string
+      op stringSurround (as string: text, as string: prefix, as string: suffix) as string
+}
+
+contract (StringSearchContract) {
+      op stringContains (as string: text, as string: needle) as bool
+      op stringContainsAny (as string: text, as list of data: needles) as bool
+      op stringContainsAll (as string: text, as list of data: needles) as bool
+      op stringStartsWith (as string: text, as string: prefix) as bool
+      op stringEndsWith (as string: text, as string: suffix) as bool
+      op stringIndexOf (as string: text, as string: needle) as int64
+      op stringLastIndexOf (as string: text, as string: needle) as int64
+      op stringCount (as string: text, as string: needle) as int64
+}
+
+contract (StringSelectionContract) {
+      op stringTake (as string: text, as int64: n) as string
+      op stringDrop (as string: text, as int64: n) as string
+      op stringTakeLast (as string: text, as int64: n) as string
+      op stringDropLast (as string: text, as int64: n) as string
+      op stringPadStart (as string: text, as int64: target_len, as string: pad) as string
+      op stringPadEnd (as string: text, as int64: target_len, as string: pad) as string
+      op stringPadCenter (as string: text, as int64: target_len, as string: pad) as string
+      op stringFilter (as string: text, as list of data: allowed_chars) as string
+      op stringOmit (as string: text, as list of data: omitted_chars) as string
+}
+
+contract (StringUtilityContract) {
+      op stringCompare (as string: left, as string: right) as int64
+      op stringEqualsIgnoreCase (as string: left, as string: right) as bool
+      op stringSplit (as string: text, as string: separator) as list of data
+      op stringJoin (as list of data: items, as string: separator) as string
+}
+
+contract (StringValidationContract) {
+      op stringIsAlpha (as string: text) as bool
+      op stringIsDigit (as string: text) as bool
+      op stringIsAlphanumeric (as string: text) as bool
+      op stringIsWhitespace (as string: text) as bool
+      op stringIsBlank (as string: text) as bool
+      op stringIsLower (as string: text) as bool
+      op stringIsUpper (as string: text) as bool
+      op stringIsAscii (as string: text) as bool
+}
+
+agent (StringStdLib) impl StringBasicContract, StringAccessContract, StringMutationContract, StringSearchContract, StringTransformContract, StringSelectionContract, StringValidationContract, StringUtilityContract {
+      #L -- StringBasicContract ---------------------------------------
+      op stringLength (as string: text) as int64 ==> {
+            mut as int64: count = 0
+            infinite (c in text) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op stringIsEmpty (as string: text) as bool ==> {
+            mut as bool: empty = true
+            infinite (c in text) {
+                  empty = false
+                  break
+            }
+            emit(nice, empty, "ok")
+      }
+
+      op stringIsNotEmpty (as string: text) as bool ==> {
+            mut as bool: empty = true
+            infinite (c in text) {
+                  empty = false
+                  break
+            }
+            emit(nice, not empty, "ok")
+      }
+
+      op stringContains (as string: text, as string: needle) as bool ==> {
+            mut as int64: idx = stringIndexOf(text, needle)
+            emit(nice, idx > 0, "ok")
+      }
+
+      op stringContainsAny (as string: text, as list of data: needles) as bool ==> {
+            mut as bool: found_any = false
+            infinite (n in needles) {
+                  mut as int64: idx = stringIndexOf(text, "" + n)
+                  route {
+                        idx > 0 ==> {
+                              found_any = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found_any, "ok")
+      }
+
+      op stringContainsAll (as string: text, as list of data: needles) as bool ==> {
+            mut as bool: all_found = true
+            infinite (n in needles) {
+                  mut as int64: idx = stringIndexOf(text, "" + n)
+                  route {
+                        idx <= 0 ==> {
+                              all_found = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, all_found, "ok")
+      }
+
+      op stringClearAll (as string: text) as string ==> {
+            mut as string: res = ""
+            emit(nice, res, "ok")
+      }
+
+      op stringSingleton (as string: char) as string ==> {
+            mut as string: res = char
+            emit(nice, res, "ok")
+      }
+
+      op stringSingletonInt (as int64: value) as string ==> {
+            mut as string: res = "" + value
+            emit(nice, res, "ok")
+      }
+
+      op stringSingletonString (as string: value) as string ==> {
+            mut as string: res = "" + value
+            emit(nice, res, "ok")
+      }
+
+      op stringClone (as string: text) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  res = res + c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringToList (as string: text) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (c in text) {
+                  count = count + 1
+                  res[count] = c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringFromList (as list of data: chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in chars) {
+                  res = res + c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringFromSet (as set of data: chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in chars) {
+                  res = res + c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringFromString (as string: text) as string ==> {
+            emit(nice, stringClone(text), "ok")
+      }
+
+      op stringToSet (as string: text) as set of data ==> {
+            emit(nice, stdCollectionToSet(stringToList(text)), "ok")
+      }
+
+      op stringToMap (as string: text) as map ==> {
+            mut as map: m = map{}
+            mut as list of data: pairs = stringSplit(text, ",")
+            infinite (p in pairs) {
+                  mut as string: entry = stringTrim("" + p)
+                  mut as int64: sep_idx = stringIndexOf(entry, ":")
+                  route {
+                        sep_idx <= 0 ==> {
+                              sep_idx = stringIndexOf(entry, "=")
+                        }
+                  }
+                  route {
+                        sep_idx > 0 ==> {
+                              mut as string: k = stringTrim(stringTake(entry, sep_idx - 1))
+                              mut as string: v = stringTrim(stringDrop(entry, sep_idx))
+                              route {
+                                    stringLength(k) > 0 ==> {
+                                          m[k] = v
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, m, "ok")
+      }
+
+      op stringToString (as string: text) as string ==> {
+            emit(nice, stringClone(text), "ok")
+      }
+
+      #L -- StringAccessContract --------------------------------------
+      op stringGetFirst (as string: text) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  res = c
+                  break
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringGetAt (as string: text, as int64: index) as string ==> {
+            mut as int64: len_text = stringLength(text)
+            route {
+                  index < 1 or index > len_text ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: res = text[index]
+            emit(nice, res, "ok")
+      }
+
+      op stringGetLast (as string: text) as string ==> {
+            mut as int64: len_text = stringLength(text)
+            route {
+                  len_text == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: res = text[len_text]
+            emit(nice, res, "ok")
+      }
+
+      op stringGetLeft (as string: text, as int64: n) as string ==> {
+            emit(nice, stringTake(text, n), "ok")
+      }
+
+      op stringGetRight (as string: text, as int64: n) as string ==> {
+            emit(nice, stringTakeLast(text, n), "ok")
+      }
+
+      op stringGetCenter (as string: text, as int64: n) as string ==> {
+            mut as int64: total = stringLength(text)
+            route {
+                  total == 0 or n < 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> {
+                        start_idx = 1
+                  }
+            }
+            route {
+                  end_idx > total ==> {
+                        end_idx = total
+                  }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        mut as string: empty2 = ""
+                        emit(nice, empty2, "ok")
+                  }
+            }
+            emit(nice, stringSlice(text, start_idx, end_idx), "ok")
+      }
+
+      op stringSlice (as string: text, as int64: start, as int64: end) as string ==> {
+            mut as int64: len_text = stringLength(text)
+            route {
+                  start < 1 or start > len_text or start > end ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: act_end = end
+            route {
+                  act_end > len_text ==> {
+                        act_end = len_text
+                  }
+            }
+            imut as string: res = text[start..act_end]
+            emit(nice, res, "ok")
+      }
+
+      #L -- StringMutationContract ------------------------------------
+      op stringPushFront (as string: text, as string: char) as string ==> {
+            emit(nice, char + text, "ok")
+      }
+
+      op stringPushBack (as string: text, as string: char) as string ==> {
+            emit(nice, text + char, "ok")
+      }
+
+      op stringPrepend (as string: text, as string: prefix) as string ==> {
+            emit(nice, prefix + text, "ok")
+      }
+
+      op stringAppend (as string: text, as string: suffix) as string ==> {
+            emit(nice, text + suffix, "ok")
+      }
+
+      op stringInsertFirst (as string: text, as string: insert_text) as string ==> {
+            emit(nice, insert_text + text, "ok")
+      }
+
+      op stringInsertAt (as string: text, as int64: index, as string: insert_text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  index <= 1 ==> {
+                        emit(nice, insert_text + text, "ok")
+                  }
+                  index > len_t ==> {
+                        emit(nice, text + insert_text, "ok")
+                  }
+                  index > 1 and index <= len_t ==> {
+                        mut as string: left = text[1..(index - 1)]
+                        mut as string: right = text[index..len_t]
+                        emit(nice, left + insert_text + right, "ok")
+                  }
+            }
+      }
+
+      op stringInsertLast (as string: text, as string: insert_text) as string ==> {
+            emit(nice, text + insert_text, "ok")
+      }
+
+      op stringInsert (as string: text, as int64: index, as string: insert_text) as string ==> {
+            emit(nice, stringInsertAt(text, index, insert_text), "ok")
+      }
+
+      op stringRemoveFirst (as string: text) as string ==> {
+            emit(nice, stringRemoveAt(text, 1), "ok")
+      }
+
+      op stringRemoveAt (as string: text, as int64: index) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  index < 1 or index > len_t ==> {
+                        emit(nice, text, "ok")
+                  }
+                  index == 1 ==> {
+                        route {
+                              len_t <= 1 ==> {
+                                    emit(nice, "", "ok")
+                              }
+                              len_t > 1 ==> {
+                                    emit(nice, text[2..len_t], "ok")
+                              }
+                        }
+                  }
+                  index == len_t ==> {
+                        emit(nice, text[1..(len_t - 1)], "ok")
+                  }
+                  index > 1 and index < len_t ==> {
+                        emit(nice, text[1..(index - 1)] + text[(index + 1)..len_t], "ok")
+                  }
+            }
+      }
+
+      op stringRemoveLast (as string: text) as string ==> {
+            emit(nice, stringRemoveAt(text, stringLength(text)), "ok")
+      }
+
+      op stringRemove (as string: text, as string: target) as string ==> {
+            emit(nice, stringReplaceFirst(text, target, ""), "ok")
+      }
+
+      op stringRemoveAll (as string: text, as string: target) as string ==> {
+            emit(nice, stringReplace(text, target, ""), "ok")
+      }
+
+      #L -- StringSearchContract --------------------------------------
+      op stringStartsWith (as string: text, as string: prefix) as bool ==> {
+            mut as int64: len_p = stringLength(prefix)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_p == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_p > len_t ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: sub = text[1..len_p]
+            emit(nice, sub == prefix, "ok")
+      }
+
+      op stringEndsWith (as string: text, as string: suffix) as bool ==> {
+            mut as int64: len_s = stringLength(suffix)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_s == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_s > len_t ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as int64: start = len_t - len_s + 1
+            imut as string: sub = text[start..len_t]
+            emit(nice, sub == suffix, "ok")
+      }
+
+      op stringIndexOf (as string: text, as string: needle) as int64 ==> {
+            mut as int64: len_n = stringLength(needle)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_n == 0 ==> {
+                        mut as int64: one = 1
+                        emit(nice, one, "ok")
+                  }
+                  len_n > len_t ==> {
+                        mut as int64: neg = -1
+                        emit(nice, neg, "ok")
+                  }
+            }
+            mut as int64: max_start = len_t - len_n + 1
+            mut as int64: found_idx = -1
+            infinite (i in 1 .. max_start) {
+                  mut as int64: end_i = i + len_n - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == needle ==> {
+                              found_idx = i
+                              break
+                        }
+                  }
+            }
+            emit(nice, found_idx, "ok")
+      }
+
+      op stringLastIndexOf (as string: text, as string: needle) as int64 ==> {
+            mut as int64: len_n = stringLength(needle)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_n == 0 ==> {
+                        mut as int64: res_pos = len_t + 1
+                        emit(nice, res_pos, "ok")
+                  }
+                  len_n > len_t ==> {
+                        mut as int64: neg = -1
+                        emit(nice, neg, "ok")
+                  }
+            }
+            mut as int64: max_start = len_t - len_n + 1
+            mut as int64: found_idx = -1
+            infinite (i in max_start .. 1) {
+                  mut as int64: end_i = i + len_n - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == needle ==> {
+                              found_idx = i
+                              break
+                        }
+                  }
+            }
+            emit(nice, found_idx, "ok")
+      }
+
+      op stringCount (as string: text, as string: needle) as int64 ==> {
+            mut as int64: len_n = stringLength(needle)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_n == 0 or len_n > len_t ==> {
+                        mut as int64: zero = 0
+                        emit(nice, zero, "ok")
+                  }
+            }
+            mut as int64: count = 0
+            mut as int64: i = 1
+            mut as int64: max_i = len_t - len_n + 1
+            infinite {
+                  route {
+                        i > max_i ==> {
+                              break
+                        }
+                  }
+                  mut as int64: end_i = i + len_n - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == needle ==> {
+                              count = count + 1
+                              i = i + len_n
+                        }
+                        sub != needle ==> {
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, count, "ok")
+      }
+
+      #L -- StringTransformContract -----------------------------------
+      op stringUpper (as string: text) as string ==> {
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as string: mapped = c
+                  mut as int64: idx = 1
+                  infinite (lc in low) {
+                        route {
+                              c == lc ==> {
+                                    mapped = upp[idx]
+                                    break
+                              }
+                        }
+                        idx = idx + 1
+                  }
+                  res = res + mapped
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringLower (as string: text) as string ==> {
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as string: mapped = c
+                  mut as int64: idx = 1
+                  infinite (uc in upp) {
+                        route {
+                              c == uc ==> {
+                                    mapped = low[idx]
+                                    break
+                              }
+                        }
+                        idx = idx + 1
+                  }
+                  res = res + mapped
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringCapitalize (as string: text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: first_char = stringUpper(text[1])
+            route {
+                  len_t == 1 ==> {
+                        emit(nice, first_char, "ok")
+                  }
+            }
+            imut as string: rest = stringLower(text[2..len_t])
+            imut as string: res = first_char + rest
+            emit(nice, res, "ok")
+      }
+
+      op stringTrim (as string: text) as string ==> {
+            mut as string: s1 = stringTrimStart(text)
+            mut as string: res = stringTrimEnd(s1)
+            emit(nice, res, "ok")
+      }
+
+      op stringTrimStart (as string: text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as int64: start_idx = len_t + 1
+            mut as int64: curr = 1
+            infinite (c in text) {
+                  route {
+                        c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                              start_idx = curr
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            route {
+                  start_idx > len_t ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: res = text[start_idx..len_t]
+            emit(nice, res, "ok")
+      }
+
+      op stringTrimEnd (as string: text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as int64: end_idx = 0
+            route {
+                  len_t > 0 ==> {
+                        infinite (i in len_t .. 1) {
+                              mut as string: c = text[i]
+                              route {
+                                    c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                                          end_idx = i
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  end_idx == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: res = text[1..end_idx]
+            emit(nice, res, "ok")
+      }
+
+      op stringReplace (as string: text, as string: target, as string: replacement) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as int64: len_tgt = stringLength(target)
+            route {
+                  len_tgt == 0 or len_tgt > len_t ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            mut as int64: max_i = len_t - len_tgt + 1
+            infinite {
+                  route {
+                        i > len_t ==> {
+                              break
+                        }
+                        i > max_i ==> {
+                              res = res + text[i..len_t]
+                              break
+                        }
+                  }
+                  mut as int64: end_i = i + len_tgt - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == target ==> {
+                              res = res + replacement
+                              i = i + len_tgt
+                        }
+                        sub != target ==> {
+                              res = res + text[i]
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringReplaceFirst (as string: text, as string: target, as string: replacement) as string ==> {
+            mut as int64: idx = stringIndexOf(text, target)
+            route {
+                  idx <= 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: len_tgt = stringLength(target)
+            mut as int64: len_text = stringLength(text)
+            mut as string: before = ""
+            route {
+                  idx > 1 ==> {
+                        before = text[1..(idx - 1)]
+                  }
+            }
+            mut as string: after = ""
+            mut as int64: after_start = idx + len_tgt
+            route {
+                  after_start <= len_text ==> {
+                        after = text[after_start..len_text]
+                  }
+            }
+            imut as string: res = before + replacement + after
+            emit(nice, res, "ok")
+      }
+
+      op stringReverse (as string: text) as string ==> {
+            mut as string: res = ""
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t > 0 ==> {
+                        infinite (i in len_t .. 1) {
+                              res = res + text[i]
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringRepeat (as string: text, as int64: count) as string ==> {
+            mut as string: res = ""
+            route {
+                  count > 0 ==> {
+                        infinite (i in 1 .. count) {
+                              res = res + text
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringConcat (as string: left, as string: right) as string ==> {
+            imut as string: res = left + right
+            emit(nice, res, "ok")
+      }
+
+      op stringSurround (as string: text, as string: prefix, as string: suffix) as string ==> {
+            imut as string: res = prefix + text + suffix
+            emit(nice, res, "ok")
+      }
+
+      #L -- StringSelectionContract -----------------------------------
+      op stringTake (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 or len_t == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: act_n = n
+            route {
+                  act_n > len_t ==> {
+                        act_n = len_t
+                  }
+            }
+            imut as string: res = text[1..act_n]
+            emit(nice, res, "ok")
+      }
+
+      op stringDrop (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+                  n >= len_t ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: start = n + 1
+            imut as string: res = text[start..len_t]
+            emit(nice, res, "ok")
+      }
+
+      op stringTakeLast (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 or len_t == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: start = len_t - n + 1
+            route {
+                  start < 1 ==> {
+                        start = 1
+                  }
+            }
+            imut as string: res = text[start..len_t]
+            emit(nice, res, "ok")
+      }
+
+      op stringDropLast (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+                  n >= len_t ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: end_pos = len_t - n
+            imut as string: res = text[1..end_pos]
+            emit(nice, res, "ok")
+      }
+
+      op stringPadStart (as string: text, as int64: target_len, as string: pad) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t >= target_len or stringLength(pad) == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: needed = target_len - len_t
+            mut as string: padding = ""
+            infinite (i in 1 .. needed) {
+                  padding = padding + pad
+            }
+            mut as string: act_pad = padding[1..needed]
+            imut as string: res = act_pad + text
+            emit(nice, res, "ok")
+      }
+
+      op stringPadEnd (as string: text, as int64: target_len, as string: pad) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t >= target_len or stringLength(pad) == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: needed = target_len - len_t
+            mut as string: padding = ""
+            infinite (i in 1 .. needed) {
+                  padding = padding + pad
+            }
+            mut as string: act_pad = padding[1..needed]
+            imut as string: res = text + act_pad
+            emit(nice, res, "ok")
+      }
+
+      op stringPadCenter (as string: text, as int64: target_len, as string: pad) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t >= target_len or stringLength(pad) == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: needed = target_len - len_t
+            mut as int64: left_needed = needed /i 2
+            mut as int64: right_needed = needed - left_needed
+            mut as string: left_padding = ""
+            infinite (i in 1 .. left_needed) {
+                  left_padding = left_padding + pad
+            }
+            mut as string: right_padding = ""
+            infinite (i in 1 .. right_needed) {
+                  right_padding = right_padding + pad
+            }
+            mut as string: act_left = ""
+            route {
+                  left_needed > 0 ==> {
+                        act_left = left_padding[1..left_needed]
+                  }
+            }
+            mut as string: act_right = ""
+            route {
+                  right_needed > 0 ==> {
+                        act_right = right_padding[1..right_needed]
+                  }
+            }
+            imut as string: res = act_left + text + act_right
+            emit(nice, res, "ok")
+      }
+
+      op stringFilter (as string: text, as list of data: allowed_chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as bool: should_keep = false
+                  infinite (item in allowed_chars) {
+                        route {
+                              c == ("" + item) ==> {
+                                    should_keep = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        should_keep ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringOmit (as string: text, as list of data: omitted_chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as bool: should_omit = false
+                  infinite (item in omitted_chars) {
+                        route {
+                              c == ("" + item) ==> {
+                                    should_omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not should_omit ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L -- StringValidationContract ----------------------------------
+      op stringIsAlpha (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as bool: all_alpha = true
+            infinite (c in text) {
+                  mut as bool: found = false
+                  infinite (a in alpha) {
+                        route {
+                              c == a ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_alpha = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_alpha
+            emit(nice, res, "ok")
+      }
+
+      op stringIsDigit (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: digits = "0123456789"
+            mut as bool: all_digits = true
+            infinite (c in text) {
+                  mut as bool: found = false
+                  infinite (d in digits) {
+                        route {
+                              c == d ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_digits = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_digits
+            emit(nice, res, "ok")
+      }
+
+      op stringIsAlphanumeric (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: alnum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            mut as bool: all_alnum = true
+            infinite (c in text) {
+                  mut as bool: found = false
+                  infinite (a in alnum) {
+                        route {
+                              c == a ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_alnum = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_alnum
+            emit(nice, res, "ok")
+      }
+
+      op stringIsWhitespace (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as bool: all_ws = true
+            infinite (c in text) {
+                  route {
+                        c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                              all_ws = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_ws
+            emit(nice, res, "ok")
+      }
+
+      op stringIsBlank (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+            }
+            mut as bool: all_ws = true
+            infinite (c in text) {
+                  route {
+                        c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                              all_ws = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_ws
+            emit(nice, res, "ok")
+      }
+
+      op stringIsLower (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            mut as bool: has_alpha = false
+            mut as bool: has_upper = false
+            infinite (c in text) {
+                  infinite (u in upp) {
+                        route {
+                              c == u ==> {
+                                    has_upper = true
+                                    break
+                              }
+                        }
+                  }
+                  infinite (l in low) {
+                        route {
+                              c == l ==> {
+                                    has_alpha = true
+                                    break
+                              }
+                        }
+                  }
+            }
+            mut as bool: is_low = has_alpha and not has_upper
+            imut as bool: res = is_low
+            emit(nice, res, "ok")
+      }
+
+      op stringIsUpper (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            mut as bool: has_alpha = false
+            mut as bool: has_lower = false
+            infinite (c in text) {
+                  infinite (u in upp) {
+                        route {
+                              c == u ==> {
+                                    has_alpha = true
+                                    break
+                              }
+                        }
+                  }
+                  infinite (l in low) {
+                        route {
+                              c == l ==> {
+                                    has_lower = true
+                                    break
+                              }
+                        }
+                  }
+            }
+            mut as bool: is_up = has_alpha and not has_lower
+            imut as bool: res = is_up
+            emit(nice, res, "ok")
+      }
+
+      op stringIsAscii (as string: text) as bool ==> {
+            mut as bool: all_ascii = true
+            infinite (c in text) {
+                  route {
+                        c > "~" ==> {
+                              all_ascii = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_ascii
+            emit(nice, res, "ok")
+      }
+
+      #L -- StringUtilityContract -------------------------------------
+      op stringCompare (as string: left, as string: right) as int64 ==> {
+            route {
+                  left == right ==> {
+                        mut as int64: eq = 0
+                        emit(nice, eq, "ok")
+                  }
+                  left < right ==> {
+                        mut as int64: lt = -1
+                        emit(nice, lt, "ok")
+                  }
+                  left > right ==> {
+                        mut as int64: gt = 1
+                        emit(nice, gt, "ok")
+                  }
+            }
+      }
+
+      op stringEqualsIgnoreCase (as string: left, as string: right) as bool ==> {
+            imut as string: l_low = stringLower(left)
+            imut as string: r_low = stringLower(right)
+            emit(nice, l_low == r_low, "ok")
+      }
+
+      op stringSplit (as string: text, as string: separator) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: len_t = stringLength(text)
+            mut as int64: len_s = stringLength(separator)
+            route {
+                  len_s == 0 ==> {
+                        mut as int64: i = 1
+                        infinite (c in text) {
+                              res[i] = c
+                              i = i + 1
+                        }
+                        emit(nice, res, "ok")
+                  }
+                  len_t == 0 ==> {
+                        res[1] = ""
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: count = 0
+            mut as int64: start = 1
+            infinite {
+                  mut as int64: rem_len = len_t - start + 1
+                  route {
+                        rem_len < len_s ==> {
+                              count = count + 1
+                              res[count] = text[start..len_t]
+                              break
+                        }
+                  }
+                  mut as string: rem = text[start..len_t]
+                  mut as int64: next_rel = stringIndexOf(rem, separator)
+                  route {
+                        next_rel <= 0 ==> {
+                              count = count + 1
+                              res[count] = text[start..len_t]
+                              break
+                        }
+                  }
+                  mut as int64: sep_pos = start + next_rel - 1
+                  mut as string: part = ""
+                  route {
+                        sep_pos > start ==> {
+                              part = text[start..(sep_pos - 1)]
+                        }
+                  }
+                  count = count + 1
+                  res[count] = part
+                  start = sep_pos + len_s
+                  route {
+                        start > len_t ==> {
+                              count = count + 1
+                              res[count] = ""
+                              break
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringJoin (as list of data: items, as string: separator) as string ==> {
+            mut as string: text = ""
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              text = "" + x
+                              first = false
+                        }
+                        not first ==> {
+                              text = text + separator + x
+                        }
+                  }
+            }
+            imut as string: res = text
+            emit(nice, res, "ok")
+      }
+}

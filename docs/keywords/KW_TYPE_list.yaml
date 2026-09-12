@@ -1,0 +1,24 @@
+keyword: list
+category: Tipo de Coleção - List
+description: Sequência homogênea com índice 1-based e atribuição por índice.
+syntax: 'mut as list of Type: var1, var2, ..., varN [= [<valor>, ...]]'
+pseudocode: 'lista : LISTA DE int64   // homogenea, indice 1-based'
+usages:
+- name: Lista (list)
+  description: Sequência homogênea com índice 1-based e atribuição por índice.
+  examples:
+  - code: 'mut as list of int64: xs = [10, 20, 30]
+
+      print(xs[1])        # 10
+
+      print(xs[3])        # 30
+
+      xs[2] = 25
+
+      print(xs)           # [10, 25, 30]'
+restrictions:
+- 'list REQUER ''of Type'' (ex: ''list of int64'').'
+- Listas usam índices 1-based (first = [1]).
+- 'Growth por atribuição indexada: <list>[len+1] = v faz append; in-range substitui; > len+1 é erro out of range.'
+- Tipo do elemento pode ser outra coleção (list of list of string).
+- Suportado nos 5 backends (in, vm, wat, wasm, llvm).

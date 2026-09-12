@@ -1,0 +1,13 @@
+keyword: and
+category: Operador Lógico
+description: Operador de conjunção lógica com avaliação de curto-circuito. Retorna true somente se ambos os operandos
+  avaliarem para true.
+syntax: <expr1> and <expr2>
+pseudocode: "SE a E b:\n    ...\n// conjuncao logica, curto-circuito"
+usages:
+- name: Conjunção lógica
+  description: Combina duas expressões booleanas com curto-circuito.
+  examples:
+  - code: 'mut as bool: ok = (x > 0) and (y < 10)'
+restrictions:
+- Ambos os operandos devem avaliar para expressões ou condições booleanas.

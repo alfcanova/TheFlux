@@ -1,0 +1,60 @@
+keyword: function
+category: Function Declaration
+description: 'Declara uma function nomeada e reutilizável com parameters tipados e return optional (via `as <type_return>`).
+  Parâmetros são immutable (`imut`) por pattern quando o modificador de mutabilidade for omitido (ex: `as <type>: <identifier>`);
+  para permitir reassignment ao parameter no scope local, declare-o explicitamente como `mut as <type>: <identifier>`. Parâmetros
+  do mesmo type e mutabilidade can be agrupados em uma única declaration (`[mut | imut | as] <type>: <id1>, <id2>, ..., <idN>`);
+  grupos com tipagens distintas são separados por `;`. O body da function deve terminar com um `emit` terminal que devolve
+  um struct implícito de resultado de três fields (`.sta`, `.val`, `.msg`). Se o field de return não for explicitado no chamador,
+  o field pattern de evaluatesção é o `.val`. Functions são declaradas no topo do file (.flux) ou no body de agents/impl (.fdsl),
+  antes do `program`, e can be chamadas por `nome(args)`; o resultado integer fica disponível via variable (`r = calc(5)`)
+  e cada field é lido com acesso nomeado.'
+syntax: "function (<nome_camelCase>) ([mut | imut | as] <type>: <identificador1>, ..., <identificadorN> [; [mut | imut | as]\
+  \ <type>: <identificador1>, ..., <identificadorN>]) [as <tipo_retorno>] {\n      <instruções>\n      emit(nice | fail, <identifier>,\
+  \ \"<mensagem>\")\n}"
+pseudocode: "FUNCAO somar(a, b):\n    RETURN a + b\nFIM FUNCAO"
+usages:
+- name: Function with return e consumo dos fields
+  description: 'Function que calcula um value; o chamador lê o struct de resultado via fields .sta, .val e .msg. Os parameters
+    são immutable por pattern (as <type>: x).'
+  examples:
+  - code: "function (calc) (as int64: x) as int64 {\n      mut as int64: resultado = x * 2\n      emit(nice, resultado, \"\
+      \ dobro ok\")\n}\n\nprogram (Main) {\n      imut as int64: r = calc(5)\n      print(r.sta)     # \"nice\"\n      print(r.val)\
+      \     # 10\n      print(r.msg)     # \"dobro ok\"\n}"
+- name: Function com parameters agrupados
+  description: 'Parameters do mesmo type e mutabilidade compartilham uma única declaration (`as int64: dividendo, divisor`);
+    grupos com tipagens distintas são separados por `;`.'
+  examples:
+  - code: "function (epar) (mut as int64: dividendo, divisor ; imut as float64: PI) as float64 {\n      mut as float64: quociente\
+      \ = dividendo /f divisor * PI\n      emit(nice, quociente, \"calculo ok\")\n}\n\nprogram (Main) {\n        print(epar(4,\
+      \ 2, 3.14)) # imprime 6.28\n}"
+- name: Function com parameter mutable local
+  description: Parameters declarados com `mut as <type>:` can be reatribuídos dentro do body da function.
+  examples:
+  - code: "function (acumular) (mut as int64: total, as int64: incremento) as int64 {\n      total =+ incremento\n      emit(nice,\
+      \ total, \"acumulado com sucesso\")\n}\n\nprogram (Main) {\n      print(acumular(10, 5)) # imprime 15\n}"
+- name: Function com evaluatesção direta de value
+  description: Quando chamada em expressions ou print diretamente, evaluates o field .val por pattern.
+  examples:
+  - code: "function (dobro) (as int64: n) as int64 {\n      mut as int64: res = n * 2\n      emit(nice, res, \"ok\")\n}\n\n\
+      program (Main) {\n      print(dobro(21)) # imprime 42\n}"
+- name: Function que failure com emit(fail)
+  description: A function pode terminar em `emit(fail, ...)`; os três fields seguem preenchidos com o status de error.
+  examples:
+  - code: "function (validar) (as int64: idade) as int64 {\n      route {\n            idade < 18 ==> {\n                \
+      \  emit(fail, idade, \"menor de idade\")\n            }\n            _ ==> {\n                  emit(nice, idade, \"\
+      validacao concluida\")\n            }\n      }\n}\n\nprogram (Main) {\n      imut as int64: r = validar(15)\n      print(r.sta)\
+      \     # \"fail\"\n      print(r.val)     # 15\n      print(r.msg)     # \"menor de idade\"\n}"
+restrictions:
+- 'O nome da function deve estar em camelCase: `function nomeCamelCase(...)`.'
+- 'Parameters seguem a convenção `[mut | imut | as] <type>: <identifier>` e identifiers em snake_case.'
+- 'Parameters de mesmo type e mutabilidade can be agrupados em uma única declaration (ex: `mut as int64: dividendo, divisor`);
+  grupos com tipagens distintas são separados por `;`.'
+- 'Parameters são immutable (`imut`) por pattern quando declarados apenas com `as <type>: nome`.'
+- Functions com type de return `as <type>` devem terminar obrigatoriamente com o comando `emit`.
+- Functions são declaradas no topo do file (.flux) ou no body de agents/impl (.fdsl), antes do `program`.
+- Funções sem type de return são void; functions com return exigem `emit` em todos os caminhos de execução.
+- '`emit` aceita apenas um identifier declarado como value; expressions e literais are not allowed.'
+- '`emit` encerra a execução e devolve o struct de resultado com `.sta`, `.val` e `.msg`.'
+- A declaration de functions é proibida dentro do block `program`.
+- Functions recursivas são suportadas e chamadas com sintaxe pattern `nome(args)`.

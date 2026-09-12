@@ -1,0 +1,28 @@
+keyword: fail
+category: Return Status
+description: Status de failure usado na instrução `emit(fail, ...)`. Indica que a function encontrou um error ou condition
+  excepcional e devolve um struct de resultado com `.sta == "fail"`. O chamador captura o resultado pelos fields `.sta`, `.val`
+  e `.msg`, ou despacha o fluxo com o operator `?`. O runtime também gera o status `fail` automaticamente quando ocorre divisão
+  por zero (mensagem "divisao por zero").
+syntax: emit(fail, <identifier>, "<mensagem>")
+pseudocode: "IF erro_detectado:\n    EMITIR_FALHA(valor_parcial, \"motivo\")   // status de failure"
+usages:
+- name: Emit fail em caminho de error
+  description: Devolve status de error em um branch de route; o chamador lê .sta, .val e .msg.
+  examples:
+  - code: "function (validar) (idade: int64) as int64 {\n      route {\n            idade < 18 ==> {\n                  emit(fail,\
+      \ idade, \"menor de idade\")\n            }\n            _ ==> {\n                  emit(nice, idade, \"validacao concluida\"\
+      )\n            }\n      }\n}\n\nimut as int64: r = validar(15)\nprint(r.sta)     #L \"fail\"\nprint(r.val)     #L 15\n\
+      print(r.msg)     #L \"menor de idade\""
+- name: Fail gerado automaticamente e propagado com ?
+  description: Divisão por zero gera o status fail sem emit explícito; o operator ? despacha para o branch fail.
+  examples:
+  - code: "function (dividir) (dividendo: int64, divisor: int64) as int64 {\n      mut as int64: resultado = (dividendo /i\
+      \ divisor) ? {\n            ==> emit(fail, divisor, \"divisao por zero\")\n            ==> emit(nice, resultado, \"\
+      divisao executada\")\n      }\n}"
+restrictions:
+- '`fail` só can be used como status do primeiro argument de `emit()` e como branch `==> emit(fail, ...)` do operator `?`
+  (o branch fail vem antes do branch nice).'
+- O value de `emit(fail, ...)` must be um identifier declarado (sem literais nem expressions).
+- A mensagem é required e must be string literal ou interpolada.
+- Divisão por zero gera o status `fail` automaticamente, com mensagem 'divisao por zero'.

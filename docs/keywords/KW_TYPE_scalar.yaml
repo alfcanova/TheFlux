@@ -1,0 +1,48 @@
+keyword: char, bool, datetime, string
+category: Tipo Escalar Primitivo
+description: 'Tipos escalares nativos que não são numéricos: char (code point Unicode UTF-32), bool (booleano), datetime (timestamp
+  ISO 8601), string (cadeia de texto). Esses tipos são reconhecidos pelo lexer como palavras reservadas de tipo.'
+syntax: 'mut as char: <var> = ''<caractere>''
+
+  mut as bool: <var> = true | false
+
+  mut as datetime: <var> = <ISO_8601>
+
+  # timezone_suffix: "Z" | ("+"|"-") 2*digit [ [":"] 2*digit ]  (opcional, default Z) mut as datetime: <var> = 2024-01-01T10:30:00.000000000Z
+  mut as datetime: <var> = 2024-01-01T12:30:00+03 mut as datetime: <var> = 2024-01-01T12:30:00+0300 mut as datetime: <var>
+  = 2024-01-01T12:30:00+03:00 mut as datetime: <var> = 2024-01-01T10:30:00.5
+
+  mut as string: <var> = "<texto>"'
+pseudocode: 'v : ESCALAR   // char | bool | datetime | string (nao numericos)'
+usages:
+- name: Tipo char
+  description: Code point Unicode entre aspas simples (1 code point, 1-4 bytes UTF-8; armazenado como i32 em backends compilados).
+  examples:
+  - code: 'mut as char: letra = ''A'''
+  - code: 'mut as char: acento = ''é'''
+  - code: 'mut as char: emoji = ''\u{1F600}'''
+- name: Tipo bool
+  description: Valor booleano true ou false.
+  examples:
+  - code: 'mut as bool: ativo = true'
+  - code: 'mut as bool: completo = false'
+- name: Tipo datetime
+  description: Timestamp Unix com timezone — literal ISO 8601 opcionalmente com fração (1-9 dígitos) e sufixo de timezone.
+  examples:
+  - code: 'mut as datetime: momento = 1970-01-01T00:00:00.000000000Z'
+  - code: 'mut as datetime: sem_sufixo = 2024-01-01T10:30:00'
+  - code: 'mut as datetime: curto = 2024-01-01T12:30:00+03'
+  - code: 'mut as datetime: local = 2024-01-01T12:30:00.123456789-03:00'
+- name: Tipo string
+  description: 'Cadeia de texto entre aspas duplas, com suporte a interpolação #{ }.'
+  examples:
+  - code: 'mut as string: nome = "TheFlux"'
+  - code: 'mut as string: msg = "Contador: #{valor}"'
+restrictions:
+- char aceita 1 code point Unicode (1-4 bytes UTF-8) ou escape; em backends compilados o valor é armazenado como code point
+  de 32 bits (i32) e decodificado para UTF-8 apenas na impressão/concatenação; surrogates ou code points fora do range (U+0000..U+10FFFF)
+  são erro.
+- 'datetime segue a gramática: YYYY-MM-DDTHH:MM:SS [.f] [Z | ±HH | ±HHMM | ±HH:MM] — fração (1-9 dígitos) e timezone opcionais
+  (default Z/UTC); o valor é armazenado como timestamp Unix (i64 nanos UTC) e impresso no formato canônico com 9 dígitos.'
+- O tipo task foi removido; a concorrência é tratada pelas palavras-chave async (modificador de função que retorna Future),
+  spawn (despacho de green thread) e await (sincronização sobre Future).

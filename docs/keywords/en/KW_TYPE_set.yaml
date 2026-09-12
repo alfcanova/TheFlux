@@ -1,0 +1,17 @@
+keyword: set
+category: Collection Type - Set
+description: Elementos únicos sem ordem; suporta o operator in.
+syntax: 'mut as set of Type: var1, var2, ..., varN [= {<value>, ...}]'
+pseudocode: 'conjunto : CONJUNTO DE string   // elementos unicos, sem ordem'
+usages:
+- name: Conjunto (set)
+  description: Elementos únicos sem ordem; suporta o operator in.
+  examples:
+  - code: 'mut as set of string: sensores = {"temp", "pressao", "temp", "vibracao"}
+
+      print(sensores)     # {"temp", "pressao", "vibracao"}
+
+      print("temp" in sensores)   # true'
+restrictions:
+- 'set REQUER ''of Type'' (ex: ''set of string'').'
+- Set não suporta slice ou indexação individual.

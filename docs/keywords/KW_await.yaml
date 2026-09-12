@@ -1,0 +1,41 @@
+keyword: await
+category: Tarefas Assíncronas (Future / Green Thread)
+description: 'Ponto de sincronização linear que suspende a pipeline síncrona até a resolução de um Future. Ao encontrar
+  await, a esteira de execução bloqueia de forma determinística até que o Future associado (gerado por uma função async ou
+  despachado por spawn) esteja resolvido, e então retorna o seu valor.
+
+  '
+syntax: 'await <expressão_future>
+
+  '
+usages:
+- name: Await de Future de função async
+  description: Suspende a pipeline até o Future retornado pela função async resolver.
+  examples:
+  - code: 'async function dobro (as int64: n) as int64 {
+
+        mut as int64: res = n * 2
+
+        emit(nice, res, "ok")
+
+      }
+
+      program (Main) {
+
+        print(await dobro(21))   # 42
+
+      }
+
+      '
+- name: Await de Future despachado por spawn
+  description: Coleta o resultado de um nó do dataflow despachado como green thread.
+  examples:
+  - code: 'mut g = spawn (dobro(20 + 1) --> print)
+
+      print(await g)
+
+      '
+restrictions:
+- Só pode ser aplicado a valores do tipo Future.
+- Aplicar await a um valor não-assíncrono é rejeitado pela análise semântica.
+- Suspende de forma linear e determinística a pipeline síncrona até a resolução do Future.

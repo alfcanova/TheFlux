@@ -1,0 +1,68 @@
+keyword: match
+category: Pattern Matching
+description: Realiza casamento de patterns (pattern matching) sobre uma expression. O match é uma expression e returns o value
+  producesido pelo primeiro branch cujo pattern corresponda ao value analisado e cuja guard (guard), quando presente, seja
+  verdadeira. A sintaxe de desestruturação reutiliza exatamente a mesma forma utilizada na construção de structs e variants
+  de enum, tornando construção e desconstrução operations simétricas. Para enums, o compilador verifica exaustividade e detecta
+  branches inalcançáveis.
+syntax: "match (<expression>) {\n\n    <pattern> ==> <expression>\n\n    <pattern> (<expressao_booleana>)\n        ==> <expression>\n\
+  \n    ...\n\n}"
+pseudocode: "ESCOLHER(expressao):\n    CASE padrao_1: resultado_1\n    CASE padrao_2: resultado_2\n    PADRAO: resultado_fallback"
+usages:
+- name: Match with literals
+  description: Seleciona um branch com base em values literais.
+  examples:
+  - code: "match (valor) {\n\n    1 ==> \"um\"\n\n    2 ==> \"dois\"\n\n    _ ==> \"outro\"\n\n}"
+- name: Match with enum
+  description: Desestrutura variants de enum utilizando a mesma sintaxe empregada durante sua construção.
+  examples:
+  - code: "match (resposta) {\n\n    Resultado::Ok(\n        .valor: valor\n    ) ==> valor\n\n    Resultado::Erro(\n    \
+      \    .mensagem: mensagem\n    ) ==> mensagem\n\n}"
+- name: Match with struct
+  description: Desestrutura structs utilizando exatamente a mesma sintaxe utilizada durante sua construção.
+  examples:
+  - code: "match (evento) {\n\n    Evento(\n\n        .nome: nome\n\n        .quando: quando\n\n        .contador: contador\n\
+      \n    ) ==> contador\n\n}"
+- name: Match with record
+  description: Desestrutura registros anônimos por nome de field.
+  examples:
+  - code: "match (registro) {\n\n    {\n\n        .tipo: \"sensor\"\n\n        .valor: valor\n\n    } ==> valor\n\n    {\n\
+      \n        .tipo: tipo\n\n    } ==> tipo\n\n    _ ==> \"desconhecido\"\n\n}"
+- name: Match with guard
+  description: Executes o branch apenas quando o pattern corresponde e a condition booleana é verdadeira.
+  examples:
+  - code: "match (resultado) {\n\n    Resultado::Ok(\n        .valor: valor\n    ) (valor >= 0) ==> \"positivo\"\n\n    Resultado::Ok(\n\
+      \        .valor: valor\n    ) ==> \"negativo\"\n\n    Resultado::Erro(\n        .mensagem: msg\n    ) ==> msg\n\n}"
+- name: Nested match
+  description: Permite desestruturar estruturas compostas em um único pattern.
+  examples:
+  - code: "match (usuario) {\n\n    Usuario::Ativo(\n\n        .pessoa:\n\n            Pessoa(\n\n                .nome: nome\n\
+      \n                .idade: idade\n\n            )\n\n    ) ==> nome\n\n    Usuario::Bloqueado(\n\n        .motivo: motivo\n\
+      \n    ) ==> motivo\n\n}"
+restrictions:
+- Match é uma expression.
+- O match returns o value producesido pelo primeiro branch correspondente.
+- Deve existir pelo menos um branch.
+- Os branches são evaluatesdos na ordem em que aparecem.
+- O primeiro pattern correspondente cuja guard seja verdadeira encerra a evaluatesção.
+- A guard é optional e é escrita como expression booleana entre parentheses após o pattern.
+- 'A guard não é um pattern: um branch precisa de um pattern (branches somente com guard são error de parse).'
+- Guards são evaluatesdos somente após o pattern correspondente ser satisfeito.
+- 'Um branch com guard não cobre incondicionalmente o pattern: variants/wildcards guarddos não tornam o match exaustivo nem
+  marcam branches seguintes como inalcançáveis.'
+- O pattern _ corresponde a qualquer value.
+- Todo field é obrigatoriamente prefixado por dot (.) e ocupa uma linha própria; fields são separados por quebra de linha
+  (EOL), nunca por comma.
+- Patterns de struct verificam nominalmente o type.
+- Patterns de enum verificam nominalmente o enum e a variant.
+- A correspondência dos fields ocorre pelo nome, nunca pela posição.
+- Fields can be ignorados utilizando _.
+- A construção e a desestruturação utilizam exatamente a mesma estrutura sintática.
+- Em backends tipados (LLVM, WASM/WAT), todos os branches devem producesir types compatíveis.
+- Quando a expression analisada possuir um type enum, o compilador deve verificar a exaustividade do match.
+- Um match é considerado exaustivo quando todas as variants do enum são cobertas explicitamente ou quando existe um branch
+  wildcard (_).
+- Para structs, o pattern matching é naturalmente exaustivo, pois existe apenas um construtor possível.
+- O compilador deve detectar branches inalcançáveis.
+- Um branch cujo pattern nunca possa ser selecionado constitui error semântico.
+- Patterns de listas ainda não são suportados; o parser deve emitir PAR001.

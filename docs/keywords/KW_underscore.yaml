@@ -1,0 +1,30 @@
+keyword: _
+category: Pattern Matching
+description: O caractere underscore (`_`) atua como curinga (wildcard) universal e padrão de descarte na linguagem TheFlux.
+  É utilizado como braço catch-all em estruturas `route`, como padrão universal em expressões `match` (garantindo exaustividade
+  em enums e tipos literais), e como descarte de campos na desestruturação de structs, registros e variantes de enums.
+syntax: "route {\n      <condição> ==> { <bloco> }\n      _          ==> { <fallback> }\n}\nmatch (<expressão>) {\n      <padrão>\
+  \ ==> <expressão_ou_bloco>\n      _        ==> <fallback>\n}\n{ .campo1: <padrão>, .campo2: _ }"
+pseudocode: "ESCOLHER(estado):\n    CASO 0: pronto()\n    PADRAO(_): ignora_qualquer_outro()   // curinga universal"
+usages:
+- name: Braço catch-all em route
+  description: Captura qualquer condição não atendida pelos braços anteriores em um bloco route.
+  examples:
+  - code: "route {\n      status == \"ativo\"    ==> { print(\"Conexao ativa\") }\n      status == \"bloqueio\" ==> { print(\"\
+      Acesso bloqueado\") }\n      _                    ==> { print(\"Status desconhecido\") }\n}"
+- name: Padrão wildcard universal em match
+  description: Corresponde a qualquer valor não coberto anteriormente, garantindo exaustividade.
+  examples:
+  - code: "match (codigo) {\n      200 ==> print(\"Sucesso\")\n      404 ==> print(\"Nao encontrado\")\n      _   ==> print(\"\
+      Outro codigo: padrao curinga\")\n}"
+- name: Descarte de campos em desestruturação
+  description: Permite ignorar campos específicos durante o pattern matching de estruturas ou registros.
+  examples:
+  - code: "match (evento) {\n      { .tipo: \"sensor\", .leitura: val } ==> print(\"Leitura: \" + val)\n      { .tipo: \"\
+      alerta\", .leitura: _ }   ==> print(\"Alerta sem telemetria\")\n      _                                  ==> print(\"\
+      Evento ignorado\")\n}"
+restrictions:
+- Em estruturas route, o braço wildcard `_` deve ser obrigatoriamente o último braço quando presente.
+- Em expressões match, o padrão wildcard `_` sem guarda (guard) captura qualquer valor e encerra a exaustividade.
+- Braços posicionados após um `_` incondicional geram erro semântico de código inalcançável.
+- Pode ser utilizado para ignorar campos individuais em padrões de struct, enum ou registros anônimos.

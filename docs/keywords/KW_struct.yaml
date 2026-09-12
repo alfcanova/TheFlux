@@ -1,0 +1,45 @@
+keyword: struct
+category: Declaração de Tipo
+description: Declara um tipo struct (registro) composto por um conjunto fixo de campos nomeados. Cada campo pode ser mutável
+  (mut) ou imutável (imut). Uma struct representa um único formato de dados e possui exatamente um construtor nominal. A mesma
+  sintaxe utilizada para construir uma struct é reutilizada pelo pattern matching para desestruturá-la, tornando construção
+  e desconstrução operações simétricas. O nome da struct deve estar em PascalCase.
+syntax: "struct (<NomePascalCase>) {\n\n    mut: .<campo_snake_case>: <tipo>\n\n    imut: .<CAMPO_SCREAMING_SNAKE_CASE>: <tipo>\n\
+  \n    ...\n\n}"
+pseudocode: "REGISTRO Pessoa:\n    campo nome: string\n    campo idade: int64\n// valores nomeados, conjunto fixo de campos"
+usages:
+- name: Struct com campos mutáveis e imutáveis
+  description: Declara uma struct contendo campos mutáveis e imutáveis.
+  examples:
+  - code: "struct (Evento) {\n\n    mut: .nome: string\n\n    imut: .DATA: datetime\n\n    mut: .contador: int64\n\n}"
+- name: Inicialização de struct
+  description: Inicializa uma struct utilizando campos nomeados. A correspondência dos argumentos ocorre pelo nome dos campos
+    e não pela posição. Cada campo é escrito em uma linha própria, separado por quebra de linha (EOL); o ponto é obrigatório.
+  examples:
+  - code: Inicializacao
+- name: Acesso aos campos
+  description: Acessa campos utilizando a notação de ponto.
+  examples:
+  - code: print(evento.nome)
+  - code: evento.contador = evento.contador + 1
+- name: Pattern matching
+  description: 'Desestrutura uma struct utilizando exatamente a mesma sintaxe empregada durante sua construção: cada campo
+    em uma linha própria, prefixado por ponto.'
+  examples:
+  - code: "match (evento) {\n\n    Evento(\n\n        .nome: nome\n\n        .quando: quando\n\n        .contador: contador\n\
+      \n    ) ==> contador\n\n}"
+restrictions:
+- O nome da struct deve estar em PascalCase.
+- O keyword struct é escrito em minúsculo.
+- Todo campo é obrigatoriamente prefixado por ponto (.), tanto na declaração quanto na construção e desestruturação.
+- Cada campo ocupa uma linha própria; campos são separados por quebra de linha (EOL), nunca por vírgula.
+- Campos mutáveis devem utilizar snake_case.
+- Campos imutáveis devem utilizar SCREAMING_SNAKE_CASE.
+- Os nomes dos campos devem ser únicos dentro da struct.
+- Uma struct deve possuir pelo menos um campo.
+- Structs possuem exatamente um construtor.
+- Campos são inicializados utilizando argumentos nomeados prefixados por ponto.
+- A ordem dos campos durante a inicialização é irrelevante; a correspondência ocorre pelo nome.
+- Todos os campos obrigatórios devem ser inicializados.
+- Campos declarados como imutáveis não podem receber atribuição após a construção da instância.
+- A construção e a desestruturação utilizam exatamente a mesma estrutura sintática.

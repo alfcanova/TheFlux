@@ -1,0 +1,42 @@
+keyword: char
+category: Character Type
+description: 'Tipo character: representa exatamente um code point Unicode (U+0000..U+10FFFF). Internamente, em backends compilados
+  (llvm/wat/wasm), o value é armazenado como code point de 32 bits (i32); a codificação UTF-8 (1-4 bytes) é producesida apenas
+  na impressão, concatenação com string e operations de texto. No interpretador, o value é mantido como string Python de 1
+  code point. O type genérico is required in the declaration.'
+syntax: 'mut as char: <var> = ''<code point>''
+
+  mut as char: <var> = ''\u{XXXX}'''
+pseudocode: 'letra : CARACTERE = ''A''   // um code point Unicode'
+usages:
+- name: Char básico
+  description: Characters ASCII e Unicode entre single quotes.
+  examples:
+  - code: 'mut as char: letra = ''A''
+
+      mut as char: digito = ''7'''
+- name: Unicode
+  description: Code points não-ASCII (1-4 bytes UTF-8) direto ou via escape.
+  examples:
+  - code: 'mut as char: acento = ''é''
+
+      mut as char: omega = ''\u{03A9}''
+
+      mut as char: emoji = ''\u{1F600}'''
+- name: Operations
+  description: Igualdade, concatenação com string e match por literal.
+  examples:
+  - code: 'print(''A'' == ''A'')
+
+      mut as string: x = "letra: " + ''A''
+
+      match c { ''\u{1F600}'' ==> print("emoji") _ ==> print("outro") }'
+restrictions:
+- Exatamente 1 code point (1-4 bytes UTF-8) ou escape; string de 1 carácter (double quotes) é type string, não char.
+- Surrogates (U+D800..U+DFFF) e code points fora de U+0000..U+10FFFF são error de lexicação.
+- Em backends compilados o char é i32 (code point); a decodificação para UTF-8 acontece em runtime apenas ao imprimir/concatenar.
+- 'Coleções (list/set/map of char) e fields char em data/struct não são suportados: o value é tratado conforme o type do elemento
+  (ver docs de cada backend).'
+- 'Operations dinâmicas que leem texto externo (file, teclado, indexação de string) return string UTF-8; a conversão para
+  char (code point i32) deve decodificar UTF-8 (diretriz: 1 code point por char).'
+- Ver também KW_LITERAL_char.yaml (literais) e KW_TYPE_string.yaml (string).

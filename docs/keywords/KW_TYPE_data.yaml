@@ -1,0 +1,20 @@
+keyword: data
+category: Tipo de Coleção - Data
+description: Lista de elementos heterogêneos acessíveis por indexação (1-based).
+syntax: 'mut/imut as data: var1, var2, ..., varN [= [<valor>, ...]]'
+pseudocode: 'dados : DATA   // elementos heterogeneos, acesso por indice 1-based'
+usages:
+- name: Dados dinâmicos (data)
+  description: Lista de elementos heterogêneos acessíveis por indexação (1-based).
+  examples:
+  - code: 'mut as data: endereco = ["andre", "bauru", "sp", 16550, "Rua Osilio Rocha"]
+
+      print(endereco[1])        # "andre"
+
+      print(endereco[4])        # 16550'
+restrictions:
+- Listas e data usam índices 1-based (first = [1]).
+- data sem inicialização padrão é inicializado como [] (lista vazia).
+- 'Growth por atribuição indexada: <data>[len+1] = v faz append; in-range substitui; > len+1 é erro out of range.'
+- 'Mutação aninhada suportada: <data>[2][2] = v percorre a cadeia de índices.'
+- Suportado nos 5 backends (in, vm, wat, wasm, llvm).

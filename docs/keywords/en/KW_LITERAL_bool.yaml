@@ -1,0 +1,29 @@
+keyword: True, False
+category: Boolean Literal
+description: 'Literais booleanos. A forma canônica é PascalCase: True e False. Apenas essas duas formas são aceitas como literais;
+  qualquer outra capitalização (true, false, TRUE, FALSE) não é alias e lexa como identifier, causando error de variable indefinida.'
+syntax: True | False
+pseudocode: 'verdadeiro := True
+
+  falso      := False'
+usages:
+- name: Forma canônica
+  description: As únicas formas aceitas.
+  examples:
+  - code: 'mut as bool: ativo= True
+
+      mut as bool: completo= False'
+- name: Usage em route
+  description: Booleans as direct route condition.
+  examples:
+  - code: 'route { True --> { print("Sempre executa") } }
+
+      route { False --> { print("Nunca executa") } }'
+- name: Pattern in dataflow
+  description: Booleanos em patterns de dataflow (-->/==>).
+  examples:
+  - code: route { True ==> { print("OK") } }
+restrictions:
+- Apenas True e False são literais booleanos válidos.
+- 'true, false, TRUE, FALSE não são aliases: lexam como IDENTIFIER e generate errorr de variable indefinida (ou type indefinido).'
+- Booleanos são do type bool.

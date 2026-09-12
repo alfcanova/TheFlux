@@ -1,0 +1,23 @@
+keyword: nice
+category: Return Status
+description: Status de success usado na instrução `emit(nice, ...)`. Indica que a function completou sua execução com success
+  e devolve um struct de resultado com `.sta == "nice"`. É a contraparte positiva de `fail`. O chamador captura o resultado
+  pelos fields `.sta`, `.val` e `.msg`, ou despacha o fluxo com o operator `?`.
+syntax: emit(nice, <identifier>, "<mensagem>")
+pseudocode: "FUNCAO valida(x):\n    EMITIR_OK(x, \"sucesso\")   // status de success"
+usages:
+- name: Emit nice com return
+  description: Devolve um value bem-sucedido; o chamador lê .sta, .val e .msg.
+  examples:
+  - code: "function (calc) (x: int64) as int64 {\n      emit(nice, x, \"ok\")\n}\n\nprogram (Main) {\n      imut as int64:\
+      \ r = calc(5)\n      print(r.sta)     #L \"nice\"\n      print(r.val)     #L 5\n      print(r.msg)     #L \"ok\"\n}"
+- name: Nice em branch do operator ?
+  description: O branch nice do block short-circuit é executesdo quando o subject não é fail.
+  examples:
+  - code: "function (validar) (idade: int64) as int64 {\n      (idade > 18) ? {\n            ==> emit(fail, idade, \"menor\
+      \ de idade\")\n            ==> emit(nice, idade, \"maior de idade\")\n      }\n}"
+restrictions:
+- '`nice` só can be used como status do primeiro argument de `emit()` e como branch `==> emit(nice, ...)` do operator `?`
+  (o branch nice vem depois do branch fail).'
+- O value de `emit(nice, ...)` must be um identifier declarado (sem literais nem expressions).
+- A mensagem é required e must be string literal ou interpolada.

@@ -1,0 +1,57 @@
+keyword: ..
+category: Range / Slice Operator
+description: 'O operator .. (range) tem dois usages: cria intervals numéricos inclusivos para iteration em infinite (a ..
+  b), e especifica slices (slices) em coleções e strings [start .. end] ou (start .. end). O range é inclusivo em ambas as
+  extremidades. Veja também KW_slices.yaml para o guia completo de slices.'
+syntax: '<início> .. <fim>                     # Range numérico para iteração
+
+  [<início> .. <fim>]                   # Slice em list/data/tensor
+
+  [.. <fim>]                            # Slice do início até <fim>
+
+  [<início> ..]                         # Slice de <início> até o final
+
+  [..]                                  # Slice completo (cópia superficial)
+
+  (<início> .. <fim>)                   # Slice em string (após identificador)
+
+  (..<fim>)                             # Slice de string do início até <fim>
+
+  (<início> ..)                         # Slice de string de <início> até o final
+
+  (..)                                  # Slice de string completo'
+pseudocode: intervalo := 1 .. 10   // range numerico inclusivo
+usages:
+- name: Range para iteration
+  description: Itera sobre um interval numérico inclusivo.
+  examples:
+  - code: "infinite (i in 1 .. 5) {\n    print(i)  # 1, 2, 3, 4, 5\n}\ninfinite (i in -4 .. 4) {\n    print(i)  # -4, -3,\
+      \ -2, -1, 0, 1, 2, 3, 4\n}"
+- name: Slice de lista
+  description: Extrai uma slice de uma lista.
+  examples:
+  - code: 'mut as list: valores= [10, 20, 30, 40, 50]
+
+      print(valores[..])       # [10, 20, 30, 40, 50]
+
+      print(valores[..3])      # [10, 20, 30]
+
+      print(valores[2..])      # [30, 40, 50]
+
+      print(valores[2..4])     # [30, 40]'
+- name: Slice de string
+  description: Extrai uma substring usando parentheses após o identifier.
+  examples:
+  - code: 'mut as string: texto= "flux"
+
+      print(texto(..))      # flux
+
+      print(texto(2..3))    # lu'
+restrictions:
+- O range a..b é inclusivo em ambas as extremidades.
+- Range descendente (a > b) é permitido e itera do maior ao menor.
+- Indexs em list/string são 1-based e o fim do slice é inclusivo.
+- Set/map não suportam slice.
+- Slice com passo só é suportado em tensor; em list/string generates errorr.
+- A sintaxe de slice de string usa parentheses (texto(2..3)); brackets em string não são suportados.
+- .. em route with subject é um wildcard (sempre True).

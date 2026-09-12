@@ -1,0 +1,13 @@
+keyword: or
+category: Logical Operator
+description: Operator de disjunção lógica com evaluatesção de curto-circuito. Returns true se qualquer um dos operandos evaluatesr
+  para true.
+syntax: <expr1> or <expr2>
+pseudocode: "IF a OU b:\n    ...\n// disjuncao logica, curto-circuito"
+usages:
+- name: Disjunção lógica
+  description: Evaluates conditions de fallback.
+  examples:
+  - code: 'mut as bool: ehValido = (count > 0) or ehPadrao'
+restrictions:
+- Ambos os operandos devem evaluatesr para expressions booleanas.

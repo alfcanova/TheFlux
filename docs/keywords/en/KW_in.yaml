@@ -1,0 +1,28 @@
+keyword: in
+category: Iteration
+description: 'O operator `in` é usado em loops `infinite (variable in coleção)` para iterar sobre os elementos de uma coleção:
+  range numérico, lista, set ou string. O argument da esquerda declara a variable iteradora (snake_case); o da direita é a
+  coleção percorrida. Ao iterar sobre map/data, a iteration percorre as braces.'
+syntax: infinite (<variável_snake_case> in <coleção>) { <body> }
+pseudocode: "FOR CADA item DENTRO DE colecao:\n    processar(item)\n// itera sobre range, lista, set ou string"
+usages:
+- name: Iteration sobre range
+  description: Itera sobre um interval numérico inclusivo.
+  examples:
+  - code: "infinite (i in 1 .. 5) {\n    print(\"Numero: \" + i)\n}"
+- name: Iteration sobre lista
+  description: Itera sobre cada elemento de uma lista.
+  examples:
+  - code: "infinite (fruta in [\"uva\", \"banana\", \"cereja\"]) {\n    print(\"Fruta: \" + fruta)\n}"
+- name: Iteration sobre set
+  description: Itera sobre elementos de um set (conjunto).
+  examples:
+  - code: "infinite (item in {\"a\", \"b\", \"c\"}) {\n    print(\"Item: \" + item)\n}"
+- name: Iteration sobre string
+  description: Itera sobre characters de uma string.
+  examples:
+  - code: "infinite (letra in \"FLUX\") {\n    print(\"Letra: \" + letra)\n}"
+restrictions:
+- A variable iteradora deve estar em snake_case.
+- Range a..b é inclusivo e can be descendente.
+- Iteration sobre map/data itera sobre as braces.

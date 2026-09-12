@@ -1,0 +1,31 @@
+keyword: contract
+category: Declaração de Contrato
+description: 'Declara um contrato que define um conjunto de assinaturas de operações (op) que um agente (agent) pode implementar.
+  O contrato é uma interface que especifica nomes, parâmetros e tipos de retorno sem implementação.
+
+  Contratos são válidos apenas em arquivos .fdsl. O nome do contrato deve estar em PascalCase. '
+syntax: "contract (<Nome_PascalCase>) {\n      op <nome_camelCase> ([mut | imut | as] <tipo>: <identificador> [, ...]) [as\
+  \ <tipo_retorno>]\n      op <nome_camelCase> () [as <tipo_retorno>]\n      ...\n}\n"
+pseudocode: "CONTRATO Operavel:\n    assinatura ligar()\n    assinatura desligar()\n// conjunto de assinaturas que um agente\
+  \ pode implementar"
+usages:
+- name: Contrato com operações simples
+  description: Contrato com ops sem parâmetros.
+  examples:
+  - code: "contract (Readable) {\n      op read () as int64\n}\n"
+- name: Contrato com operações parametrizadas
+  description: Contrato para operações matemáticas básicas com parâmetros nomeados.
+  examples:
+  - code: "contract (OperacoesBasicas) {\n      op somar (as int64: a, as int64: b) as int64\n      op subtrair (as int64:\
+      \ a, as int64: b) as int64\n      op multiplicar (as int64: a, as int64: b) as int64\n      op dividirInteiro (as int64:\
+      \ a, as int64: b) as int64\n}\n"
+- name: Múltiplos contratos no mesmo arquivo
+  description: Dois contratos declarados sequencialmente em um .fdsl.
+  examples:
+  - code: "contract (ReadOp) {\n      op read () as int64\n}\ncontract (WriteOp) {\n      op write () as int64\n}\n"
+restrictions:
+- O nome do contrato deve estar em PascalCase.
+- Operações em contratos não podem ter corpo (apenas assinatura).
+- Deve haver pelo menos uma operação no contrato.
+- Contratos são válidos apenas em arquivos .fdsl (não em .flux).
+- Agentes implementam contratos via a cláusula `impl` na declaração `agent`.

@@ -1,0 +1,12 @@
+keyword: not
+category: Logical Operator
+description: Operator unário de negação lógica. Inverte o value booleano de verdade de uma expression.
+syntax: not <expression>
+pseudocode: "IF NAO flag:\n    ...\n// negacao logica"
+usages:
+- name: Negação lógica
+  description: Inverte o resultado de uma condition.
+  examples:
+  - code: 'mut as bool: desabilitado = not esta_ativo'
+restrictions:
+- O operando deve evaluatesr para um booleano.

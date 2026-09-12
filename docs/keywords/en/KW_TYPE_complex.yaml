@@ -1,0 +1,24 @@
+keyword: complex32, complex64, complex128
+category: Numeric Type - Complex
+description: Types numéricos complexos com partes real e imaginária (complex32, complex64, complex128).
+syntax: 'mut as complex32: <identifier> [, <identifier> ...]  = <real> + <imag>i   # 2 x float16
+
+  mut as complex64: <identifier> [, <identifier> ...]  = <real> + <imag>i   # 2 x float32
+
+  mut as complex128: <identifier> [, <identifier> ...] = <real> + <imag>i   # 2 x float64'
+pseudocode: 'num : COMPLEXO128 = 1 + 2i   // parte real + parte imaginaria'
+usages:
+- name: Declaration de types complexos
+  description: Declara variables com types numéricos complexos compostos por parte real e imaginária.
+  examples:
+  - code: 'mut as complex32: c32 = -1.5 + -2.5i
+
+      mut as complex64: c64 = 64.125 + -8.5i
+
+      mut as complex128: c128 = 1.5 + 2.5i'
+restrictions:
+- 'O sufixo i (ou j) indica a parte imaginária (ex: 2.5i).'
+- complex32 usa 2 componentes float16; complex64 usa 2 float32; complex128 usa 2 float64.
+- bigcomplex é reservado para versões futuras.
+- 'Ver também KW_LITERAL_complex.yaml (literal) — types e literais são files espelhados: TYPES descreve a forma in the declaration,
+  LITERAL descreve a sintaxe do value.'

@@ -1,0 +1,15 @@
+agent (AgentOfPrint) {
+
+      op printNome ==> {
+            print("Andre Luiz Fassone Canova")
+      }
+
+      op printIdade ==> {
+            print("Sua idade e 53 anos")
+      }
+
+      op printMora ==> {
+            print("Voce mora em Bauru")
+      }
+
+}

@@ -1,0 +1,41 @@
+keyword: spy
+category: Telemetria/Depuração
+description: >-
+  Emite telemetria diagnóstica detalhada do valor de uma expressão para fins de depuração e inspeção em tempo de execução sem alterar o fluxo de dados.
+  Preserva o valor original como um tap/tee transparente, permitindo que spy seja usado em operandos, expressões intermediárias e em pipelines de dataflow.
+
+  A saída estruturada de telemetria detalha a origem do nó AST, amostra/rank dos dados, tipagem e coerção, despacho de hardware, tempo de vida (liveness) e reciclagem de memória.
+syntax: |
+  spy(<expressão>)
+
+  <variável> = spy(<operando>) + <expressão>
+
+  <variável> = spy(<expressão_composta>)
+
+  <origem> --> <transformação> --> spy --> <destino>
+pseudocode: |
+  INSPECIONAR_TELEMETRIA(origem, valor)
+  RETORNAR valor // transparente, preserva o fluxo
+usages:
+  - name: 1. Espiando um Operando Específico
+    description: Inspeciona uma variável ou operando antes da operação, reportando leitura de memória, rank e regra de preservação/imutabilidade.
+    examples:
+      - code: |
+          mut as int64: a = 10
+          mut as float64: b = 5.5
+          mut as float64: sum = spy(a) + b
+  - name: 2. Espiando o Resultado de uma Operação
+    description: Inspeciona o valor gerado após a execução de uma operação intermediária, reportando promoções automáticas de tipos (widening), latência e alocação de buffer.
+    examples:
+      - code: |
+          mut as float64: total = spy(a + b)
+  - name: 3. Métricas de Topologia e Tempo de Vida em Dataflow
+    description: Atua como elemento intermediário transparente (pass-through tap) em uma cadeia de dataflow, inspecionando saídas de funções/agentes, liveness out-degree e transformações de ABI.
+    examples:
+      - code: |
+          dados --> preverTendencia --> spy --> print
+          dobro(10) --> spy --> print
+restrictions:
+  - O operador spy é transparente e preserva o valor original sem consumi-lo (empréstimo/borrow somente leitura).
+  - Pode ser utilizado tanto como função/expressão envolvente quanto como nó de conexão em cadeias de dataflow (-->).
+  - Emite árvore diagnóstica estruturada cobrindo Origem, Dados/Rank, Tipagem, Hardware Dispatch, Latência e Memória.

@@ -1,0 +1,28 @@
+keyword: meta
+category: Metaprogramação
+description: Declara uma meta-função de metaprogramação (`meta`) que gera e transforma código em tempo de compilação. O corpo
+  de uma definição `meta` retorna uma árvore sintática encapsulada em um bloco `lift { ... }`. Parâmetros passados para a
+  meta-função são injetados no código gerado através da expressão `lower(param)`. A expansão de metas é realizada estaticamente
+  pelo compilador antes da análise semântica e da geração de código.
+syntax: "meta (<nomeCamelCase>) (<params>) {\n      lift {\n            <declarações_ou_expressões com lower(param)>\n   \
+  \   }\n}"
+pseudocode: "METAFUNCAO gerar_campos(lista):\n    // produz codigo-fonte em tempo de compilacao\n    RETORNAR codigo_gerado"
+usages:
+- name: Meta com um parâmetro
+  description: Meta-função que dobra um valor em tempo de compilação.
+  examples:
+  - code: "meta dobraNumero(num) {\n      lift {\n            mut as int64: res = lower(num) * 2\n      }\n}\n\nprogram (ExemploDobra)\
+      \ {\n      mut as int64: dobrado = dobraNumero(21)\n      print(dobrado)\n}"
+- name: Meta com 3 parâmetros (Área do Trapézio)
+  description: Meta-função que calcula a área decimal de um trapézio ((bmaior + bmenor) * altura) /f 2 a partir de 3 parâmetros
+    enviados.
+  examples:
+  - code: "meta areaTrapezio(bmaior, bmenor, altura) {\n      lift {\n            mut as float64: area = ((lower(bmaior) +\
+      \ lower(bmenor)) * lower(altura)) /f 2\n      }\n}\n\nprogram (ExemploTrapezio) {\n      mut as float64: a = areaTrapezio(15,\
+      \ 6, 3)\n      print(a)\n}"
+restrictions:
+- meta é válida apenas no nível superior do módulo ou arquivo.
+- O corpo de uma meta deve conter uma expressão ou bloco lift { ... }.
+- lower() só pode ser utilizado dentro de blocos lift.
+- 'Profundidade máxima de expansão estática recursiva: 64 níveis.'
+- Suportado de forma transparente em todos os 5 backends (Interpreter, VM, LLVM, WAT, WASM).

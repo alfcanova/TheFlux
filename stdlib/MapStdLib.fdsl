@@ -1,0 +1,1364 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Modulo nativo para manipulacao de mapas (dicionarios chave-valor)
+#L Implementacao 100% nativa em TheFlux (sem intrinsicos)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (MapBasicContract) {
+      op mapLength (as map: record) as int64
+      op mapIsEmpty (as map: record) as bool
+      op mapIsNotEmpty (as map: record) as bool
+      op mapContainsKey (as map: record, as string: key) as bool
+      op mapContainsAnyKey (as map: record, as list of data: keys) as bool
+      op mapContainsAllKeys (as map: record, as list of data: keys) as bool
+      op mapContainsValue (as map: record, as data: value) as bool
+      op mapContainsAnyValue (as map: record, as list of data: values) as bool
+      op mapContainsAllValues (as map: record, as list of data: values) as bool
+      op mapClearAll (as map: record) as map
+      op mapSingleton (as string: key, as data: value) as map
+      op mapClone (as map: record) as map
+      op mapToList (as map: record) as list of data
+      op mapToSet (as map: record) as set of data
+      op mapToMap (as data: value) as map
+      op mapToString (as map: record) as string
+      op mapFromList (as list of data: pairs) as map
+      op mapFromSet (as set of data: pairs) as map
+      op mapFromString (as string: text) as map
+}
+
+contract (MapAccessContract) {
+      op mapGet (as map: record, as string: key) as data
+      op mapGetOrDefault (as map: record, as string: key, as data: default_value) as data
+      op mapGetFirst (as map: record) as list of data
+      op mapGetAt (as map: record, as int64: index) as list of data
+      op mapGetLast (as map: record) as list of data
+      op mapGetLeft (as map: record, as int64: n) as map
+      op mapGetRight (as map: record, as int64: n) as map
+      op mapGetCenter (as map: record, as int64: n) as map
+      op mapSlice (as map: record, as int64: start, as int64: end) as map
+      op mapKeys (as map: record) as list of data
+      op mapValues (as map: record) as list of data
+      op mapEntries (as map: record) as list of data
+}
+
+contract (MapMutationContract) {
+      op mapPut (as map: record, as string: key, as data: value) as map
+      op mapPutIfAbsent (as map: record, as string: key, as data: value) as map
+      op mapReplace (as map: record, as string: key, as data: value) as map
+      op mapPutAll (as map: record, as map: other) as map
+      op mapRemove (as map: record, as string: key) as map
+      op mapRemoveAll (as map: record, as list of data: keys) as map
+}
+
+contract (MapTransformContract) {
+      op mapMerge (as map: left, as map: right) as map
+      op mapInvert (as map: record) as map
+      op mapZip (as list of data: keys, as list of data: values) as map
+      op mapFilterKeys (as map: record, as list of data: allowed_keys) as map
+      op mapOmitKeys (as map: record, as list of data: omitted_keys) as map
+}
+
+contract (MapSearchContract) {
+      op mapContainsKey (as map: record, as string: key) as bool
+      op mapContainsAnyKey (as map: record, as list of data: keys) as bool
+      op mapContainsAllKeys (as map: record, as list of data: keys) as bool
+      op mapContainsValue (as map: record, as data: value) as bool
+      op mapContainsAnyValue (as map: record, as list of data: values) as bool
+      op mapContainsAllValues (as map: record, as list of data: values) as bool
+      op mapFindKey (as map: record, as data: value) as data
+      op mapFindKeys (as map: record, as data: value) as list of data
+      op mapCountValues (as map: record, as data: value) as int64
+}
+
+contract (MapSelectionContract) {
+      op mapTake (as map: record, as int64: n) as map
+      op mapDrop (as map: record, as int64: n) as map
+      op mapTakeLast (as map: record, as int64: n) as map
+      op mapDropLast (as map: record, as int64: n) as map
+      op mapFilterKeys (as map: record, as list of data: allowed_keys) as map
+      op mapOmitKeys (as map: record, as list of data: omitted_keys) as map
+      op mapFilterValues (as map: record, as list of data: allowed_values) as map
+      op mapOmitValues (as map: record, as list of data: omitted_values) as map
+}
+
+contract (MapUtilityContract) {
+      op mapEquals (as map: lhs, as map: rhs) as bool
+      op mapSwapKeys (as map: record, as string: key1, as string: key2) as map
+      op mapJoin (as map: record, as string: entry_sep, as string: kv_sep) as string
+      op mapCount (as map: record, as string: key) as int64
+}
+
+contract (MapAggregateContract) {
+      op mapMin (as map: record) as data
+      op mapMax (as map: record) as data
+      op mapSum (as map: record) as data
+      op mapProduct (as map: record) as data
+      op mapAverage (as map: record) as float64
+      op mapCountValues (as map: record, as data: value) as int64
+}
+
+contract (MapRelationContract) {
+      op mapIsSubmap (as map: sub, as map: sup) as bool
+      op mapIsSupermap (as map: sup, as map: sub) as bool
+      op mapHasSameKeys (as map: lhs, as map: rhs) as bool
+      op mapDisjointKeys (as map: lhs, as map: rhs) as bool
+      op mapDiffKeys (as map: lhs, as map: rhs) as list of data
+}
+
+contract (MapEntryContract) {
+      op mapFromEntries (as list of data: entries) as map
+      op mapToEntries (as map: record) as list of data
+      op mapInvertMulti (as map: record) as map
+      op mapGroupListBy (as list of data: items, as string: key_field) as map
+      op mapSelectEntries (as map: record, as list of data: keys) as list of data
+}
+
+agent (MapStdLib) impl MapBasicContract, MapAccessContract, MapMutationContract, MapTransformContract, MapSearchContract, MapRelationContract, MapAggregateContract, MapSelectionContract, MapUtilityContract, MapEntryContract {
+      #L ==============================================================================
+      #L 1. MapBasicContract (19 operacoes)
+      #L ==============================================================================
+      op mapLength (as map: record) as int64 ==> {
+            mut as int64: count = 0
+            infinite (k in record) {
+                  count = count + 1
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      op mapIsEmpty (as map: record) as bool ==> {
+            mut as bool: empty = true
+            infinite (k in record) {
+                  empty = false
+                  break
+            }
+            imut as bool: res = empty
+            emit(nice, res, "ok")
+      }
+
+      op mapIsNotEmpty (as map: record) as bool ==> {
+            mut as bool: empty = true
+            infinite (k in record) {
+                  empty = false
+                  break
+            }
+            imut as bool: res = not empty
+            emit(nice, res, "ok")
+      }
+
+      op mapContainsKey (as map: record, as string: key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in record) {
+                  route {
+                        k == key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found
+            emit(nice, res, "ok")
+      }
+
+      op mapContainsAnyKey (as map: record, as list of data: keys) as bool ==> {
+            mut as bool: found_any = false
+            infinite (target_k in keys) {
+                  infinite (k in record) {
+                        route {
+                              k == ("" + target_k) ==> {
+                                    found_any = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        found_any ==> {
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found_any
+            emit(nice, res, "ok")
+      }
+
+      op mapContainsAllKeys (as map: record, as list of data: keys) as bool ==> {
+            mut as bool: all_found = true
+            infinite (target_k in keys) {
+                  mut as bool: found = false
+                  infinite (k in record) {
+                        route {
+                              k == ("" + target_k) ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_found = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_found
+            emit(nice, res, "ok")
+      }
+
+      op mapContainsValue (as map: record, as data: value) as bool ==> {
+            mut as bool: found = false
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found
+            emit(nice, res, "ok")
+      }
+
+      op mapContainsAnyValue (as map: record, as list of data: values) as bool ==> {
+            mut as bool: found_any = false
+            infinite (target_val in values) {
+                  infinite (k in record) {
+                        route {
+                              record[k] == target_val ==> {
+                                    found_any = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        found_any ==> {
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found_any
+            emit(nice, res, "ok")
+      }
+
+      op mapContainsAllValues (as map: record, as list of data: values) as bool ==> {
+            mut as bool: all_found = true
+            infinite (target_val in values) {
+                  mut as bool: found = false
+                  infinite (k in record) {
+                        route {
+                              record[k] == target_val ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_found = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_found
+            emit(nice, res, "ok")
+      }
+
+      op mapClearAll (as map: record) as map ==> {
+            mut as map: m = map{}
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapSingleton (as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            m[key] = value
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapClone (as map: record) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapToList (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = k
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapToSet (as map: record) as set of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = k
+            }
+            imut as set of data: res = l as set of data
+            emit(nice, res, "ok")
+      }
+
+      op mapToMap (as data: value) as map ==> {
+            emit(nice, stdListToMap(value as list of data), "ok")
+      }
+
+      op mapToString (as map: record) as string ==> {
+            emit(nice, mapJoin(record, ", ", ": "), "ok")
+      }
+
+      op mapFromList (as list of data: pairs) as map ==> {
+            emit(nice, stdListToMap(pairs), "ok")
+      }
+
+      op mapFromSet (as set of data: pairs) as map ==> {
+            emit(nice, stdListToMap(stdSetToList(pairs)), "ok")
+      }
+
+      op mapFromString (as string: text) as map ==> {
+            mut as map: m = map{}
+            mut as int64: len_t = 0
+            infinite (c in text) { len_t = len_t + 1 }
+            route {
+                  len_t == 0 ==> {
+                        emit(nice, m, "ok")
+                  }
+            }
+            mut as int64: start = 1
+            infinite {
+                  route {
+                        start > len_t ==> {
+                              break
+                        }
+                  }
+                  mut as int64: next_comma = -1
+                  infinite (i in start .. len_t) {
+                        imut as string: ch = text[i]
+                        route {
+                              ch == "," ==> {
+                                    next_comma = i
+                                    break
+                              }
+                        }
+                  }
+                  mut as string: chunk = ""
+                  route {
+                        next_comma > 0 ==> {
+                              route {
+                                    next_comma > start ==> {
+                                          chunk = text[start..(next_comma - 1)]
+                                    }
+                              }
+                              start = next_comma + 1
+                        }
+                        next_comma <= 0 ==> {
+                              chunk = text[start..len_t]
+                              start = len_t + 1
+                        }
+                  }
+                  mut as int64: len_c = 0
+                  infinite (k in chunk) { len_c = len_c + 1 }
+                  mut as int64: sep_pos = -1
+                  infinite (j in 1 .. len_c) {
+                        imut as string: ch2 = chunk[j]
+                        route {
+                              ch2 == ":" or ch2 == "=" ==> {
+                                    sep_pos = j
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        sep_pos > 0 ==> {
+                              mut as string: raw_k = ""
+                              route {
+                                    sep_pos > 1 ==> {
+                                          raw_k = chunk[1..(sep_pos - 1)]
+                                    }
+                              }
+                              mut as string: raw_v = ""
+                              route {
+                                    sep_pos < len_c ==> {
+                                          raw_v = chunk[(sep_pos + 1)..len_c]
+                                    }
+                              }
+                              mut as int64: len_k = 0
+                              infinite (k in raw_k) { len_k = len_k + 1 }
+                              mut as int64: k_start = len_k + 1
+                              infinite (ki in 1 .. len_k) {
+                                    imut as string: kc = raw_k[ki]
+                                    route {
+                                          kc != " " and kc != "\t" and kc != "\n" and kc != "\r" ==> {
+                                                k_start = ki
+                                                break
+                                          }
+                                    }
+                              }
+                              mut as int64: k_end = 0
+                              route {
+                                    len_k > 0 ==> {
+                                          infinite (ki in len_k .. 1) {
+                                                imut as string: kc2 = raw_k[ki]
+                                                route {
+                                                      kc2 != " " and kc2 != "\t" and kc2 != "\n" and kc2 != "\r" ==> {
+                                                            k_end = ki
+                                                            break
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                              mut as string: key_str = ""
+                              route {
+                                    k_start <= k_end ==> {
+                                          key_str = raw_k[k_start..k_end]
+                                    }
+                              }
+
+                              mut as int64: len_v = 0
+                              infinite (v in raw_v) { len_v = len_v + 1 }
+                              mut as int64: v_start = len_v + 1
+                              infinite (vi in 1 .. len_v) {
+                                    imut as string: vc = raw_v[vi]
+                                    route {
+                                          vc != " " and vc != "\t" and vc != "\n" and vc != "\r" ==> {
+                                                v_start = vi
+                                                break
+                                          }
+                                    }
+                              }
+                              mut as int64: v_end = 0
+                              route {
+                                    len_v > 0 ==> {
+                                          infinite (vi in len_v .. 1) {
+                                                imut as string: vc2 = raw_v[vi]
+                                                route {
+                                                      vc2 != " " and vc2 != "\t" and vc2 != "\n" and vc2 != "\r" ==> {
+                                                            v_end = vi
+                                                            break
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                              mut as string: val_str = ""
+                              route {
+                                    v_start <= v_end ==> {
+                                          val_str = raw_v[v_start..v_end]
+                                    }
+                              }
+
+                              route {
+                                    key_str != "" ==> {
+                                          mut as int64: parsed_int = 0
+                                          mut as bool: is_num = true
+                                          infinite (ch_num in val_str) {
+                                                route {
+                                                      ch_num < "0" or ch_num > "9" ==> {
+                                                            is_num = false
+                                                      }
+                                                }
+                                          }
+                                          route {
+                                                is_num and val_str != "" ==> {
+                                                      infinite (digit in val_str) {
+                                                            mut as int64: d_val = 0
+                                                            route {
+                                                                  digit == "0" ==> { d_val = 0 }
+                                                                  digit == "1" ==> { d_val = 1 }
+                                                                  digit == "2" ==> { d_val = 2 }
+                                                                  digit == "3" ==> { d_val = 3 }
+                                                                  digit == "4" ==> { d_val = 4 }
+                                                                  digit == "5" ==> { d_val = 5 }
+                                                                  digit == "6" ==> { d_val = 6 }
+                                                                  digit == "7" ==> { d_val = 7 }
+                                                                  digit == "8" ==> { d_val = 8 }
+                                                                  digit == "9" ==> { d_val = 9 }
+                                                            }
+                                                            parsed_int = parsed_int * 10 + d_val
+                                                      }
+                                                      m[key_str] = parsed_int
+                                                }
+                                                not is_num or val_str == "" ==> {
+                                                      m[key_str] = val_str
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, m, "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. MapAccessContract (12 operacoes)
+      #L ==============================================================================
+      op mapGet (as map: record, as string: key) as data ==> {
+            imut as data: res = record[key]
+            emit(nice, res, "ok")
+      }
+
+      op mapGetOrDefault (as map: record, as string: key, as data: default_value) as data ==> {
+            mut as bool: found = false
+            infinite (k in record) {
+                  route {
+                        k == key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            mut as data: val = default_value
+            route {
+                  found ==> {
+                        val = record[key]
+                  }
+            }
+            imut as data: res = val
+            emit(nice, res, "ok")
+      }
+
+      op mapGetFirst (as map: record) as list of data ==> {
+            mut as list of data: res = []
+            infinite (k in record) {
+                  res = [k, record[k]]
+                  break
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapGetAt (as map: record, as int64: index) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: curr = 0
+            infinite (k in record) {
+                  curr = curr + 1
+                  route {
+                        curr == index ==> {
+                              res = [k, record[k]]
+                              break
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapGetLast (as map: record) as list of data ==> {
+            mut as list of data: res = []
+            infinite (k in record) {
+                  res = [k, record[k]]
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapGetLeft (as map: record, as int64: n) as map ==> {
+            emit(nice, mapTake(record, n), "ok")
+      }
+
+      op mapGetRight (as map: record, as int64: n) as map ==> {
+            emit(nice, mapTakeLast(record, n), "ok")
+      }
+
+      op mapGetCenter (as map: record, as int64: n) as map ==> {
+            mut as int64: total = mapLength(record)
+            route {
+                  total == 0 or n < 0 ==> {
+                        emit(nice, map{}, "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> { start_idx = 1 }
+            }
+            route {
+                  end_idx > total ==> { end_idx = total }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, map{}, "ok")
+                  }
+            }
+            emit(nice, mapSlice(record, start_idx, end_idx), "ok")
+      }
+
+      op mapSlice (as map: record, as int64: start, as int64: end) as map ==> {
+            mut as map: m = map{}
+            mut as int64: curr = 0
+            infinite (k in record) {
+                  curr = curr + 1
+                  route {
+                        curr >= start and curr <= end ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            emit(nice, m, "ok")
+      }
+
+      op mapKeys (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = k
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapValues (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = record[k]
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapEntries (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = [k, record[k]]
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. MapMutationContract (6 operacoes)
+      #L ==============================================================================
+      op mapPut (as map: record, as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            m[key] = value
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapPutIfAbsent (as map: record, as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            mut as bool: exists = false
+            infinite (k in record) {
+                  m[k] = record[k]
+                  route {
+                        k == key ==> {
+                              exists = true
+                        }
+                  }
+            }
+            route {
+                  not exists ==> {
+                        m[key] = value
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapReplace (as map: record, as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            m[key] = value
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapPutAll (as map: record, as map: other) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            infinite (k in other) {
+                  m[k] = other[k]
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapRemove (as map: record, as string: key) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  route {
+                        k != key ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapRemoveAll (as map: record, as list of data: keys) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: to_remove = false
+                  infinite (rk in keys) {
+                        route {
+                              k == rk ==> {
+                                    to_remove = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not to_remove ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. MapRelationContract (4 operacoes)
+      #L ==============================================================================
+      op mapIsSubmap (as map: sub, as map: sup) as bool ==> {
+            mut as bool: sub_ok = true
+            infinite (k in sub) {
+                  route {
+                        sub[k] != sup[k] ==> {
+                              sub_ok = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = sub_ok
+            emit(nice, res, "ok")
+      }
+
+      op mapIsSupermap (as map: sup, as map: sub) as bool ==> {
+            emit(nice, mapIsSubmap(sub, sup), "ok")
+      }
+
+      op mapHasSameKeys (as map: lhs, as map: rhs) as bool ==> {
+            mut as int64: n_lhs = 0
+            infinite (k in lhs) {
+                  n_lhs = n_lhs + 1
+            }
+            mut as int64: n_rhs = 0
+            infinite (k in rhs) {
+                  n_rhs = n_rhs + 1
+            }
+            mut as bool: same = n_lhs == n_rhs
+            route {
+                  same ==> {
+                        infinite (k in lhs) {
+                              mut as bool: in_rhs = false
+                              infinite (rk in rhs) {
+                                    route {
+                                          k == rk ==> {
+                                                in_rhs = true
+                                                break
+                                          }
+                                    }
+                              }
+                              route {
+                                    not in_rhs ==> {
+                                          same = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            imut as bool: res = same
+            emit(nice, res, "ok")
+      }
+
+      op mapDisjointKeys (as map: lhs, as map: rhs) as bool ==> {
+            mut as bool: disjoint = true
+            infinite (k in lhs) {
+                  infinite (rk in rhs) {
+                        route {
+                              k == rk ==> {
+                                    disjoint = false
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not disjoint ==> {
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = disjoint
+            emit(nice, res, "ok")
+      }
+
+      op mapDiffKeys (as map: lhs, as map: rhs) as list of data ==> {
+            mut as list of data: diff = []
+            mut as int64: dlen = 0
+            infinite (k in lhs) {
+                  mut as bool: in_rhs = false
+                  infinite (rk in rhs) {
+                        route {
+                              k == rk ==> {
+                                    in_rhs = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not in_rhs ==> {
+                              dlen = dlen + 1
+                              diff[dlen] = k
+                        }
+                  }
+            }
+            imut as list of data: res = diff
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. MapAggregateContract (6 operacoes)
+      #L ==============================================================================
+      op mapMin (as map: record) as data ==> {
+            mut as int64: min_val = 0
+            mut as bool: first = true
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  route {
+                        first ==> {
+                              min_val = val
+                              first = false
+                        }
+                        not first and val < min_val ==> {
+                              min_val = val
+                        }
+                  }
+            }
+            imut as int64: res = min_val
+            emit(nice, res, "ok")
+      }
+
+      op mapMax (as map: record) as data ==> {
+            mut as int64: max_val = 0
+            mut as bool: first = true
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  route {
+                        first ==> {
+                              max_val = val
+                              first = false
+                        }
+                        not first and val > max_val ==> {
+                              max_val = val
+                        }
+                  }
+            }
+            imut as int64: res = max_val
+            emit(nice, res, "ok")
+      }
+
+      op mapSum (as map: record) as data ==> {
+            mut as int64: total = 0
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  total = total + val
+            }
+            imut as int64: res = total
+            emit(nice, res, "ok")
+      }
+
+      op mapProduct (as map: record) as data ==> {
+            mut as int64: total = 1
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  total = total * val
+            }
+            imut as int64: res = total
+            emit(nice, res, "ok")
+      }
+
+      op mapAverage (as map: record) as float64 ==> {
+            mut as int64: count = 0
+            mut as float64: sum_val = 0.0
+            infinite (k in record) {
+                  count = count + 1
+                  sum_val = sum_val + ((record[k] as int64) as float64)
+            }
+            route {
+                  count == 0 ==> {
+                        mut as data: trigger_err = record["_not_found_"]
+                  }
+            }
+            mut as float64: avg = sum_val /f (count as float64)
+            imut as float64: res = avg
+            emit(nice, res, "ok")
+      }
+
+      op mapCountValues (as map: record, as data: value) as int64 ==> {
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              count = count + 1
+                        }
+                  }
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 6. MapSelectionContract (8 operacoes)
+      #L ==============================================================================
+      op mapTake (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        count < n ==> {
+                              count = count + 1
+                              m[k] = record[k]
+                        }
+                        count >= n ==> {
+                              break
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapDrop (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: count = 0
+            infinite (k in record) {
+                  count = count + 1
+                  route {
+                        count > n ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapTakeLast (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: total = 0
+            infinite (k in record) { total = total + 1 }
+            mut as int64: start_idx = total - n + 1
+            route {
+                  start_idx < 1 ==> { start_idx = 1 }
+            }
+            mut as int64: curr = 1
+            infinite (k in record) {
+                  route {
+                        curr >= start_idx ==> {
+                              m[k] = record[k]
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, m, "ok")
+      }
+
+      op mapDropLast (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: total = 0
+            infinite (k in record) { total = total + 1 }
+            mut as int64: keep_count = total - n
+            mut as int64: curr = 1
+            infinite (k in record) {
+                  route {
+                        curr <= keep_count ==> {
+                              m[k] = record[k]
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, m, "ok")
+      }
+
+      op mapFilterValues (as map: record, as list of data: allowed_values) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: allowed = false
+                  infinite (av in allowed_values) {
+                        route {
+                              record[k] == av ==> {
+                                    allowed = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        allowed ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapOmitValues (as map: record, as list of data: omitted_values) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: omit = false
+                  infinite (ov in omitted_values) {
+                        route {
+                              record[k] == ov ==> {
+                                    omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not omit ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 7. MapTransformContract (5 operacoes)
+      #L ==============================================================================
+      op mapMerge (as map: left, as map: right) as map ==> {
+            mut as map: m = map{}
+            infinite (k in left) {
+                  m[k] = left[k]
+            }
+            infinite (k in right) {
+                  m[k] = right[k]
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapInvert (as map: record) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as string: sk = "" + record[k]
+                  m[sk] = k
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapZip (as list of data: keys, as list of data: values) as map ==> {
+            mut as map: m = map{}
+            mut as int64: klen = 0
+            infinite (k in keys) {
+                  klen = klen + 1
+            }
+            mut as int64: vlen = 0
+            infinite (v in values) {
+                  vlen = vlen + 1
+            }
+            mut as int64: limit = klen
+            route {
+                  vlen < limit ==> {
+                        limit = vlen
+                  }
+            }
+            mut as int64: idx = 1
+            infinite (idx <= limit) {
+                  mut as string: kstr = "" + keys[idx]
+                  m[kstr] = values[idx]
+                  idx = idx + 1
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapFilterKeys (as map: record, as list of data: allowed_keys) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: allowed = false
+                  infinite (ak in allowed_keys) {
+                        route {
+                              k == ak ==> {
+                                    allowed = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        allowed ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapOmitKeys (as map: record, as list of data: omitted_keys) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: omit = false
+                  infinite (ok in omitted_keys) {
+                        route {
+                              k == ok ==> {
+                                    omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not omit ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L MapSearchContract (9 operacoes)
+      #L ==============================================================================
+      op mapFindKey (as map: record, as data: value) as data ==> {
+            mut as data: res = ""
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              res = k
+                              break
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapFindKeys (as map: record, as data: value) as list of data ==> {
+            mut as list of data: keys = []
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              count = count + 1
+                              keys[count] = k
+                        }
+                  }
+            }
+            emit(nice, keys, "ok")
+      }
+
+      #L ==============================================================================
+      #L 8. MapUtilityContract (4 operacoes)
+      #L ==============================================================================
+      op mapEquals (as map: lhs, as map: rhs) as bool ==> {
+            mut as int64: n_lhs = 0
+            infinite (k in lhs) {
+                  n_lhs = n_lhs + 1
+            }
+            mut as int64: n_rhs = 0
+            infinite (k in rhs) {
+                  n_rhs = n_rhs + 1
+            }
+            mut as bool: eq = n_lhs == n_rhs
+            route {
+                  eq ==> {
+                        infinite (k in lhs) {
+                              route {
+                                    lhs[k] != rhs[k] ==> {
+                                          eq = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            imut as bool: res = eq
+            emit(nice, res, "ok")
+      }
+
+      op mapJoin (as map: record, as string: entry_sep, as string: kv_sep) as string ==> {
+            mut as string: result = ""
+            mut as bool: first = true
+            infinite (k in record) {
+                  route {
+                        first ==> {
+                              result = "" + k + kv_sep + record[k]
+                              first = false
+                        }
+                        not first ==> {
+                              result = result + entry_sep + k + kv_sep + record[k]
+                        }
+                  }
+            }
+            imut as string: res = result
+            emit(nice, res, "ok")
+      }
+
+      op mapSwapKeys (as map: record, as string: key1, as string: key2) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  route {
+                        k == key1 ==> {
+                              m[key1] = record[key2]
+                        }
+                        k == key2 ==> {
+                              m[key2] = record[key1]
+                        }
+                        k != key1 and k != key2 ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapCount (as map: record, as string: key) as int64 ==> {
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        k == key ==> {
+                              count = 1
+                              break
+                        }
+                  }
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 10. MapEntryContract (5 operacoes)
+      #L ==============================================================================
+      op mapFromEntries (as list of data: entries) as map ==> {
+            mut as map: m = map{}
+            infinite (pair in entries) {
+                  mut as list of data: p = pair as list of data
+                  mut as string: k = "" + p[1]
+                  mut as data: v = p[2]
+                  m[k] = v
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapToEntries (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = [k, record[k]]
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapInvertMulti (as map: record) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as string: val_key = "" + record[k]
+                  mut as bool: exists = false
+                  infinite (ek in m) {
+                        route {
+                              ek == val_key ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        exists ==> {
+                              mut as list of data: existing = m[val_key] as list of data
+                              mut as int64: elen = 0
+                              infinite (x in existing) { elen = elen + 1 }
+                              existing[elen + 1] = k
+                              m[val_key] = existing
+                        }
+                        not exists ==> {
+                              mut as list of data: first_list = [k]
+                              m[val_key] = first_list
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapGroupListBy (as list of data: items, as string: key_field) as map ==> {
+            mut as map: m = map{}
+            infinite (item in items) {
+                  mut as map: item_map = item as map
+                  mut as string: gkey = "" + item_map[key_field]
+                  mut as bool: exists = false
+                  infinite (ek in m) {
+                        route {
+                              ek == gkey ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        exists ==> {
+                              mut as list of data: existing = m[gkey] as list of data
+                              mut as int64: elen = 0
+                              infinite (x in existing) { elen = elen + 1 }
+                              existing[elen + 1] = item
+                              m[gkey] = existing
+                        }
+                        not exists ==> {
+                              mut as list of data: first_list = [item]
+                              m[gkey] = first_list
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapSelectEntries (as map: record, as list of data: keys) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (target_k in keys) {
+                  mut as string: tk_str = "" + target_k
+                  infinite (k in record) {
+                        route {
+                              k == tk_str ==> {
+                                    count = count + 1
+                                    res[count] = [k, record[k]]
+                                    break
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

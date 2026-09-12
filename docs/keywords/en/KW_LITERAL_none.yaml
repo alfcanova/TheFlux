@@ -1,0 +1,34 @@
+keyword: none (valor nulo)
+category: Literal
+description: Representa a ausência de value (nulo/nil/None). É returnsdo por operations que não produce um value útil, como
+  acesso a chave ausente em map/data. É exibido como "None" na standard output em todos os backends (interpreter, vm, llvm,
+  wasm, wat). There is no uma keyword explícita para criar none; ele surge implicitamente em operations sem value de return.
+syntax: '# none não tem sintaxe literal explícita; surge implicitamente:
+
+  <mapa>["<chave_ausente>"]   # retorna none
+
+  <data>.<campo_ausente>       # retorna none
+
+  <expression> --> print        # print como sink retorna none'
+pseudocode: resultado := NULO   // ausencia de value (nulo/nil)
+usages:
+- name: Acesso a chave ausente em map
+  description: Braces que não existem em map return none.
+  examples:
+  - code: 'mut as map: metricas= {.threads: 8, .batch: 32}
+
+      print(metricas["ausente"])   # none'
+- name: Acesso a field ausente em data
+  description: Fields que não existem em data return none.
+  examples:
+  - code: 'mut as data: payload= {.status: "ok"}
+
+      print(payload.ausente)       # none'
+- name: Print como sink
+  description: --> print encerra a string e não returns value útil.
+  examples:
+  - code: 'dobro(10) --> print    # printagem, sem valor de retorno'
+restrictions:
+- none não tem keyword própria; aparece implicitamente.
+- não é um error acessar chave/field ausente - returns none.
+- none não é um type errorr; é um value de ausência.

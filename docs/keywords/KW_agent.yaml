@@ -1,0 +1,35 @@
+keyword: agent
+category: Declaração de Agente
+description: Declara um agente em arquivos .fdsl. Agentes são unidades modulares que encapsulam operações (op). O nome do
+  agente deve estar em PascalCase. Agentes são proibidos em arquivos .flux.
+syntax: "agent (<nome_PascalCase>) {\n      <declarações>\n      op <nome_camelCase> ([mut | imut | as] <tipo>: <identificador>\
+  \ [, [mut | imut | as] <tipo>: <identificador> ...]) [as <tipo_retorno>] ==> {\n            <instruções>\n            emit(nice\
+  \ | fail, <identificador>, \"<mensagem>\")\n      }\n      ...\n}"
+pseudocode: "AGENTE Veiculo:\n    OPERACAO acelerar(velocidade):\n        ...\n// unidade modular que encapsula operacoes\
+  \ (op)"
+usages:
+- name: Agente simples
+  description: Agente que declara operações sem parâmetros.
+  examples:
+  - code: "agent (AgentOfMath) {\n      op dot ==> {\n            print(\"Produto Escalar\")\n      }\n      op crux ==> {\n\
+      \            print(\"Produto Vetorial\")\n      }\n}"
+- name: Agente com operações parametrizadas
+  description: 'Agente com ops que recebem parâmetros nomeados ([mut | imut | as] <tipo>: <id>), retorno opcional ([as <tipo>])
+    e bloco com ==>.'
+  examples:
+  - code: "agent (AgentOfMath) {\n      op dot (as int64: x, as int64: y) as int64 ==> {\n            mut as int64: res =\
+      \ x + y\n            emit(nice, res, \"ok\")\n      }\n      op normalizarNome (as string: nome) as string ==> {\n \
+      \           emit(nice, nome, \"ok\")\n      }\n}"
+- name: Agente com estado
+  description: Agente que encapsula estado com declarações mut/imut.
+  examples:
+  - code: "agent (AgenteContador) {\n      mut as int64: total = 0\n      op incrementar (as int64: passo) as int64 ==> {\n\
+      \            total =+ passo\n            emit(nice, total, \"ok\")\n      }\n}"
+restrictions:
+- O nome do agente deve estar em PascalCase.
+- Um agente pode implementar no máximo um contrato usando a cláusula `impl`.
+- 'Operações (`op`) declaradas no corpo do agente seguem a sintaxe `op nomeCamelCase ([mut | imut | as] <tipo>: <id> ...)
+  [as <tipo>] ==> { <corpo> }`.'
+- Arquivos `.fdsl` não possuem `program`; apenas agentes e contratos são permitidos.
+- O corpo de um agente é delimitado por chaves `{}` e pode conter variáveis, funções e operações.
+- Agentes podem ser importados em arquivos `.flux` através da declaração `use`.

@@ -1,0 +1,50 @@
+keyword: keep
+category: Posse
+description: Inibe a liberação automática do Eager Flow Disposal, estendendo o tempo de vida do dado. Sem keep(), o compilador
+  determina o ponto de última uso de cada variável e a libera automaticamente. keep(x) mantém x válido até o final do bloco
+  léxico.
+syntax: 'keep(<identificador>)
+
+  <expressão> --> keep
+
+  '
+pseudocode: 'dado := PRODUZIR_DADO()
+
+  MANTER(dado)     // impede o descarte automatico (eager flow disposal)
+
+  USAR(dado)       // dado ainda disponivel depois'
+usages:
+- name: Impedir disposal automático
+  description: Variável seria disposed após última uso, keep() mantém viva.
+  examples:
+  - code: 'mut as int64: x = 10
+
+      mut as int64: r = x + 5
+
+      keep(x)
+
+      print(x)
+
+      '
+- name: Keep como sink de dataflow
+  description: Destino transparente que preserva o valor em pipeline.
+  examples:
+  - code: dados --> keep
+- name: Keep idempotente
+  description: Múltiplas chamadas de keep(x) são equivalentes a uma.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      keep(x)
+
+      keep(x)
+
+      print(x)
+
+      '
+restrictions:
+- Sem keep(), variável é disposed após última referência (Eager Flow Disposal).
+- keep(x) mantém x até fim do bloco léxico.
+- Variável disposed não pode ser lida (erro em runtime).
+- keep() pode ser chamado múltiplas vezes (idempotente).
+- --> keep é destino transparente que não consome o valor.

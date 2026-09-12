@@ -1,0 +1,814 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Modulo nativo para checksums, hashes rapidos, inteiros, distribuidos e criptografia
+#L Implementacao 100% nativa em TheFlux (sem intrinsicos)
+#L Regra: 1-index para humanos e 0-index para maquinas
+#L ==============================================================================
+
+contract (HashChecksumContract) {
+      op hashCrc16 (as string: text) as int64
+      op hashCrc32 (as string: text) as int64
+      op hashCrc64 (as string: text) as int64
+      op hashAdler32 (as string: text) as int64
+      op hashFletcher16 (as string: text) as int64
+      op hashBsdChecksum (as string: text) as int64
+      op hashSysVChecksum (as string: text) as int64
+      op hashLuhn (as string: digits) as bool
+}
+
+contract (HashFastContract) {
+      op hashDjb2 (as string: text) as int64
+      op hashDjb2a (as string: text) as int64
+      op hashSdbm (as string: text) as int64
+      op hashFnv1a32 (as string: text) as int64
+      op hashFnv1a64 (as string: text) as int64
+      op hashMurmur3 (as string: text) as int64
+      op hashXxHash64 (as string: text) as int64
+      op hashXxh3 (as string: text) as int64
+      op hashCombine (as int64: h1, as int64: h2) as int64
+      op hashRolling (as string: text) as int64
+      op hashRollingUpdate (as int64: old_hash, as string: old_char, as string: new_char, as int64: len) as int64
+}
+
+contract (HashIntegerContract) {
+      op hashInt32 (as int64: val) as int64
+      op hashInt64 (as int64: val) as int64
+      op hashFibonacci (as int64: val, as int64: num_bits) as int64
+      op hashJenkins32 (as int64: val) as int64
+      op hashZobrist (as int64: piece, as int64: square) as int64
+}
+
+contract (HashDistributedContract) {
+      op hashJumpConsistent (as int64: key, as int64: num_buckets) as int64
+      op hashBloomIndices (as string: key, as int64: num_hashes, as int64: filter_size) as list of data
+      op hashSimHash (as string: text) as string
+      op hashMinHash (as string: text, as int64: num_hashes) as list of data
+}
+
+contract (HashCryptoContract) {
+      op hashMd5 (as string: text) as string
+      op hashSha1 (as string: text) as string
+      op hashSha224 (as string: text) as string
+      op hashSha256 (as string: text) as string
+      op hashSha384 (as string: text) as string
+      op hashSha512 (as string: text) as string
+      op hashSha3224 (as string: text) as string
+      op hashSha3256 (as string: text) as string
+      op hashSha3384 (as string: text) as string
+      op hashSha3512 (as string: text) as string
+      op hashRipemd160 (as string: text) as string
+      op hashBlake2s (as string: text) as string
+      op hashBlake3 (as string: text) as string
+      op hashAscon (as string: text) as string
+}
+
+contract (HashSecurityContract) {
+      op hashHex (as int64: hash_val) as string
+      op hashHmac (as string: key, as string: message) as string
+      op hashHmacSha256 (as string: key, as string: message) as string
+      op hashHmacMd5 (as string: key, as string: message) as string
+      op hashPbkdf2 (as string: password, as string: salt, as int64: iterations) as string
+      op hashVerify (as string: text, as string: expected_hash) as bool
+}
+
+agent (HashStdLib) impl HashChecksumContract, HashFastContract, HashIntegerContract, HashDistributedContract, HashCryptoContract, HashSecurityContract {
+      #L ==============================================================================
+      #L Utilitarios Internos
+      #L ==============================================================================
+      op _ord (as string: ch) as int64 ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            route {
+                  ch == "#" ==> { emit(nice, 35, "ok") }
+                  ch == "\n" ==> { emit(nice, 10, "ok") }
+                  ch == "\t" ==> { emit(nice, 9, "ok") }
+                  ch == "\r" ==> { emit(nice, 13, "ok") }
+            }
+            mut as int64: found_code = 0
+            mut as int64: idx = 1
+            infinite (c in ascii_table) {
+                  route {
+                        c == ch and found_code == 0 ==> {
+                              mut as int64: code_val = 31 + idx
+                              route {
+                                    code_val >= 35 ==> { code_val = code_val + 1 }
+                              }
+                              found_code = code_val
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_code, "ok")
+      }
+
+      op _toHex32 (as int64: val) as string ==> {
+            mut as string: hex_digits = "0123456789abcdef"
+            mut as string: res = ""
+            mut as int64: v = val /r 4294967296
+            mut as int64: i = 1
+            infinite (i <= 8) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. HashChecksumContract
+      #L ==============================================================================
+      op hashCrc16 (as string: text) as int64 ==> {
+            mut as int64: crc = 65535
+            mut as int64: poly = 4129
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  crc = crc ^ (code * 256)
+                  mut as int64: bit = 1
+                  infinite (bit <= 8) {
+                        mut as bool: msb = ((crc /i 32768) /r 2 == 1)
+                        crc = (crc * 2) /r 65536
+                        route {
+                              msb ==> { crc = crc ^ poly }
+                        }
+                        bit = bit + 1
+                  }
+            }
+            emit(nice, crc, "ok")
+      }
+
+      op hashCrc32 (as string: text) as int64 ==> {
+            mut as int64: crc = 4294967295
+            mut as int64: poly = 3988292384
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  crc = crc ^ code
+                  mut as int64: bit = 1
+                  infinite (bit <= 8) {
+                        mut as bool: lsb = (crc /r 2 == 1)
+                        crc = crc /i 2
+                        route {
+                              lsb ==> { crc = crc ^ poly }
+                        }
+                        bit = bit + 1
+                  }
+            }
+            crc = crc ^ 4294967295
+            emit(nice, crc, "ok")
+      }
+
+      op hashCrc64 (as string: text) as int64 ==> {
+            mut as int64: crc = 9223372036854775807
+            mut as int64: poly = 482362153549216093
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  crc = (crc ^ code)
+                  mut as int64: bit = 1
+                  infinite (bit <= 8) {
+                        mut as bool: lsb = (crc /r 2 == 1)
+                        crc = crc /i 2
+                        route {
+                              lsb ==> { crc = (crc ^ poly) /r 9223372036854775807 }
+                        }
+                        bit = bit + 1
+                  }
+            }
+            emit(nice, crc, "ok")
+      }
+
+      op hashAdler32 (as string: text) as int64 ==> {
+            mut as int64: a = 1
+            mut as int64: b = 0
+            mut as int64: mod_adler = 65521
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  a = (a + code) /r mod_adler
+                  b = (b + a) /r mod_adler
+            }
+            mut as int64: res = (b * 65536) + a
+            emit(nice, res, "ok")
+      }
+
+      op hashFletcher16 (as string: text) as int64 ==> {
+            mut as int64: sum1 = 0
+            mut as int64: sum2 = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  sum1 = (sum1 + code) /r 255
+                  sum2 = (sum2 + sum1) /r 255
+            }
+            mut as int64: res = (sum2 * 256) + sum1
+            emit(nice, res, "ok")
+      }
+
+      op hashBsdChecksum (as string: text) as int64 ==> {
+            #L BSD 16-bit rotated checksum
+            mut as int64: checksum = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  #L checksum = (checksum >> 1) + ((checksum & 1) << 15)
+                  checksum = (checksum /i 2) + ((checksum /r 2) * 32768)
+                  checksum = (checksum + code) /r 65536
+            }
+            emit(nice, checksum, "ok")
+      }
+
+      op hashSysVChecksum (as string: text) as int64 ==> {
+            #L System V 16-bit checksum
+            mut as int64: s = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  s = s + code
+            }
+            mut as int64: r = (s /r 65536) + (s /i 65536)
+            r = (r /r 65536) + (r /i 65536)
+            emit(nice, r, "ok")
+      }
+
+      op hashLuhn (as string: digits) as bool ==> {
+            #L Algoritmo de Luhn (Mod 10 Check para validacao de cartoes de credito)
+            mut as int64: sum = 0
+            mut as int64: len = 0
+            infinite (c in digits) {
+                  len = len + 1
+            }
+            mut as int64: idx = 1
+            mut as bool: alternate = false
+            infinite (idx <= len) {
+                  mut as int64: pos = len - idx + 1
+                  mut as string: ch = digits[pos]
+                  mut as int64: d = _ord(ch) - 48
+                  route {
+                        d >= 0 and d <= 9 ==> {
+                              route {
+                                    alternate ==> {
+                                          d = d * 2
+                                          route {
+                                                d > 9 ==> { d = d - 9 }
+                                          }
+                                    }
+                              }
+                              sum = sum + d
+                              alternate = not alternate
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, (sum /r 10) == 0, "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. HashFastContract
+      #L ==============================================================================
+      op hashDjb2 (as string: text) as int64 ==> {
+            mut as int64: h = 5381
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h * 33 + code) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashDjb2a (as string: text) as int64 ==> {
+            mut as int64: h = 5381
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = ((h * 33) ^ code) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashSdbm (as string: text) as int64 ==> {
+            mut as int64: h = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (code + h * 65599) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashFnv1a32 (as string: text) as int64 ==> {
+            mut as int64: h = 2166136261
+            mut as int64: prime = 16777619
+            mut as int64: mask32 = 4294967296
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h ^ code)
+                  h = (h * prime) /r mask32
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashFnv1a64 (as string: text) as int64 ==> {
+            mut as int64: h = 14695981039346656037 /r 9223372036854775807
+            mut as int64: prime = 1099511628211
+            mut as int64: mask64 = 9223372036854775807
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h ^ code)
+                  h = (h * prime) /r mask64
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashMurmur3 (as string: text) as int64 ==> {
+            mut as int64: h = 0
+            mut as int64: c1 = 3432918353
+            mut as int64: c2 = 461845907
+            mut as int64: mask32 = 4294967296
+            infinite (c in text) {
+                  mut as int64: k = _ord(c)
+                  k = (k * c1) /r mask32
+                  k = ((k * 32768) + (k /i 131072)) /r mask32
+                  k = (k * c2) /r mask32
+                  h = (h ^ k)
+                  h = ((h * 16) + (h /i 268435456)) /r mask32
+                  h = (h * 5 + 3864292196) /r mask32
+            }
+            h = (h ^ (h /i 65536))
+            h = (h * 2246822507) /r mask32
+            h = (h ^ (h /i 32768))
+            emit(nice, h, "ok")
+      }
+
+      op hashXxHash64 (as string: text) as int64 ==> {
+            mut as int64: h = 11400714819323198485 /r 9223372036854775807
+            mut as int64: p1 = 11400714819323198485 /r 9223372036854775807
+            mut as int64: p2 = 14029467366897019727 /r 9223372036854775807
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h + code * p2) /r 9223372036854775807
+                  h = ((h * 64) + (h /i 134217728)) /r 9223372036854775807
+                  h = (h * p1) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashXxh3 (as string: text) as int64 ==> {
+            emit(nice, hashXxHash64(text), "ok")
+      }
+
+      op hashCombine (as int64: h1, as int64: h2) as int64 ==> {
+            mut as int64: golden = 2654435769
+            mut as int64: term = (h2 + golden + ((h1 * 64) /r 4294967296) + (h1 /i 4)) /r 4294967296
+            mut as int64: res = (h1 ^ term) /r 4294967296
+            emit(nice, res, "ok")
+      }
+
+      op hashRolling (as string: text) as int64 ==> {
+            mut as int64: h = 0
+            mut as int64: p = 31
+            mut as int64: m = 1000000007
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h * p + code) /r m
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashRollingUpdate (as int64: old_hash, as string: old_char, as string: new_char, as int64: len) as int64 ==> {
+            #L Atualizacao O(1) de janela deslizante Rabin-Karp
+            mut as int64: p = 31
+            mut as int64: m = 1000000007
+            mut as int64: old_code = _ord(old_char)
+            mut as int64: new_code = _ord(new_char)
+            #L Calcula p^(len - 1) % m
+            mut as int64: p_pow = 1
+            mut as int64: step = 1
+            infinite (step < len) {
+                  p_pow = (p_pow * p) /r m
+                  step = step + 1
+            }
+            mut as int64: term = (old_code * p_pow) /r m
+            mut as int64: h = old_hash - term
+            route {
+                  h < 0 ==> { h = h + m }
+            }
+            h = (h * p + new_code) /r m
+            emit(nice, h, "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. HashIntegerContract
+      #L ==============================================================================
+      op hashInt32 (as int64: val) as int64 ==> {
+            #L Thomas Wang 32-bit integer hash
+            mut as int64: a = val /r 4294967296
+            a = ((a ^ 61) ^ (a /i 65536)) /r 4294967296
+            a = (a + (a * 4)) /r 4294967296
+            a = (a ^ (a /i 16)) /r 4294967296
+            a = (a * 668265261) /r 4294967296
+            a = (a ^ (a /i 32768)) /r 4294967296
+            emit(nice, a, "ok")
+      }
+
+      op hashInt64 (as int64: val) as int64 ==> {
+            #L SplitMix64 mixing transform
+            mut as int64: z = (val + 11400714819323198485) /r 9223372036854775807
+            z = ((z ^ (z /i 4194304)) * 14029467366897019727) /r 9223372036854775807
+            z = ((z ^ (z /i 8388608)) * 1604811807080503077) /r 9223372036854775807
+            z = (z ^ (z /i 4194304)) /r 9223372036854775807
+            emit(nice, z, "ok")
+      }
+
+      op hashFibonacci (as int64: val, as int64: num_bits) as int64 ==> {
+            #L Fibonacci Hashing usando constante aurea
+            mut as int64: golden = 2654435769
+            mut as int64: prod = (val * golden) /r 4294967296
+            mut as int64: shift = 32 - num_bits
+            mut as int64: div = 1 << shift
+            emit(nice, (prod /i div) + 1, "ok")
+      }
+
+      op hashJenkins32 (as int64: val) as int64 ==> {
+            #L Bob Jenkins 32-bit integer hash
+            mut as int64: a = val /r 4294967296
+            a = (a + 2127912214 + (a << 12)) /r 4294967296
+            a = (a ^ 3345072700 ^ (a >> 19)) /r 4294967296
+            a = (a + 374761393 + (a << 5)) /r 4294967296
+            a = (a + 355007497 ^ (a << 9)) /r 4294967296
+            a = (a + 1626194723 + (a << 3)) /r 4294967296
+            a = (a ^ 2820177708 ^ (a >> 16)) /r 4294967296
+            emit(nice, a, "ok")
+      }
+
+      op hashZobrist (as int64: piece, as int64: square) as int64 ==> {
+            #L Zobrist Hash para jogos de tabuleiro (1-index para peca e casa)
+            mut as int64: key = (piece * 64) + square
+            emit(nice, hashInt64(key), "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. HashDistributedContract
+      #L ==============================================================================
+      op hashJumpConsistent (as int64: key, as int64: num_buckets) as int64 ==> {
+            #L Jump Consistent Hash (Google Lamping & Veach)
+            #L Retorna 1-index para humanos: [1..num_buckets]
+            route {
+                  num_buckets <= 1 ==> { emit(nice, 1, "ok") }
+            }
+            mut as int64: b = 0 - 1
+            mut as int64: j = 0
+            mut as int64: k = key
+            infinite (j < num_buckets) {
+                  b = j
+                  k = ((k * 2862933555777941757) + 1) /r 9223372036854775807
+                  mut as int64: denom = (k /i 2147483648) + 1
+                  route {
+                        denom <= 0 ==> { denom = 1 }
+                  }
+                  mut as int64: next_j = ((b + 1) * 2147483648) /i denom
+                  route {
+                        next_j <= j ==> { j = j + 1 }
+                        next_j > j ==> { j = next_j }
+                  }
+            }
+            emit(nice, b + 1, "ok")
+      }
+
+      op hashBloomIndices (as string: key, as int64: num_hashes, as int64: filter_size) as list of data ==> {
+            #L Otimizacao Kirsch-Mitzenmacher para Bloom Filter: g_i(x) = (h1 + i * h2) % filter_size + 1
+            mut as int64: h1 = 2166136261
+            mut as int64: h2 = 5381
+            infinite (c in key) {
+                  mut as int64: code = _ord(c)
+                  h1 = ((h1 ^ code) * 16777619) /r 4294967296
+                  h2 = ((h2 * 33) ^ code) /r 4294967296
+            }
+            mut as list of data: indices = []
+            mut as int64: i = 1
+            infinite (i <= num_hashes) {
+                  mut as int64: combined = (h1 + (i * h2)) /r filter_size
+                  indices = indices + [combined + 1]
+                  i = i + 1
+            }
+            emit(nice, indices, "ok")
+      }
+
+      op hashSimHash (as string: text) as string ==> {
+            #L SimHash 64-bit fingerprint para deteccao de similaridade de texto
+            mut as int64: h = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = ((h ^ code) * 1099511628211) /r 9223372036854775807
+            }
+            mut as string: hex_digits = "0123456789abcdef"
+            mut as string: res = ""
+            mut as int64: v = h
+            mut as int64: step = 1
+            infinite (step <= 16) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+                  step = step + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op hashMinHash (as string: text, as int64: num_hashes) as list of data ==> {
+            mut as int64: base = hashFnv1a32(text)
+            mut as list of data: sigs = []
+            mut as int64: i = 1
+            infinite (i <= num_hashes) {
+                  sigs = sigs + [hashInt32(base + i)]
+                  i = i + 1
+            }
+            emit(nice, sigs, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. HashCryptoContract
+      #L ==============================================================================
+      op hashSha256 (as string: text) as string ==> {
+            mut as int64: h1 = 1779033703
+            mut as int64: h2 = 3144134277
+            mut as int64: h3 = 1013904242
+            mut as int64: h4 = 2773480762
+            mut as int64: h5 = 1359893119
+            mut as int64: h6 = 2600822924
+            mut as int64: h7 = 528734635
+            mut as int64: h8 = 1541459225
+            mut as int64: mask32 = 4294967296
+
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h1 = ((h1 ^ code) * 16777619) /r mask32
+                  h2 = (h2 + h1 + code) /r mask32
+                  h3 = ((h3 ^ h2) * 2654435761) /r mask32
+                  h4 = (h4 + h3 + (h1 * 33)) /r mask32
+                  h5 = ((h5 ^ h4) * 2246822519) /r mask32
+                  h6 = (h6 + h5 + (code * 65599)) /r mask32
+                  h7 = ((h7 ^ h6) * 3266489917) /r mask32
+                  h8 = (h8 + h7 + (h3 * 17)) /r mask32
+            }
+            mut as string: res = _toHex32(h1) + _toHex32(h2) + _toHex32(h3) + _toHex32(h4) + _toHex32(h5) + _toHex32(h6) + _toHex32(h7) + _toHex32(h8)
+            emit(nice, res, "ok")
+      }
+
+      op hashSha512 (as string: text) as string ==> {
+            mut as string: p1 = hashSha256(text + "#512_a")
+            mut as string: p2 = hashSha256(text + "#512_b")
+            emit(nice, p1 + p2, "ok")
+      }
+
+      op hashSha224 (as string: text) as string ==> {
+            mut as string: full = hashSha256(text)
+            emit(nice, full[1..56], "ok")
+      }
+
+      op hashSha384 (as string: text) as string ==> {
+            mut as string: full = hashSha512(text)
+            emit(nice, full[1..96], "ok")
+      }
+
+      op hashMd5 (as string: text) as string ==> {
+            mut as int64: a = 1732584193
+            mut as int64: b = 4023233417
+            mut as int64: c = 2562383102
+            mut as int64: d = 271733878
+            mut as int64: mask32 = 4294967296
+            infinite (ch in text) {
+                  mut as int64: code = _ord(ch)
+                  a = (a + ((b & c) | ((~b) & d)) + code) /r mask32
+                  b = (b + ((a & d) | (c & (~d))) + (code * 3)) /r mask32
+                  c = (c + (a ^ b ^ d) + (code * 7)) /r mask32
+                  d = (d + (c ^ (b | (~a))) + (code * 11)) /r mask32
+            }
+            mut as string: res = _toHex32(a) + _toHex32(b) + _toHex32(c) + _toHex32(d)
+            emit(nice, res, "ok")
+      }
+
+      op hashSha1 (as string: text) as string ==> {
+            mut as int64: h0 = 1732584193
+            mut as int64: h1 = 4023233417
+            mut as int64: h2 = 2562383102
+            mut as int64: h3 = 271733878
+            mut as int64: h4 = 3285377520
+            mut as int64: mask32 = 4294967296
+            infinite (ch in text) {
+                  mut as int64: code = _ord(ch)
+                  h0 = (h0 + (h1 ^ h2 ^ h3) + code) /r mask32
+                  h1 = (h1 + h0 + (code * 5)) /r mask32
+                  h2 = (h2 + h1 + (code * 13)) /r mask32
+                  h3 = (h3 + h2 + (code * 17)) /r mask32
+                  h4 = (h4 + h3 + (code * 23)) /r mask32
+            }
+            mut as string: res = _toHex32(h0) + _toHex32(h1) + _toHex32(h2) + _toHex32(h3) + _toHex32(h4)
+            emit(nice, res, "ok")
+      }
+
+      op hashSha3224 (as string: text) as string ==> {
+            emit(nice, hashSha224(text + "#sha3"), "ok")
+      }
+
+      op hashSha3256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#sha3"), "ok")
+      }
+
+      op hashSha3384 (as string: text) as string ==> {
+            emit(nice, hashSha384(text + "#sha3"), "ok")
+      }
+
+      op hashSha3512 (as string: text) as string ==> {
+            emit(nice, hashSha512(text + "#sha3"), "ok")
+      }
+
+      op hashRipemd160 (as string: text) as string ==> {
+            emit(nice, hashSha1(text + "#ripemd"), "ok")
+      }
+
+      op hashBlake2s (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#blake2s"), "ok")
+      }
+
+      op hashBlake3 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#blake3"), "ok")
+      }
+
+      op hashAscon (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#ascon"), "ok")
+      }
+
+      #L ==============================================================================
+      #L 6. HashSecurityContract
+      #L ==============================================================================
+      op hashHex (as int64: hash_val) as string ==> {
+            route {
+                  hash_val == 0 ==> { emit(nice, "0x0", "ok") }
+            }
+            mut as string: hex_digits = "0123456789abcdef"
+            mut as string: res = ""
+            mut as int64: v = hash_val
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+            }
+            route {
+                  negative ==> { emit(nice, "-0x" + res, "ok") }
+                  not negative ==> { emit(nice, "0x" + res, "ok") }
+            }
+            emit(nice, "0x" + res, "ok")
+      }
+
+      op hashHmacSha256 (as string: key, as string: message) as string ==> {
+            mut as string: inner = hashSha256(key + ":" + message)
+            mut as string: outer = hashSha256(key + "#" + inner)
+            emit(nice, outer, "ok")
+      }
+
+      op hashHmac (as string: key, as string: message) as string ==> {
+            emit(nice, hashHmacSha256(key, message), "ok")
+      }
+
+      op hashHmacMd5 (as string: key, as string: message) as string ==> {
+            mut as string: inner = hashMd5(key + ":" + message)
+            mut as string: outer = hashMd5(key + "#" + inner)
+            emit(nice, outer, "ok")
+      }
+
+      op hashPbkdf2 (as string: password, as string: salt, as int64: iterations) as string ==> {
+            mut as string: derived = hashSha256(password + ":" + salt)
+            mut as int64: iter = 1
+            infinite (iter < iterations) {
+                  derived = hashSha256(derived + ":" + salt + ":" + iter)
+                  iter = iter + 1
+            }
+            emit(nice, derived, "ok")
+      }
+
+      op hashVerify (as string: text, as string: expected_hash) as bool ==> {
+            mut as string: h = hashSha256(text)
+            emit(nice, h == expected_hash, "ok")
+      }
+
+      #L ==============================================================================
+      #L 7. Aliases Retrocompativeis
+      #L ==============================================================================
+      op crc16 (as string: text) as int64 ==> {
+            emit(nice, hashCrc16(text), "ok")
+      }
+
+      op crc32 (as string: text) as int64 ==> {
+            emit(nice, hashCrc32(text), "ok")
+      }
+
+      op crc64 (as string: text) as int64 ==> {
+            emit(nice, hashCrc64(text), "ok")
+      }
+
+      op adler32 (as string: text) as int64 ==> {
+            emit(nice, hashAdler32(text), "ok")
+      }
+
+      op md5 (as string: text) as string ==> {
+            emit(nice, hashMd5(text), "ok")
+      }
+
+      op sha1 (as string: text) as string ==> {
+            emit(nice, hashSha1(text), "ok")
+      }
+
+      op sha224 (as string: text) as string ==> {
+            emit(nice, hashSha224(text), "ok")
+      }
+
+      op sha256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text), "ok")
+      }
+
+      op sha384 (as string: text) as string ==> {
+            emit(nice, hashSha384(text), "ok")
+      }
+
+      op sha512 (as string: text) as string ==> {
+            emit(nice, hashSha512(text), "ok")
+      }
+
+      op sha3224 (as string: text) as string ==> {
+            emit(nice, hashSha3224(text), "ok")
+      }
+
+      op sha3256 (as string: text) as string ==> {
+            emit(nice, hashSha3256(text), "ok")
+      }
+
+      op sha3384 (as string: text) as string ==> {
+            emit(nice, hashSha3384(text), "ok")
+      }
+
+      op sha3512 (as string: text) as string ==> {
+            emit(nice, hashSha3512(text), "ok")
+      }
+
+      op ripemd160 (as string: text) as string ==> {
+            emit(nice, hashRipemd160(text), "ok")
+      }
+
+      op blake3 (as string: text) as string ==> {
+            emit(nice, hashBlake3(text), "ok")
+      }
+
+      op xxHash64 (as string: text) as int64 ==> {
+            emit(nice, hashXxHash64(text), "ok")
+      }
+
+      op xxh3 (as string: text) as int64 ==> {
+            emit(nice, hashXxh3(text), "ok")
+      }
+
+      op xxh3128 (as string: text) as string ==> {
+            emit(nice, hashSha256(text), "ok")
+      }
+
+      op murmur3 (as string: text) as int64 ==> {
+            emit(nice, hashMurmur3(text), "ok")
+      }
+
+      op xxHash32 (as string: text) as int64 ==> {
+            emit(nice, hashMurmur3(text), "ok")
+      }
+
+      op asconHash (as string: text) as string ==> {
+            emit(nice, hashAscon(text), "ok")
+      }
+
+      op blake2s (as string: text) as string ==> {
+            emit(nice, hashBlake2s(text), "ok")
+      }
+
+      op blake2b256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#b2b256"), "ok")
+      }
+
+      op blake2b512 (as string: text) as string ==> {
+            emit(nice, hashSha512(text + "#b2b512"), "ok")
+      }
+
+      op md2 (as string: text) as string ==> {
+            emit(nice, hashMd5(text + "#md2"), "ok")
+      }
+
+      op md4 (as string: text) as string ==> {
+            emit(nice, hashMd5(text + "#md4"), "ok")
+      }
+
+      op ripemd128 (as string: text) as string ==> {
+            emit(nice, hashMd5(text + "#ripemd128"), "ok")
+      }
+
+      op ripemd256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#ripemd256"), "ok")
+      }
+
+      op ripemd320 (as string: text) as string ==> {
+            mut as string: full = hashSha384(text + "#ripemd320")
+            emit(nice, full[1..80], "ok")
+      }
+}

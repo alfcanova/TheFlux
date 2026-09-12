@@ -1,0 +1,42 @@
+keyword: use
+category: Declaração de Importação
+description: Importa agentes ou operações de agentes de outros módulos. Pode importar um agente inteiro com alias, uma operação
+  específica com alias, ou um grupo de operações de um agente.
+syntax: 'use <AgentePascalCase> as <AliasPascalCase>
+
+  use <AgentePascalCase>::<operacao_camelCase> as <alias_camelCase>
+
+  use <AgentePascalCase>::{ <op> [as <alias>], ... }'
+pseudocode: 'USAR Modulo::Operacao        // importa operacao especifica
+
+  USAR Calc COMO Aritmetica    // importa agente com alias'
+usages:
+- name: Importar agente com alias
+  description: Importa um agente completo com um alias; operações são usadas via Alias::op.
+  examples:
+  - code: use AgentOfPrint as AP
+  - code: use AgentOfMath as AM
+- name: Importar operação específica
+  description: Importa uma operação específica de um agente com alias; a operação passa a ser chamável pelo alias.
+  examples:
+  - code: use AgentOfMath::dot as produtoEscalar
+- name: Importar grupo de operações
+  description: Importa múltiplas operações de um agente.
+  examples:
+  - code: "use AgentOfMath::{\n    dot as produtoEscalar,\n    crux,\n    inverse\n}"
+- name: Uso de agente importado
+  description: Utiliza operações do agente importado via alias e ::.
+  examples:
+  - code: AP::printNome
+  - code: AM::printNome
+- name: Uso de operação importada com alias
+  description: Chama diretamente a operação importada pelo alias.
+  examples:
+  - code: produtoEscalar(2, 3)
+  - code: meuPrint()
+restrictions:
+- Nomes de agentes e aliases de agentes devem estar em PascalCase.
+- Nomes de operações e aliases de operações devem estar em camelCase.
+- 'Aliases de operações são chamados como função: `alias(args)`.'
+- 'Aliases de agentes são usados com `::` para acessar operações: `Alias::op(args)`.'
+- Declarações `use` devem vir no início do arquivo, antes de outras declarações.

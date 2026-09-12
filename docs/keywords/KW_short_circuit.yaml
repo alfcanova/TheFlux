@@ -1,0 +1,35 @@
+keyword: '?'
+category: Tratamento Condicional Estatal
+description: 'Bloco short-circuit que avalia uma expressão. O retorno dessa expressão é um struct transparente gerado e enviado
+  internamente pelo comando `emit`. O operador `?` intercepta esse struct e despacha o fluxo para um dos dois braços obrigatórios:
+  executa o primeiro braço quando o struct transparente possui `.sta == "fail"`, e o segundo braço quando `.sta == "nice"`.
+  O struct retornado é ligado diretamente  na variável resultante (permitindo ler `.sta`, `.val` e `.msg`) sem reavaliar a
+  chamada.'
+syntax: "<expressão> ?\n{\n      ==> emit(fail, variável, mensagem)   # `.sta` / `.val` / `.msg`\n      ==> emit(nice, variável,\
+  \ mensagem)   # `.sta` / `.val` / `.msg`\n}"
+pseudocode: 'resultado := avalia(expressao) ?   // struct de resultado transparente
+
+  estado    := resultado.estado      // leitura dos campos'
+usages:
+- name: Bloco short-circuit acessando os campos do resultado
+  description: Despacha para `fail` ou `nice` e le os campos .sta/.val/.msg do resultado.
+  examples:
+  - code: "function (validar) (idade: int64) as int64 {\n      (idade > 18) ? {\n            ==> emit(fail, idade, \"menor\
+      \ de idade\") \n            ==> emit(nice, idade, \"maior de idade\")\n      }\n}\n\nimut as int64: r = validar(15)\n\
+      print(r.sta)     #L \"fail\"\nprint(r.val)     #L 15\nprint(r.msg)     #L \"menor de idade\"\n\nimut as int64: r = validar(21)\n\
+      print(r.sta)     #L \"nice\"\nprint(r.val)     #L 21\nprint(r.msg)     #L \"maior de idade\""
+- name: 'Bloco atribuido: struct capturado na variavel'
+  description: Quando o bloco short-circuit é atribuído a uma variável, o struct de resultado produzido pelo braço executado
+    fica disponível nessa variável (.sta, .val e .msg), sem reavaliar a expressão original.
+  examples:
+  - code: "function (validar) (idade: int64) as int64 {\n      (idade > 18) ? {\n            ==> emit(fail, idade, \"menor\
+      \ de idade\")\n            ==> emit(nice, idade, \"maior de idade\")\n      }\n}\n\nimut as int64: entrada = 15\nimut\
+      \ as int64: r = validar(entrada) ? {\n      ==> emit(fail, entrada, \"erro na validacao\")\n      ==> emit(nice, entrada,\
+      \ \"validacao ok\")\n}\nprint(r)"
+restrictions:
+- O braço `fail` deve vir antes do braço `nice`.
+- Ambos os braços (`fail` e `nice`) são obrigatórios no bloco sintático do operador `?`.
+- A variável associada ao struct carrega os campos inteiros do resultado (`.sta`, `.val`, `.msg`). Quando injetada internamente
+  por braços anônimos, seu escopo é restrito ao corpo do braço; quando declarada via atribuição externa, segue as regras normais
+  de escopo da variável atribuída.
+- O bloco `?` é uma instrução válida dentro de blocos de função e operações.

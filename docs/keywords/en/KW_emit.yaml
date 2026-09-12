@@ -1,0 +1,75 @@
+keyword: emit
+category: Return Instruction
+description: 'Encerra a function atual devolvendo um struct implícito de resultado com três fields sempre definidos: `.sta`
+  ("nice" | "fail"), `.val` (value do identifier emitido, tipado pelo `as <type>` da function) e `.msg` (mensagem string ou
+  interpolada). `emit` é o statement terminal required do body de uma function. O struct integer fica disponível via variable
+  (`r = calc(5)`); depois leia cada field com acesso nomeado.'
+syntax: 'emit(nice, <identifier>, "<mensagem>")
+
+  emit(fail, <identifier>, "<mensagem>")'
+pseudocode: "FUNCAO calc(x):\n    IF invalido(x):\n        EMITIR(falha, x, \"entrada invalida\")\n    EMITIR(ok, x, \"calculado\")\
+  \   // terminal: encerra a function"
+usages:
+- name: Emit nice com return e consumo dos fields
+  description: Devolve o resultado de success; o chamador lê .sta, .val e .msg.
+  examples:
+  - code: |
+      function (calc) (as int64: x) as int64 {
+            emit(nice, x, "ok")
+      }
+
+      program (Main) {
+            imut as auto: r = calc(5)
+            print(r.sta)     #L "nice"
+            print(r.val)     #L 5
+            print(r.msg)     #L "ok"
+      }
+- name: Emit fail em caminho de error
+  description: Devolve status de error em um branch de route; os três fields continuam preenchidos.
+  examples:
+  - code: |
+      function (dividir) (as int64: dividendo, as int64: divisor) as int64 {
+            route {
+                  divisor == 0 ==> {
+                        emit(fail, divisor, "divisao por zero")
+                  }
+                  _ ==> {
+                        mut as int64: resultado = dividendo /i divisor
+                        emit(nice, resultado, "divisao executada")
+                  }
+            }
+      }
+
+      program (Main) {
+            imut as auto: r = dividir(10, 2)
+            print(r.sta)     #L "nice"
+            print(r.val)     #L 5
+            print(r.msg)     #L "divisao executada"
+      }
+- name: Emit fail com return
+  description: Devolve o status de error junto com o value e a mensagem.
+  examples:
+  - code: |
+      function (validar) (as int64: idade) as int64 {
+            route {
+                  idade < 18 ==> {
+                        emit(fail, idade, "menor de idade")
+                  }
+                  _ ==> {
+                        emit(nice, idade, "validacao concluida")
+                  }
+            }
+      }
+
+      program (Main) {
+            imut as auto: r = validar(15)
+            print(r.sta)     #L "fail"
+            print(r.val)     #L 15
+            print(r.msg)     #L "menor de idade"
+      }
+restrictions:
+- Apenas os status `nice` (success) e `fail` (error) são permitidos.
+- '`emit` é o statement terminal do body de uma function — nada pode vir depois.'
+- '`value` é um único identifier declarado (sem lista, sem expression, sem literal direto).'
+- A mensagem must be string literal ou string interpolada.
+- Functions com `as <type>` de return devem ter `emit` em todo caminho de execução (loops não contam).

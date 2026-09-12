@@ -1,0 +1,26 @@
+keyword: imut
+category: Declaração de Variável Imutável
+description: Declara uma constante imutável com valor inicial obrigatório. Uma vez atribuída, não pode ser reatribuída; a
+  reatribuição gera erro semântico (SEM001). Múltiplas constantes podem ser declaradas na forma principal com vírgulas, desde
+  que compartilhem o mesmo valor inicial.
+syntax: 'imut as <tipo>: <identificador> [, <identificador> ...] = <expressão>'
+pseudocode: CONSTANTE maximo := 100     // valor fixo, nao reatributivel
+usages:
+- name: Declaração de constante
+  description: Declara uma constante imutável com tipo explícito e valor inicial obrigatório.
+  examples:
+  - code: 'imut as int64: MAX_TENTATIVAS = 10
+
+      imut as string: NOME_APP = "TheFlux"'
+- name: Declaração múltipla em linha
+  description: Várias constantes na forma principal, separadas por vírgula; todas recebem o mesmo valor inicial.
+  examples:
+  - code: 'imut as float64: PI1, PI2 = 3.14159'
+restrictions:
+- Os identificadores devem seguir SCREAMING_SNAKE_CASE; a implementação emite uma sugestão (SUG) quando o nome não segue a
+  convenção (não é erro).
+- O valor inicial é obrigatório; a omissão gera erro SEM001 (imut não tem valor padrão).
+- Não pode ser reatribuída após a declaração; reatribuição com `=` ou operadores compostos gera erro SEM001.
+- O tipo é obrigatório após `as` (não há forma sem tipo).
+- 'Múltiplas constantes em uma única declaração são aceitas apenas na forma principal, com vírgulas entre os identificadores
+  (`imut as <tipo>: A, B = 42`); todas recebem o mesmo valor inicial. Valores diferentes exigem declarações separadas.'

@@ -1,0 +1,40 @@
+keyword: as
+category: Cast Operator / Import Alias
+description: Converte (cast) um value de um type para outro. Can be usado como operator pós-fixo em expressions ou como sink
+  em pipelines de dataflow ((as <type>)). Também define alias ao importar agents ou operations com use.
+syntax: '<expression> as <type>
+
+  <expression> --> (as <type>)
+
+  use <AgentePascalCase> as <AliasPascalCase>
+
+  use <AgentePascalCase>::<op> as <alias_camelCase>'
+pseudocode: 'numero := "12.5" CONVERTIDO_PARA float64
+
+  // mudanca de type explicita (cast)'
+usages:
+- name: Cast em expression
+  description: Converte uma string para int64.
+  examples:
+  - code: "mut as string: STR_IDADE = \"25\"\nmut as int64: idade = 0\nroute {\n      STR_IDADE == \"\" ==> { idade = 0 }\n\
+      \      _ ==> { idade = STR_IDADE as int64 }\n}"
+- name: Cast em pipeline de dataflow
+  description: Converte o type de um value em um pipeline.
+  examples:
+  - code: 'mut as string: STR_VEL = "12.5"
+
+      print(STR_VEL as float64)'
+- name: Alias de operation importada
+  description: Importa uma operation de um agent com um nome alternativo.
+  examples:
+  - code: use AgentOfMath::dot as produtoEscalar
+  - code: use AgentOfPrint::printNome as meuPrint
+- name: Alias de agent importado
+  description: Importa um agent integer com um nome alternativo.
+  examples:
+  - code: use AgentOfPrint as AP
+restrictions:
+- Na declaration de variables, o type após `as` é estritamente required.
+- Operations de cast inválidas entre types incompatíveis generate errorr de checagem estática (SEM002).
+- Declarations de alias (use ... as ...) devem vir no início do file.
+- Aliases de modules e agents devem seguir convenção PascalCase; aliases de operations devem seguir camelCase.

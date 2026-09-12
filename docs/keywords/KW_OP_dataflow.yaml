@@ -1,0 +1,51 @@
+keyword: --> (dataflow), ==> (lambda), split, join
+category: Operador de Dataflow
+description: Operadores de fluxo de dados para pipelines e transformações. --> (ARROW) direciona um valor para um destino
+  (função, sink, print, spy, cast). ==> (LAMBDA_ARROW) é o separador entre padrão e expressão em match arms e também funciona
+  como transformação lambda com binding it. split bifurca um fluxo em vias paralelas; join consolida fluxos em uma lista.
+syntax: '<expr> --> <destino>              # Pipeline de dataflow
+
+  <padrão> ==> <expr>              # Match arm ou lambda
+
+  <expr> split <expr>              # Bifurcação de fluxo
+
+  <expr> join <expr>               # Consolidação de fluxos'
+pseudocode: 'valor --> f --> g --> destino   // pipeline de dataflow
+
+  dobro(valor) --> EXIBIR        // terminal da cadeia'
+usages:
+- name: Dataflow arrow (-->)
+  description: Direciona o valor da esquerda para o destino da direita.
+  examples:
+  - code: 'dobro(10) --> print
+
+      dados --> preverTendencia --> spy --> print
+
+      "42" --> (as int64) --> print
+
+      input("Digite: ") --> print'
+- name: Lambda arrow (==>)
+  description: Transforma valor usando binding it.
+  examples:
+  - code: 'mut as int64: resultado = 10 ==> it * 2  # resultado = 20'
+- name: Split
+  description: Bifurca um fluxo em vias paralelas (retorna lista).
+  examples:
+  - code: 'mut as list: rotas = 100 split 200 split 300
+
+      rotas[2] --> print  # Acessa via específica'
+- name: Join
+  description: Consolida fluxos bifurcados em uma única lista.
+  examples:
+  - code: 'mut as list: fluxo = 10 join 20 join 30 join 40
+
+      fluxo[1] --> print  # 10'
+- name: Split e join combinados
+  description: Topologia complexa de dataflow.
+  examples:
+  - code: (1 split 2) join (3 split 4) --> print
+restrictions:
+- --> move implicitamente identificadores fonte (verificado pelo borrow checker).
+- Como sink, print encerra a cadeia; spy preserva o valor.
+- ==> avalia a expressão em um escopo filho com it vinculado imutavelmente.
+- split/join são operadores de topologia; split cria bundle de branches.

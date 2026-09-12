@@ -1,0 +1,56 @@
+keyword: =, =+, =-, =*, =/f, =/i, =/r, =^e, =^r
+category: Operador de Atribuição Aritmética
+description: Operadores de atribuição simples e composta aritmética. A atribuição simples (=) suporta identificadores, acesso
+  a campos, índices e multi-índices. Atribuições compostas aritméticas (=+, =-, =*, =/f, =/i, =/r, =^e, =^r) combinam operação
+  aritmética com atribuição, e suportam apenas identificadores simples.
+syntax: '<alvo> = <expr>              # Atribuição simples
+
+  <alvo> =+ <expr>             # Atribuição com adição (alvo = alvo + expr)
+
+  <alvo> =- <expr>             # Atribuição com subtração
+
+  <alvo> =* <expr>             # Atribuição com multiplicação
+
+  <alvo> =/f <expr>            # Atribuição com divisão decimal
+
+  <alvo> =/i <expr>            # Atribuição com divisão inteira
+
+  <alvo> =/r <expr>            # Atribuição com resto
+
+  <alvo> =^e <expr>            # Atribuição com potência
+
+  <alvo> =^r <expr>            # Atribuição com raiz'
+pseudocode: 'n := 10
+
+  n =+ 5     // n vira 15
+
+  n =* 2     // n vira 30
+
+  n =/i 3    // n vira 10'
+usages:
+- name: Atribuição simples
+  description: Atribui um valor a uma variável, campo ou índice.
+  examples:
+  - code: 'contador = 5
+
+      evento_atual.contador = 2
+
+      valores[1] = 15
+
+      payload.amostras[2] = 0.25'
+- name: Atribuição composta aritmética
+  description: Operação aritmética e atribuição em um único operador.
+  examples:
+  - code: 'soma =+ 3          # soma = soma + 3
+
+      subtracao =- 4     # subtracao = subtracao - 4
+
+      multiplicacao =* 7 # multiplicacao = multiplicacao * 7
+
+      resto =/r 4        # resto = resto /r 4
+
+      potencia =^e 3     # potencia = potencia ^e 3'
+restrictions:
+- 'Atribuição simples (=) suporta: identificador, campo, índice e multi-índice.'
+- Atribuição composta aritmética suporta apenas identificadores simples.
+- Atribuição a imut (constantes) é rejeitada at compile time.

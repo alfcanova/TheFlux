@@ -1,0 +1,37 @@
+keyword: async
+category: Tarefas Assíncronas (Future / Green Thread)
+description: 'Modificador que transforma uma função em uma operação não-bloqueante que retorna um Future. A função marcada
+  com async não bloqueia a pipeline síncrona que a invoca; seu corpo é avaliado sob demanda e o resultado é resolvido quando
+  a pipeline consome o Future com await.
+
+  '
+syntax: 'async function <nome_camelCase> (<parâmetros>) [as <tipo_retorno>] {
+
+      <instruções>
+
+  }
+
+  '
+usages:
+- name: Função assíncrona que retorna Future
+  description: Declara uma função não-bloqueante; a chamada retorna um Future resolvido com await.
+  examples:
+  - code: 'async function dobro (as int64: n) as int64 {
+
+        mut as int64: res = n * 2
+
+        emit(nice, res, "ok")
+
+      }
+
+      program (Main) {
+
+        print(await dobro(21))   # imprime 42
+
+      }
+
+      '
+restrictions:
+- async é um modificador de função, não um prefixo de expressão.
+- A função marcada com async retorna um Future e não bloqueia a pipeline síncrona.
+- O corpo é avaliado sob demanda e o resultado é colhido com await.

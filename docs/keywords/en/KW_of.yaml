@@ -1,0 +1,24 @@
+keyword: of
+category: Type Composition
+description: Operator de composição de type para coleções e tensores (`list of <type>`, `set of <type>`, `tensor[...] of <type>`).
+  Especifica o type dos elementos contidos na estrutura.
+syntax: 'list of <tipo_elemento>
+
+  set of <tipo_elemento>
+
+  tensor[<dimensões>] of <tipo_elemento>'
+pseudocode: 'lista  : LISTA DE Elemento
+
+  set    : CONJUNTO DE Elemento
+
+  matriz : TENSOR[dims] DE Elemento'
+usages:
+- name: Composição de type em coleções e tensores
+  description: Especifica o type dos elementos em listas, conjuntos e tensores.
+  examples:
+  - code: 'mut as list of int64: numeros = [1, 2, 3]'
+  - code: 'mut as set of string: tags = {"flux", "lang"}'
+  - code: 'mut as tensor[2, 2] of float32: matriz'
+restrictions:
+- O type do elemento must be um type válido da linguagem.
+- Tensores exigem que o type do elemento seja numérico.

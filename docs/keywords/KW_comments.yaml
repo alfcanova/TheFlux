@@ -1,0 +1,43 @@
+keyword: '#L, #B ... B#, #D ... D#'
+category: Comentário / Documentação
+description: 'Três formas de comentário na linguagem TheFlux: `#L` para comentários de linha, `#B ... B#` para comentários
+  em bloco multi-linha, e `#D ... D#` para docstrings estruturadas associadas a declarações. Docstrings suportam campos no
+  formato bullet (- chave: valor) extraídos pelo lexer.'
+syntax: '#L <texto>                            # Comentário de linha (até quebra de linha)
+
+  #B <texto> B#                         # Comentário em bloco multi-linha
+
+  #D                                    # Início da docstring
+
+  - <chave>: <valor>                    # Campo estruturado
+
+  - <chave>: <valor>
+
+  D#                                    # Fim da docstring'
+pseudocode: "#L comentario de linha\n#B\n   bloco comentado\nB#\n#D documentacao usada por ferramentas\nD#"
+usages:
+- name: Comentário de linha (#L)
+  description: Comentário de linha única estendendo-se até a quebra de linha.
+  examples:
+  - code: '#L Este é um comentário de linha única'
+  - code: '#L Rota condicional com padrão wildcard'
+- name: Comentário em bloco (#B ... B#)
+  description: Comentário que pode abranger múltiplas linhas sem afetar a indentação.
+  examples:
+  - code: '#B
+
+      Este é um comentário
+
+      em bloco com múltiplas linhas
+
+      B#'
+- name: Docstring estruturada (#D ... D#)
+  description: Documentação automática estruturada associada ao programa ou declarações.
+  examples:
+  - code: "#D\n- Programa: DocumentacaoExemplo\n- Descricao: Exemplo de documentacao gerada automaticamente.\n- Autor: TheFlux\n\
+      - Versao: 0.5\nD#\nprogram (ExemploDocumentacao) {\n      print(\"Exemplo\")\n}"
+restrictions:
+- '#B ... B# e #D ... D# não podem ser aninhados.'
+- Docstrings são associadas à próxima declaração ou statement.
+- 'Campos de docstring começam com -, * ou + e contêm o padrão chave: valor.'
+- Comentários e docstrings são tratados em tempo de compilação e não geram overhead em runtime nos backends.

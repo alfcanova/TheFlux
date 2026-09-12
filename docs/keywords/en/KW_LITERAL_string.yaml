@@ -1,0 +1,50 @@
+keyword: literal string (string_literal)
+category: Literal
+description: 'Literais string representam strings de texto entre double quotes. Codificadas em UTF-8; characters não-ASCII
+  são aceitos diretamente no literal. Suportam sequências de escape, incluindo \u{XXXX} para code points Unicode. Podem conter
+  interpolação de expressions com #{ }. O type é string (dinâmica) ou string(N) (capacidade fixa). len() conta bytes UTF-8.'
+syntax: '"<texto_utf8>"                      # String simples
+
+  "<texto com escapes \\n \\t \\\\>"   # Com escapes
+
+  "texto #{<expression>} texto"         # Com interpolação
+
+  "Aqui \\u{1F600}"                     # Code point Unicode'
+pseudocode: texto := "ola, mundo"   // UTF-8 entre double quotes
+usages:
+- name: String simples
+  description: Texto sem interpolação entre double quotes.
+  examples:
+  - code: 'mut as string: nome= "TheFlux"'
+  - code: print("Hello, World!")
+  - code: 'mut as string: vazia= ""'
+- name: UTF-8 direto
+  description: Characters não-ASCII são aceitos no literal (UTF-8).
+  examples:
+  - code: 'mut as string: saudacao= "Olá, mundo!"'
+  - code: 'mut as string: emoji= "🔥"'
+- name: String com escapes
+  description: Usa sequências de escape para characters especiais.
+  examples:
+  - code: 'mut as string: path= "C:\\\\TheFlux\\\\arquivo"'
+  - code: 'mut as string: texto= "Primeira linha\\nSegunda linha"'
+  - code: 'mut as string: tab= "Coluna1\\tColuna2"'
+  - code: 'mut as string: pi= "\\u{03C0}"        # "π"'
+- name: String com interpolação
+  description: 'Expressions #{ } são evaluatesdas e convertidas para string.'
+  examples:
+  - code: 'print("Contador: #{contador}")'
+  - code: 'print("Soma: #{a + b}")'
+  - code: 'mut as string: msg= "Resultado: #{calcular(x)}"'
+- name: Concatenação
+  description: Strings can be concatenadas com o operator +.
+  examples:
+  - code: 'mut as string: saudacao= "Ola, " + nome + "!"'
+restrictions:
+- String é UTF-8; len() mede bytes, não code points.
+- 'Interpolação #{ } não pode conter quebras de linha.'
+- 'Escapes suportados: \n, \t, \r, \0, \\, \", \'', \u{XXXX} (1-6 hex, sem surrogates, máx U+10FFFF).'
+- Escape inválido, surrogate ou code point fora do range causa error de lexicação.
+- NUL interno (\0 no meio do texto) é válido no interpretador/vm; backends compilados podem truncar na impressão (LLVM printf
+  %s).
+- string(N) (capacidade fixa) rejeita assignment que exceda N bytes.

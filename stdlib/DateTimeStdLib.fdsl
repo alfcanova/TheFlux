@@ -1,0 +1,1130 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Modulo nativo para operacoes com Datas, Horarios e Fusos Horarios
+#L ==============================================================================
+
+contract (DateTimeDateContract) {
+      op dateTimeCreateDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime
+      op dateTimeYear (as datetime: value) as int64
+      op dateTimeMonth (as datetime: value) as int64
+      op dateTimeDay (as datetime: value) as int64
+      op dateTimeWeekday (as datetime: value) as int64
+      op dateTimeDayOfYear (as datetime: value) as int64
+      op dateTimeDaysInMonth (as datetime: value) as int64
+      op dateTimeQuarter (as datetime: value) as int64
+      op dateTimeIsLeapYear (as datetime: value) as bool
+      op dateTimeIsWeekend (as datetime: value) as bool
+      op dateTimeAddDays (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractDays (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMonths (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMonths (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddYears (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractYears (as datetime: value, as int64: amount) as datetime
+      op dateTimeDaysBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMonthsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeYearsBetween (as datetime: left, as datetime: right) as int64
+}
+
+contract (DateTimeTimeContract) {
+      op dateTimeCreateTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime
+      op dateTimeCreateTimeFull (as int64: hour_value, as int64: minute_value, as int64: second_value, as int64: millisecond_value, as int64: microsecond_value, as int64: nanosecond_value) as datetime
+      op dateTimeHour (as datetime: value) as int64
+      op dateTimeMinute (as datetime: value) as int64
+      op dateTimeSecond (as datetime: value) as int64
+      op dateTimeMillisecond (as datetime: value) as int64
+      op dateTimeMicrosecond (as datetime: value) as int64
+      op dateTimeNanosecond (as datetime: value) as int64
+      op dateTimeAddHours (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractHours (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMinutes (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMinutes (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddSeconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractSeconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMilliseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMilliseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMicroseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMicroseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddNanoseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractNanoseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeHoursBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMinutesBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeSecondsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMillisecondsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMicrosecondsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeNanosecondsBetween (as datetime: left, as datetime: right) as int64
+}
+
+contract (DateTimeTimeZoneContract) {
+      op dateTimeToTimeZone (as datetime: value, as string: timezone_name) as string
+      op dateTimeToLocal (as datetime: value) as string
+      op dateTimeToUtc (as datetime: value) as datetime
+      op dateTimeUtcOffset (as datetime: value, as string: timezone_name) as float64
+      op dateTimeLocalTimeZone () as string
+      op dateTimeIsDaylightSavingTime (as datetime: value, as string: timezone_name) as bool
+      op dateTimeDstOffset (as datetime: value, as string: timezone_name) as float64
+}
+
+contract (DateTimeFormatContract) {
+      op dateTimeEpoch () as datetime
+      op dateTimeNow () as datetime
+      op dateTimeToday () as datetime
+      op dateTimeTime () as datetime
+      op dateTimeNowFormatted () as string
+      op dateTimeFormatDuration (as int64: duration_ns) as string
+      op dateTimeParseIso (as string: text) as datetime
+      op dateTimeToIso (as datetime: value) as string
+      op dateTimeToString (as datetime: value) as string
+      op dateTimeFormat (as datetime: value, as string: pattern) as string
+}
+
+contract (DateTimeCompareContract) {
+      op dateTimeSameInstant (as datetime: left, as datetime: right) as bool
+      op dateTimeIsBefore (as datetime: left, as datetime: right) as bool
+      op dateTimeIsAfter (as datetime: left, as datetime: right) as bool
+      op dateTimeCompare (as datetime: left, as datetime: right) as int64
+}
+
+contract (DateTimeMonotonicContract) {
+      op dateTimeMonotonicNow () as int64
+      op dateTimeMonotonicElapsed (as int64: start_time_ns) as int64
+}
+
+agent (DateTimeStdLib) impl DateTimeDateContract, DateTimeTimeContract, DateTimeTimeZoneContract, DateTimeFormatContract, DateTimeCompareContract, DateTimeMonotonicContract {
+
+      #L -- DateTimeDateContract --------------------------------------
+      op dateTimeCreateDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateDate(year_value, month_value, day_value), "ok")
+      }
+
+      op dateTimeYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeYear(value), "ok")
+      }
+
+      op dateTimeMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMonth(value), "ok")
+      }
+
+      op dateTimeDay (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDay(value), "ok")
+      }
+
+      op dateTimeWeekday (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeWeekday(value), "ok")
+      }
+
+      op dateTimeDayOfYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDayOfYear(value), "ok")
+      }
+
+      op dateTimeDaysInMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDaysInMonth(value), "ok")
+      }
+
+      op dateTimeQuarter (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeQuarter(value), "ok")
+      }
+
+      op dateTimeIsLeapYear (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsLeapYear(value), "ok")
+      }
+
+      op dateTimeIsWeekend (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsWeekend(value), "ok")
+      }
+
+      op dateTimeAddDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, amount), "ok")
+      }
+
+      op dateTimeSubtractDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, -amount), "ok")
+      }
+
+      op dateTimeAddMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, -amount), "ok")
+      }
+
+      op dateTimeAddYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, amount), "ok")
+      }
+
+      op dateTimeSubtractYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, -amount), "ok")
+      }
+
+      op dateTimeDaysBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeDaysBetween(left, right), "ok")
+      }
+
+      op dateTimeMonthsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMonthsBetween(left, right), "ok")
+      }
+
+      op dateTimeYearsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeYearsBetween(left, right), "ok")
+      }
+
+      #L -- DateTimeTimeContract --------------------------------------
+      op dateTimeCreateTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTime(hour_value, minute_value, second_value), "ok")
+      }
+
+      op dateTimeCreateTimeFull (as int64: hour_value, as int64: minute_value, as int64: second_value, as int64: millisecond_value, as int64: microsecond_value, as int64: nanosecond_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTimeFull(hour_value, minute_value, second_value, millisecond_value, microsecond_value, nanosecond_value), "ok")
+      }
+
+      op dateTimeHour (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeHour(value), "ok")
+      }
+
+      op dateTimeMinute (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMinute(value), "ok")
+      }
+
+      op dateTimeSecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeSecond(value), "ok")
+      }
+
+      op dateTimeMillisecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMillisecond(value), "ok")
+      }
+
+      op dateTimeMicrosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecond(value), "ok")
+      }
+
+      op dateTimeNanosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeNanosecond(value), "ok")
+      }
+
+      op dateTimeAddHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, amount), "ok")
+      }
+
+      op dateTimeSubtractHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, -amount), "ok")
+      }
+
+      op dateTimeAddMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, -amount), "ok")
+      }
+
+      op dateTimeAddSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, -amount), "ok")
+      }
+
+      op dateTimeAddMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, -amount), "ok")
+      }
+
+      op dateTimeAddMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, -amount), "ok")
+      }
+
+      op dateTimeAddNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, -amount), "ok")
+      }
+
+      op dateTimeHoursBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeHoursBetween(left, right), "ok")
+      }
+
+      op dateTimeMinutesBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMinutesBetween(left, right), "ok")
+      }
+
+      op dateTimeSecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeSecondsBetween(left, right), "ok")
+      }
+
+      op dateTimeMillisecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMillisecondsBetween(left, right), "ok")
+      }
+
+      op dateTimeMicrosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecondsBetween(left, right), "ok")
+      }
+
+      op dateTimeNanosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeNanosecondsBetween(left, right), "ok")
+      }
+
+      #L -- DateTimeTimeZoneContract ----------------------------------
+      op dateTimeToTimeZone (as datetime: value, as string: timezone_name) as string ==> {
+            emit(nice, stdDateTimeToTimeZone(value, timezone_name), "ok")
+      }
+
+      op dateTimeToLocal (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToLocal(value), "ok")
+      }
+
+      op dateTimeToUtc (as datetime: value) as datetime ==> {
+            emit(nice, stdDateTimeToUtc(value), "ok")
+      }
+
+      op dateTimeUtcOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeUtcOffset(value, timezone_name), "ok")
+      }
+
+      op dateTimeLocalTimeZone () as string ==> {
+            emit(nice, stdDateTimeLocalTimeZone(), "ok")
+      }
+
+      op dateTimeIsDaylightSavingTime (as datetime: value, as string: timezone_name) as bool ==> {
+            emit(nice, stdDateTimeIsDaylightSavingTime(value, timezone_name), "ok")
+      }
+
+      op dateTimeDstOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeDstOffset(value, timezone_name), "ok")
+      }
+
+      #L -- DateTimeFormatContract ------------------------------------
+      op dateTimeEpoch () as datetime ==> {
+            emit(nice, 1970-01-01T00:00:00.000000000Z, "ok")
+      }
+
+      op dateTimeNow () as datetime ==> {
+            emit(nice, stdDateTimeNow(), "ok")
+      }
+
+      op dateTimeToday () as datetime ==> {
+            emit(nice, stdDateTimeToday(), "ok")
+      }
+
+      op dateTimeTime () as datetime ==> {
+            emit(nice, stdDateTimeTime(), "ok")
+      }
+
+      op dateTimeNowFormatted () as string ==> {
+            emit(nice, stdGetCurrentTimeNsString(), "ok")
+      }
+
+      op dateTimeFormatDuration (as int64: duration_ns) as string ==> {
+            emit(nice, stdFormatDurationNs(duration_ns), "ok")
+      }
+
+      op dateTimeParseIso (as string: text) as datetime ==> {
+            emit(nice, stdDateTimeParseIso(text), "ok")
+      }
+
+      op dateTimeToIso (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op dateTimeToString (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op dateTimeFormat (as datetime: value, as string: pattern) as string ==> {
+            emit(nice, stdDateTimeFormat(value, pattern), "ok")
+      }
+
+      #L -- DateTimeCompareContract -----------------------------------
+      op dateTimeSameInstant (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, left == right, "ok")
+      }
+
+      op dateTimeIsBefore (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsBefore(left, right), "ok")
+      }
+
+      op dateTimeIsAfter (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsAfter(left, right), "ok")
+      }
+
+      op dateTimeCompare (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeCompare(left, right), "ok")
+      }
+
+      #L -- DateTimeMonotonicContract ---------------------------------
+      op dateTimeMonotonicNow () as int64 ==> {
+            emit(nice, stdDateTimeMonotonicNow(), "ok")
+      }
+
+      op dateTimeMonotonicElapsed (as int64: start_time_ns) as int64 ==> {
+            emit(nice, stdDateTimeMonotonicElapsed(start_time_ns), "ok")
+      }
+
+      #L -- Backward Compatibility Aliases ---------------------------
+      op monotonicNow () as int64 ==> {
+            emit(nice, stdDateTimeMonotonicNow(), "ok")
+      }
+
+      op monotonic () as int64 ==> {
+            emit(nice, stdDateTimeMonotonicNow(), "ok")
+      }
+
+      op monotonicNs () as int64 ==> {
+            emit(nice, stdDateTimeMonotonicNow(), "ok")
+      }
+
+      op monotonicElapsed (as int64: start_time_ns) as int64 ==> {
+            emit(nice, stdDateTimeMonotonicElapsed(start_time_ns), "ok")
+      }
+
+      op elapsed (as int64: start_time_ns) as int64 ==> {
+            emit(nice, stdDateTimeMonotonicElapsed(start_time_ns), "ok")
+      }
+
+      op epoch () as datetime ==> {
+            emit(nice, 1970-01-01T00:00:00.000000000Z, "ok")
+      }
+
+      op time () as datetime ==> {
+            emit(nice, stdDateTimeTime(), "ok")
+      }
+
+      op now () as datetime ==> {
+            emit(nice, stdDateTimeNow(), "ok")
+      }
+
+      op nowFormatted () as string ==> {
+            emit(nice, stdGetCurrentTimeNsString(), "ok")
+      }
+
+      op formatDuration (as int64: duration_ns) as string ==> {
+            emit(nice, stdFormatDurationNs(duration_ns), "ok")
+      }
+
+      op durationToString (as int64: duration_ns) as string ==> {
+            emit(nice, stdFormatDurationNs(duration_ns), "ok")
+      }
+
+      op today () as datetime ==> {
+            emit(nice, stdDateTimeToday(), "ok")
+      }
+
+      op createDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateDate(year_value, month_value, day_value), "ok")
+      }
+
+      op makeDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateDate(year_value, month_value, day_value), "ok")
+      }
+
+      op createTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTime(hour_value, minute_value, second_value), "ok")
+      }
+
+      op makeTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTime(hour_value, minute_value, second_value), "ok")
+      }
+
+      op createTimeFull (as int64: hour_value, as int64: minute_value, as int64: second_value, as int64: millisecond_value, as int64: microsecond_value, as int64: nanosecond_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTimeFull(hour_value, minute_value, second_value, millisecond_value, microsecond_value, nanosecond_value), "ok")
+      }
+
+      op makeTimeFull (as int64: hour_value, as int64: minute_value, as int64: second_value, as int64: millisecond_value, as int64: microsecond_value, as int64: nanosecond_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTimeFull(hour_value, minute_value, second_value, millisecond_value, microsecond_value, nanosecond_value), "ok")
+      }
+
+      op parseIso (as string: text) as datetime ==> {
+            emit(nice, stdDateTimeParseIso(text), "ok")
+      }
+
+      op parseIsoString (as string: text) as datetime ==> {
+            emit(nice, stdDateTimeParseIso(text), "ok")
+      }
+
+      op fromIso (as string: text) as datetime ==> {
+            emit(nice, stdDateTimeParseIso(text), "ok")
+      }
+
+      op toIso (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op toIsoString (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op toISOString (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op format (as datetime: value, as string: pattern) as string ==> {
+            emit(nice, stdDateTimeFormat(value, pattern), "ok")
+      }
+
+      op formatDateTime (as datetime: value, as string: pattern) as string ==> {
+            emit(nice, stdDateTimeFormat(value, pattern), "ok")
+      }
+
+      op formatPattern (as datetime: value, as string: pattern) as string ==> {
+            emit(nice, stdDateTimeFormat(value, pattern), "ok")
+      }
+
+      op sameInstant (as datetime: lhs, as datetime: rhs) as bool ==> {
+            emit(nice, lhs == rhs, "ok")
+      }
+
+      op year (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeYear(value), "ok")
+      }
+
+      op extractYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeYear(value), "ok")
+      }
+
+      op getYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeYear(value), "ok")
+      }
+
+      op month (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMonth(value), "ok")
+      }
+
+      op extractMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMonth(value), "ok")
+      }
+
+      op getMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMonth(value), "ok")
+      }
+
+      op day (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDay(value), "ok")
+      }
+
+      op extractDay (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDay(value), "ok")
+      }
+
+      op getDay (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDay(value), "ok")
+      }
+
+      op weekday (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeWeekday(value), "ok")
+      }
+
+      op extractWeekday (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeWeekday(value), "ok")
+      }
+
+      op getWeekday (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeWeekday(value), "ok")
+      }
+
+      op dayOfYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDayOfYear(value), "ok")
+      }
+
+      op extractDayOfYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDayOfYear(value), "ok")
+      }
+
+      op getDayOfYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDayOfYear(value), "ok")
+      }
+
+      op daysInMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDaysInMonth(value), "ok")
+      }
+
+      op extractDaysInMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDaysInMonth(value), "ok")
+      }
+
+      op getDaysInMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDaysInMonth(value), "ok")
+      }
+
+      op quarter (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeQuarter(value), "ok")
+      }
+
+      op extractQuarter (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeQuarter(value), "ok")
+      }
+
+      op getQuarter (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeQuarter(value), "ok")
+      }
+
+      op isLeapYear (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsLeapYear(value), "ok")
+      }
+
+      op isWeekend (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsWeekend(value), "ok")
+      }
+
+      op hour (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeHour(value), "ok")
+      }
+
+      op extractHour (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeHour(value), "ok")
+      }
+
+      op getHour (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeHour(value), "ok")
+      }
+
+      op minute (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMinute(value), "ok")
+      }
+
+      op extractMinute (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMinute(value), "ok")
+      }
+
+      op getMinute (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMinute(value), "ok")
+      }
+
+      op second (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeSecond(value), "ok")
+      }
+
+      op extractSecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeSecond(value), "ok")
+      }
+
+      op getSecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeSecond(value), "ok")
+      }
+
+      op millisecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMillisecond(value), "ok")
+      }
+
+      op extractMillisecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMillisecond(value), "ok")
+      }
+
+      op getMillisecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMillisecond(value), "ok")
+      }
+
+      op microsecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecond(value), "ok")
+      }
+
+      op extractMicrosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecond(value), "ok")
+      }
+
+      op getMicrosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecond(value), "ok")
+      }
+
+      op nanosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeNanosecond(value), "ok")
+      }
+
+      op extractNanosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeNanosecond(value), "ok")
+      }
+
+      op getNanosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeNanosecond(value), "ok")
+      }
+
+      op addDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, amount), "ok")
+      }
+
+      op plusDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, amount), "ok")
+      }
+
+      op subtractDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, -amount), "ok")
+      }
+
+      op minusDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, -amount), "ok")
+      }
+
+      op addHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, amount), "ok")
+      }
+
+      op plusHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, amount), "ok")
+      }
+
+      op subtractHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, -amount), "ok")
+      }
+
+      op minusHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, -amount), "ok")
+      }
+
+      op addMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, amount), "ok")
+      }
+
+      op plusMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, amount), "ok")
+      }
+
+      op subtractMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, -amount), "ok")
+      }
+
+      op minusMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, -amount), "ok")
+      }
+
+      op addSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, amount), "ok")
+      }
+
+      op plusSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, amount), "ok")
+      }
+
+      op subtractSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, -amount), "ok")
+      }
+
+      op minusSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, -amount), "ok")
+      }
+
+      op addMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, amount), "ok")
+      }
+
+      op plusMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, amount), "ok")
+      }
+
+      op subtractMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, -amount), "ok")
+      }
+
+      op minusMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, -amount), "ok")
+      }
+
+      op addMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, amount), "ok")
+      }
+
+      op plusMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, amount), "ok")
+      }
+
+      op subtractMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, -amount), "ok")
+      }
+
+      op minusMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, -amount), "ok")
+      }
+
+      op addNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, amount), "ok")
+      }
+
+      op plusNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, amount), "ok")
+      }
+
+      op subtractNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, -amount), "ok")
+      }
+
+      op minusNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, -amount), "ok")
+      }
+
+      op addMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, amount), "ok")
+      }
+
+      op plusMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, amount), "ok")
+      }
+
+      op subtractMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, -amount), "ok")
+      }
+
+      op minusMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, -amount), "ok")
+      }
+
+      op addYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, amount), "ok")
+      }
+
+      op plusYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, amount), "ok")
+      }
+
+      op subtractYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, -amount), "ok")
+      }
+
+      op minusYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, -amount), "ok")
+      }
+
+      op isBefore (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsBefore(left, right), "ok")
+      }
+
+      op isEarlier (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsBefore(left, right), "ok")
+      }
+
+      op isAfter (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsAfter(left, right), "ok")
+      }
+
+      op isLater (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsAfter(left, right), "ok")
+      }
+
+      op compare (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeCompare(left, right), "ok")
+      }
+
+      op compareTo (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeCompare(left, right), "ok")
+      }
+
+      op daysBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeDaysBetween(left, right), "ok")
+      }
+
+      op diffDays (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeDaysBetween(left, right), "ok")
+      }
+
+      op monthsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMonthsBetween(left, right), "ok")
+      }
+
+      op diffMonths (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMonthsBetween(left, right), "ok")
+      }
+
+      op yearsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeYearsBetween(left, right), "ok")
+      }
+
+      op diffYears (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeYearsBetween(left, right), "ok")
+      }
+
+      op hoursBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeHoursBetween(left, right), "ok")
+      }
+
+      op diffHours (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeHoursBetween(left, right), "ok")
+      }
+
+      op minutesBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMinutesBetween(left, right), "ok")
+      }
+
+      op diffMinutes (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMinutesBetween(left, right), "ok")
+      }
+
+      op secondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeSecondsBetween(left, right), "ok")
+      }
+
+      op diffSeconds (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeSecondsBetween(left, right), "ok")
+      }
+
+      op millisecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMillisecondsBetween(left, right), "ok")
+      }
+
+      op diffMilliseconds (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMillisecondsBetween(left, right), "ok")
+      }
+
+      op microsecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecondsBetween(left, right), "ok")
+      }
+
+      op diffMicroseconds (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecondsBetween(left, right), "ok")
+      }
+
+      op nanosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeNanosecondsBetween(left, right), "ok")
+      }
+
+      op diffNanoseconds (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeNanosecondsBetween(left, right), "ok")
+      }
+
+      op toTimeZone (as datetime: value, as string: timezone_name) as string ==> {
+            emit(nice, stdDateTimeToTimeZone(value, timezone_name), "ok")
+      }
+
+      op inTimeZone (as datetime: value, as string: timezone_name) as string ==> {
+            emit(nice, stdDateTimeToTimeZone(value, timezone_name), "ok")
+      }
+
+      op toLocal (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToLocal(value), "ok")
+      }
+
+      op toUtc (as datetime: value) as datetime ==> {
+            emit(nice, stdDateTimeToUtc(value), "ok")
+      }
+
+      op utcOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeUtcOffset(value, timezone_name), "ok")
+      }
+
+      op getUtcOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeUtcOffset(value, timezone_name), "ok")
+      }
+
+      op localTimeZone () as string ==> {
+            emit(nice, stdDateTimeLocalTimeZone(), "ok")
+      }
+
+      op getLocalTimeZone () as string ==> {
+            emit(nice, stdDateTimeLocalTimeZone(), "ok")
+      }
+
+      op isDaylightSavingTime (as datetime: value, as string: timezone_name) as bool ==> {
+            emit(nice, stdDateTimeIsDaylightSavingTime(value, timezone_name), "ok")
+      }
+
+      op inDaylightTime (as datetime: value, as string: timezone_name) as bool ==> {
+            emit(nice, stdDateTimeIsDaylightSavingTime(value, timezone_name), "ok")
+      }
+
+      op dstOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeDstOffset(value, timezone_name), "ok")
+      }
+
+      #L -- Legacy Time* aliases ---------------------------------------
+      op timeEpoch () as datetime ==> {
+            emit(nice, 1970-01-01T00:00:00.000000000Z, "ok")
+      }
+
+      op timeNow () as datetime ==> {
+            emit(nice, stdDateTimeNow(), "ok")
+      }
+
+      op timeToday () as datetime ==> {
+            emit(nice, stdDateTimeToday(), "ok")
+      }
+
+      op timeTime () as datetime ==> {
+            emit(nice, stdDateTimeTime(), "ok")
+      }
+
+      op timeNowFormatted () as string ==> {
+            emit(nice, stdGetCurrentTimeNsString(), "ok")
+      }
+
+      op timeFormatDuration (as int64: duration_ns) as string ==> {
+            emit(nice, stdFormatDurationNs(duration_ns), "ok")
+      }
+
+      op timeCreateDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateDate(year_value, month_value, day_value), "ok")
+      }
+
+      op timeCreateTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTime(hour_value, minute_value, second_value), "ok")
+      }
+
+      op timeParseIso (as string: text) as datetime ==> {
+            emit(nice, stdDateTimeParseIso(text), "ok")
+      }
+
+      op timeToIso (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op timeToString (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op timeFormat (as datetime: value, as string: pattern) as string ==> {
+            emit(nice, stdDateTimeFormat(value, pattern), "ok")
+      }
+
+      op timeSameInstant (as datetime: lhs, as datetime: rhs) as bool ==> {
+            emit(nice, lhs == rhs, "ok")
+      }
+
+      op timeYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeYear(value), "ok")
+      }
+
+      op timeMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMonth(value), "ok")
+      }
+
+      op timeDay (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDay(value), "ok")
+      }
+
+      op timeHour (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeHour(value), "ok")
+      }
+
+      op timeMinute (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMinute(value), "ok")
+      }
+
+      op timeSecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeSecond(value), "ok")
+      }
+
+      op timeWeekday (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeWeekday(value), "ok")
+      }
+
+      op timeAddDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, amount), "ok")
+      }
+
+      op timeSubtractDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, -amount), "ok")
+      }
+
+      op timeAddHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, amount), "ok")
+      }
+
+      op timeSubtractHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, -amount), "ok")
+      }
+
+      op timeAddMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, amount), "ok")
+      }
+
+      op timeSubtractMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, -amount), "ok")
+      }
+
+      op timeAddSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, amount), "ok")
+      }
+
+      op timeSubtractSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, -amount), "ok")
+      }
+
+      op timeAddMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, amount), "ok")
+      }
+
+      op timeSubtractMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, -amount), "ok")
+      }
+
+      op timeAddYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, amount), "ok")
+      }
+
+      op timeSubtractYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, -amount), "ok")
+      }
+
+      op timeIsBefore (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsBefore(left, right), "ok")
+      }
+
+      op timeIsAfter (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsAfter(left, right), "ok")
+      }
+
+      op timeIsLeapYear (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsLeapYear(value), "ok")
+      }
+
+      op timeDaysBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeDaysBetween(left, right), "ok")
+      }
+
+      op timeHoursBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeHoursBetween(left, right), "ok")
+      }
+
+      op timeMinutesBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMinutesBetween(left, right), "ok")
+      }
+
+      op timeSecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeSecondsBetween(left, right), "ok")
+      }
+
+      op timeMillisecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMillisecondsBetween(left, right), "ok")
+      }
+
+      op timeMicrosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecondsBetween(left, right), "ok")
+      }
+
+      op timeNanosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeNanosecondsBetween(left, right), "ok")
+      }
+
+      op timeToTimeZone (as datetime: value, as string: timezone_name) as string ==> {
+            emit(nice, stdDateTimeToTimeZone(value, timezone_name), "ok")
+      }
+
+      op timeToLocal (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToLocal(value), "ok")
+      }
+
+      op timeToUtc (as datetime: value) as datetime ==> {
+            emit(nice, stdDateTimeToUtc(value), "ok")
+      }
+
+      op timeUtcOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeUtcOffset(value, timezone_name), "ok")
+      }
+
+      op timeLocalTimeZone () as string ==> {
+            emit(nice, stdDateTimeLocalTimeZone(), "ok")
+      }
+
+      op timeIsDaylightSavingTime (as datetime: value, as string: timezone_name) as bool ==> {
+            emit(nice, stdDateTimeIsDaylightSavingTime(value, timezone_name), "ok")
+      }
+
+      op timeDstOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeDstOffset(value, timezone_name), "ok")
+      }
+}
+

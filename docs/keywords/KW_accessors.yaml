@@ -1,0 +1,82 @@
+keyword: ., ::, [], ..
+category: Operadores de Acesso
+description: 'Operadores fundamentais para acesso a membros, resolução de escopo, indexação e fatiamento em TheFlux:
+
+  - `.` (ponto): Acesso a campos de instâncias de `struct` e `data`, propriedades de retorno de operações (`res.sta`, `res.val`,
+  `res.msg`) e chamadas de métodos.
+
+  - `::` (dois-pontos duplo): Resolução estática de escopo para variantes de enum (`Enum::Variante`), operações de agentes
+  (`Agente::operacao`) e símbolos de módulos.
+
+  - `[ ]` (colchetes): Acesso por índice posicional em `list` (1-based), acesso associativo por chave em `map` (`mapa["chave"]`),
+  e acesso multidimensional em `tensor` (`tensor[i, j]`).
+
+  - `..` (range/slice): Fatiamento contíguo dentro de colchetes (`[ini..fim]`, `[..fim]`, `[ini..]`, `[..]`) para listas,
+  strings e tensores, além de iteração em faixas.'
+syntax: '<expr>.<campo>                      # Acesso a campo de struct ou data
+
+  <expr>.<propriedade>                # Acesso a propriedades de retorno (sta, val, msg)
+
+  <Enum>::<Variante>                  # Acesso a variante de enumeração
+
+  <Agente>::<operacao>()              # Acesso e invocação de operação de agente
+
+  <Modulo>::<simbolo>                 # Acesso a símbolo de namespace importado
+
+  <lista>[<indice>]                   # Acesso posicional a elemento de lista
+
+  <mapa>[<chave>]                     # Acesso associativo por chave em mapa
+
+  <tensor>[<dim1>, <dim2>]            # Acesso multidimensional a elemento de tensor
+
+  <colecao>[<inicio> .. <fim>]        # Fatiamento (slice) por faixa de índices'
+pseudocode: 'obj.campo          // acesso a campo (.)
+
+  Modulo::item       // resolucao de escopo (::)
+
+  colecao[1]         // indexacao ([]) — 1-based
+
+  fatia := colecao[2..5]   // fatia (range)'
+usages:
+- name: Acesso a campos e propriedades (.)
+  description: Acessa campos em structs, objetos data e propriedades de retorno de operações.
+  examples:
+  - code: "struct (Ponto) {\n      mut: .x: float64\n      mut: .y: float64\n}\n\nprogram (ExemploPonto) {\n      mut as Ponto:\
+      \ p = Ponto(\n            .x: 10.5\n            .y: 20.0\n      )\n      print(p.x)\n      p.y = 35.0\n}"
+  - code: 'mut as data: payload = data(.nome: "TheFlux", .ativo: true)
+
+      print(payload.nome)
+
+      payload.status = "online"'
+- name: Resolução de escopo e namespaces (::)
+  description: Acessa variantes de enum, operações de agentes e símbolos de módulos importados.
+  examples:
+  - code: "enum (Status) {\n      Ativo\n      Inativo\n}\n\nprogram (ExemploEnum) {\n      mut as Status: s = Status::Ativo\n\
+      \      print(s)\n}"
+  - code: "use AgentOfPrint as AP\n\nprogram (ExemploAgente) {\n      AP::printNome()\n}"
+- name: Indexação e fatiamento ([ ] e ..)
+  description: Acessa elementos em listas, mapas, tensores e extrai fatias de coleções.
+  examples:
+  - code: 'mut as list of int64: valores = [10, 20, 30, 40, 50]
+
+      print(valores[1])      # Primeiro elemento (10)
+
+      print(valores[2..4])   # Sublista [20, 30, 40]
+
+      print(valores[..3])    # Do inicio ate o 3o [10, 20, 30]
+
+      print(valores[3..])    # Do 3o ate o final [30, 40, 50]'
+  - code: 'mut as tensor[2, 2] of float64: matriz
+
+      matriz[1, 2] = 42.0
+
+      mut as float64: elem = matriz[1, 2]
+
+      print(elem)'
+restrictions:
+- O ponto (.) é utilizado para campos de struct, data e propriedades de retorno. Mapas não aceitam .campo (requerem mapa["chave"]).
+- 'O operador :: é estático e reservado para Enum::Variante, Agente::operacao e Modulo::simbolo.'
+- Colchetes [ ] realizam indexação posicional em listas (base 1), associativa em mapas e multidimensional em tensores separados
+  por vírgula.
+- O operador de faixa .. em [a..b] é inclusivo em ambas as extremidades e preserva o tipo da coleção original.
+- Não é permitido aplicar fatiamento (..) diretamente sobre tipos set ou map.

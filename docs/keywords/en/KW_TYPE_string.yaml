@@ -1,0 +1,29 @@
+keyword: string, string(N)
+category: String Type
+description: 'Types de texto. string é dinâmica (alocação sob demanda); string(N) é estática com capacidade fixa de N bytes
+  UTF-8. O type genérico is required in the declaration (mut as string: x = ...). Char tem doc próprio: KW_TYPE_char.yaml.'
+syntax: 'mut as string: <var> = <value>        # dinâmica (fat pointer)
+
+  mut as string(50): <var> = <value>    # estática, 50 bytes UTF-8'
+pseudocode: 's : STRING      // dinamica (alocacao sob demanda)
+
+  f : STRING(32)  // capacidade fixa de N bytes'
+usages:
+- name: String dinâmica
+  description: Cresce conforme necessário; alocação por heap.
+  examples:
+  - code: 'mut as string: nome = "TheFlux"
+
+      mut as string: saudacao = "Olá, " + nome'
+- name: String estática
+  description: Capacidade fixa; assignment que exceda N bytes é error.
+  examples:
+  - code: 'mut as string(16): codigo = "A1B2"'
+restrictions:
+- 'string(N): N > 0, medido em bytes UTF-8; literal maior que N é error compile-time; assignment runtime acima do cap é error
+  claro; concat além do cap é error.'
+- string (dinâmica) é o type pattern quando there is no parameter.
+- len() de string conta bytes UTF-8, não code points.
+- 'Backends: fat pointer (ptr << 32 | len) em wasm/wat; i8* + printf %s em llvm (NUL interno trunca na impressão).'
+- 'Sintaxe string(N) usa parentheses; divergência conhecida: tensor[N] usa brackets — decisão de design documentada.'
+- Ver também KW_LITERAL_string.yaml, KW_LITERAL_char.yaml (literais) e KW_TYPE_char.yaml (type char).

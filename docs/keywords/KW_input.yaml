@@ -1,0 +1,50 @@
+keyword: input
+category: Instrução de Entrada
+description: 'Lê uma linha da entrada padrão (stdin) e atribui à variável declarada. Exibe um prompt opcional antes da
+  leitura. A declaração de tipo é obrigatória em TheFlux; o tipo declarado na variável define o tipo esperado do valor
+  digitado.
+
+  A verificação de tipagem ocorre depois de pressionar Enter. Se o valor digitado for incompatível com o tipo declarado,
+  o prompt volta e escreve em cinza "Digite um <tipo>, como: <exemplo>".
+
+  '
+syntax: 'input()
+
+  input(<expressão_prompt>)
+
+  mut as <tipo>: <variável> = input()
+
+  mut as <tipo>: <variável> = input(<expressão_prompt>)
+
+  '
+pseudocode: 'LER("Idade: ")
+
+  // SE digitado inválido para int64: RE-PERGUNTA "Digite um inteiro, como: 35"
+
+  LER("Nome: ")
+
+  // SE digitado inválido para string: sempre válido'
+usages:
+- name: Input tipado como int64
+  description: 'Lê um inteiro. Após Enter, valida que o valor é int64; se não for, volta ao prompt com "Digite um inteiro, como: 35".'
+  examples:
+  - code: 'mut as int64: idade = input("Introduza a sua idade: ")'
+  - code: 'mut as int64: quantidade = input()'
+- name: Input tipado como string
+  description: Lê um texto. Qualquer valor digitado é aceito como string.
+  examples:
+  - code: 'mut as string: nome = input("Introduza o seu nome: ")'
+  - code: 'mut as string: comando = input()'
+- name: Input tipado com outros builtins
+  description: O tipo declarado define o tipo esperado; outros builtins funcionam da mesma forma.
+  examples:
+  - code: 'mut as float64: preco = input("Preco: ")'
+  - code: 'mut as complex128: c = input("Numero complexo: ")'
+  - code: 'mut as char: ch = input("Caractere: ")'
+  - code: 'mut as bool: ativo = input("Ativo? ")'
+  - code: 'mut as datetime: data = input("Data: ")'
+restrictions:
+- A declaração de tipo é obrigatória; `input` assume o tipo declarado na variável (`as <tipo>`).
+- A verificação de tipagem ocorre somente depois de pressionar Enter.
+- 'Se o tipo digitado for incompatível com o tipo declarado, o prompt volta e escreve em cinza `Digite um <tipo>, como: <exemplo>`.'
+- O valor lido é compatível com o tipo da variável; pode ser convertido para outros tipos usando as (cast).

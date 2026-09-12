@@ -1,0 +1,29 @@
+keyword: program
+category: Entry Point
+description: Declara o dot de entrada required de um file .flux.  O  program must be a última declaration no file e é o block
+  principal executesdo. O nome do program deve estar em PascalCase. Essa keyword é proibida  em files .fdsl.
+syntax: "program (<nome_PascalCase>) {\n    <declarações>\n}"
+pseudocode: "PROGRAMA Nome:\n    instrucoes...\nFIM PROGRAMA"
+usages:
+- name: Program simples
+  description: Dot de entrada principal com body de execução.
+  examples:
+  - code: "program (Main) {\n      print(\"Hello, World!\")\n}"
+  - code: "program (MathTest) {\n      imut as int64: VALOR = 42\n      print(VALOR)\n}"
+  - code: program (Empty) {}
+- name: Program com declarations internas
+  description: Program pode conter declarations de variables, route, infinite, etc.
+  examples:
+  - code: "program (ExampleOfRoute) {\n      route {\n            false ==> { print(\"Deve Imprimir\") }\n            true\
+      \  ==> { print(\"Nao deve imprimir\") }\n            _     ==> { print(\"saindo!\") }\n      }\n}"
+  - code: "program (Variables) {\n      mut as int64: x = 10\n      mut as float64: y = 3.14\n      print(x + y)\n}"
+  - code: "program (Dataflow) {\n      mut as string: nome = \"TheFlux\"\n      nome --> print\n}"
+  - code: "program (Resultado) {\n      imut as int64: r = calc(5)\n      print(r.sta)     # \"nice\"\n      print(r.val)\
+      \     # 5\n      print(r.msg)     # \"ok\"\n}"
+restrictions:
+- Apenas uma declaration `program` é permitida por file.
+- O nome do `program` (<nome_PascalCase>) deve estar em PascalCase.
+- '`program` é required e must be a última declaration em files .flux.'
+- '`program` é proibida em files .fdsl.'
+- O block da declaration `program` define o scope raiz da aplicação.
+- Nenhuma outra declaration pode existir após o encerramento do block da declaration `program`.

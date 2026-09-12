@@ -1,0 +1,38 @@
+#L O Contrato define a assinatura obrigatoria das 5 operacoes
+contract (OperacoesBasicas) {
+      op somar (as int64: a, as int64: b) as int64
+      op subtrair (as int64: a, as int64: b) as int64
+      op dividirInteiro (as int64: a, as int64: b) as int64
+      op restoDivisao (as int64: a, as int64: b) as int64
+      op multiplicar (as int64: a, as int64: b) as int64
+}
+
+#L O Agente assina o contrato e fornece a logica de execucao
+agent (AgentOfCalculadora) impl OperacoesBasicas {
+      op somar (as int64: a, as int64: b) as int64 ==> {
+            mut as int64: resultado = a + b
+            emit(nice, resultado, "Soma concluida")
+      }
+
+      op subtrair (as int64: a, as int64: b) as int64 ==> {
+            mut as int64: resultado = a - b
+            emit(nice, resultado, "Subtracao concluida")
+      }
+
+      op dividirInteiro (as int64: a, as int64: b) as int64 ==> {
+            #L Utiliza o operador canonico de divisao inteira /i
+            mut as int64: resultado = a /i b
+            emit(nice, resultado, "Divisao inteira concluida")
+      }
+
+      op restoDivisao (as int64: a, as int64: b) as int64 ==> {
+            #L Utiliza o operador canonico de resto /r
+            mut as int64: resultado = a /r b
+            emit(nice, resultado, "Calculo de resto concluido")
+      }
+
+      op multiplicar (as int64: a, as int64: b) as int64 ==> {
+            mut as int64: resultado = a * b
+            emit(nice, resultado, "Multiplicacao concluida")
+      }
+}

@@ -1,0 +1,11 @@
+#D
+- Funcao: CoreSyntax
+- Descricao: Agent base para sintaxe compartilhada entre DSLs.
+- Parametros: Nenhum.
+- Retorno: Primitivas de sintaxe base.
+- Autor: TheFlux
+- Versao: 0.1
+D#
+
+agent (AgentOfCore) {
+}

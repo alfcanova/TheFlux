@@ -1,0 +1,34 @@
+keyword: literal caractere (char_literal)
+category: Literal
+description: Literais caractere (char) representam um único code point Unicode entre aspas simples. Em UTF-8, um code point
+  ocupa 1 a 4 bytes. Suporta caracteres imprimíveis e sequências de escape, incluindo \u{XXXX}. O tipo é char.
+syntax: '''<caractere>''                   # Ex: ''A'', '' '', ''3'', ''é''
+
+  ''<escape>''                         # Ex: ''\n'', ''\t'', ''\\'', ''\u{03C0}'''
+pseudocode: 'letra  := ''A''
+
+  espaco := '' '''
+usages:
+- name: Caractere
+  description: Um único code point entre aspas simples.
+  examples:
+  - code: 'mut as char: letra= ''A'''
+  - code: 'mut as char: digito= ''7'''
+  - code: 'mut as char: espaco= '' '''
+  - code: 'mut as char: acento= ''é'''
+- name: Escapes
+  description: Sequências de escape para caracteres especiais.
+  examples:
+  - code: 'mut as char: nova_linha= ''\n'''
+  - code: 'mut as char: tabulacao= ''\t'''
+  - code: 'mut as char: retorno= ''\r'''
+  - code: 'mut as char: nulo= ''\0'''
+  - code: 'mut as char: barra= ''\\'''
+  - code: 'mut as char: aspas_simples= ''\'''''
+  - code: 'mut as char: omega= ''\u{03A9}'''
+restrictions:
+- Exatamente um code point (1-4 bytes UTF-8) ou escape entre as aspas simples.
+- 'Escape inválido (ex: \x) causa erro de lexicação.'
+- 'Char é distinto de string de 1: char é 1 code point; string é sequência.'
+- Em backends compilados (llvm/wat/wasm), char é armazenado como code point de 32 bits (i32); a conversão para UTF-8 (1-4
+  bytes) acontece apenas na impressão/concatenação (ver docs de cada backend).

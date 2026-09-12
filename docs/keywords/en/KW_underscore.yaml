@@ -1,0 +1,30 @@
+keyword: _
+category: Pattern Matching
+description: O character underscore (`_`) atua como curinga (wildcard) universal e pattern de descarte na linguagem TheFlux.
+  É utilizado como branch catch-all em estruturas `route`, como pattern universal em expressions `match` (garantindo exaustividade
+  em enums e types literais), e como descarte de fields na desestruturação de structs, registros e variants de enums.
+syntax: "route {\n      <condition> ==> { <bloco> }\n      _          ==> { <fallback> }\n}\nmatch (<expression>) {\n    \
+  \  <pattern> ==> <expressão_ou_bloco>\n      _        ==> <fallback>\n}\n{ .campo1: <pattern>, .campo2: _ }"
+pseudocode: "ESCOLHER(estado):\n    CASE 0: pronto()\n    PADRAO(_): ignora_qualquer_outro()   // curinga universal"
+usages:
+- name: Branch catch-all em route
+  description: Captura qualquer condition não atendida pelos branches anteriores em um block route.
+  examples:
+  - code: "route {\n      status == \"ativo\"    ==> { print(\"Conexao ativa\") }\n      status == \"bloqueio\" ==> { print(\"\
+      Acesso bloqueado\") }\n      _                    ==> { print(\"Status desconhecido\") }\n}"
+- name: Pattern wildcard universal em match
+  description: Corresponde a qualquer value não coberto anteriormente, garantindo exaustividade.
+  examples:
+  - code: "match (codigo) {\n      200 ==> print(\"Sucesso\")\n      404 ==> print(\"Nao encontrado\")\n      _   ==> print(\"\
+      Outro codigo: padrao curinga\")\n}"
+- name: Descarte de fields em desestruturação
+  description: Permite ignorar fields específicos durante o pattern matching de estruturas ou registros.
+  examples:
+  - code: "match (evento) {\n      { .tipo: \"sensor\", .leitura: val } ==> print(\"Leitura: \" + val)\n      { .tipo: \"\
+      alerta\", .leitura: _ }   ==> print(\"Alerta sem telemetria\")\n      _                                  ==> print(\"\
+      Evento ignorado\")\n}"
+restrictions:
+- Em estruturas route, o branch wildcard `_` must be obrigatoriamente o último branch quando presente.
+- Em expressions match, o pattern wildcard `_` sem guard (guard) captura qualquer value e encerra a exaustividade.
+- Branches posicionados após um `_` incondicional generate errorr semântico de código inalcançável.
+- Can be utilizado para ignorar fields individuais em patterns de struct, enum ou registros anônimos.

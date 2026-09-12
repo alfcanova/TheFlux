@@ -1,0 +1,31 @@
+keyword: and, or, not
+category: Logical Operator
+description: Operadores lógicos para composição de expressions booleanas. and e or são operators infixos binários; not é um
+  operator prefixo unário. A forma ! também é aceita como operator not prefixo.
+syntax: '<expr> and <expr>   # Conjunção (E lógico) - precedência 30
+
+  <expr> or  <expr>   # Disjunção (OU lógico) - precedência 20
+
+  not <expr>          # Negação (NÃO lógico) - precedência 80
+
+  ! <expr>            # Negação alternativa'
+pseudocode: "IF (a E b) OU c:\n    ...\nIF NAO d:\n    ..."
+usages:
+- name: Composição de conditions
+  description: Combina múltiplas conditions com and/or.
+  examples:
+  - code: "route {\n    nota >= 9.0 and frequencia >= 95.0 --> { print(\"Excelente!\") }\n    nota >= 7.0 and frequencia >=\
+      \ 75.0 --> { print(\"Aprovado\") }\n    nota >= 5.0 or  frequencia >= 75.0 --> { print(\"Recuperacao\") }\n}"
+- name: Negação
+  description: Inverte o value de uma expression booleana.
+  examples:
+  - code: "route {\n    not (nota >= 5.0 or frequencia >= 75.0) --> { print(\"Reprovado\") }\n}"
+- name: Route com subjects e operators lógicos
+  description: Combina conditions posicionais com and/or em route with subjects.
+  examples:
+  - code: "route (temperatura, pressao) {\n    > 40 and \"alta\"   --> { print(\"PERIGO!\") }\n    > 37.5 and ..     --> {\
+      \ print(\"Atencao: Febre\") }\n    _                 --> { print(\"Normal\") }\n}"
+restrictions:
+- and tem precedência maior que or (and = 30, or = 20).
+- Operandos must be expressions booleanas.
+- Evaluatesção é de curto-circuito (short-circuit evaluation).

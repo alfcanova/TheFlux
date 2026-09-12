@@ -1,0 +1,37 @@
+# ==============================================================================
+# TheFlux - Normalização e Tratamento de Fim de Linha (.gitattributes)
+# ==============================================================================
+
+# Detecção automática de texto e normalização para LF
+* text=auto
+
+# Fontes da linguagem TheFlux e biblioteca padrão
+*.flux text eol=lf
+*.fdsl text eol=lf
+
+# Código-fonte Python, C e Web
+*.py text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.jsonc text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+# Scripts Windows
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binários e documentos
+*.docx binary
+*.db binary
+*.png binary
+*.jpg binary
+*.ico binary

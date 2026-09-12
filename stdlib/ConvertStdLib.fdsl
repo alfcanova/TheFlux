@@ -1,0 +1,1164 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Modulo nativo para conversao de tipos, parsing de textos, bases e codificacoes
+#L Implementacao 100% nativa em TheFlux (sem intrinsicos)
+#L Regra: 1-index para humanos e 0-index para maquinas
+#L ==============================================================================
+
+contract (ConvertNumericContract) {
+      op convertIntToFloat (as int64: value) as float64
+      op convertFloatToInt (as float64: value) as int64
+      op convertBoolToInt (as bool: value) as int64
+      op convertIntToBool (as int64: value) as bool
+      op convertIntToInt8 (as int64: value) as int8
+      op convertIntToInt8OrDefault (as int64: value, as int8: default) as int8
+      op convertIntToUint8 (as int64: value) as uint8
+      op convertIntToUint8OrDefault (as int64: value, as uint8: default) as uint8
+      op convertIntToInt16 (as int64: value) as int16
+      op convertIntToInt16OrDefault (as int64: value, as int16: default) as int16
+      op convertIntToUint16 (as int64: value) as uint16
+      op convertIntToUint16OrDefault (as int64: value, as uint16: default) as uint16
+      op convertIntToInt32 (as int64: value) as int32
+      op convertIntToInt32OrDefault (as int64: value, as int32: default) as int32
+      op convertIntToUint32 (as int64: value) as uint32
+      op convertIntToUint32OrDefault (as int64: value, as uint32: default) as uint32
+      op convertIntToInt64 (as data: value) as int64
+      op convertIntToUint64 (as data: value) as uint64
+      op convertFloatToFloat16 (as float64: value) as float16
+      op convertFloatToFloat32 (as float64: value) as float32
+      op convertFloatToFloat64 (as float64: value) as float64
+      op convertCastToInt8 (as int64: value) as int8
+      op convertCastToUint8 (as int64: value) as uint8
+      op convertCastToInt16 (as int64: value) as int16
+      op convertCastToUint16 (as int64: value) as uint16
+      op convertCastToInt32 (as int64: value) as int32
+      op convertCastToUint32 (as int64: value) as uint32
+      op convertCastToInt64 (as int32: value) as int64
+      op convertCastToUint64 (as int64: value) as uint64
+      op convertCastToFloat16 (as float64: value) as float16
+      op convertCastToFloat32 (as float64: value) as float32
+      op convertCastToFloat64 (as float64: value) as float64
+      op convertCastToBf16E8M7 (as float32: value) as bf16_e8m7
+      op convertCastToTf32E8M10 (as float32: value) as tf32_e8m10
+      op convertCastToFp8E4M3 (as float32: value) as fp8_e4m3
+      op convertCastToFp8E4M3OrDefault (as float32: value, as fp8_e4m3: default) as fp8_e4m3
+      op convertCastToFp8E5M2 (as float32: value) as fp8_e5m2
+}
+
+contract (ConvertBaseContract) {
+      op convertIntToHex (as int64: value) as string
+      op convertIntToHexPadded (as int64: value, as int64: width) as string
+      op convertIntToBinary (as int64: value) as string
+      op convertIntToBinaryPadded (as int64: value, as int64: width) as string
+      op convertIntToOctal (as int64: value) as string
+      op convertIntToOctalPadded (as int64: value, as int64: width) as string
+      op convertIntToRadix (as int64: value, as int64: base) as string
+      op convertParseRadix (as string: text, as int64: base) as int64
+      op convertParseRadixOrDefault (as string: text, as int64: base, as int64: default) as int64
+}
+
+contract (ConvertEncodingContract) {
+      op convertCharToAscii (as string: ch) as int64
+      op convertOrd (as string: ch) as int64
+      op convertAsciiToChar (as int64: code) as string
+      op convertChr (as int64: code) as string
+      op convertStringToBase64 (as string: text) as string
+      op convertBase64ToString (as string: b64_text) as string
+      op convertStringToHex (as string: text) as string
+      op convertHexToString (as string: hex_text) as string
+}
+
+contract (ConvertParsingContract) {
+      op convertParseInt (as string: text) as int64
+      op convertParseIntOrDefault (as string: text, as int64: default) as int64
+      op convertParseFloat (as string: text) as float64
+      op convertParseFloatOrDefault (as string: text, as float64: default) as float64
+      op convertParseBool (as string: text) as bool
+      op convertParseHex (as string: text) as int64
+      op convertParseBinary (as string: text) as int64
+      op convertParseOctal (as string: text) as int64
+}
+
+contract (ConvertComplexContract) {
+      op convertToComplex (as float64: real, as float64: imag) as complex64
+      op convertToComplex32 (as float64: real, as float64: imag) as complex32
+      op convertToComplex128 (as float64: real, as float64: imag) as complex128
+      op convertComplexToList (as complex64: value) as list of data
+}
+
+contract (ConvertStringContract) {
+      op convertToString (as data: value) as string
+      op convertIntToString (as int64: value) as string
+      op convertFloatToString (as float64: value) as string
+      op convertBoolToString (as bool: value) as string
+      op convertEnumToString (as data: value) as string
+}
+
+agent (ConvertStdLib) impl ConvertNumericContract, ConvertBaseContract, ConvertEncodingContract, ConvertParsingContract, ConvertComplexContract, ConvertStringContract {
+      #L ==============================================================================
+      #L 1. ConvertNumericContract
+      #L ==============================================================================
+      op convertIntToFloat (as int64: value) as float64 ==> {
+            emit(nice, value as float64, "ok")
+      }
+
+      op convertFloatToInt (as float64: value) as int64 ==> {
+            emit(nice, value as int64, "ok")
+      }
+
+      op convertBoolToInt (as bool: value) as int64 ==> {
+            route {
+                  value ==> { emit(nice, 1, "ok") }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op convertIntToBool (as int64: value) as bool ==> {
+            emit(nice, value != 0, "ok")
+      }
+
+      op convertIntToInt8 (as int64: value) as int8 ==> {
+            emit(nice, value as int8, "ok")
+      }
+
+      op convertIntToInt8OrDefault (as int64: value, as int8: default) as int8 ==> {
+            route {
+                  value < -128 or value > 127 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as int8, "ok")
+      }
+
+      op convertIntToUint8 (as int64: value) as uint8 ==> {
+            emit(nice, value as uint8, "ok")
+      }
+
+      op convertIntToUint8OrDefault (as int64: value, as uint8: default) as uint8 ==> {
+            route {
+                  value < 0 or value > 255 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as uint8, "ok")
+      }
+
+      op convertIntToInt16 (as int64: value) as int16 ==> {
+            emit(nice, value as int16, "ok")
+      }
+
+      op convertIntToInt16OrDefault (as int64: value, as int16: default) as int16 ==> {
+            route {
+                  value < -32768 or value > 32767 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as int16, "ok")
+      }
+
+      op convertIntToUint16 (as int64: value) as uint16 ==> {
+            emit(nice, value as uint16, "ok")
+      }
+
+      op convertIntToUint16OrDefault (as int64: value, as uint16: default) as uint16 ==> {
+            route {
+                  value < 0 or value > 65535 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as uint16, "ok")
+      }
+
+      op convertIntToInt32 (as int64: value) as int32 ==> {
+            emit(nice, value as int32, "ok")
+      }
+
+      op convertIntToInt32OrDefault (as int64: value, as int32: default) as int32 ==> {
+            route {
+                  value < -2147483648 or value > 2147483647 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as int32, "ok")
+      }
+
+      op convertIntToUint32 (as int64: value) as uint32 ==> {
+            emit(nice, value as uint32, "ok")
+      }
+
+      op convertIntToUint32OrDefault (as int64: value, as uint32: default) as uint32 ==> {
+            route {
+                  value < 0 or value > 4294967295 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as uint32, "ok")
+      }
+
+      op convertIntToInt64 (as data: value) as int64 ==> {
+            emit(nice, value as int64, "ok")
+      }
+
+      op convertIntToUint64 (as data: value) as uint64 ==> {
+            emit(nice, value as uint64, "ok")
+      }
+
+      op convertFloatToFloat16 (as float64: value) as float16 ==> {
+            emit(nice, value as float16, "ok")
+      }
+
+      op convertFloatToFloat32 (as float64: value) as float32 ==> {
+            emit(nice, value as float32, "ok")
+      }
+
+      op convertFloatToFloat64 (as float64: value) as float64 ==> {
+            emit(nice, value as float64, "ok")
+      }
+
+      op convertCastToInt8 (as int64: value) as int8 ==> {
+            emit(nice, value as int8, "ok")
+      }
+
+      op convertCastToUint8 (as int64: value) as uint8 ==> {
+            emit(nice, value as uint8, "ok")
+      }
+
+      op convertCastToInt16 (as int64: value) as int16 ==> {
+            emit(nice, value as int16, "ok")
+      }
+
+      op convertCastToUint16 (as int64: value) as uint16 ==> {
+            emit(nice, value as uint16, "ok")
+      }
+
+      op convertCastToInt32 (as int64: value) as int32 ==> {
+            emit(nice, value as int32, "ok")
+      }
+
+      op convertCastToUint32 (as int64: value) as uint32 ==> {
+            emit(nice, value as uint32, "ok")
+      }
+
+      op convertCastToInt64 (as int32: value) as int64 ==> {
+            emit(nice, value as int64, "ok")
+      }
+
+      op convertCastToUint64 (as int64: value) as uint64 ==> {
+            emit(nice, value as uint64, "ok")
+      }
+
+      op convertCastToFloat16 (as float64: value) as float16 ==> {
+            emit(nice, value as float16, "ok")
+      }
+
+      op convertCastToFloat32 (as float64: value) as float32 ==> {
+            emit(nice, value as float32, "ok")
+      }
+
+      op convertCastToFloat64 (as float64: value) as float64 ==> {
+            emit(nice, value as float64, "ok")
+      }
+
+      op convertCastToBf16E8M7 (as float32: value) as bf16_e8m7 ==> {
+            emit(nice, value as bf16_e8m7, "ok")
+      }
+
+      op convertCastToTf32E8M10 (as float32: value) as tf32_e8m10 ==> {
+            emit(nice, value as tf32_e8m10, "ok")
+      }
+
+      op convertCastToFp8E4M3 (as float32: value) as fp8_e4m3 ==> {
+            emit(nice, value as fp8_e4m3, "ok")
+      }
+
+      op convertCastToFp8E4M3OrDefault (as float32: value, as fp8_e4m3: default) as fp8_e4m3 ==> {
+            route {
+                  value < -448.0 or value > 448.0 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as fp8_e4m3, "ok")
+      }
+
+      op convertCastToFp8E5M2 (as float32: value) as fp8_e5m2 ==> {
+            emit(nice, value as fp8_e5m2, "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. ConvertBaseContract
+      #L ==============================================================================
+      op convertIntToHex (as int64: value) as string ==> {
+            route {
+                  value == 0 ==> { emit(nice, "0x0", "ok") }
+            }
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: hex_digits = "0123456789ABCDEF"
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+            }
+            route {
+                  negative ==> { res = "-0x" + res }
+                  not negative ==> { res = "0x" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertIntToHexPadded (as int64: value, as int64: width) as string ==> {
+            mut as string: raw = ""
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            route {
+                  v == 0 ==> { raw = "0" }
+            }
+            mut as string: hex_digits = "0123456789ABCDEF"
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 16
+                  raw = hex_digits[rem + 1] + raw
+                  v = v /i 16
+            }
+            mut as int64: len = 0
+            infinite (c in raw) { len = len + 1 }
+            mut as string: padded = raw
+            infinite (len < width) {
+                  padded = "0" + padded
+                  len = len + 1
+            }
+            route {
+                  negative ==> { emit(nice, "-0x" + padded, "ok") }
+                  not negative ==> { emit(nice, "0x" + padded, "ok") }
+            }
+            emit(nice, "0x" + padded, "ok")
+      }
+
+      op convertIntToBinary (as int64: value) as string ==> {
+            route {
+                  value == 0 ==> { emit(nice, "0b0", "ok") }
+            }
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 2
+                  route {
+                        rem == 0 ==> { res = "0" + res }
+                        rem == 1 ==> { res = "1" + res }
+                  }
+                  v = v /i 2
+            }
+            route {
+                  negative ==> { res = "-0b" + res }
+                  not negative ==> { res = "0b" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertIntToBinaryPadded (as int64: value, as int64: width) as string ==> {
+            mut as string: raw = ""
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            route {
+                  v == 0 ==> { raw = "0" }
+            }
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 2
+                  route {
+                        rem == 0 ==> { raw = "0" + raw }
+                        rem == 1 ==> { raw = "1" + raw }
+                  }
+                  v = v /i 2
+            }
+            mut as int64: len = 0
+            infinite (c in raw) { len = len + 1 }
+            mut as string: padded = raw
+            infinite (len < width) {
+                  padded = "0" + padded
+                  len = len + 1
+            }
+            route {
+                  negative ==> { emit(nice, "-0b" + padded, "ok") }
+                  not negative ==> { emit(nice, "0b" + padded, "ok") }
+            }
+            emit(nice, "0b" + padded, "ok")
+      }
+
+      op convertIntToOctal (as int64: value) as string ==> {
+            route {
+                  value == 0 ==> { emit(nice, "0o0", "ok") }
+            }
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 8
+                  res = ("" + rem) + res
+                  v = v /i 8
+            }
+            route {
+                  negative ==> { res = "-0o" + res }
+                  not negative ==> { res = "0o" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertIntToOctalPadded (as int64: value, as int64: width) as string ==> {
+            mut as string: raw = ""
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            route {
+                  v == 0 ==> { raw = "0" }
+            }
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 8
+                  raw = ("" + rem) + raw
+                  v = v /i 8
+            }
+            mut as int64: len = 0
+            infinite (c in raw) { len = len + 1 }
+            mut as string: padded = raw
+            infinite (len < width) {
+                  padded = "0" + padded
+                  len = len + 1
+            }
+            route {
+                  negative ==> { emit(nice, "-0o" + padded, "ok") }
+                  not negative ==> { emit(nice, "0o" + padded, "ok") }
+            }
+            emit(nice, "0o" + padded, "ok")
+      }
+
+      op convertIntToRadix (as int64: value, as int64: base) as string ==> {
+            route {
+                  base < 2 or base > 36 ==> { emit(nice, "", "ok") }
+                  value == 0 ==> { emit(nice, "0", "ok") }
+            }
+            mut as string: alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r base
+                  res = alphabet[rem + 1] + res
+                  v = v /i base
+            }
+            route {
+                  negative ==> { res = "-" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseRadixOrDefault (as string: text, as int64: base, as int64: default) as int64 ==> {
+            route {
+                  base < 2 or base > 36 ==> { emit(nice, default, "ok") }
+            }
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, default, "ok") }
+            }
+            mut as string: alphabet_upper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as string: alphabet_lower = "0123456789abcdefghijklmnopqrstuvwxyz"
+            mut as bool: negative = false
+            mut as int64: start_idx = 1
+            route {
+                  text[1] == "-" ==> {
+                        negative = true
+                        start_idx = 2
+                  }
+                  text[1] == "+" ==> {
+                        start_idx = 2
+                  }
+            }
+            mut as int64: res = 0
+            mut as bool: valid = true
+            infinite (i in start_idx .. len) {
+                  route {
+                        valid ==> {
+                              mut as string: ch = text[i]
+                              mut as int64: d = -1
+                              mut as int64: pos = 1
+                              infinite (pos <= base) {
+                                    route {
+                                          ch == alphabet_upper[pos] or ch == alphabet_lower[pos] ==> {
+                                                d = pos - 1
+                                          }
+                                    }
+                                    pos = pos + 1
+                              }
+                              route {
+                                    d < 0 ==> { valid = false }
+                                    d >= 0 ==> { res = res * base + d }
+                              }
+                        }
+                  }
+            }
+            route {
+                  not valid ==> { emit(nice, default, "ok") }
+                  valid and negative ==> { emit(nice, 0 - res, "ok") }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseRadix (as string: text, as int64: base) as int64 ==> {
+            emit(nice, convertParseRadixOrDefault(text, base, 0), "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. ConvertEncodingContract
+      #L ==============================================================================
+      op convertOrd (as string: ch) as int64 ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            route {
+                  ch == "#" ==> { emit(nice, 35, "ok") }
+                  ch == "\n" ==> { emit(nice, 10, "ok") }
+                  ch == "\t" ==> { emit(nice, 9, "ok") }
+                  ch == "\r" ==> { emit(nice, 13, "ok") }
+            }
+            mut as int64: found_code = 0
+            mut as int64: idx = 1
+            infinite (c in ascii_table) {
+                  route {
+                        c == ch and found_code == 0 ==> {
+                              mut as int64: code_val = 31 + idx
+                              route {
+                                    code_val >= 35 ==> { code_val = code_val + 1 }
+                              }
+                              found_code = code_val
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_code, "ok")
+      }
+
+      op convertCharToAscii (as string: ch) as int64 ==> {
+            emit(nice, convertOrd(ch), "ok")
+      }
+
+      op convertChr (as int64: code) as string ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            route {
+                  code == 35 ==> { emit(nice, "#", "ok") }
+                  code == 10 ==> { emit(nice, "\n", "ok") }
+                  code == 9 ==> { emit(nice, "\t", "ok") }
+                  code == 13 ==> { emit(nice, "\r", "ok") }
+                  code >= 32 and code <= 126 ==> {
+                        mut as int64: pos = code - 31
+                        route {
+                              code > 35 ==> { pos = pos - 1 }
+                        }
+                        emit(nice, ascii_table[pos], "ok")
+                  }
+            }
+            emit(nice, "", "ok")
+      }
+
+      op convertAsciiToChar (as int64: code) as string ==> {
+            emit(nice, convertChr(code), "ok")
+      }
+
+      op convertStringToBase64 (as string: text) as string ==> {
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, "", "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as int64: b1 = convertOrd(text[i])
+                  mut as int64: b2 = 0
+                  mut as int64: b3 = 0
+                  mut as int64: chunk_size = 1
+                  route {
+                        i + 1 <= len ==> {
+                              b2 = convertOrd(text[i + 1])
+                              chunk_size = 2
+                        }
+                  }
+                  route {
+                        i + 2 <= len ==> {
+                              b3 = convertOrd(text[i + 2])
+                              chunk_size = 3
+                        }
+                  }
+                  mut as int64: n = (b1 * 65536) + (b2 * 256) + b3
+                  mut as int64: idx1 = ((n /i 262144) /r 64) + 1
+                  mut as int64: idx2 = ((n /i 4096) /r 64) + 1
+                  mut as int64: idx3 = ((n /i 64) /r 64) + 1
+                  mut as int64: idx4 = (n /r 64) + 1
+                  
+                  res = res + b64_table[idx1] + b64_table[idx2]
+                  route {
+                        chunk_size == 1 ==> {
+                              res = res + "=="
+                        }
+                        chunk_size == 2 ==> {
+                              res = res + b64_table[idx3] + "="
+                        }
+                        chunk_size == 3 ==> {
+                              res = res + b64_table[idx3] + b64_table[idx4]
+                        }
+                  }
+                  i = i + 3
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _b64CharToVal (as string: ch) as int64 ==> {
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            mut as int64: idx = 1
+            mut as int64: found_val = 0
+            infinite (c in b64_table) {
+                  route {
+                        c == ch ==> {
+                              found_val = idx - 1
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_val, "ok")
+      }
+
+      op convertBase64ToString (as string: b64_text) as string ==> {
+            mut as int64: len = 0
+            infinite (c in b64_text) { len = len + 1 }
+            route {
+                  len == 0 or (len /r 4 != 0) ==> { emit(nice, "", "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c1 = b64_text[i]
+                  mut as string: c2 = b64_text[i + 1]
+                  mut as string: c3 = b64_text[i + 2]
+                  mut as string: c4 = b64_text[i + 3]
+                  mut as int64: v1 = _b64CharToVal(c1)
+                  mut as int64: v2 = _b64CharToVal(c2)
+                  mut as int64: v3 = 0
+                  mut as int64: v4 = 0
+                  mut as bool: pad2 = (c3 == "=")
+                  mut as bool: pad3 = (c4 == "=")
+                  route {
+                        not pad2 ==> { v3 = _b64CharToVal(c3) }
+                  }
+                  route {
+                        not pad3 ==> { v4 = _b64CharToVal(c4) }
+                  }
+                  mut as int64: n = (v1 * 262144) + (v2 * 4096) + (v3 * 64) + v4
+                  mut as int64: b1 = (n /i 65536) /r 256
+                  mut as int64: b2 = (n /i 256) /r 256
+                  mut as int64: b3 = n /r 256
+                  res = res + convertChr(b1)
+                  route {
+                        not pad2 ==> { res = res + convertChr(b2) }
+                  }
+                  route {
+                        not pad3 ==> { res = res + convertChr(b3) }
+                  }
+                  i = i + 4
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertStringToHex (as string: text) as string ==> {
+            mut as string: hex_digits = "0123456789ABCDEF"
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as int64: code = convertOrd(c)
+                  mut as int64: h1 = code /i 16
+                  mut as int64: h2 = code /r 16
+                  res = res + hex_digits[h1 + 1] + hex_digits[h2 + 1]
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertHexToString (as string: hex_text) as string ==> {
+            mut as int64: len = 0
+            infinite (c in hex_text) { len = len + 1 }
+            route {
+                  len == 0 or (len /r 2 != 0) ==> { emit(nice, "", "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: ch1 = hex_text[i]
+                  mut as string: ch2 = hex_text[i + 1]
+                  mut as int64: d1 = 0
+                  mut as int64: d2 = 0
+                  route {
+                        ch1 == "A" or ch1 == "a" ==> { d1 = 10 }
+                        ch1 == "B" or ch1 == "b" ==> { d1 = 11 }
+                        ch1 == "C" or ch1 == "c" ==> { d1 = 12 }
+                        ch1 == "D" or ch1 == "d" ==> { d1 = 13 }
+                        ch1 == "E" or ch1 == "e" ==> { d1 = 14 }
+                        ch1 == "F" or ch1 == "f" ==> { d1 = 15 }
+                        ch1 >= "0" and ch1 <= "9" ==> { d1 = (ch1 as int64) }
+                  }
+                  route {
+                        ch2 == "A" or ch2 == "a" ==> { d2 = 10 }
+                        ch2 == "B" or ch2 == "b" ==> { d2 = 11 }
+                        ch2 == "C" or ch2 == "c" ==> { d2 = 12 }
+                        ch2 == "D" or ch2 == "d" ==> { d2 = 13 }
+                        ch2 == "E" or ch2 == "e" ==> { d2 = 14 }
+                        ch2 == "F" or ch2 == "f" ==> { d2 = 15 }
+                        ch2 >= "0" and ch2 <= "9" ==> { d2 = (ch2 as int64) }
+                  }
+                  mut as int64: code = d1 * 16 + d2
+                  res = res + convertChr(code)
+                  i = i + 2
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. ConvertParsingContract (1-Index)
+      #L ==============================================================================
+      op _charToDigit (as string: c) as int64 ==> {
+            route {
+                  c == "0" ==> { emit(nice, 0, "ok") }
+                  c == "1" ==> { emit(nice, 1, "ok") }
+                  c == "2" ==> { emit(nice, 2, "ok") }
+                  c == "3" ==> { emit(nice, 3, "ok") }
+                  c == "4" ==> { emit(nice, 4, "ok") }
+                  c == "5" ==> { emit(nice, 5, "ok") }
+                  c == "6" ==> { emit(nice, 6, "ok") }
+                  c == "7" ==> { emit(nice, 7, "ok") }
+                  c == "8" ==> { emit(nice, 8, "ok") }
+                  c == "9" ==> { emit(nice, 9, "ok") }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      op _charToHexDigit (as string: c) as int64 ==> {
+            route {
+                  c == "0" ==> { emit(nice, 0, "ok") }
+                  c == "1" ==> { emit(nice, 1, "ok") }
+                  c == "2" ==> { emit(nice, 2, "ok") }
+                  c == "3" ==> { emit(nice, 3, "ok") }
+                  c == "4" ==> { emit(nice, 4, "ok") }
+                  c == "5" ==> { emit(nice, 5, "ok") }
+                  c == "6" ==> { emit(nice, 6, "ok") }
+                  c == "7" ==> { emit(nice, 7, "ok") }
+                  c == "8" ==> { emit(nice, 8, "ok") }
+                  c == "9" ==> { emit(nice, 9, "ok") }
+                  c == "a" or c == "A" ==> { emit(nice, 10, "ok") }
+                  c == "b" or c == "B" ==> { emit(nice, 11, "ok") }
+                  c == "c" or c == "C" ==> { emit(nice, 12, "ok") }
+                  c == "d" or c == "D" ==> { emit(nice, 13, "ok") }
+                  c == "e" or c == "E" ==> { emit(nice, 14, "ok") }
+                  c == "f" or c == "F" ==> { emit(nice, 15, "ok") }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      op convertParseIntOrDefault (as string: text, as int64: default) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, default, "ok") }
+            }
+            mut as bool: negative = false
+            mut as int64: start_idx = 1
+            route {
+                  text[1] == "-" ==> {
+                        negative = true
+                        start_idx = 2
+                  }
+                  text[1] == "+" ==> {
+                        start_idx = 2
+                  }
+            }
+            route {
+                  start_idx > len ==> { emit(nice, default, "ok") }
+            }
+            mut as int64: res = 0
+            mut as bool: valid = true
+            infinite (i in start_idx .. len) {
+                  route {
+                        valid ==> {
+                              mut as string: ch = text[i]
+                              mut as int64: d = _charToDigit(ch)
+                              route {
+                                    d < 0 ==> { valid = false }
+                                    d >= 0 ==> { res = res * 10 + d }
+                              }
+                        }
+                  }
+            }
+            route {
+                  not valid ==> { emit(nice, default, "ok") }
+                  valid and negative ==> { emit(nice, 0 - res, "ok") }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseInt (as string: text) as int64 ==> {
+            mut as int64: val = convertParseIntOrDefault(text, 0)
+            emit(nice, val, "ok")
+      }
+
+      op convertParseFloatOrDefault (as string: text, as float64: default) as float64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, default, "ok") }
+            }
+            mut as bool: negative = false
+            mut as int64: start_idx = 1
+            route {
+                  text[1] == "-" ==> {
+                        negative = true
+                        start_idx = 2
+                  }
+                  text[1] == "+" ==> {
+                        start_idx = 2
+                  }
+            }
+            route {
+                  start_idx > len ==> { emit(nice, default, "ok") }
+            }
+            mut as int64: dot_idx = -1
+            infinite (i in start_idx .. len) {
+                  route {
+                        text[i] == "." and dot_idx == -1 ==> {
+                              dot_idx = i
+                        }
+                  }
+            }
+            mut as float64: int_part = 0.0
+            mut as float64: frac_part = 0.0
+            mut as bool: valid = true
+            route {
+                  dot_idx == -1 ==> {
+                        infinite (i in start_idx .. len) {
+                              route {
+                                    valid ==> {
+                                          mut as int64: d = _charToDigit(text[i])
+                                          route {
+                                                d < 0 ==> { valid = false }
+                                                d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  dot_idx != -1 ==> {
+                        infinite (i in start_idx .. dot_idx - 1) {
+                              route {
+                                    valid ==> {
+                                          mut as int64: d = _charToDigit(text[i])
+                                          route {
+                                                d < 0 ==> { valid = false }
+                                                d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                                          }
+                                    }
+                              }
+                        }
+                        mut as float64: divisor = 10.0
+                        infinite (i in dot_idx + 1 .. len) {
+                              route {
+                                    valid ==> {
+                                          mut as int64: d = _charToDigit(text[i])
+                                          route {
+                                                d < 0 ==> { valid = false }
+                                                d >= 0 ==> {
+                                                      frac_part = frac_part + ((d as float64) /f divisor)
+                                                      divisor = divisor * 10.0
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  not valid ==> { emit(nice, default, "ok") }
+            }
+            mut as float64: res = int_part + frac_part
+            route {
+                  negative ==> { res = 0.0 - res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseFloat (as string: text) as float64 ==> {
+            mut as float64: val = convertParseFloatOrDefault(text, 0.0)
+            emit(nice, val, "ok")
+      }
+
+      op convertParseBool (as string: text) as bool ==> {
+            route {
+                  text == "true" or text == "1" or text == "yes" or text == "t" or text == "sim" ==> {
+                        emit(nice, true, "ok")
+                  }
+            }
+            emit(nice, false, "ok")
+      }
+
+      op convertParseHex (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: start_idx = 1
+            route {
+                  len >= 2 and (text[1..2] == "0x" or text[1..2] == "0X") ==> {
+                        start_idx = 3
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start_idx .. len) {
+                  mut as int64: d = _charToHexDigit(text[i])
+                  route {
+                        d < 0 ==> { emit(nice, 0, "ok") }
+                  }
+                  res = res * 16 + d
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseBinary (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: start_idx = 1
+            route {
+                  len >= 2 and (text[1..2] == "0b" or text[1..2] == "0B") ==> {
+                        start_idx = 3
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start_idx .. len) {
+                  mut as string: ch = text[i]
+                  route {
+                        ch == "0" ==> { res = res * 2 }
+                        ch == "1" ==> { res = res * 2 + 1 }
+                        ch != "0" and ch != "1" ==> { emit(nice, 0, "ok") }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseOctal (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: start_idx = 1
+            route {
+                  len >= 2 and (text[1..2] == "0o" or text[1..2] == "0O") ==> {
+                        start_idx = 3
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start_idx .. len) {
+                  mut as int64: d = _charToDigit(text[i])
+                  route {
+                        d < 0 or d >= 8 ==> { emit(nice, 0, "ok") }
+                  }
+                  res = res * 8 + d
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. ConvertComplexContract
+      #L ==============================================================================
+      op convertToComplex (as float64: real, as float64: imag) as complex64 ==> {
+            mut as complex64: c = (real as complex64) + ((imag as complex64) * 1.0i)
+            emit(nice, c, "ok")
+      }
+
+      op convertToComplex32 (as float64: real, as float64: imag) as complex32 ==> {
+            mut as complex32: c = (real as complex32) + ((imag as complex32) * 1.0i)
+            emit(nice, c, "ok")
+      }
+
+      op convertToComplex128 (as float64: real, as float64: imag) as complex128 ==> {
+            mut as complex128: c = (real as complex128) + ((imag as complex128) * 1.0i)
+            emit(nice, c, "ok")
+      }
+
+      op convertComplexToList (as complex64: value) as list of data ==> {
+            emit(nice, [value], "ok")
+      }
+
+      #L ==============================================================================
+      #L 6. ConvertStringContract
+      #L ==============================================================================
+      op convertToString (as data: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertIntToString (as int64: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertFloatToString (as float64: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertBoolToString (as bool: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertEnumToString (as data: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      #L ==============================================================================
+      #L 7. Aliases Retrocompativeis
+      #L ==============================================================================
+      op parseInt (as string: text) as int64 ==> {
+            emit(nice, convertParseInt(text), "ok")
+      }
+
+      op parseIntOrDefault (as string: text, as int64: default) as int64 ==> {
+            emit(nice, convertParseIntOrDefault(text, default), "ok")
+      }
+
+      op parseFloat (as string: text) as float64 ==> {
+            emit(nice, convertParseFloat(text), "ok")
+      }
+
+      op parseFloatOrDefault (as string: text, as float64: default) as float64 ==> {
+            emit(nice, convertParseFloatOrDefault(text, default), "ok")
+      }
+
+      op parseBool (as string: text) as bool ==> {
+            emit(nice, convertParseBool(text), "ok")
+      }
+
+      op toString (as data: value) as string ==> {
+            emit(nice, convertToString(value), "ok")
+      }
+
+      op intToString (as int64: value) as string ==> {
+            emit(nice, convertIntToString(value), "ok")
+      }
+
+      op floatToString (as float64: value) as string ==> {
+            emit(nice, convertFloatToString(value), "ok")
+      }
+
+      op boolToString (as bool: value) as string ==> {
+            emit(nice, convertBoolToString(value), "ok")
+      }
+
+      op intToFloat (as int64: value) as float64 ==> {
+            emit(nice, convertIntToFloat(value), "ok")
+      }
+
+      op floatToInt (as float64: value) as int64 ==> {
+            emit(nice, convertFloatToInt(value), "ok")
+      }
+
+      op intToInt32 (as int64: value) as int32 ==> {
+            emit(nice, convertIntToInt32(value), "ok")
+      }
+
+      op intToInt32OrDefault (as int64: value, as int32: default) as int32 ==> {
+            emit(nice, convertIntToInt32OrDefault(value, default), "ok")
+      }
+
+      op intToUint8 (as int64: value) as uint8 ==> {
+            emit(nice, convertIntToUint8(value), "ok")
+      }
+
+      op intToUint8OrDefault (as int64: value, as uint8: default) as uint8 ==> {
+            emit(nice, convertIntToUint8OrDefault(value, default), "ok")
+      }
+
+      op boolToInt (as bool: value) as int64 ==> {
+            emit(nice, convertBoolToInt(value), "ok")
+      }
+
+      op intToBool (as int64: value) as bool ==> {
+            emit(nice, convertIntToBool(value), "ok")
+      }
+
+      op castToInt32 (as int64: value) as int32 ==> {
+            emit(nice, convertCastToInt32(value), "ok")
+      }
+
+      op castToInt64 (as int32: value) as int64 ==> {
+            emit(nice, convertCastToInt64(value), "ok")
+      }
+
+      op castToFloat64 (as float32: value) as float64 ==> {
+            emit(nice, convertCastToFloat64(value), "ok")
+      }
+
+      op castToFloat32 (as data: value) as float32 ==> {
+            emit(nice, convertCastToFloat32(value), "ok")
+      }
+
+      op castToBf16E8M7 (as float32: value) as bf16_e8m7 ==> {
+            emit(nice, convertCastToBf16E8M7(value), "ok")
+      }
+
+      op castToTf32E8M10 (as float32: value) as tf32_e8m10 ==> {
+            emit(nice, convertCastToTf32E8M10(value), "ok")
+      }
+
+      op castToFp8E4M3 (as float32: value) as fp8_e4m3 ==> {
+            emit(nice, convertCastToFp8E4M3(value), "ok")
+      }
+
+      op castToFp8E4M3OrDefault (as float32: value, as fp8_e4m3: default) as fp8_e4m3 ==> {
+            emit(nice, convertCastToFp8E4M3OrDefault(value, default), "ok")
+      }
+
+      op castToFp8E5M2 (as float32: value) as fp8_e5m2 ==> {
+            emit(nice, convertCastToFp8E5M2(value), "ok")
+      }
+
+      op toComplex (as float64: real, as float64: imag) as complex64 ==> {
+            emit(nice, convertToComplex(real, imag), "ok")
+      }
+
+      op complexToList (as complex64: value) as list of data ==> {
+            emit(nice, convertComplexToList(value), "ok")
+      }
+
+      op enumToString (as data: value) as string ==> {
+            emit(nice, convertEnumToString(value), "ok")
+      }
+}

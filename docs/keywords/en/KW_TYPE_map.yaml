@@ -1,0 +1,42 @@
+keyword: map
+category: Collection Type - Map
+description: Dicionário com braces string e acesso dinâmico; ausente returns none.
+syntax: 'mut as map: var1, var2, ..., varN [= map{.<chave> of <type>: <value> [of <type>], ...}]'
+pseudocode: 'dicionario : MAPA   // chave string → value; ausente devolve nulo'
+usages:
+- name: Mapa (map)
+  description: Dicionário com braces string e acesso dinâmico; ausente returns none.
+  examples:
+  - code: 'mut as map: metricas = map { "threads": 8, "batch": 32 }
+
+      metricas["threads"] = 16
+
+      print(metricas["batch"])    # 32
+
+      print(metricas["ausente"])  # none'
+- name: Entradas tipadas
+  description: Braces string (.nome of string) ou numéricas (.1 of uint8 -> chave runtime "1"); anotação optional de type
+    no value (of string, of bool, ...).
+  examples:
+  - code: 'mut as map: codigos = map{.1 of uint8: "Norte" of string, .2 of uint8: "Nordeste" of string}
+
+      print(codigos["1"])  # Norte
+
+      print(codigos["5"])  # none'
+- name: Operations da stdlib
+  description: 24 ops do agent MapStdLib (insertEntry, containsKey, merge, extractKeys, toMap, ...) via use MapStdLib.
+  examples:
+  - code: 'use MapStdLib
+
+      mut as map: m = map{.name of string: "flux"}
+
+      println(keys(m))          # [name]
+
+      println(merge(m, map{.x of string: 9}))  # {name: flux, x: 9}'
+restrictions:
+- Map aceita braces novas por assignment dinâmica.
+- Acesso a chave ausente em map returns none (não causa error).
+- 'Print usa {k: v, ...} (ordem de inserção, strings sem aspas); concat "texto: " + <map> usa a forma formatada.'
+- 'Chave de entrada tipada: of string -> lexema; of uint8/int64/... numérico -> string do dígito; of <type> no value é anotação
+  (sem coerção em runtime).'
+- Suportado nos 5 backends (in, vm, wat, wasm, llvm).

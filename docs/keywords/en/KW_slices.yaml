@@ -1,0 +1,69 @@
+keyword: slices
+category: Range / Slice Operator
+description: 'Slices extraem slices de coleções e strings usando o operator de range .. dentro de delimitadores. O delimitador
+  depende do type: brackets [ ] para list, data e tensor; parentheses ( ) para string. O range é inclusivo em ambas as extremidades
+  e os indexs são 1-based.'
+syntax: 'lista[ .. ]              # Slice completo (cópia)
+
+  lista[x .. ]             # De x até o final
+
+  lista[ .. y]             # Do início até y
+
+  lista[x .. y]            # De x até y (inclusivo)
+
+  texto( .. )              # String completa (cópia)
+
+  texto(x .. )             # Substring de x até o final
+
+  texto( .. y)             # Substring do início até y
+
+  texto(x .. y)            # Substring de x até y (inclusivo)'
+pseudocode: 'numeros := [1, 2, 3, 4, 5]
+
+  fatia   := numeros[2..4]   // extrai subcolecao'
+usages:
+- name: Slice de lista
+  description: Extrai uma slice de uma list com brackets.
+  examples:
+  - code: 'mut as list of int64: valores = [10, 20, 30, 40, 50]
+
+      print(valores[ .. ])     # [10, 20, 30, 40, 50]
+
+      print(valores[ .. 3])    # [10, 20, 30]
+
+      print(valores[2 .. ])    # [20, 30, 40, 50]
+
+      print(valores[2 .. 4])   # [20, 30, 40]'
+- name: Slice de tensor
+  description: Slice a primeira dimension de um tensor com brackets; passo é suportado apenas em tensor.
+  examples:
+  - code: 'mut as tensor[4] of int64: t = tensor([1, 2, 3, 4])
+
+      print(t[2 .. 4])         # [2, 3, 4]
+
+      print(t[1 .. 4 .. 2])    # [1, 3]'
+- name: Slice de data
+  description: Slice uma lista de data (registros) com brackets.
+  examples:
+  - code: 'mut as list of data: itens = [{a: 1}, {a: 2}, {a: 3}]
+
+      print(itens[2 .. 3])     # [{a: 2}, {a: 3}]'
+- name: Slice de string
+  description: Extrai uma substring com parentheses; indexs contam codepoints Unicode.
+  examples:
+  - code: 'mut as string: texto = "flux"
+
+      print(texto( .. ))       # flux
+
+      print(texto( .. 3))      # flu
+
+      print(texto(2 .. ))      # lux
+
+      print(texto(2 .. 3))     # lu'
+restrictions:
+- Indexs são 1-based e o fim é inclusivo.
+- Início, fim ou ambos can be omitidos; omitidos assumem o início/fim da coleção.
+- Fora do interval válido (1..size) ou início maior que fim generates errorr at runtime.
+- Passo (sintaxe `[início .. fim .. passo]`) só é suportado em tensor; em list e string generates errorr.
+- Set e map não suportam slice.
+- 'O delimitador segue o type: [ ] para list/data/tensor, ( ) para string.'

@@ -1,0 +1,82 @@
+# ==============================================================================
+# TheFlux - Regras de Exclusão do Git (.gitignore)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Python (Bytecode, Caches, Ambientes Virtuais)
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+ENV/
+env/
+
+# ------------------------------------------------------------------------------
+# 2. Arquivos Temporários, Backups e Logs de Editores
+# ------------------------------------------------------------------------------
+*.bak
+*.swp
+*.swo
+*~
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# ------------------------------------------------------------------------------
+# 3. Node / NPM / Dependências de Ferramentas
+# ------------------------------------------------------------------------------
+node_modules/
+**/.opencode/node_modules/
+package-lock.json
+bun.lock
+
+# ------------------------------------------------------------------------------
+# 4. Caches de Ferramentas e MCPs Locais
+# ------------------------------------------------------------------------------
+.code-review-graph/
+.cache/
+graft/.cache/
+artifacts/
+
+# ------------------------------------------------------------------------------
+# 5. Saídas de Compilação, Binários e Intermediários do Compilador
+# ------------------------------------------------------------------------------
+intermediates/
+temp/
+scratch/
+build/
+t_benchmarks/
+t_fvmbc/
+t_general/
+t_llvm/
+t_wasm-*/
+t_wat-*/
+
+*.exe
+*.wasm
+*.wat
+*.fvmbc
+*.ll
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+
+# ------------------------------------------------------------------------------
+# 6. Saídas Geradas por Testes e Execuções
+# ------------------------------------------------------------------------------
+io_stdlib_output.txt
+io_stdlib_lines.txt
+io_stdlib_copy.txt
+io_stdlib_moved.txt
+io_stdlib_test_dir/
+# Preservar fixture estática indispensável para a suite de testes:
+!io_stdlib_fixture.txt
+

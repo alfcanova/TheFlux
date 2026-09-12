@@ -1,0 +1,13 @@
+agent (AgentOfContratoCalculadora) impl CalculadoraContrato, SaudeContrato {
+      op dobro(valor: int64): int64 {
+            emit(nice, valor * 2, "ok")
+      }
+
+      op soma(lhs: int64, rhs: int64): int64 {
+            emit(nice, lhs + rhs, "ok")
+      }
+
+      op ping(): int64 {
+            emit(nice, 7, "ok")
+      }
+}

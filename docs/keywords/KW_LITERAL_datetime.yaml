@@ -1,0 +1,29 @@
+keyword: datetime (literal ISO 8601)
+category: Literal de Data/Hora
+description: Literais de data e hora no formato ISO 8601. Precisão de nanossegundos; fração pode ter 1-9 dígitos. Sufixo Z
+  (UTC) ou offset ±HH, ±HHMM, ±HH:MM. Internamente é um inteiro de nanossegundos desde a época (1970-01-01T00:00:00Z). O tipo
+  é datetime.
+syntax: <AAAA>-<MM>-<DD>T<HH>:<MM>:<SS>[.<fração>][Z | ±<offset>]
+pseudocode: instante := 2026-07-03T10:30:00Z   // ISO 8601, precisao de nanossegundos
+usages:
+- name: Literal datetime
+  description: Timestamp completo com nanossegundos.
+  examples:
+  - code: 'mut as datetime: data = 1970-01-01T00:00:00.000000000Z
+
+      mut as datetime: agora = 2026-06-14T15:30:00.123456789Z'
+- name: Offsets e fração curta
+  description: Offset numérico e fração com menos de 9 dígitos.
+  examples:
+  - code: 'mut as datetime: com_offset = 2024-01-01T12:30:00+03
+
+      mut as datetime: offset_compacto = 2024-01-01T12:30:00+0300
+
+      mut as datetime: offset_extenso = 2024-01-01T12:30:00.5-03:00'
+restrictions:
+- Fração com 1-9 dígitos (preenchida com zeros à direita até 9).
+- Sufixo Z (UTC) ou offset ±HH, ±HHMM ou ±HH:MM.
+- O formato é validado na lexicação.
+- 'Data sem hora (ex: 2024-01-01) não é datetime literal — lexa como número e operadores.'
+- 'Backends: datetime é i64 nanossegundos; wat formata via $dt_to_str; vm formata via _format_iso_nanos; llvm e wasm imprimem
+  o valor numérico (nanos) — limitação documentada.'

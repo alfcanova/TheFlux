@@ -1,0 +1,14 @@
+agent (AgentOfMath) {
+
+      op dot ==> {
+            print("MathAgent syntax Produto Escalar")
+      }
+
+      op crux ==> {
+            print("MathAgent syntax Produto Vetorial")
+      }
+
+      op inverse ==> {
+            print("MathAgent syntax Inverse")
+      }
+}

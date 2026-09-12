@@ -1,0 +1,1454 @@
+#B
+================================================================================
+  ListStdLib.fdsl -- Biblioteca Padrao de Listas em TheFlux (100% Nativa)
+  Regra: 1-index para humanos e 0-index para maquinas.
+================================================================================
+B#
+
+contract (ListBasicContract) {
+      op listLength (as list of data: value) as int64
+      op listIsEmpty (as list of data: value) as bool
+      op listIsNotEmpty (as list of data: value) as bool
+      op listContains (as list of data: value, as data: item) as bool
+      op listContainsAny (as list of data: value, as list of data: items) as bool
+      op listContainsAll (as list of data: items, as list of data: subset) as bool
+      op listClearAll (as list of data: value) as list of data
+      op listSingleton (as data: value) as list of data
+      op listSingletonInt (as int64: value) as list of data
+      op listSingletonString (as string: value) as list of data
+      op listClone (as list of data: value) as list of data
+      op listToList (as data: value) as list of data
+      op listToSet (as data: value) as set of data
+      op listToMap (as list of data: value) as map
+      op listToString (as list of data: value) as string
+      op listFromList (as list of data: items) as list of data
+      op listFromSet (as set of data: items) as list of data
+      op listFromString (as string: text) as list of data
+}
+
+contract (ListAccessContract) {
+      op listGetFirst (as list of data: items) as data
+      op listGetAt (as list of data: items, as int64: index) as data
+      op listGetLast (as list of data: items) as data
+      op listGetLeft (as list of data: items, as int64: n) as list of data
+      op listGetRight (as list of data: items, as int64: n) as list of data
+      op listGetCenter (as list of data: items, as int64: n) as list of data
+      op listSlice (as list of data: items, as int64: start, as int64: end) as list of data
+}
+
+contract (ListMutationContract) {
+      op listPushFront (as list of data: items, as data: item) as list of data
+      op listPushBack (as list of data: items, as data: item) as list of data
+      op listPrepend (as list of data: items, as list of data: other) as list of data
+      op listAppend (as list of data: items, as list of data: other) as list of data
+      op listInsertFirst (as list of data: items, as data: item) as list of data
+      op listInsertAt (as list of data: items, as int64: index, as data: item) as list of data
+      op listInsertLast (as list of data: items, as data: item) as list of data
+      op listInsertAll (as list of data: items, as int64: index, as list of data: other) as list of data
+      op listRemoveFirst (as list of data: items) as list of data
+      op listRemoveAt (as list of data: items, as int64: index) as list of data
+      op listRemoveLast (as list of data: items) as list of data
+      op listRemove (as list of data: items, as data: item) as list of data
+      op listRemoveAll (as list of data: items, as data: item) as list of data
+}
+
+contract (ListTransformContract) {
+      op listSort (as list of data: items) as list of data
+      op listSortAscending (as list of data: items) as list of data
+      op listSortDescending (as list of data: items) as list of data
+      op listReverse (as list of data: items) as list of data
+      op listRotateLeft (as list of data: items, as int64: n) as list of data
+      op listRotateRight (as list of data: items, as int64: n) as list of data
+      op listFlatten (as list of data: items) as list of data
+      op listPartition (as list of data: items, as int64: size) as list of data
+      op listZip (as list of data: left, as list of data: right) as list of data
+      op listUnzip (as list of data: pairs) as list of data
+}
+
+contract (ListSearchContract) {
+      op listContains (as list of data: items, as data: item) as bool
+      op listContainsAny (as list of data: items, as list of data: needles) as bool
+      op listContainsAll (as list of data: items, as list of data: subset) as bool
+      op listStartsWith (as list of data: items, as list of data: prefix) as bool
+      op listEndsWith (as list of data: items, as list of data: suffix) as bool
+      op listIndexOf (as list of data: items, as data: item) as int64
+      op listLastIndexOf (as list of data: items, as data: item) as int64
+      op listCount (as list of data: items, as data: item) as int64
+}
+
+contract (ListSelectionContract) {
+      op listTake (as list of data: items, as int64: n) as list of data
+      op listDrop (as list of data: items, as int64: n) as list of data
+      op listTakeLast (as list of data: items, as int64: n) as list of data
+      op listDropLast (as list of data: items, as int64: n) as list of data
+      op listFilter (as list of data: items, as list of data: allowed_items) as list of data
+      op listOmit (as list of data: items, as list of data: omitted_items) as list of data
+      op listDistinct (as list of data: items) as list of data
+}
+
+contract (ListUtilityContract) {
+      op listEquals (as list of data: lhs, as list of data: rhs) as bool
+      op listJoin (as list of data: items, as string: separator) as string
+      op listSwap (as list of data: items, as int64: i, as int64: j) as list of data
+      op listReplaceAt (as list of data: items, as int64: index, as data: item) as list of data
+      op listConcat (as list of data: left, as list of data: right) as list of data
+      op listRepeat (as data: item, as int64: count) as list of data
+      op listFill (as list of data: items, as data: value) as list of data
+}
+
+contract (ListAggregateContract) {
+      op listMin (as list of data: items) as data
+      op listMax (as list of data: items) as data
+      op listSum (as list of data: items) as data
+      op listProduct (as list of data: items) as data
+      op listAverage (as list of data: items) as float64
+      op listCountValues (as list of data: items, as data: value) as int64
+}
+
+contract (ListCombinatorContract) {
+      op listChunk (as list of data: items, as int64: size) as list of data
+      op listWindow (as list of data: items, as int64: size) as list of data
+      op listFrequencies (as list of data: items) as map
+      op listCartesian (as list of data: lhs, as list of data: rhs) as list of data
+      op listCombinations (as list of data: items, as int64: k) as list of data
+}
+
+agent (ListStdLib) impl ListBasicContract, ListAccessContract, ListMutationContract, ListTransformContract, ListSearchContract, ListAggregateContract, ListSelectionContract, ListUtilityContract, ListCombinatorContract {
+      #L -- ListBasicContract -----------------------------------------
+      op listLength (as list of data: value) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in value) {
+                  count = count + 1
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      op listIsEmpty (as list of data: value) as bool ==> {
+            mut as bool: empty = true
+            infinite (x in value) {
+                  empty = false
+                  break
+            }
+            imut as bool: res = empty
+            emit(nice, res, "ok")
+      }
+
+      op listIsNotEmpty (as list of data: value) as bool ==> {
+            mut as bool: empty = true
+            infinite (x in value) {
+                  empty = false
+                  break
+            }
+            imut as bool: res = not empty
+            emit(nice, res, "ok")
+      }
+
+      op listContains (as list of data: value, as data: item) as bool ==> {
+            mut as bool: found = false
+            infinite (x in value) {
+                  route {
+                        x == item ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found
+            emit(nice, res, "ok")
+      }
+
+      op listContainsAny (as list of data: value, as list of data: items) as bool ==> {
+            mut as bool: found_any = false
+            infinite (it in items) {
+                  infinite (x in value) {
+                        route {
+                              x == it ==> {
+                                    found_any = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        found_any ==> {
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found_any
+            emit(nice, res, "ok")
+      }
+
+      op listContainsAll (as list of data: items, as list of data: subset) as bool ==> {
+            mut as bool: all_found = true
+            infinite (sub in subset) {
+                  mut as bool: found = false
+                  infinite (x in items) {
+                        route {
+                              x == sub ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_found = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_found
+            emit(nice, res, "ok")
+      }
+
+      op listClearAll (as list of data: value) as list of data ==> {
+            mut as list of data: res = []
+            emit(nice, res, "ok")
+      }
+
+      op listSingleton (as data: value) as list of data ==> {
+            mut as list of data: res = [value]
+            emit(nice, res, "ok")
+      }
+
+      op listSingletonInt (as int64: value) as list of data ==> {
+            mut as list of data: res = [value]
+            emit(nice, res, "ok")
+      }
+
+      op listSingletonString (as string: value) as list of data ==> {
+            mut as list of data: res = [value]
+            emit(nice, res, "ok")
+      }
+
+      op listClone (as list of data: value) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in value) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listToList (as data: value) as list of data ==> {
+            imut as list of data: res = value as list of data
+            emit(nice, res, "ok")
+      }
+
+      op listToSet (as data: value) as set of data ==> {
+            imut as set of data: res = value as set of data
+            emit(nice, res, "ok")
+      }
+
+      op listToMap (as list of data: value) as map ==> {
+            mut as map: m = map{}
+            infinite (p in value) {
+                  match (p) {
+                        [k, v] ==> {
+                              m[k] = v
+                        }
+                        [..pair] ==> {
+                              m[pair[1]] = pair[2]
+                        }
+                        _ ==> none
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op listToString (as list of data: value) as string ==> {
+            emit(nice, listJoin(value, ", "), "ok")
+      }
+
+      op listFromList (as list of data: items) as list of data ==> {
+            emit(nice, listClone(items), "ok")
+      }
+
+      op listFromSet (as set of data: items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFromString (as string: text) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (c in text) {
+                  rlen = rlen + 1
+                  res[rlen] = c
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListAccessContract ----------------------------------------
+      op listGetFirst (as list of data: items) as data ==> {
+            imut as data: res = items[1]
+            emit(nice, res, "ok")
+      }
+
+      op listGetAt (as list of data: items, as int64: index) as data ==> {
+            imut as data: res = items[index]
+            emit(nice, res, "ok")
+      }
+
+      op listGetLast (as list of data: items) as data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            imut as data: res = items[total]
+            emit(nice, res, "ok")
+      }
+
+      op listGetLeft (as list of data: items, as int64: n) as list of data ==> {
+            emit(nice, listTake(items, n), "ok")
+      }
+
+      op listGetRight (as list of data: items, as int64: n) as list of data ==> {
+            emit(nice, listTakeLast(items, n), "ok")
+      }
+
+      op listGetCenter (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  total == 0 or n < 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> {
+                        start_idx = 1
+                  }
+            }
+            route {
+                  end_idx > total ==> {
+                        end_idx = total
+                  }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, items[start_idx..end_idx], "ok")
+      }
+
+      op listSlice (as list of data: items, as int64: start, as int64: end) as list of data ==> {
+            imut as list of data: res = items[start..end]
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListMutationContract --------------------------------------
+      op listPushFront (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = [item]
+            infinite (x in items) {
+                  mut as int64: n = 0
+                  infinite (k in res) { n = n + 1 }
+                  res[n + 1] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listPushBack (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  count = count + 1
+                  res[count] = x
+            }
+            count = count + 1
+            res[count] = item
+            emit(nice, res, "ok")
+      }
+
+      op listPrepend (as list of data: items, as list of data: other) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in other) {
+                  count = count + 1
+                  res[count] = x
+            }
+            infinite (x in items) {
+                  count = count + 1
+                  res[count] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listAppend (as list of data: items, as list of data: other) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  count = count + 1
+                  res[count] = x
+            }
+            infinite (x in other) {
+                  count = count + 1
+                  res[count] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listInsertFirst (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = [item]
+            infinite (x in items) {
+                  mut as int64: n = 0
+                  infinite (k in res) { n = n + 1 }
+                  res[n + 1] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listInsertAt (as list of data: items, as int64: index, as data: item) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  index < 1 or index > (total + 1) ==> {
+                        mut as data: trigger_err = items[index]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr == index ==> {
+                              mut as int64: rlen1 = 0
+                              infinite (k in res) { rlen1 = rlen1 + 1 }
+                              res[rlen1 + 1] = item
+                        }
+                  }
+                  mut as int64: rlen2 = 0
+                  infinite (k in res) { rlen2 = rlen2 + 1 }
+                  res[rlen2 + 1] = x
+                  curr = curr + 1
+            }
+            route {
+                  index == (total + 1) ==> {
+                        mut as int64: rlen3 = 0
+                        infinite (k in res) { rlen3 = rlen3 + 1 }
+                        res[rlen3 + 1] = item
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listInsertLast (as list of data: items, as data: item) as list of data ==> {
+            emit(nice, listPushBack(items, item), "ok")
+      }
+
+      op listInsertAll (as list of data: items, as int64: index, as list of data: other) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr == index ==> {
+                              infinite (o in other) {
+                                    count = count + 1
+                                    res[count] = o
+                              }
+                        }
+                  }
+                  count = count + 1
+                  res[count] = x
+                  curr = curr + 1
+            }
+            route {
+                  index > count ==> {
+                        infinite (o in other) {
+                              count = count + 1
+                              res[count] = o
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveFirst (as list of data: items) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr > 1 ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveAt (as list of data: items, as int64: index) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  index < 1 or index > total ==> {
+                        mut as data: trigger_err = items[index]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr != index ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveLast (as list of data: items) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr < total ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemove (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            mut as bool: removed = false
+            infinite (x in items) {
+                  route {
+                        not removed and x == item ==> {
+                              removed = true
+                        }
+                        removed or x != item ==> {
+                              count = count + 1
+                              res[count] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveAll (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  route {
+                        x != item ==> {
+                              count = count + 1
+                              res[count] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListTransformContract -------------------------------------
+      op listSort (as list of data: items) as list of data ==> {
+            emit(nice, listSortAscending(items), "ok")
+      }
+
+      op listSortAscending (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  mut as int64: rlen = 0
+                  infinite (k in res) { rlen = rlen + 1 }
+                  res[rlen + 1] = x
+            }
+            mut as int64: n = 0
+            infinite (x in res) {
+                  n = n + 1
+            }
+            route {
+                  n > 1 ==> {
+                        infinite (i in 1 .. n) {
+                              mut as int64: limit = n - i
+                              route {
+                                    limit >= 1 ==> {
+                                          infinite (j in 1 .. limit) {
+                                                route {
+                                                      res[j] > res[j + 1] ==> {
+                                                            mut as data: temp = res[j]
+                                                            res[j] = res[j + 1]
+                                                            res[j + 1] = temp
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listSortDescending (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  mut as int64: rlen = 0
+                  infinite (k in res) { rlen = rlen + 1 }
+                  res[rlen + 1] = x
+            }
+            mut as int64: n = 0
+            infinite (x in res) {
+                  n = n + 1
+            }
+            route {
+                  n > 1 ==> {
+                        infinite (i in 1 .. n) {
+                              mut as int64: limit = n - i
+                              route {
+                                    limit >= 1 ==> {
+                                          infinite (j in 1 .. limit) {
+                                                route {
+                                                      res[j] < res[j + 1] ==> {
+                                                            mut as data: temp = res[j]
+                                                            res[j] = res[j + 1]
+                                                            res[j + 1] = temp
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listReverse (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n = 0
+            infinite (x in items) {
+                  n = n + 1
+            }
+            route {
+                  n > 0 ==> {
+                        infinite (i in n .. 1) {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = items[i]
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRotateLeft (as list of data: items, as int64: n) as list of data ==> {
+            mut as int64: total = listLength(items)
+            route {
+                  total <= 1 or n <= 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as int64: shift = n /r total
+            route {
+                  shift == 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as list of data: head = items[(shift + 1)..total]
+            mut as list of data: tail = items[1..shift]
+            emit(nice, listAppend(head, tail), "ok")
+      }
+
+      op listRotateRight (as list of data: items, as int64: n) as list of data ==> {
+            mut as int64: total = listLength(items)
+            route {
+                  total <= 1 or n <= 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as int64: shift = n /r total
+            route {
+                  shift == 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as list of data: tail = items[(total - shift + 1)..total]
+            mut as list of data: head = items[1..(total - shift)]
+            emit(nice, listAppend(tail, head), "ok")
+      }
+
+      op listFlatten (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  match (x) {
+                        [..sub] ==> {
+                              infinite (y in sub) {
+                                    mut as int64: rlen = 0
+                                    infinite (k in res) { rlen = rlen + 1 }
+                                    res[rlen + 1] = y
+                              }
+                        }
+                        _ ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listPartition (as list of data: items, as int64: size) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  size <= 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as list of data: current_chunk = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  mut as int64: clen = 0
+                  infinite (k in current_chunk) { clen = clen + 1 }
+                  current_chunk[clen + 1] = x
+                  count = count + 1
+                  route {
+                        count == size ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = current_chunk
+                              current_chunk = []
+                              count = 0
+                        }
+                  }
+            }
+            route {
+                  count > 0 ==> {
+                        mut as int64: rlen2 = 0
+                        infinite (k in res) { rlen2 = rlen2 + 1 }
+                        res[rlen2 + 1] = current_chunk
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listZip (as list of data: left, as list of data: right) as list of data ==> {
+            mut as int64: n1 = 0
+            infinite (x in left) { n1 = n1 + 1 }
+            mut as int64: n2 = 0
+            infinite (x in right) { n2 = n2 + 1 }
+            mut as int64: min_len = n1
+            route {
+                  n2 < min_len ==> {
+                        min_len = n2
+                  }
+            }
+            mut as list of data: res = []
+            route {
+                  min_len > 0 ==> {
+                        infinite (i in 1 .. min_len) {
+                              mut as list of data: pair = [left[i], right[i]]
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = pair
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listUnzip (as list of data: pairs) as list of data ==> {
+            mut as list of data: left_list = []
+            mut as list of data: right_list = []
+            infinite (p in pairs) {
+                  match (p) {
+                        [k, v] ==> {
+                              mut as int64: l1 = 0
+                              infinite (i in left_list) { l1 = l1 + 1 }
+                              left_list[l1 + 1] = k
+
+                              mut as int64: l2 = 0
+                              infinite (j in right_list) { l2 = l2 + 1 }
+                              right_list[l2 + 1] = v
+                        }
+                        [..pair] ==> {
+                              mut as int64: l1 = 0
+                              infinite (i in left_list) { l1 = l1 + 1 }
+                              left_list[l1 + 1] = pair[1]
+
+                              mut as int64: l2 = 0
+                              infinite (j in right_list) { l2 = l2 + 1 }
+                              right_list[l2 + 1] = pair[2]
+                        }
+                        _ ==> none
+                  }
+            }
+            mut as list of data: res = [left_list, right_list]
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListSearchContract ----------------------------------------
+      op listStartsWith (as list of data: items, as list of data: prefix) as bool ==> {
+            mut as int64: len_p = listLength(prefix)
+            mut as int64: len_i = listLength(items)
+            route {
+                  len_p == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_p > len_i ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as list of data: sub = items[1..len_p]
+            emit(nice, sub == prefix, "ok")
+      }
+
+      op listEndsWith (as list of data: items, as list of data: suffix) as bool ==> {
+            mut as int64: len_s = listLength(suffix)
+            mut as int64: len_i = listLength(items)
+            route {
+                  len_s == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_s > len_i ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as int64: start = len_i - len_s + 1
+            mut as list of data: sub = items[start..len_i]
+            emit(nice, sub == suffix, "ok")
+      }
+
+      op listIndexOf (as list of data: items, as data: item) as int64 ==> {
+            mut as int64: idx = -1
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        x == item ==> {
+                              idx = curr
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            imut as int64: res = idx
+            emit(nice, res, "ok")
+      }
+
+      op listLastIndexOf (as list of data: items, as data: item) as int64 ==> {
+            mut as int64: idx = -1
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        x == item ==> {
+                              idx = curr
+                        }
+                  }
+                  curr = curr + 1
+            }
+            imut as int64: res = idx
+            emit(nice, res, "ok")
+      }
+
+      op listCount (as list of data: items, as data: item) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in items) {
+                  route {
+                        x == item ==> {
+                              count = count + 1
+                        }
+                  }
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListAggregateContract -------------------------------------
+      op listMin (as list of data: items) as data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as data: min_val = items[1]
+            infinite (x in items) {
+                  route {
+                        x < min_val ==> {
+                              min_val = x
+                        }
+                  }
+            }
+            imut as data: res = min_val
+            emit(nice, res, "ok")
+      }
+
+      op listMax (as list of data: items) as data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as data: max_val = items[1]
+            infinite (x in items) {
+                  route {
+                        x > max_val ==> {
+                              max_val = x
+                        }
+                  }
+            }
+            imut as data: res = max_val
+            emit(nice, res, "ok")
+      }
+
+      op listSum (as list of data: items) as data ==> {
+            mut as data: acc = 0
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              acc = x
+                              first = false
+                        }
+                        not first ==> {
+                              acc = acc + x
+                        }
+                  }
+            }
+            imut as data: res = acc
+            emit(nice, res, "ok")
+      }
+
+      op listProduct (as list of data: items) as data ==> {
+            mut as data: acc = 1
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              acc = x
+                              first = false
+                        }
+                        not first ==> {
+                              acc = acc * x
+                        }
+                  }
+            }
+            imut as data: res = acc
+            emit(nice, res, "ok")
+      }
+
+      op listAverage (as list of data: items) as float64 ==> {
+            mut as int64: count = 0
+            mut as float64: sum_val = 0.0
+            infinite (x in items) {
+                  count = count + 1
+                  sum_val = sum_val + (x as float64)
+            }
+            route {
+                  count == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as float64: avg = sum_val /f (count as float64)
+            imut as float64: res = avg
+            emit(nice, res, "ok")
+      }
+
+      op listCountValues (as list of data: items, as data: value) as int64 ==> {
+            emit(nice, listCount(items, value), "ok")
+      }
+
+      #L -- ListSelectionContract -------------------------------------
+      op listTake (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  n <= 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr <= n ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                        curr > n ==> {
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listDrop (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr > n ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listTakeLast (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  n <= 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            mut as int64: start_idx = total - n + 1
+            route {
+                  start_idx < 1 ==> {
+                        start_idx = 1
+                  }
+            }
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr >= start_idx ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listDropLast (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  n <= 0 ==> {
+                        mut as int64: rlen0 = 0
+                        infinite (x in items) {
+                              rlen0 = rlen0 + 1
+                              res[rlen0] = x
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            mut as int64: keep_count = total - n
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr <= keep_count ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFilter (as list of data: items, as list of data: allowed_items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  mut as bool: should_keep = false
+                  infinite (item_allowed in allowed_items) {
+                        route {
+                              x == item_allowed ==> {
+                                    should_keep = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        should_keep ==> {
+                              rlen = rlen + 1
+                              res[rlen] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listOmit (as list of data: items, as list of data: omitted_items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  mut as bool: should_omit = false
+                  infinite (item_omitted in omitted_items) {
+                        route {
+                              x == item_omitted ==> {
+                                    should_omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not should_omit ==> {
+                              rlen = rlen + 1
+                              res[rlen] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listDistinct (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  mut as bool: exists = false
+                  infinite (r in res) {
+                        route {
+                              r == x ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not exists ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListUtilityContract ---------------------------------------
+      op listEquals (as list of data: lhs, as list of data: rhs) as bool ==> {
+            mut as int64: n_l = listLength(lhs)
+            mut as int64: n_r = listLength(rhs)
+            mut as bool: eq = n_l == n_r
+            route {
+                  eq ==> {
+                        mut as int64: idx = 1
+                        infinite (idx <= n_l) {
+                              route {
+                                    lhs[idx] != rhs[idx] ==> {
+                                          eq = false
+                                          break
+                                    }
+                              }
+                              idx = idx + 1
+                        }
+                  }
+            }
+            emit(nice, eq, "ok")
+      }
+
+      op listJoin (as list of data: items, as string: separator) as string ==> {
+            mut as string: text = ""
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              text = "" + x
+                              first = false
+                        }
+                        not first ==> {
+                              text = text + separator + x
+                        }
+                  }
+            }
+            imut as string: res = text
+            emit(nice, res, "ok")
+      }
+
+      op listSwap (as list of data: items, as int64: i, as int64: j) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  i < 1 or i > total or j < 1 or j > total ==> {
+                        mut as data: trigger_err = items[0]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            mut as data: temp = res[i]
+            res[i] = res[j]
+            res[j] = temp
+            emit(nice, res, "ok")
+      }
+
+      op listReplaceAt (as list of data: items, as int64: index, as data: item) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  index < 1 or index > total ==> {
+                        mut as data: trigger_err = items[index]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            res[index] = item
+            emit(nice, res, "ok")
+      }
+
+      op listConcat (as list of data: left, as list of data: right) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in left) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            infinite (y in right) {
+                  rlen = rlen + 1
+                  res[rlen] = y
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRepeat (as data: item, as int64: count) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  count > 0 ==> {
+                        infinite (i in 1 .. count) {
+                              res[i] = item
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFill (as list of data: items, as data: value) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  res[curr] = value
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L -- ListCombinatorContract ------------------------------------
+      op listChunk (as list of data: items, as int64: size) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total = listLength(items)
+            route {
+                  size <= 0 or total == 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: num_chunks = 0
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > total ==> {
+                              break
+                        }
+                  }
+                  mut as int64: end_i = i + size - 1
+                  route {
+                        end_i > total ==> {
+                              end_i = total
+                        }
+                  }
+                  mut as list of data: chunk = []
+                  mut as int64: c_idx = 1
+                  infinite (j in i .. end_i) {
+                        chunk[c_idx] = items[j]
+                        c_idx = c_idx + 1
+                  }
+                  num_chunks = num_chunks + 1
+                  res[num_chunks] = chunk
+                  i = i + size
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listWindow (as list of data: items, as int64: size) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total = listLength(items)
+            route {
+                  size <= 0 or size > total or total == 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: max_start = total - size + 1
+            mut as int64: w_count = 0
+            infinite (i in 1 .. max_start) {
+                  mut as int64: end_i = i + size - 1
+                  mut as list of data: win = []
+                  mut as int64: c_idx = 1
+                  infinite (j in i .. end_i) {
+                        win[c_idx] = items[j]
+                        c_idx = c_idx + 1
+                  }
+                  w_count = w_count + 1
+                  res[w_count] = win
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFrequencies (as list of data: items) as map ==> {
+            mut as map: m = map{}
+            infinite (x in items) {
+                  mut as string: k = "" + x
+                  mut as bool: exists = false
+                  infinite (ek in m) {
+                        route {
+                              ek == k ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        exists ==> {
+                              mut as int64: curr_cnt = m[k] as int64
+                              m[k] = curr_cnt + 1
+                        }
+                        not exists ==> {
+                              m[k] = 1
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op listCartesian (as list of data: lhs, as list of data: rhs) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in lhs) {
+                  infinite (y in rhs) {
+                        count = count + 1
+                        res[count] = [x, y]
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listCombinations (as list of data: items, as int64: k) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n = listLength(items)
+            route {
+                  k <= 0 ==> {
+                        res[1] = []
+                        emit(nice, res, "ok")
+                  }
+                  k > n ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as list of int64: idxs = []
+            infinite (i in 1 .. k) {
+                  idxs[i] = i
+            }
+            mut as int64: count = 0
+            infinite {
+                  count = count + 1
+                  mut as list of data: combo = []
+                  infinite (c in 1 .. k) {
+                        mut as int64: pos = idxs[c]
+                        combo[c] = items[pos]
+                  }
+                  res[count] = combo
+
+                  mut as int64: p = k
+                  infinite {
+                        route {
+                              p < 1 ==> {
+                                    break
+                              }
+                              idxs[p] < n - k + p ==> {
+                                    break
+                              }
+                        }
+                        p = p - 1
+                  }
+                  route {
+                        p < 1 ==> {
+                              break
+                        }
+                  }
+                  idxs[p] = idxs[p] + 1
+                  mut as int64: next_val = idxs[p]
+                  mut as int64: start_q = p + 1
+                  route {
+                        start_q <= k ==> {
+                              infinite (q in start_q .. k) {
+                                    next_val = next_val + 1
+                                    idxs[q] = next_val
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

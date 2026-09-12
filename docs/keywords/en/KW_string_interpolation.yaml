@@ -1,0 +1,28 @@
+keyword: '#{ }'
+category: String Interpolation
+description: 'Interpolação de expressions dentro de strings delimitadas por double quotes. A sintaxe #{expression} evaluates
+  a expression e converte o resultado para string no local. Expressões podem conter operations, chamadas de function, e qualquer
+  expression válida.'
+syntax: '"texto #{<expression>} mais texto"'
+pseudocode: 'nome := "Ana"
+
+  msg  := "Ola, #{nome}!"   // interpola a expression na string'
+usages:
+- name: Interpolação simples
+  description: Insere o value de uma variable na string.
+  examples:
+  - code: 'print("Contador: #{contador}")'
+  - code: 'print("Nome: #{nome}, Idade: #{idade}")'
+- name: Interpolação com expression
+  description: Evaluates uma expression dentro da interpolação.
+  examples:
+  - code: 'print("Soma: #{a + b}")'
+  - code: 'print("Resultado: #{calcular(x) * 2}")'
+- name: Interpolação múltipla
+  description: Múltiplas interpolações na mesma string.
+  examples:
+  - code: 'print("x = #{x}, y = #{y}, total = #{x + y}")'
+restrictions:
+- Só funciona em strings com double quotes (").
+- Expressions podem conter quebras de linha; a interpolação termina apenas em }.
+- Qualquer expression válida é aceita, incluindo chamadas de function.

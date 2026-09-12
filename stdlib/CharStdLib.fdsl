@@ -1,0 +1,450 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Modulo nativo para operacoes de caractere unico (char)
+#L Implementacao 100% nativa em TheFlux (sem intrinsicos)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (CharClassificationContract) {
+      op charIsDigit (as char: c) as bool
+      op charIsAlpha (as char: c) as bool
+      op charIsAlphanumeric (as char: c) as bool
+      op charIsLower (as char: c) as bool
+      op charIsUpper (as char: c) as bool
+      op charIsWhitespace (as char: c) as bool
+      op charIsSpace (as char: c) as bool
+      op charIsPunctuation (as char: c) as bool
+      op charIsHexDigit (as char: c) as bool
+      op charIsOctalDigit (as char: c) as bool
+      op charIsBinaryDigit (as char: c) as bool
+      op charIsAscii (as char: c) as bool
+}
+
+contract (CharTransformContract) {
+      op charToUpper (as char: c) as char
+      op charToLower (as char: c) as char
+      op charToggleCase (as char: c) as char
+      op charToDigit (as char: c) as int64
+      op charFromDigit (as int64: digit) as char
+}
+
+contract (CharHexContract) {
+      op charToHexValue (as char: c) as int64
+      op charFromHexValue (as int64: value) as char
+      op charToBinaryValue (as char: c) as int64
+      op charFromBinaryValue (as int64: value) as char
+}
+
+contract (CharAsciiContract) {
+      op charToAscii (as char: c) as int64
+      op charFromAscii (as int64: code) as char
+      op charIsPrintable (as char: c) as bool
+      op charIsControl (as char: c) as bool
+}
+
+contract (CharCompareContract) {
+      op charEquals (as char: a, as char: b) as bool
+      op charEqualsIgnoreCase (as char: a, as char: b) as bool
+      op charCompare (as char: a, as char: b) as int64
+      op charCompareIgnoreCase (as char: a, as char: b) as int64
+      op charIsBetween (as char: c, as char: start, as char: end) as bool
+}
+
+contract (CharUtilityContract) {
+      op charToString (as char: c) as string
+      op charRepeat (as char: c, as int64: count) as string
+      op charIsVowel (as char: c) as bool
+      op charIsConsonant (as char: c) as bool
+      op charEscape (as char: c) as string
+      op charName (as char: c) as string
+}
+
+agent (CharStdLib) impl CharClassificationContract, CharTransformContract, CharHexContract, CharAsciiContract, CharCompareContract, CharUtilityContract {
+
+      #L -- CharClassificationContract --------------------------------
+      op charIsDigit (as char: c) as bool ==> {
+            imut as bool: res = (c == '0' or c == '1' or c == '2' or c == '3' or c == '4' or c == '5' or c == '6' or c == '7' or c == '8' or c == '9')
+            emit(nice, res, "ok")
+      }
+
+      op charIsLower (as char: c) as bool ==> {
+            imut as bool: res = (c == 'a' or c == 'b' or c == 'c' or c == 'd' or c == 'e' or c == 'f' or c == 'g' or c == 'h' or c == 'i' or c == 'j' or c == 'k' or c == 'l' or c == 'm' or c == 'n' or c == 'o' or c == 'p' or c == 'q' or c == 'r' or c == 's' or c == 't' or c == 'u' or c == 'v' or c == 'w' or c == 'x' or c == 'y' or c == 'z')
+            emit(nice, res, "ok")
+      }
+
+      op charIsUpper (as char: c) as bool ==> {
+            imut as bool: res = (c == 'A' or c == 'B' or c == 'C' or c == 'D' or c == 'E' or c == 'F' or c == 'G' or c == 'H' or c == 'I' or c == 'J' or c == 'K' or c == 'L' or c == 'M' or c == 'N' or c == 'O' or c == 'P' or c == 'Q' or c == 'R' or c == 'S' or c == 'T' or c == 'U' or c == 'V' or c == 'W' or c == 'X' or c == 'Y' or c == 'Z')
+            emit(nice, res, "ok")
+      }
+
+      op charIsAlpha (as char: c) as bool ==> {
+            mut as bool: is_low = charIsLower(c)
+            mut as bool: is_upp = charIsUpper(c)
+            imut as bool: res = (is_low or is_upp)
+            emit(nice, res, "ok")
+      }
+
+      op charIsAlphanumeric (as char: c) as bool ==> {
+            mut as bool: is_alp = charIsAlpha(c)
+            mut as bool: is_dig = charIsDigit(c)
+            imut as bool: res = (is_alp or is_dig)
+            emit(nice, res, "ok")
+      }
+
+      op charIsWhitespace (as char: c) as bool ==> {
+            imut as bool: res = (c == ' ' or c == '\t' or c == '\n' or c == '\r')
+            emit(nice, res, "ok")
+      }
+
+      op charIsSpace (as char: c) as bool ==> {
+            imut as bool: res = (c == ' ')
+            emit(nice, res, "ok")
+      }
+
+      op charIsPunctuation (as char: c) as bool ==> {
+            imut as bool: res = (c == '!' or c == '"' or c == '#' or c == '$' or c == '%' or c == '&' or c == '\'' or c == '(' or c == ')' or c == '*' or c == '+' or c == ',' or c == '-' or c == '.' or c == '/' or c == ':' or c == ';' or c == '<' or c == '=' or c == '>' or c == '?' or c == '@' or c == '[' or c == '\\' or c == ']' or c == '^' or c == '_' or c == '`' or c == '{' or c == '|' or c == '}' or c == '~')
+            emit(nice, res, "ok")
+      }
+
+      op charIsHexDigit (as char: c) as bool ==> {
+            mut as bool: is_dig = charIsDigit(c)
+            mut as bool: is_hex_alpha = (c == 'a' or c == 'b' or c == 'c' or c == 'd' or c == 'e' or c == 'f' or c == 'A' or c == 'B' or c == 'C' or c == 'D' or c == 'E' or c == 'F')
+            imut as bool: res = (is_dig or is_hex_alpha)
+            emit(nice, res, "ok")
+      }
+
+      op charIsOctalDigit (as char: c) as bool ==> {
+            imut as bool: res = (c == '0' or c == '1' or c == '2' or c == '3' or c == '4' or c == '5' or c == '6' or c == '7')
+            emit(nice, res, "ok")
+      }
+
+      op charIsBinaryDigit (as char: c) as bool ==> {
+            imut as bool: res = (c == '0' or c == '1')
+            emit(nice, res, "ok")
+      }
+
+      op charIsAscii (as char: c) as bool ==> {
+            mut as int64: ascii_code = charToAscii(c)
+            imut as bool: res = (ascii_code >= 0)
+            emit(nice, res, "ok")
+      }
+
+      #L -- CharTransformContract -------------------------------------
+      op charToUpper (as char: c) as char ==> {
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as int64: idx = 1
+            mut as bool: found = false
+            infinite (ch in low) {
+                  route {
+                        ch == (c as string) ==> {
+                              found = true
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  found ==> {
+                        imut as char: res = upp[idx]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, c, "ok")
+      }
+
+      op charToLower (as char: c) as char ==> {
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            mut as int64: idx = 1
+            mut as bool: found = false
+            infinite (ch in upp) {
+                  route {
+                        ch == (c as string) ==> {
+                              found = true
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  found ==> {
+                        imut as char: res = low[idx]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, c, "ok")
+      }
+
+      op charToggleCase (as char: c) as char ==> {
+            mut as bool: is_low = charIsLower(c)
+            route {
+                  is_low ==> {
+                        mut as char: up = charToUpper(c)
+                        emit(nice, up, "ok")
+                  }
+            }
+            mut as bool: is_upp = charIsUpper(c)
+            route {
+                  is_upp ==> {
+                        mut as char: lo = charToLower(c)
+                        emit(nice, lo, "ok")
+                  }
+            }
+            emit(nice, c, "ok")
+      }
+
+      op charToDigit (as char: c) as int64 ==> {
+            route { c == '0' ==> { emit(nice, 0, "ok") } }
+            route { c == '1' ==> { emit(nice, 1, "ok") } }
+            route { c == '2' ==> { emit(nice, 2, "ok") } }
+            route { c == '3' ==> { emit(nice, 3, "ok") } }
+            route { c == '4' ==> { emit(nice, 4, "ok") } }
+            route { c == '5' ==> { emit(nice, 5, "ok") } }
+            route { c == '6' ==> { emit(nice, 6, "ok") } }
+            route { c == '7' ==> { emit(nice, 7, "ok") } }
+            route { c == '8' ==> { emit(nice, 8, "ok") } }
+            route { c == '9' ==> { emit(nice, 9, "ok") } }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromDigit (as int64: digit) as char ==> {
+            route { digit == 0 ==> { emit(nice, '0', "ok") } }
+            route { digit == 1 ==> { emit(nice, '1', "ok") } }
+            route { digit == 2 ==> { emit(nice, '2', "ok") } }
+            route { digit == 3 ==> { emit(nice, '3', "ok") } }
+            route { digit == 4 ==> { emit(nice, '4', "ok") } }
+            route { digit == 5 ==> { emit(nice, '5', "ok") } }
+            route { digit == 6 ==> { emit(nice, '6', "ok") } }
+            route { digit == 7 ==> { emit(nice, '7', "ok") } }
+            route { digit == 8 ==> { emit(nice, '8', "ok") } }
+            route { digit == 9 ==> { emit(nice, '9', "ok") } }
+            emit(nice, '?', "ok")
+      }
+
+      #L -- CharHexContract -------------------------------------------
+      op charToHexValue (as char: c) as int64 ==> {
+            mut as int64: dig = charToDigit(c)
+            route {
+                  dig >= 0 ==> {
+                        emit(nice, dig, "ok")
+                  }
+            }
+            route { c == 'a' or c == 'A' ==> { emit(nice, 10, "ok") } }
+            route { c == 'b' or c == 'B' ==> { emit(nice, 11, "ok") } }
+            route { c == 'c' or c == 'C' ==> { emit(nice, 12, "ok") } }
+            route { c == 'd' or c == 'D' ==> { emit(nice, 13, "ok") } }
+            route { c == 'e' or c == 'E' ==> { emit(nice, 14, "ok") } }
+            route { c == 'f' or c == 'F' ==> { emit(nice, 15, "ok") } }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromHexValue (as int64: value) as char ==> {
+            route {
+                  value >= 0 and value <= 9 ==> {
+                        mut as char: c_d = charFromDigit(value)
+                        emit(nice, c_d, "ok")
+                  }
+            }
+            route { value == 10 ==> { emit(nice, 'A', "ok") } }
+            route { value == 11 ==> { emit(nice, 'B', "ok") } }
+            route { value == 12 ==> { emit(nice, 'C', "ok") } }
+            route { value == 13 ==> { emit(nice, 'D', "ok") } }
+            route { value == 14 ==> { emit(nice, 'E', "ok") } }
+            route { value == 15 ==> { emit(nice, 'F', "ok") } }
+            emit(nice, '?', "ok")
+      }
+
+      op charToBinaryValue (as char: c) as int64 ==> {
+            route { c == '0' ==> { emit(nice, 0, "ok") } }
+            route { c == '1' ==> { emit(nice, 1, "ok") } }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromBinaryValue (as int64: value) as char ==> {
+            route { value == 0 ==> { emit(nice, '0', "ok") } }
+            route { value == 1 ==> { emit(nice, '1', "ok") } }
+            emit(nice, '?', "ok")
+      }
+
+      #L -- CharAsciiContract -----------------------------------------
+      op charToAscii (as char: c) as int64 ==> {
+            route { c == '\0' ==> { emit(nice, 0, "ok") } }
+            route { c == '\t' ==> { emit(nice, 9, "ok") } }
+            route { c == '\n' ==> { emit(nice, 10, "ok") } }
+            route { c == '\r' ==> { emit(nice, 13, "ok") } }
+            imut as string: printable = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as int64: idx = 1
+            mut as bool: found = false
+            infinite (p in printable) {
+                  route {
+                        p == (c as string) ==> {
+                              found = true
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  found ==> {
+                        mut as int64: code = 31 + idx
+                        emit(nice, code, "ok")
+                  }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromAscii (as int64: code) as char ==> {
+            route { code == 0 ==> { emit(nice, '\0', "ok") } }
+            route { code == 9 ==> { emit(nice, '\t', "ok") } }
+            route { code == 10 ==> { emit(nice, '\n', "ok") } }
+            route { code == 13 ==> { emit(nice, '\r', "ok") } }
+            route {
+                  code >= 32 and code <= 126 ==> {
+                        imut as string: printable = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+                        mut as int64: idx = code - 31
+                        imut as char: res = printable[idx]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, '?', "ok")
+      }
+
+      op charIsPrintable (as char: c) as bool ==> {
+            mut as int64: code = charToAscii(c)
+            imut as bool: res = (code >= 32 and code <= 126)
+            emit(nice, res, "ok")
+      }
+
+      op charIsControl (as char: c) as bool ==> {
+            mut as int64: code = charToAscii(c)
+            route {
+                  code >= 0 and code < 32 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+            }
+            route {
+                  code == 127 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+            }
+            mut as bool: f = false
+            emit(nice, f, "ok")
+      }
+
+      #L -- CharCompareContract ---------------------------------------
+      op charEquals (as char: a, as char: b) as bool ==> {
+            imut as bool: res = (a == b)
+            emit(nice, res, "ok")
+      }
+
+      op charEqualsIgnoreCase (as char: a, as char: b) as bool ==> {
+            mut as char: a_low = charToLower(a)
+            mut as char: b_low = charToLower(b)
+            imut as bool: res = (a_low == b_low)
+            emit(nice, res, "ok")
+      }
+
+      op charCompare (as char: a, as char: b) as int64 ==> {
+            mut as int64: a_code = charToAscii(a)
+            mut as int64: b_code = charToAscii(b)
+            route {
+                  a_code < b_code ==> {
+                        emit(nice, -1, "ok")
+                  }
+            }
+            route {
+                  a_code > b_code ==> {
+                        emit(nice, 1, "ok")
+                  }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op charCompareIgnoreCase (as char: a, as char: b) as int64 ==> {
+            mut as char: a_low = charToLower(a)
+            mut as char: b_low = charToLower(b)
+            mut as int64: res = charCompare(a_low, b_low)
+            emit(nice, res, "ok")
+      }
+
+      op charIsBetween (as char: c, as char: start, as char: end) as bool ==> {
+            mut as int64: val = charToAscii(c)
+            mut as int64: lo = charToAscii(start)
+            mut as int64: hi = charToAscii(end)
+            route {
+                  val >= 0 and lo >= 0 and hi >= 0 ==> {
+                        imut as bool: res = (val >= lo and val <= hi)
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as bool: f = false
+            emit(nice, f, "ok")
+      }
+
+      #L -- CharUtilityContract ---------------------------------------
+      op charToString (as char: c) as string ==> {
+            imut as string: res = c as string
+            emit(nice, res, "ok")
+      }
+
+      op charRepeat (as char: c, as int64: count) as string ==> {
+            mut as string: res = ""
+            mut as int64: i = 0
+            mut as string: s = c as string
+            infinite {
+                  route {
+                        i >= count ==> {
+                              break
+                        }
+                  }
+                  res = res + s
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op charIsVowel (as char: c) as bool ==> {
+            mut as char: lo = charToLower(c)
+            imut as bool: res = (lo == 'a' or lo == 'e' or lo == 'i' or lo == 'o' or lo == 'u')
+            emit(nice, res, "ok")
+      }
+
+      op charIsConsonant (as char: c) as bool ==> {
+            mut as bool: is_alp = charIsAlpha(c)
+            mut as bool: is_vow = charIsVowel(c)
+            imut as bool: res = (is_alp and not is_vow)
+            emit(nice, res, "ok")
+      }
+
+      op charEscape (as char: c) as string ==> {
+            route { c == '\n' ==> { emit(nice, "\\n", "ok") } }
+            route { c == '\t' ==> { emit(nice, "\\t", "ok") } }
+            route { c == '\r' ==> { emit(nice, "\\r", "ok") } }
+            route { c == '\0' ==> { emit(nice, "\\0", "ok") } }
+            route { c == '\\' ==> { emit(nice, "\\\\", "ok") } }
+            route { c == '\'' ==> { emit(nice, "\\'", "ok") } }
+            imut as string: res = c as string
+            emit(nice, res, "ok")
+      }
+
+      op charName (as char: c) as string ==> {
+            route { c == ' ' ==> { emit(nice, "espaco", "ok") } }
+            route { c == '\n' ==> { emit(nice, "nova_linha", "ok") } }
+            route { c == '\t' ==> { emit(nice, "tabulacao", "ok") } }
+            route { c == '\r' ==> { emit(nice, "retorno_carro", "ok") } }
+            mut as bool: is_dig = charIsDigit(c)
+            route { is_dig ==> { emit(nice, "digito", "ok") } }
+            mut as bool: is_upp = charIsUpper(c)
+            route { is_upp ==> { emit(nice, "letra_maiuscula", "ok") } }
+            mut as bool: is_low = charIsLower(c)
+            route { is_low ==> { emit(nice, "letra_minuscula", "ok") } }
+            mut as bool: is_pun = charIsPunctuation(c)
+            route { is_pun ==> { emit(nice, "pontuacao", "ok") } }
+            mut as bool: is_ctl = charIsControl(c)
+            route { is_ctl ==> { emit(nice, "controle", "ok") } }
+            emit(nice, "outro", "ok")
+      }
+}

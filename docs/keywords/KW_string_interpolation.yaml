@@ -1,0 +1,28 @@
+keyword: '#{ }'
+category: Interpolação de String
+description: 'Interpolação de expressões dentro de strings delimitadas por aspas duplas. A sintaxe #{expressão} avalia a expressão
+  e converte o resultado para string no local. Expressões podem conter operações, chamadas de função, e qualquer expressão
+  válida.'
+syntax: '"texto #{<expressão>} mais texto"'
+pseudocode: 'nome := "Ana"
+
+  msg  := "Ola, #{nome}!"   // interpola a expressao na string'
+usages:
+- name: Interpolação simples
+  description: Insere o valor de uma variável na string.
+  examples:
+  - code: 'print("Contador: #{contador}")'
+  - code: 'print("Nome: #{nome}, Idade: #{idade}")'
+- name: Interpolação com expressão
+  description: Avalia uma expressão dentro da interpolação.
+  examples:
+  - code: 'print("Soma: #{a + b}")'
+  - code: 'print("Resultado: #{calcular(x) * 2}")'
+- name: Interpolação múltipla
+  description: Múltiplas interpolações na mesma string.
+  examples:
+  - code: 'print("x = #{x}, y = #{y}, total = #{x + y}")'
+restrictions:
+- Só funciona em strings com aspas duplas (").
+- Expressões podem conter quebras de linha; a interpolação termina apenas em }.
+- Qualquer expressão válida é aceita, incluindo chamadas de função.
