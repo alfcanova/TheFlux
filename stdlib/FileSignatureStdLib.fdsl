@@ -1,0 +1,164 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FileSignatureStdLib
+#L Modulo nativo para assinaturas de integridade, autenticidade e formato de arquivos
+#L Integrado com IoStdLib e HashStdLib para manipulacao e selecao de diretorios
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+use IoStdLib
+use HashStdLib
+
+contract (FileHashSignatureContract) {
+      op fileSha256 (as string: path) as string
+      op fileMd5 (as string: path) as string
+      op fileSha1 (as string: path) as string
+      op fileCrc32 (as string: path) as int64
+      op fileVerifySha256 (as string: path, as string: expected_hash) as bool
+      op fileVerifyMd5 (as string: path, as string: expected_hash) as bool
+      op fileVerifyHash (as string: path, as string: expected_hash) as bool
+}
+
+contract (FileAuthSignatureContract) {
+      op fileHmacSha256 (as string: path, as string: key) as string
+      op fileHmacMd5 (as string: path, as string: key) as string
+      op fileVerifyHmac (as string: path, as string: key, as string: expected_hmac) as bool
+}
+
+contract (FileFormatSignatureContract) {
+      op fileMagicBytes (as string: path, as int64: num_bytes) as string
+      op fileDetectType (as string: path) as string
+      op fileIsBinary (as string: path) as bool
+}
+
+contract (FileDirectorySignatureContract) {
+      op fileSignDirectory (as string: dir_path) as list of data
+      op fileFilterAndSign (as string: dir_path, as string: extension) as list of data
+      op fileCreateManifest (as string: dir_path) as string
+      op fileChecksumManifest (as string: manifest_content) as string
+}
+
+agent (FileSignatureStdLib) impl FileHashSignatureContract, FileAuthSignatureContract, FileFormatSignatureContract, FileDirectorySignatureContract {
+
+      #L -- FileHashSignatureContract ---------------------------------
+      op fileSha256 (as string: path) as string ==> {
+            emit(nice, stdFileSha256(path), "ok")
+      }
+
+      op fileMd5 (as string: path) as string ==> {
+            emit(nice, stdFileMd5(path), "ok")
+      }
+
+      op fileSha1 (as string: path) as string ==> {
+            emit(nice, stdFileSha1(path), "ok")
+      }
+
+      op fileCrc32 (as string: path) as int64 ==> {
+            emit(nice, stdFileCrc32(path), "ok")
+      }
+
+      op fileVerifySha256 (as string: path, as string: expected_hash) as bool ==> {
+            mut as string: actual = stdFileSha256(path)
+            emit(nice, actual == expected_hash, "ok")
+      }
+
+      op fileVerifyMd5 (as string: path, as string: expected_hash) as bool ==> {
+            mut as string: actual = stdFileMd5(path)
+            emit(nice, actual == expected_hash, "ok")
+      }
+
+      op fileVerifyHash (as string: path, as string: expected_hash) as bool ==> {
+            mut as string: actual_sha = stdFileSha256(path)
+            mut as string: actual_md5 = stdFileMd5(path)
+            mut as bool: is_matched = (actual_sha == expected_hash) or (actual_md5 == expected_hash)
+            emit(nice, is_matched, "ok")
+      }
+
+      #L -- FileAuthSignatureContract ---------------------------------
+      op fileHmacSha256 (as string: path, as string: key) as string ==> {
+            emit(nice, stdFileHmacSha256(path, key), "ok")
+      }
+
+      op fileHmacMd5 (as string: path, as string: key) as string ==> {
+            emit(nice, stdFileHmacMd5(path, key), "ok")
+      }
+
+      op fileVerifyHmac (as string: path, as string: key, as string: expected_hmac) as bool ==> {
+            mut as string: actual = stdFileHmacSha256(path, key)
+            emit(nice, actual == expected_hmac, "ok")
+      }
+
+      #L -- FileFormatSignatureContract -------------------------------
+      op fileMagicBytes (as string: path, as int64: num_bytes) as string ==> {
+            emit(nice, stdFileMagicBytes(path, num_bytes), "ok")
+      }
+
+      op fileDetectType (as string: path) as string ==> {
+            emit(nice, stdFileDetectType(path), "ok")
+      }
+
+      op fileIsBinary (as string: path) as bool ==> {
+            emit(nice, stdFileIsBinary(path), "ok")
+      }
+
+      #L -- FileDirectorySignatureContract ----------------------------
+      op fileSignDirectory (as string: dir_path) as list of data ==> {
+            mut as list of data: entries = listDir(dir_path)
+            mut as list of data: result = []
+            infinite (name in entries) {
+                  mut as string: full_path = pathJoin(dir_path, name as string)
+                  route {
+                        fileExists(full_path) == true ==> {
+                              mut as string: h = stdFileSha256(full_path)
+                              mut as string: item = (name as string) + ": " + h
+                              mut as int64: rlen = 0
+                              infinite (k in result) { rlen = rlen + 1 }
+                              result[rlen + 1] = item
+                        }
+                  }
+            }
+            emit(nice, result, "ok")
+      }
+
+      op fileFilterAndSign (as string: dir_path, as string: extension) as list of data ==> {
+            mut as list of data: entries = listDir(dir_path)
+            mut as list of data: result = []
+            infinite (name in entries) {
+                  mut as string: ext = pathExtension(name as string)
+                  route {
+                        ext == extension or ("." + ext) == extension ==> {
+                              mut as string: full_path = pathJoin(dir_path, name as string)
+                              route {
+                                    fileExists(full_path) == true ==> {
+                                          mut as string: h = stdFileSha256(full_path)
+                                          mut as string: item = (name as string) + ": " + h
+                                          mut as int64: rlen = 0
+                                          infinite (k in result) { rlen = rlen + 1 }
+                                          result[rlen + 1] = item
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, result, "ok")
+      }
+
+      op fileCreateManifest (as string: dir_path) as string ==> {
+            mut as list of data: entries = listDir(dir_path)
+            mut as string: manifest = ""
+            infinite (name in entries) {
+                  mut as string: full_path = pathJoin(dir_path, name as string)
+                  route {
+                        fileExists(full_path) == true ==> {
+                              mut as string: h = stdFileSha256(full_path)
+                              manifest = manifest + h + "  " + (name as string) + "\n"
+                        }
+                  }
+            }
+            emit(nice, manifest, "ok")
+      }
+
+      op fileChecksumManifest (as string: manifest_content) as string ==> {
+            mut as string: h = hashSha256(manifest_content)
+            emit(nice, h, "ok")
+      }
+}

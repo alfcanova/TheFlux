@@ -2628,6 +2628,15 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_datetime_local_timezone", "i8*", [])
             self._w.declare_function("flux_std_datetime_is_daylight_saving_time", "i64", ["i64", "i8*"])
             self._w.declare_function("flux_std_datetime_dst_offset", "double", ["i64", "i8*"])
+            self._w.declare_function("flux_std_file_sha256", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_file_md5", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_file_sha1", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_file_crc32", "i64", ["i8*"])
+            self._w.declare_function("flux_std_file_hmac_sha256", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_file_hmac_md5", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_file_magic_bytes", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_file_detect_type", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_file_is_binary", "i64", ["i8*"])
             self._w.begin_function("main", "i32")
             self._new_block("entry")
             frame = self._w.new_local("frame")
@@ -6847,6 +6856,8 @@ class LLVMCodegen:
             return (res, "i8*")
         if name.startswith("stdDateTime") or name in ("stdGetCurrentTimeNsString", "stdFormatDurationNs"):
             return self._gen_std_datetime_intrinsic(name, node.args)
+        if name.startswith("stdFile"):
+            return self._gen_std_file_signature_intrinsic(name, node.args)
         if name.startswith(("stdSet", "stdList", "stdMap", "stdCollection")):
             return self._gen_std_collection_intrinsic(name, node.args)
         raise CodegenError(f"unsupported call to '{name}'")
@@ -7002,6 +7013,58 @@ class LLVMCodegen:
             self._w.emit(f"{res} = call double @flux_std_datetime_dst_offset(i64 {i64v(0)}, i8* {sptr(1)})")
             return (res, "double")
         raise CodegenError(f"unsupported datetime intrinsic '{name}'")
+
+    def _gen_std_file_signature_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        if name == "stdFileSha256":
+            res = self._w.new_local("sig_sha256")
+            self._w.emit(f"{res} = call i8* @flux_std_file_sha256(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdFileMd5":
+            res = self._w.new_local("sig_md5")
+            self._w.emit(f"{res} = call i8* @flux_std_file_md5(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdFileSha1":
+            res = self._w.new_local("sig_sha1")
+            self._w.emit(f"{res} = call i8* @flux_std_file_sha1(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdFileCrc32":
+            res = self._w.new_local("sig_crc32")
+            self._w.emit(f"{res} = call i64 @flux_std_file_crc32(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdFileHmacSha256":
+            res = self._w.new_local("sig_hmac_sha256")
+            self._w.emit(f"{res} = call i8* @flux_std_file_hmac_sha256(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdFileHmacMd5":
+            res = self._w.new_local("sig_hmac_md5")
+            self._w.emit(f"{res} = call i8* @flux_std_file_hmac_md5(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdFileMagicBytes":
+            res = self._w.new_local("sig_magic")
+            self._w.emit(f"{res} = call i8* @flux_std_file_magic_bytes(i8* {sptr(0)}, i64 {i64v(1)})")
+            return (res, "i8*")
+        if name == "stdFileDetectType":
+            res = self._w.new_local("sig_type")
+            self._w.emit(f"{res} = call i8* @flux_std_file_detect_type(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdFileIsBinary":
+            res64 = self._w.new_local("sig_is_bin64")
+            self._w.emit(f"{res64} = call i64 @flux_std_file_is_binary(i8* {sptr(0)})")
+            res = self._w.new_local("sig_is_bin")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        raise CodegenError(f"unsupported file signature intrinsic '{name}'")
 
     def _gen_std_collection_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
         def av(i: int) -> tuple[str, str]:
@@ -7536,8 +7599,13 @@ class LLVMCodegen:
                 self._collect_called_ops(arm.body)
         elif isinstance(node, RouteStmt):
             for arm in node.arms:
+                self._collect_called_ops(arm.condition)
                 self._collect_called_ops(arm.body)
         elif isinstance(node, InfiniteStmt):
+            if node.condition:
+                self._collect_called_ops(node.condition)
+            if node.iterator and getattr(node.iterator, "collection", None) is not None:
+                self._collect_called_ops(node.iterator.collection)
             self._collect_called_ops(node.body)
         elif isinstance(node, ShortCircuitBlock):
             self._collect_called_ops(node.expr)

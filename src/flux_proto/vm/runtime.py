@@ -7,6 +7,7 @@ from flux_proto import input_utils
 from flux_proto.interpreter.environment import FSet
 from flux_proto.interpreter.interpreter import _format_iso_nanos, _round_complex
 import flux_proto.datetime_helpers as _dth
+import flux_proto.file_signature_helpers as _fsh
 
 
 class RuntimeError(Exception):
@@ -1272,7 +1273,7 @@ def _std_io_read_file(path: str) -> str:
 
 def _std_io_write_file(path: str, content: str) -> str:
     try:
-        with open(str(path), "w", encoding="utf-8") as f:
+        with open(str(path), "w", encoding="utf-8", newline="") as f:
             f.write(str(content))
     except Exception:
         pass
@@ -1281,7 +1282,7 @@ def _std_io_write_file(path: str, content: str) -> str:
 
 def _std_io_append_file(path: str, content: str) -> str:
     try:
-        with open(str(path), "a", encoding="utf-8") as f:
+        with open(str(path), "a", encoding="utf-8", newline="") as f:
             f.write(str(content))
     except Exception:
         pass
@@ -1504,6 +1505,16 @@ _BUILTINS: dict[str, tuple[int, object]] = {
     "stdIoPathExtension": (1, _std_io_path_extension),
     "stdIoPathJoin": (2, _std_io_path_join),
     "stdIoPrintErr": (1, _std_io_print_err),
+    # FileSignatureStdLib intrinsics
+    "stdFileSha256": (1, lambda p: _fsh.file_sha256(str(p))),
+    "stdFileMd5": (1, lambda p: _fsh.file_md5(str(p))),
+    "stdFileSha1": (1, lambda p: _fsh.file_sha1(str(p))),
+    "stdFileCrc32": (1, lambda p: _fsh.file_crc32(str(p))),
+    "stdFileHmacSha256": (2, lambda p, k: _fsh.file_hmac_sha256(str(p), str(k))),
+    "stdFileHmacMd5": (2, lambda p, k: _fsh.file_hmac_md5(str(p), str(k))),
+    "stdFileMagicBytes": (2, lambda p, n: _fsh.file_magic_bytes(str(p), int(n))),
+    "stdFileDetectType": (1, lambda p: _fsh.file_detect_type(str(p))),
+    "stdFileIsBinary": (1, lambda p: _fsh.file_is_binary(str(p))),
     # DateTimeStdLib intrinsics
     "stdDateTimeNow": (0, lambda: _DT(_dth.dt_now())),
     "stdDateTimeMonotonicNow": (0, _dth.dt_monotonic_now),

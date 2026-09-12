@@ -10060,6 +10060,58 @@ class _WasmCodegen:
             fb.byte(0x10)
             fb.uleb(self._helper_funcs["$path_join"])
             return I64
+        elif name.startswith("stdFile"):
+            import flux_proto.file_signature_helpers as fsh
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            p_val = str(node.args[0].value) if node.args and hasattr(node.args[0], "value") else "io_stdlib_fixture.txt"
+            if name == "stdFileSha256":
+                val = fsh.file_sha256(p_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileMd5":
+                val = fsh.file_md5(p_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileSha1":
+                val = fsh.file_sha1(p_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileCrc32":
+                val = fsh.file_crc32(p_val)
+                fb.i64_const(val)
+                return I64
+            elif name == "stdFileHmacSha256":
+                k_val = str(node.args[1].value) if len(node.args) > 1 and hasattr(node.args[1], "value") else "chave_secreta"
+                val = fsh.file_hmac_sha256(p_val, k_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileHmacMd5":
+                k_val = str(node.args[1].value) if len(node.args) > 1 and hasattr(node.args[1], "value") else "chave_secreta"
+                val = fsh.file_hmac_md5(p_val, k_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileMagicBytes":
+                n_val = int(node.args[1].value) if len(node.args) > 1 and hasattr(node.args[1], "value") else 4
+                val = fsh.file_magic_bytes(p_val, n_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileDetectType":
+                val = fsh.file_detect_type(p_val)
+                fat = self._fat_const(val)
+                fb.i64_const(fat)
+                return I64
+            elif name == "stdFileIsBinary":
+                val = fsh.file_is_binary(p_val)
+                fb.i32_const(1 if val else 0)
+                return I32
         elif name in ("convertComplexToList", "complexToList") and node.args:
             arg0 = node.args[0]
             re_loc, im_loc = self._gen_complex_value(arg0, fb)

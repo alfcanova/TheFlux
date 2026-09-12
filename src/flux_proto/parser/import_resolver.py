@@ -37,34 +37,61 @@ def resolve_imports(program: ASTNode, source_path: str) -> dict[str, FdslFile]:
     project_root = _find_project_root(source_path)
 
     imports: dict[str, FdslFile] = {}
+    queue: list[UseDecl] = list(use_decls)
+    loaded_agents: set[str] = set()
 
-    for decl in use_decls:
+    while queue:
+        decl = queue.pop(0)
         target = decl.target
         if isinstance(target, UseAgent):
             name = target.name
-            fdsl_file = _load_fdsl(name, source_dir, project_root)
             key = target.alias or name
+            if name not in loaded_agents:
+                fdsl_file = _load_fdsl(name, source_dir, project_root)
+                loaded_agents.add(name)
+                for child_decl in getattr(fdsl_file, "use_decls", []):
+                    queue.append(child_decl)
+            else:
+                fdsl_file = imports[name]
             imports[key] = fdsl_file
             if target.alias:
                 imports[name] = fdsl_file
         elif isinstance(target, UseOp):
             agent_name = target.agent
-            fdsl_file = _load_fdsl(agent_name, source_dir, project_root)
             key = target.alias or agent_name
+            if agent_name not in loaded_agents:
+                fdsl_file = _load_fdsl(agent_name, source_dir, project_root)
+                loaded_agents.add(agent_name)
+                for child_decl in getattr(fdsl_file, "use_decls", []):
+                    queue.append(child_decl)
+            else:
+                fdsl_file = imports[agent_name]
             imports[key] = fdsl_file
             if target.alias:
                 imports[agent_name] = fdsl_file
         elif isinstance(target, UseGroup):
             agent_name = target.agent
             if agent_name:
-                fdsl_file = _load_fdsl(agent_name, source_dir, project_root)
+                if agent_name not in loaded_agents:
+                    fdsl_file = _load_fdsl(agent_name, source_dir, project_root)
+                    loaded_agents.add(agent_name)
+                    for child_decl in getattr(fdsl_file, "use_decls", []):
+                        queue.append(child_decl)
+                else:
+                    fdsl_file = imports[agent_name]
                 imports.setdefault(agent_name, fdsl_file)
                 for item in target.items:
                     imports[item.alias or item.name] = fdsl_file
             else:
                 for item in target.items:
                     agent = item.agent or item.name
-                    fdsl_file = _load_fdsl(agent, source_dir, project_root)
+                    if agent not in loaded_agents:
+                        fdsl_file = _load_fdsl(agent, source_dir, project_root)
+                        loaded_agents.add(agent)
+                        for child_decl in getattr(fdsl_file, "use_decls", []):
+                            queue.append(child_decl)
+                    else:
+                        fdsl_file = imports[agent]
                     imports.setdefault(agent, fdsl_file)
                     imports[item.alias or item.name] = fdsl_file
 

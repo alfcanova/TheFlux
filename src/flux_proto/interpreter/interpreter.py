@@ -1551,7 +1551,7 @@ class Interpreter:
                 path = str(args[0].data if len(args) > 0 else "")
                 content = str(args[1].data if len(args) > 1 else "")
                 try:
-                    with open(path, "w", encoding="utf-8") as f:
+                    with open(path, "w", encoding="utf-8", newline="") as f:
                         f.write(content)
                 except Exception:
                     pass
@@ -1561,7 +1561,7 @@ class Interpreter:
                 path = str(args[0].data if len(args) > 0 else "")
                 content = str(args[1].data if len(args) > 1 else "")
                 try:
-                    with open(path, "a", encoding="utf-8") as f:
+                    with open(path, "a", encoding="utf-8", newline="") as f:
                         f.write(content)
                 except Exception:
                     pass
@@ -1726,6 +1726,8 @@ class Interpreter:
                 return val
             if name.startswith("stdDateTime") or name in ("stdGetCurrentTimeNsString", "stdFormatDurationNs"):
                 return self._eval_datetime_intrinsic(name, node.args)
+            if name.startswith("stdFile"):
+                return self._eval_file_signature_intrinsic(name, node.args)
             op_ctx = self._resolve_agent_op(name, agent_qual)
             if op_ctx is not None:
                 return self._exec_agent_op(op_ctx, node.args)
@@ -1849,6 +1851,33 @@ class Interpreter:
         if name == "stdDateTimeDstOffset":
             return Value("float64", dth.dt_dst_offset(int(args[0].data), str(args[1].data)))
         raise InterpreterError(f"unknown datetime intrinsic '{name}'")
+
+    def _eval_file_signature_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.file_signature_helpers as fsh
+        args = [self._eval(a) for a in raw_args]
+        p = str(args[0].data if args else "")
+        if name == "stdFileSha256":
+            return Value("string", fsh.file_sha256(p))
+        if name == "stdFileMd5":
+            return Value("string", fsh.file_md5(p))
+        if name == "stdFileSha1":
+            return Value("string", fsh.file_sha1(p))
+        if name == "stdFileCrc32":
+            return Value("int64", fsh.file_crc32(p))
+        if name == "stdFileHmacSha256":
+            key = str(args[1].data if len(args) > 1 else "")
+            return Value("string", fsh.file_hmac_sha256(p, key))
+        if name == "stdFileHmacMd5":
+            key = str(args[1].data if len(args) > 1 else "")
+            return Value("string", fsh.file_hmac_md5(p, key))
+        if name == "stdFileMagicBytes":
+            n = int(args[1].data if len(args) > 1 else 0)
+            return Value("string", fsh.file_magic_bytes(p, n))
+        if name == "stdFileDetectType":
+            return Value("string", fsh.file_detect_type(p))
+        if name == "stdFileIsBinary":
+            return Value("bool", fsh.file_is_binary(p))
+        raise InterpreterError(f"unknown file signature intrinsic '{name}'")
 
     def _resolve_agent_op(self, name: str, agent_qual: str = "") -> tuple[Any, Any] | None:
         real = self._op_aliases.get(name, name)

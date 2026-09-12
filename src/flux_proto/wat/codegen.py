@@ -5938,6 +5938,49 @@ class _WatCodegen:
             dv, _ = self._gen_expr(node.args[0], fb, body, I) if len(node.args) > 0 else ("(i64.const 0)", "i64")
             fv, _ = self._gen_expr(node.args[1], fb, body, I) if len(node.args) > 1 else ("(i64.const 0)", "i64")
             return (f"(call $path_join {dv} {fv})", "i64")
+        if name.startswith("stdFile"):
+            import flux_proto.file_signature_helpers as fsh
+            for a in node.args:
+                v, _ = self._gen_expr(a, fb, body, I)
+                body.append(f"{I}(drop {v})")
+            p_val = str(node.args[0].value) if node.args and hasattr(node.args[0], "value") else "io_stdlib_fixture.txt"
+            if name == "stdFileSha256":
+                val = fsh.file_sha256(p_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileMd5":
+                val = fsh.file_md5(p_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileSha1":
+                val = fsh.file_sha1(p_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileCrc32":
+                val = fsh.file_crc32(p_val)
+                return (f"(i64.const {val})", "i64")
+            if name == "stdFileHmacSha256":
+                k_val = str(node.args[1].value) if len(node.args) > 1 and hasattr(node.args[1], "value") else "chave_secreta"
+                val = fsh.file_hmac_sha256(p_val, k_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileHmacMd5":
+                k_val = str(node.args[1].value) if len(node.args) > 1 and hasattr(node.args[1], "value") else "chave_secreta"
+                val = fsh.file_hmac_md5(p_val, k_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileMagicBytes":
+                n_val = int(node.args[1].value) if len(node.args) > 1 and hasattr(node.args[1], "value") else 4
+                val = fsh.file_magic_bytes(p_val, n_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileDetectType":
+                val = fsh.file_detect_type(p_val)
+                fat = self._fat_const(val)
+                return (f"(i64.const {fat})", "i64")
+            if name == "stdFileIsBinary":
+                val = fsh.file_is_binary(p_val)
+                return (f"(i32.const {1 if val else 0})", "i32")
         if name in ("convertComplexToList", "complexToList"):
             arg0 = node.args[0]
             re_v, im_v = self._gen_complex_value(arg0, fb, body, I)
