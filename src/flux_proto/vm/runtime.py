@@ -8,6 +8,8 @@ from flux_proto.interpreter.environment import FSet
 from flux_proto.interpreter.interpreter import _format_iso_nanos, _round_complex
 import flux_proto.datetime_helpers as _dth
 import flux_proto.file_signature_helpers as _fsh
+import flux_proto.os_helpers as _osh
+import flux_proto.net_helpers as _neth
 
 
 class RuntimeError(Exception):
@@ -1515,6 +1517,66 @@ _BUILTINS: dict[str, tuple[int, object]] = {
     "stdFileMagicBytes": (2, lambda p, n: _fsh.file_magic_bytes(str(p), int(n))),
     "stdFileDetectType": (1, lambda p: _fsh.file_detect_type(str(p))),
     "stdFileIsBinary": (1, lambda p: _fsh.file_is_binary(str(p))),
+    # OsStdLib intrinsics
+    "stdOsGetEnv": (1, lambda n: _osh.os_get_env(str(n))),
+    "stdOsGetEnvOrDefault": (2, lambda n, d: _osh.os_get_env_or_default(str(n), str(d))),
+    "stdOsSetEnv": (2, lambda n, v: _osh.os_set_env(str(n), str(v))),
+    "stdOsHasEnv": (1, lambda n: _osh.os_has_env(str(n))),
+    "stdOsUnsetEnv": (1, lambda n: _osh.os_unset_env(str(n))),
+    "stdOsListEnv": (0, _osh.os_list_env),
+    "stdOsPlatform": (0, _osh.os_platform),
+    "stdOsArch": (0, _osh.os_arch),
+    "stdOsFamily": (0, _osh.os_family),
+    "stdOsHostname": (0, _osh.os_hostname),
+    "stdOsLineSeparator": (0, _osh.os_line_separator),
+    "stdOsPathSeparator": (0, _osh.os_path_separator),
+    "stdOsDirSeparator": (0, _osh.os_dir_separator),
+    "stdOsGetPid": (0, _osh.os_get_pid),
+    "stdOsGetParentPid": (0, _osh.os_get_parent_pid),
+    "stdOsCwd": (0, _osh.os_cwd),
+    "stdOsChdir": (1, lambda p: _osh.os_chdir(str(p))),
+    "stdOsExec": (1, lambda c: _osh.os_exec(str(c))),
+    "stdOsExecOutput": (1, lambda c: _osh.os_exec_output(str(c))),
+    "stdOsSleep": (1, lambda ms: _osh.os_sleep(int(ms))),
+    "stdOsUserName": (0, _osh.os_user_name),
+    "stdOsHomeDir": (0, _osh.os_home_dir),
+    "stdOsTempDir": (0, _osh.os_temp_dir),
+    "stdOsCpuCount": (0, _osh.os_cpu_count),
+    "stdOsUptime": (0, _osh.os_uptime),
+    "stdOsMemoryTotal": (0, _osh.os_memory_total),
+    "stdOsMemoryFree": (0, _osh.os_memory_free),
+    # NetStdLib intrinsics
+    # NetUrlContract
+    "stdNetUrlGetScheme": (1, lambda u: _neth.net_url_get_scheme(str(u))),
+    "stdNetUrlGetHost": (1, lambda u: _neth.net_url_get_host(str(u))),
+    "stdNetUrlGetPort": (1, lambda u: _neth.net_url_get_port(str(u))),
+    "stdNetUrlGetPath": (1, lambda u: _neth.net_url_get_path(str(u))),
+    "stdNetUrlGetQuery": (1, lambda u: _neth.net_url_get_query(str(u))),
+    "stdNetUrlGetFragment": (1, lambda u: _neth.net_url_get_fragment(str(u))),
+    "stdNetUrlEncode": (1, lambda t: _neth.net_url_encode(str(t))),
+    "stdNetUrlDecode": (1, lambda t: _neth.net_url_decode(str(t))),
+    "stdNetUrlIsValid": (1, lambda u: _neth.net_url_is_valid(str(u))),
+    "stdNetUrlJoin": (2, lambda b, r: _neth.net_url_join(str(b), str(r))),
+    # NetIpContract
+    "stdNetIpIsValid": (1, lambda ip: _neth.net_ip_is_valid(str(ip))),
+    "stdNetIpIsV4": (1, lambda ip: _neth.net_ip_is_v4(str(ip))),
+    "stdNetIpIsV6": (1, lambda ip: _neth.net_ip_is_v6(str(ip))),
+    "stdNetIpIsLoopback": (1, lambda ip: _neth.net_ip_is_loopback(str(ip))),
+    "stdNetIpIsPrivate": (1, lambda ip: _neth.net_ip_is_private(str(ip))),
+    "stdNetResolveHost": (1, lambda h: _neth.net_resolve_host(str(h))),
+    "stdNetResolveIp": (1, lambda ip: _neth.net_resolve_ip(str(ip))),
+    # NetHttpContract
+    "stdNetHttpGet": (1, lambda u: _neth.net_http_get(str(u))),
+    "stdNetHttpGetStatus": (1, lambda u: _neth.net_http_get_status(str(u))),
+    "stdNetHttpPost": (3, lambda u, b, c: _neth.net_http_post(str(u), str(b), str(c))),
+    "stdNetHttpPut": (3, lambda u, b, c: _neth.net_http_put(str(u), str(b), str(c))),
+    "stdNetHttpDelete": (1, lambda u: _neth.net_http_delete(str(u))),
+    "stdNetHttpStatusText": (1, lambda c: _neth.net_http_status_text(int(c))),
+    # NetSocketContract
+    "stdNetTcpPing": (3, lambda h, p, t: _neth.net_tcp_ping(str(h), int(p), int(t))),
+    "stdNetLocalIp": (0, _neth.net_local_ip),
+    "stdNetPortIsAvailable": (1, lambda p: _neth.net_port_is_available(int(p))),
+    "stdNetPing": (1, lambda h: _neth.net_ping(str(h))),
     # DateTimeStdLib intrinsics
     "stdDateTimeNow": (0, lambda: _DT(_dth.dt_now())),
     "stdDateTimeMonotonicNow": (0, _dth.dt_monotonic_now),

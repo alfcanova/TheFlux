@@ -1,0 +1,302 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NetStdLib
+#L Modulo nativo para operacoes de Rede, Protocolos e Conexoes (NET)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (NetUrlContract) {
+      op netUrlGetScheme (as string: url) as string
+      op netUrlGetHost (as string: url) as string
+      op netUrlGetPort (as string: url) as int64
+      op netUrlGetPath (as string: url) as string
+      op netUrlGetQuery (as string: url) as string
+      op netUrlGetFragment (as string: url) as string
+      op netUrlEncode (as string: text) as string
+      op netUrlDecode (as string: text) as string
+      op netUrlIsValid (as string: url) as bool
+      op netUrlJoin (as string: base_url, as string: relative_path) as string
+
+      #L Aliases
+      op urlGetScheme (as string: url) as string
+      op urlGetHost (as string: url) as string
+      op urlGetPort (as string: url) as int64
+      op urlGetPath (as string: url) as string
+      op urlGetQuery (as string: url) as string
+      op urlGetFragment (as string: url) as string
+      op urlEncode (as string: text) as string
+      op urlDecode (as string: text) as string
+      op urlIsValid (as string: url) as bool
+      op urlJoin (as string: base_url, as string: relative_path) as string
+}
+
+contract (NetIpContract) {
+      op netIpIsValid (as string: ip) as bool
+      op netIpIsV4 (as string: ip) as bool
+      op netIpIsV6 (as string: ip) as bool
+      op netIpIsLoopback (as string: ip) as bool
+      op netIpIsPrivate (as string: ip) as bool
+      op netResolveHost (as string: host) as string
+      op netResolveIp (as string: ip) as string
+
+      #L Aliases
+      op ipIsValid (as string: ip) as bool
+      op ipIsV4 (as string: ip) as bool
+      op ipIsV6 (as string: ip) as bool
+      op ipIsLoopback (as string: ip) as bool
+      op ipIsPrivate (as string: ip) as bool
+      op resolveHost (as string: host) as string
+      op resolveIp (as string: ip) as string
+}
+
+contract (NetHttpContract) {
+      op netHttpGet (as string: url) as string
+      op netHttpGetStatus (as string: url) as int64
+      op netHttpPost (as string: url, as string: body, as string: content_type) as string
+      op netHttpPut (as string: url, as string: body, as string: content_type) as string
+      op netHttpDelete (as string: url) as int64
+      op netHttpStatusText (as int64: status_code) as string
+
+      #L Aliases
+      op httpGet (as string: url) as string
+      op httpGetStatus (as string: url) as int64
+      op httpPost (as string: url, as string: body, as string: content_type) as string
+      op httpPut (as string: url, as string: body, as string: content_type) as string
+      op httpDelete (as string: url) as int64
+      op httpStatusText (as int64: status_code) as string
+}
+
+contract (NetSocketContract) {
+      op netTcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool
+      op netLocalIp () as string
+      op netPortIsAvailable (as int64: port) as bool
+      op netPing (as string: host) as bool
+
+      #L Aliases
+      op tcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool
+      op localIp () as string
+      op portIsAvailable (as int64: port) as bool
+      op ping (as string: host) as bool
+}
+
+agent (NetStdLib) impl NetUrlContract, NetIpContract, NetHttpContract, NetSocketContract {
+
+      #L -- NetUrlContract --------------------------------------------
+      op netUrlGetScheme (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetScheme(url), "ok")
+      }
+
+      op netUrlGetHost (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetHost(url), "ok")
+      }
+
+      op netUrlGetPort (as string: url) as int64 ==> {
+            emit(nice, stdNetUrlGetPort(url), "ok")
+      }
+
+      op netUrlGetPath (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetPath(url), "ok")
+      }
+
+      op netUrlGetQuery (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetQuery(url), "ok")
+      }
+
+      op netUrlGetFragment (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetFragment(url), "ok")
+      }
+
+      op netUrlEncode (as string: text) as string ==> {
+            emit(nice, stdNetUrlEncode(text), "ok")
+      }
+
+      op netUrlDecode (as string: text) as string ==> {
+            emit(nice, stdNetUrlDecode(text), "ok")
+      }
+
+      op netUrlIsValid (as string: url) as bool ==> {
+            emit(nice, stdNetUrlIsValid(url), "ok")
+      }
+
+      op netUrlJoin (as string: base_url, as string: relative_path) as string ==> {
+            emit(nice, stdNetUrlJoin(base_url, relative_path), "ok")
+      }
+
+      op urlGetScheme (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetScheme(url), "ok")
+      }
+
+      op urlGetHost (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetHost(url), "ok")
+      }
+
+      op urlGetPort (as string: url) as int64 ==> {
+            emit(nice, stdNetUrlGetPort(url), "ok")
+      }
+
+      op urlGetPath (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetPath(url), "ok")
+      }
+
+      op urlGetQuery (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetQuery(url), "ok")
+      }
+
+      op urlGetFragment (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetFragment(url), "ok")
+      }
+
+      op urlEncode (as string: text) as string ==> {
+            emit(nice, stdNetUrlEncode(text), "ok")
+      }
+
+      op urlDecode (as string: text) as string ==> {
+            emit(nice, stdNetUrlDecode(text), "ok")
+      }
+
+      op urlIsValid (as string: url) as bool ==> {
+            emit(nice, stdNetUrlIsValid(url), "ok")
+      }
+
+      op urlJoin (as string: base_url, as string: relative_path) as string ==> {
+            emit(nice, stdNetUrlJoin(base_url, relative_path), "ok")
+      }
+
+      #L -- NetIpContract ---------------------------------------------
+      op netIpIsValid (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsValid(ip), "ok")
+      }
+
+      op netIpIsV4 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV4(ip), "ok")
+      }
+
+      op netIpIsV6 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV6(ip), "ok")
+      }
+
+      op netIpIsLoopback (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsLoopback(ip), "ok")
+      }
+
+      op netIpIsPrivate (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsPrivate(ip), "ok")
+      }
+
+      op netResolveHost (as string: host) as string ==> {
+            emit(nice, stdNetResolveHost(host), "ok")
+      }
+
+      op netResolveIp (as string: ip) as string ==> {
+            emit(nice, stdNetResolveIp(ip), "ok")
+      }
+
+      op ipIsValid (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsValid(ip), "ok")
+      }
+
+      op ipIsV4 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV4(ip), "ok")
+      }
+
+      op ipIsV6 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV6(ip), "ok")
+      }
+
+      op ipIsLoopback (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsLoopback(ip), "ok")
+      }
+
+      op ipIsPrivate (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsPrivate(ip), "ok")
+      }
+
+      op resolveHost (as string: host) as string ==> {
+            emit(nice, stdNetResolveHost(host), "ok")
+      }
+
+      op resolveIp (as string: ip) as string ==> {
+            emit(nice, stdNetResolveIp(ip), "ok")
+      }
+
+      #L -- NetHttpContract -------------------------------------------
+      op netHttpGet (as string: url) as string ==> {
+            emit(nice, stdNetHttpGet(url), "ok")
+      }
+
+      op netHttpGetStatus (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpGetStatus(url), "ok")
+      }
+
+      op netHttpPost (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPost(url, body, content_type), "ok")
+      }
+
+      op netHttpPut (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPut(url, body, content_type), "ok")
+      }
+
+      op netHttpDelete (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpDelete(url), "ok")
+      }
+
+      op netHttpStatusText (as int64: status_code) as string ==> {
+            emit(nice, stdNetHttpStatusText(status_code), "ok")
+      }
+
+      op httpGet (as string: url) as string ==> {
+            emit(nice, stdNetHttpGet(url), "ok")
+      }
+
+      op httpGetStatus (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpGetStatus(url), "ok")
+      }
+
+      op httpPost (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPost(url, body, content_type), "ok")
+      }
+
+      op httpPut (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPut(url, body, content_type), "ok")
+      }
+
+      op httpDelete (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpDelete(url), "ok")
+      }
+
+      op httpStatusText (as int64: status_code) as string ==> {
+            emit(nice, stdNetHttpStatusText(status_code), "ok")
+      }
+
+      #L -- NetSocketContract -----------------------------------------
+      op netTcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool ==> {
+            emit(nice, stdNetTcpPing(host, port, timeout_ms), "ok")
+      }
+
+      op netLocalIp () as string ==> {
+            emit(nice, stdNetLocalIp(), "ok")
+      }
+
+      op netPortIsAvailable (as int64: port) as bool ==> {
+            emit(nice, stdNetPortIsAvailable(port), "ok")
+      }
+
+      op netPing (as string: host) as bool ==> {
+            emit(nice, stdNetPing(host), "ok")
+      }
+
+      op tcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool ==> {
+            emit(nice, stdNetTcpPing(host, port, timeout_ms), "ok")
+      }
+
+      op localIp () as string ==> {
+            emit(nice, stdNetLocalIp(), "ok")
+      }
+
+      op portIsAvailable (as int64: port) as bool ==> {
+            emit(nice, stdNetPortIsAvailable(port), "ok")
+      }
+
+      op ping (as string: host) as bool ==> {
+            emit(nice, stdNetPing(host), "ok")
+      }
+}

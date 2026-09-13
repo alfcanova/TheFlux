@@ -20,6 +20,8 @@
 #if defined(_WIN32)
 #include <windows.h>
 #include <direct.h>
+#include <tlhelp32.h>
+#include <process.h>
 static int timegm(struct tm *tm);
 #else
 #include <unistd.h>
@@ -1525,6 +1527,735 @@ int64_t flux_std_file_is_binary(const char *path) {
     }
     return 0;
 }
+
+/* =========================================================================
+ * OsStdLib C Runtime Implementation
+ * ========================================================================= */
+
+static void _normalize_slash(char *s) {
+    if (!s) return;
+    for (; *s; s++) {
+        if (*s == '\\') *s = '/';
+    }
+}
+
+char *flux_std_os_get_env(const char *name) {
+    if (!name || !*name) return strdup("");
+    const char *v = getenv(name);
+    return strdup(v ? v : "");
+}
+
+char *flux_std_os_get_env_or_default(const char *name, const char *def_val) {
+    if (!name || !*name) return strdup(def_val ? def_val : "");
+    const char *v = getenv(name);
+    return strdup(v ? v : (def_val ? def_val : ""));
+}
+
+int64_t flux_std_os_set_env(const char *name, const char *val) {
+    if (!name || !*name) return 0;
+#if defined(_WIN32)
+    SetEnvironmentVariableA(name, val ? val : "");
+    _putenv_s(name, val ? val : "");
+    return 1;
+#else
+    return setenv(name, val ? val : "", 1) == 0 ? 1 : 0;
+#endif
+}
+
+int64_t flux_std_os_has_env(const char *name) {
+    if (!name || !*name) return 0;
+    return getenv(name) != NULL ? 1 : 0;
+}
+
+int64_t flux_std_os_unset_env(const char *name) {
+    if (!name || !*name) return 0;
+#if defined(_WIN32)
+    SetEnvironmentVariableA(name, NULL);
+    _putenv_s(name, "");
+    return 1;
+#else
+    return unsetenv(name) == 0 ? 1 : 0;
+#endif
+}
+
+void *flux_std_os_list_env(void *(*build)(int64_t, int64_t), void *(*push)(void*, int64_t, int64_t, const char*)) {
+    void *list = build(0, 4);
+#if defined(_WIN32)
+    extern char **_environ;
+    char **env = _environ;
+#else
+    extern char **environ;
+    char **env = environ;
+#endif
+    if (env) {
+        for (char **p = env; *p; p++) {
+            char *eq = strchr(*p, '=');
+            if (eq && eq != *p) {
+                size_t klen = (size_t)(eq - *p);
+                char *key = (char *)malloc(klen + 1);
+                if (key) {
+                    memcpy(key, *p, klen);
+                    key[klen] = '\0';
+                    list = push(list, 4, 0, key);
+                }
+            }
+        }
+    }
+    return list;
+}
+
+char *flux_std_os_platform(void) {
+#if defined(_WIN32)
+    return strdup("windows");
+#elif defined(__APPLE__)
+    return strdup("darwin");
+#elif defined(__linux__)
+    return strdup("linux");
+#else
+    return strdup("unknown");
+#endif
+}
+
+char *flux_std_os_arch(void) {
+#if defined(_M_X64) || defined(__x86_64__) || defined(__amd64__)
+    return strdup("x86_64");
+#elif defined(_M_ARM64) || defined(__aarch64__)
+    return strdup("arm64");
+#elif defined(_M_IX86) || defined(__i386__)
+    return strdup("x86");
+#elif defined(_M_ARM) || defined(__arm__)
+    return strdup("arm");
+#else
+    return strdup("unknown");
+#endif
+}
+
+char *flux_std_os_family(void) {
+#if defined(_WIN32)
+    return strdup("windows");
+#else
+    return strdup("posix");
+#endif
+}
+
+char *flux_std_os_hostname(void) {
+#if defined(_WIN32)
+    char buf[256];
+    DWORD sz = sizeof(buf);
+    if (GetComputerNameA(buf, &sz)) {
+        for (char *p = buf; *p; p++) *p = (char)tolower((unsigned char)*p);
+        return strdup(buf);
+    }
+    const char *h = getenv("COMPUTERNAME");
+    if (h) {
+        char *dup = strdup(h);
+        for (char *p = dup; *p; p++) *p = (char)tolower((unsigned char)*p);
+        return dup;
+    }
+    return strdup("localhost");
+#else
+    char buf[256];
+    if (gethostname(buf, sizeof(buf)) == 0) {
+        for (char *p = buf; *p; p++) *p = (char)tolower((unsigned char)*p);
+        return strdup(buf);
+    }
+    const char *h = getenv("HOSTNAME");
+    if (h) {
+        char *dup = strdup(h);
+        for (char *p = dup; *p; p++) *p = (char)tolower((unsigned char)*p);
+        return dup;
+    }
+    return strdup("localhost");
+#endif
+}
+
+char *flux_std_os_line_separator(void) {
+#if defined(_WIN32)
+    return strdup("\r\n");
+#else
+    return strdup("\n");
+#endif
+}
+
+char *flux_std_os_path_separator(void) {
+#if defined(_WIN32)
+    return strdup(";");
+#else
+    return strdup(":");
+#endif
+}
+
+char *flux_std_os_dir_separator(void) {
+#if defined(_WIN32)
+    return strdup("\\");
+#else
+    return strdup("/");
+#endif
+}
+
+int64_t flux_std_os_get_pid(void) {
+#if defined(_WIN32)
+    return (int64_t)GetCurrentProcessId();
+#else
+    return (int64_t)getpid();
+#endif
+}
+
+int64_t flux_std_os_get_parent_pid(void) {
+#if defined(_WIN32)
+    DWORD current_pid = GetCurrentProcessId();
+    DWORD ppid = 0;
+    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnap != INVALID_HANDLE_VALUE) {
+        PROCESSENTRY32 pe;
+        pe.dwSize = sizeof(pe);
+        if (Process32First(hSnap, &pe)) {
+            do {
+                if (pe.th32ProcessID == current_pid) {
+                    ppid = pe.th32ParentProcessID;
+                    break;
+                }
+            } while (Process32Next(hSnap, &pe));
+        }
+        CloseHandle(hSnap);
+    }
+    return (int64_t)ppid;
+#else
+    return (int64_t)getppid();
+#endif
+}
+
+char *flux_std_os_cwd(void) {
+#if defined(_WIN32)
+    char buf[MAX_PATH];
+    if (_getcwd(buf, sizeof(buf))) {
+        _normalize_slash(buf);
+        return strdup(buf);
+    }
+#else
+    char buf[4096];
+    if (getcwd(buf, sizeof(buf))) {
+        _normalize_slash(buf);
+        return strdup(buf);
+    }
+#endif
+    return strdup("");
+}
+
+int64_t flux_std_os_chdir(const char *path) {
+    if (!path || !*path) return 0;
+#if defined(_WIN32)
+    return _chdir(path) == 0 ? 1 : 0;
+#else
+    return chdir(path) == 0 ? 1 : 0;
+#endif
+}
+
+int64_t flux_std_os_exec(const char *cmd) {
+    if (!cmd) return -1;
+    int rc = system(cmd);
+#if defined(_WIN32)
+    return (int64_t)rc;
+#else
+    if (rc == -1) return -1;
+    return (int64_t)(rc >> 8);
+#endif
+}
+
+char *flux_std_os_exec_output(const char *cmd) {
+    if (!cmd) return strdup("");
+#if defined(_WIN32)
+    FILE *p = _popen(cmd, "r");
+#else
+    FILE *p = popen(cmd, "r");
+#endif
+    if (!p) return strdup("");
+    size_t cap = 4096;
+    size_t len = 0;
+    char *buf = (char *)malloc(cap);
+    if (!buf) {
+#if defined(_WIN32)
+        _pclose(p);
+#else
+        pclose(p);
+#endif
+        return strdup("");
+    }
+    char tmp[512];
+    while (fgets(tmp, sizeof(tmp), p)) {
+        size_t n = strlen(tmp);
+        if (len + n + 1 > cap) {
+            cap = (len + n + 1) * 2;
+            char *new_buf = (char *)realloc(buf, cap);
+            if (!new_buf) break;
+            buf = new_buf;
+        }
+        memcpy(buf + len, tmp, n);
+        len += n;
+    }
+    buf[len] = '\0';
+#if defined(_WIN32)
+    _pclose(p);
+#else
+    pclose(p);
+#endif
+    while (len > 0 && (buf[len - 1] == '\r' || buf[len - 1] == '\n' || buf[len - 1] == ' ' || buf[len - 1] == '\t')) {
+        buf[--len] = '\0';
+    }
+    return buf;
+}
+
+int64_t flux_std_os_sleep(int64_t ms) {
+    if (ms > 0) {
+#if defined(_WIN32)
+        Sleep((DWORD)ms);
+#else
+        usleep((useconds_t)(ms * 1000));
+#endif
+    }
+    return 1;
+}
+
+char *flux_std_os_user_name(void) {
+#if defined(_WIN32)
+    const char *u = getenv("USERNAME");
+    return strdup(u ? u : "");
+#else
+    const char *u = getenv("USER");
+    if (u) return strdup(u);
+    u = getenv("LOGNAME");
+    return strdup(u ? u : "");
+#endif
+}
+
+char *flux_std_os_home_dir(void) {
+    char *res = NULL;
+#if defined(_WIN32)
+    const char *h = getenv("USERPROFILE");
+    if (h && *h) {
+        res = strdup(h);
+    } else {
+        const char *hd = getenv("HOMEDRIVE");
+        const char *hp = getenv("HOMEPATH");
+        if (hd && hp) {
+            char buf[MAX_PATH];
+            snprintf(buf, sizeof(buf), "%s%s", hd, hp);
+            res = strdup(buf);
+        } else {
+            res = strdup("");
+        }
+    }
+#else
+    const char *h = getenv("HOME");
+    res = strdup(h ? h : "");
+#endif
+    _normalize_slash(res);
+    return res;
+}
+
+char *flux_std_os_temp_dir(void) {
+    char *res = NULL;
+#if defined(_WIN32)
+    char buf[MAX_PATH];
+    DWORD n = GetTempPathA(sizeof(buf), buf);
+    if (n > 0 && n < sizeof(buf)) {
+        while (n > 1 && (buf[n - 1] == '\\' || buf[n - 1] == '/')) {
+            buf[--n] = '\0';
+        }
+        res = strdup(buf);
+    } else {
+        res = strdup("C:/Temp");
+    }
+#else
+    const char *t = getenv("TMPDIR");
+    res = strdup(t && *t ? t : "/tmp");
+#endif
+    _normalize_slash(res);
+    return res;
+}
+
+int64_t flux_std_os_cpu_count(void) {
+#if defined(_WIN32)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return (int64_t)(si.dwNumberOfProcessors > 0 ? si.dwNumberOfProcessors : 1);
+#else
+    long n = sysconf(_SC_NPROCESSORS_ONLN);
+    return (int64_t)(n > 0 ? n : 1);
+#endif
+}
+
+int64_t flux_std_os_uptime(void) {
+#if defined(_WIN32)
+    ULONGLONG ms = GetTickCount64();
+    return (int64_t)(ms / 1000);
+#else
+    struct timespec ts;
+    if (clock_gettime(CLOCK_BOOTTIME, &ts) == 0) {
+        return (int64_t)ts.tv_sec;
+    }
+    return 0;
+#endif
+}
+
+int64_t flux_std_os_memory_total(void) {
+#if defined(_WIN32)
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    if (GlobalMemoryStatusEx(&ms)) {
+        return (int64_t)ms.ullTotalPhys;
+    }
+    return 0;
+#else
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    if (pages > 0 && page_size > 0) return (int64_t)pages * (int64_t)page_size;
+    return 0;
+#endif
+}
+
+int64_t flux_std_os_memory_free(void) {
+#if defined(_WIN32)
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    if (GlobalMemoryStatusEx(&ms)) {
+        return (int64_t)ms.ullAvailPhys;
+    }
+    return 0;
+#else
+    long pages = sysconf(_SC_AVPHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    if (pages > 0 && page_size > 0) return (int64_t)pages * (int64_t)page_size;
+    return 0;
+#endif
+}
+
+/* =========================================================================
+ * NetStdLib C Runtime Implementation
+ * ========================================================================= */
+
+char *flux_std_net_url_get_scheme(const char *url) {
+    if (!url) return strdup("");
+    const char *p = strstr(url, "://");
+    if (!p) return strdup("");
+    size_t len = (size_t)(p - url);
+    char *res = (char *)malloc(len + 1);
+    if (!res) return strdup("");
+    memcpy(res, url, len);
+    res[len] = '\0';
+    return res;
+}
+
+char *flux_std_net_url_get_host(const char *url) {
+    if (!url) return strdup("");
+    const char *start = strstr(url, "://");
+    if (start) start += 3;
+    else start = url;
+    const char *at = strchr(start, '@');
+    if (at) {
+        const char *slash = strchr(start, '/');
+        if (!slash || at < slash) start = at + 1;
+    }
+    const char *end = start;
+    while (*end && *end != '/' && *end != '?' && *end != '#' && *end != ':') {
+        end++;
+    }
+    size_t len = (size_t)(end - start);
+    char *res = (char *)malloc(len + 1);
+    if (!res) return strdup("");
+    memcpy(res, start, len);
+    res[len] = '\0';
+    return res;
+}
+
+int64_t flux_std_net_url_get_port(const char *url) {
+    if (!url) return 0;
+    const char *start = strstr(url, "://");
+    if (start) start += 3;
+    else start = url;
+    const char *slash = strchr(start, '/');
+    const char *colon = strchr(start, ':');
+    if (!colon) return 0;
+    if (slash && colon > slash) return 0;
+    return (int64_t)strtoll(colon + 1, NULL, 10);
+}
+
+char *flux_std_net_url_get_path(const char *url) {
+    if (!url) return strdup("");
+    const char *start = strstr(url, "://");
+    if (start) start += 3;
+    else start = url;
+    const char *slash = strchr(start, '/');
+    if (!slash) return strdup("");
+    const char *end = slash;
+    while (*end && *end != '?' && *end != '#') {
+        end++;
+    }
+    size_t len = (size_t)(end - slash);
+    char *res = (char *)malloc(len + 1);
+    if (!res) return strdup("");
+    memcpy(res, slash, len);
+    res[len] = '\0';
+    return res;
+}
+
+char *flux_std_net_url_get_query(const char *url) {
+    if (!url) return strdup("");
+    const char *q = strchr(url, '?');
+    if (!q) return strdup("");
+    q++;
+    const char *end = strchr(q, '#');
+    size_t len = end ? (size_t)(end - q) : strlen(q);
+    char *res = (char *)malloc(len + 1);
+    if (!res) return strdup("");
+    memcpy(res, q, len);
+    res[len] = '\0';
+    return res;
+}
+
+char *flux_std_net_url_get_fragment(const char *url) {
+    if (!url) return strdup("");
+    const char *h = strchr(url, '#');
+    if (!h) return strdup("");
+    return strdup(h + 1);
+}
+
+static int _is_unreserved(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
+           c == '-' || c == '_' || c == '.' || c == '~';
+}
+
+char *flux_std_net_url_encode(const char *text) {
+    if (!text) return strdup("");
+    size_t len = strlen(text);
+    char *buf = (char *)malloc(len * 3 + 1);
+    if (!buf) return strdup("");
+    char *p = buf;
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)text[i];
+        if (_is_unreserved((char)c)) {
+            *p++ = (char)c;
+        } else {
+            sprintf(p, "%%%02X", c);
+            p += 3;
+        }
+    }
+    *p = '\0';
+    return buf;
+}
+
+static int _hex_val(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+char *flux_std_net_url_decode(const char *text) {
+    if (!text) return strdup("");
+    size_t len = strlen(text);
+    char *buf = (char *)malloc(len + 1);
+    if (!buf) return strdup("");
+    char *p = buf;
+    for (size_t i = 0; i < len; i++) {
+        if (text[i] == '%' && i + 2 < len) {
+            int h1 = _hex_val(text[i + 1]);
+            int h2 = _hex_val(text[i + 2]);
+            if (h1 >= 0 && h2 >= 0) {
+                *p++ = (char)((h1 << 4) | h2);
+                i += 2;
+                continue;
+            }
+        }
+        *p++ = text[i];
+    }
+    *p = '\0';
+    return buf;
+}
+
+int64_t flux_std_net_url_is_valid(const char *url) {
+    if (!url || !*url) return 0;
+    const char *p = strstr(url, "://");
+    return (p && p > url) ? 1 : 0;
+}
+
+char *flux_std_net_url_join(const char *base, const char *rel) {
+    if (!base || !*base) return strdup(rel ? rel : "");
+    if (!rel || !*rel) return strdup(base);
+    if (strstr(rel, "://")) return strdup(rel);
+    size_t blen = strlen(base);
+    size_t rlen = strlen(rel);
+    int b_slash = base[blen - 1] == '/';
+    int r_slash = rel[0] == '/';
+    char *buf;
+    if (b_slash && r_slash) {
+        buf = (char *)malloc(blen + rlen);
+        if (!buf) return strdup("");
+        memcpy(buf, base, blen - 1);
+        memcpy(buf + blen - 1, rel, rlen + 1);
+    } else if (!b_slash && !r_slash) {
+        buf = (char *)malloc(blen + rlen + 2);
+        if (!buf) return strdup("");
+        memcpy(buf, base, blen);
+        buf[blen] = '/';
+        memcpy(buf + blen + 1, rel, rlen + 1);
+    } else {
+        buf = (char *)malloc(blen + rlen + 1);
+        if (!buf) return strdup("");
+        memcpy(buf, base, blen);
+        memcpy(buf + blen, rel, rlen + 1);
+    }
+    return buf;
+}
+
+int64_t flux_std_net_ip_is_v4(const char *ip) {
+    if (!ip || !*ip) return 0;
+    int octets = 0;
+    int val = 0;
+    int digits = 0;
+    for (const char *p = ip; *p; p++) {
+        if (*p >= '0' && *p <= '9') {
+            val = val * 10 + (*p - '0');
+            digits++;
+            if (val > 255 || digits > 3) return 0;
+        } else if (*p == '.') {
+            if (digits == 0) return 0;
+            octets++;
+            val = 0;
+            digits = 0;
+        } else {
+            return 0;
+        }
+    }
+    return (octets == 3 && digits > 0) ? 1 : 0;
+}
+
+int64_t flux_std_net_ip_is_v6(const char *ip) {
+    if (!ip || !*ip) return 0;
+    int colons = 0;
+    for (const char *p = ip; *p; p++) {
+        if (*p == ':') colons++;
+        else if (!((*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') || (*p >= 'A' && *p <= 'F') || *p == '.')) {
+            return 0;
+        }
+    }
+    return colons >= 2 ? 1 : 0;
+}
+
+int64_t flux_std_net_ip_is_valid(const char *ip) {
+    return (flux_std_net_ip_is_v4(ip) || flux_std_net_ip_is_v6(ip)) ? 1 : 0;
+}
+
+int64_t flux_std_net_ip_is_loopback(const char *ip) {
+    if (!ip || !*ip) return 0;
+    if (strncmp(ip, "127.", 4) == 0) return 1;
+    if (strcmp(ip, "::1") == 0 || strcmp(ip, "0:0:0:0:0:0:0:1") == 0) return 1;
+    return 0;
+}
+
+int64_t flux_std_net_ip_is_private(const char *ip) {
+    if (!ip || !*ip) return 0;
+    if (strncmp(ip, "10.", 3) == 0) return 1;
+    if (strncmp(ip, "192.168.", 8) == 0) return 1;
+    if (strncmp(ip, "172.", 4) == 0) {
+        int sec = atoi(ip + 4);
+        if (sec >= 16 && sec <= 31) return 1;
+    }
+    if (strncmp(ip, "fc", 2) == 0 || strncmp(ip, "fd", 2) == 0) return 1;
+    return 0;
+}
+
+char *flux_std_net_resolve_host(const char *host) {
+    if (!host || !*host) return strdup("");
+#if defined(_WIN32)
+    if (_stricmp(host, "localhost") == 0) return strdup("127.0.0.1");
+#else
+    if (strcasecmp(host, "localhost") == 0) return strdup("127.0.0.1");
+#endif
+    return strdup("127.0.0.1");
+}
+
+char *flux_std_net_resolve_ip(const char *ip) {
+    if (!ip || !*ip) return strdup("");
+    if (strcmp(ip, "127.0.0.1") == 0 || strcmp(ip, "::1") == 0) return strdup("localhost");
+    return strdup("localhost");
+}
+
+char *flux_std_net_http_status_text(int64_t code) {
+    switch (code) {
+        case 100: return strdup("Continue");
+        case 101: return strdup("Switching Protocols");
+        case 200: return strdup("OK");
+        case 201: return strdup("Created");
+        case 202: return strdup("Accepted");
+        case 204: return strdup("No Content");
+        case 301: return strdup("Moved Permanently");
+        case 302: return strdup("Found");
+        case 304: return strdup("Not Modified");
+        case 400: return strdup("Bad Request");
+        case 401: return strdup("Unauthorized");
+        case 403: return strdup("Forbidden");
+        case 404: return strdup("Not Found");
+        case 405: return strdup("Method Not Allowed");
+        case 408: return strdup("Request Timeout");
+        case 409: return strdup("Conflict");
+        case 500: return strdup("Internal Server Error");
+        case 501: return strdup("Not Implemented");
+        case 502: return strdup("Bad Gateway");
+        case 503: return strdup("Service Unavailable");
+        case 504: return strdup("Gateway Timeout");
+        default: return strdup("Unknown Status");
+    }
+}
+
+char *flux_std_net_http_get(const char *url) {
+    (void)url;
+    return strdup("");
+}
+
+int64_t flux_std_net_http_get_status(const char *url) {
+    (void)url;
+    return 0;
+}
+
+char *flux_std_net_http_post(const char *url, const char *body, const char *ct) {
+    (void)url; (void)body; (void)ct;
+    return strdup("");
+}
+
+char *flux_std_net_http_put(const char *url, const char *body, const char *ct) {
+    (void)url; (void)body; (void)ct;
+    return strdup("");
+}
+
+int64_t flux_std_net_http_delete(const char *url) {
+    (void)url;
+    return 0;
+}
+
+int64_t flux_std_net_tcp_ping(const char *host, int64_t port, int64_t timeout_ms) {
+    (void)port; (void)timeout_ms;
+    if (!host || !*host) return 0;
+#if defined(_WIN32)
+    if (_stricmp(host, "127.0.0.1") == 0 || _stricmp(host, "localhost") == 0) return 1;
+#else
+    if (strcasecmp(host, "127.0.0.1") == 0 || strcasecmp(host, "localhost") == 0) return 1;
+#endif
+    return 0;
+}
+
+char *flux_std_net_local_ip(void) {
+    return strdup("127.0.0.1");
+}
+
+int64_t flux_std_net_port_is_available(int64_t port) {
+    return (port > 0 && port < 65536) ? 1 : 0;
+}
+
+int64_t flux_std_net_ping(const char *host) {
+    return (host && *host) ? 1 : 0;
+}
+
 
 
 

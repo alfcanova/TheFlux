@@ -1,0 +1,374 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OsStdLib
+#L Modulo nativo para operacoes de Sistema Operacional (OS)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (OsEnvContract) {
+      op osGetEnv (as string: name) as string
+      op osGetEnvOrDefault (as string: name, as string: default_value) as string
+      op osSetEnv (as string: name, as string: value) as bool
+      op osHasEnv (as string: name) as bool
+      op osUnsetEnv (as string: name) as bool
+      op osListEnv () as list of data
+
+      #L Aliases
+      op getEnv (as string: name) as string
+      op getEnvOrDefault (as string: name, as string: default_value) as string
+      op setEnv (as string: name, as string: value) as bool
+      op hasEnv (as string: name) as bool
+      op unsetEnv (as string: name) as bool
+      op listEnv () as list of data
+}
+
+contract (OsInfoContract) {
+      op osPlatform () as string
+      op osArch () as string
+      op osFamily () as string
+      op osHostname () as string
+      op osLineSeparator () as string
+      op osPathSeparator () as string
+      op osDirSeparator () as string
+      op osIsWindows () as bool
+      op osIsLinux () as bool
+      op osIsDarwin () as bool
+      op osInfoSummary () as string
+
+      #L Aliases
+      op platform () as string
+      op arch () as string
+      op family () as string
+      op hostname () as string
+      op lineSeparator () as string
+      op pathSeparator () as string
+      op dirSeparator () as string
+}
+
+contract (OsProcessContract) {
+      op osGetPid () as int64
+      op osGetParentPid () as int64
+      op osCwd () as string
+      op osChdir (as string: path) as bool
+      op osExec (as string: command) as int64
+      op osExecOutput (as string: command) as string
+      op osSleep (as int64: milliseconds) as bool
+      op osProcessSummary () as string
+
+      #L Aliases
+      op getPid () as int64
+      op getParentPid () as int64
+      op cwd () as string
+      op chdir (as string: path) as bool
+      op exec (as string: command) as int64
+      op execOutput (as string: command) as string
+      op sleep (as int64: milliseconds) as bool
+}
+
+contract (OsSystemContract) {
+      op osUserName () as string
+      op osHomeDir () as string
+      op osTempDir () as string
+      op osCpuCount () as int64
+      op osUptime () as int64
+      op osMemoryTotal () as int64
+      op osMemoryFree () as int64
+      op osMemoryTotalMb () as int64
+      op osMemoryTotalGb () as int64
+      op osMemoryFreeMb () as int64
+      op osMemoryFreeGb () as int64
+      op osSystemSummary () as string
+
+      #L Aliases
+      op userName () as string
+      op homeDir () as string
+      op tempDir () as string
+      op cpuCount () as int64
+      op uptime () as int64
+      op memoryTotal () as int64
+      op memoryFree () as int64
+}
+
+agent (OsStdLib) impl OsEnvContract, OsInfoContract, OsProcessContract, OsSystemContract {
+
+      #L -- OsEnvContract ---------------------------------------------
+      op osGetEnv (as string: name) as string ==> {
+            emit(nice, stdOsGetEnv(name), "ok")
+      }
+
+      op osGetEnvOrDefault (as string: name, as string: default_value) as string ==> {
+            emit(nice, stdOsGetEnvOrDefault(name, default_value), "ok")
+      }
+
+      op osSetEnv (as string: name, as string: value) as bool ==> {
+            emit(nice, stdOsSetEnv(name, value), "ok")
+      }
+
+      op osHasEnv (as string: name) as bool ==> {
+            emit(nice, stdOsHasEnv(name), "ok")
+      }
+
+      op osUnsetEnv (as string: name) as bool ==> {
+            emit(nice, stdOsUnsetEnv(name), "ok")
+      }
+
+      op osListEnv () as list of data ==> {
+            emit(nice, stdOsListEnv(), "ok")
+      }
+
+      op getEnv (as string: name) as string ==> {
+            emit(nice, stdOsGetEnv(name), "ok")
+      }
+
+      op getEnvOrDefault (as string: name, as string: default_value) as string ==> {
+            emit(nice, stdOsGetEnvOrDefault(name, default_value), "ok")
+      }
+
+      op setEnv (as string: name, as string: value) as bool ==> {
+            emit(nice, stdOsSetEnv(name, value), "ok")
+      }
+
+      op hasEnv (as string: name) as bool ==> {
+            emit(nice, stdOsHasEnv(name), "ok")
+      }
+
+      op unsetEnv (as string: name) as bool ==> {
+            emit(nice, stdOsUnsetEnv(name), "ok")
+      }
+
+      op listEnv () as list of data ==> {
+            emit(nice, stdOsListEnv(), "ok")
+      }
+
+      #L -- OsInfoContract --------------------------------------------
+      op osPlatform () as string ==> {
+            emit(nice, stdOsPlatform(), "ok")
+      }
+
+      op osArch () as string ==> {
+            emit(nice, stdOsArch(), "ok")
+      }
+
+      op osFamily () as string ==> {
+            emit(nice, stdOsFamily(), "ok")
+      }
+
+      op osHostname () as string ==> {
+            emit(nice, stdOsHostname(), "ok")
+      }
+
+      op osLineSeparator () as string ==> {
+            emit(nice, stdOsLineSeparator(), "ok")
+      }
+
+      op osPathSeparator () as string ==> {
+            emit(nice, stdOsPathSeparator(), "ok")
+      }
+
+      op osDirSeparator () as string ==> {
+            emit(nice, stdOsDirSeparator(), "ok")
+      }
+
+      op osIsWindows () as bool ==> {
+            mut as string: p = stdOsPlatform()
+            emit(nice, p == "windows", "ok")
+      }
+
+      op osIsLinux () as bool ==> {
+            mut as string: p = stdOsPlatform()
+            emit(nice, p == "linux", "ok")
+      }
+
+      op osIsDarwin () as bool ==> {
+            mut as string: p = stdOsPlatform()
+            emit(nice, p == "darwin", "ok")
+      }
+
+      op osInfoSummary () as string ==> {
+            mut as string: p = stdOsPlatform()
+            mut as string: a = stdOsArch()
+            mut as string: f = stdOsFamily()
+            mut as string: h = stdOsHostname()
+            emit(nice, "Platform=" + p + "; Arch=" + a + "; Family=" + f + "; Host=" + h, "ok")
+      }
+
+      op platform () as string ==> {
+            emit(nice, stdOsPlatform(), "ok")
+      }
+
+      op arch () as string ==> {
+            emit(nice, stdOsArch(), "ok")
+      }
+
+      op family () as string ==> {
+            emit(nice, stdOsFamily(), "ok")
+      }
+
+      op hostname () as string ==> {
+            emit(nice, stdOsHostname(), "ok")
+      }
+
+      op lineSeparator () as string ==> {
+            emit(nice, stdOsLineSeparator(), "ok")
+      }
+
+      op pathSeparator () as string ==> {
+            emit(nice, stdOsPathSeparator(), "ok")
+      }
+
+      op dirSeparator () as string ==> {
+            emit(nice, stdOsDirSeparator(), "ok")
+      }
+
+      #L -- OsProcessContract -----------------------------------------
+      op osGetPid () as int64 ==> {
+            emit(nice, stdOsGetPid(), "ok")
+      }
+
+      op osGetParentPid () as int64 ==> {
+            emit(nice, stdOsGetParentPid(), "ok")
+      }
+
+      op osCwd () as string ==> {
+            emit(nice, stdOsCwd(), "ok")
+      }
+
+      op osChdir (as string: path) as bool ==> {
+            emit(nice, stdOsChdir(path), "ok")
+      }
+
+      op osExec (as string: command) as int64 ==> {
+            emit(nice, stdOsExec(command), "ok")
+      }
+
+      op osExecOutput (as string: command) as string ==> {
+            emit(nice, stdOsExecOutput(command), "ok")
+      }
+
+      op osSleep (as int64: milliseconds) as bool ==> {
+            emit(nice, stdOsSleep(milliseconds), "ok")
+      }
+
+      op osProcessSummary () as string ==> {
+            mut as int64: p = stdOsGetPid()
+            mut as string: c = stdOsCwd()
+            emit(nice, "PID=" + p + "; CWD=" + c, "ok")
+      }
+
+      op getPid () as int64 ==> {
+            emit(nice, stdOsGetPid(), "ok")
+      }
+
+      op getParentPid () as int64 ==> {
+            emit(nice, stdOsGetParentPid(), "ok")
+      }
+
+      op cwd () as string ==> {
+            emit(nice, stdOsCwd(), "ok")
+      }
+
+      op chdir (as string: path) as bool ==> {
+            emit(nice, stdOsChdir(path), "ok")
+      }
+
+      op exec (as string: command) as int64 ==> {
+            emit(nice, stdOsExec(command), "ok")
+      }
+
+      op execOutput (as string: command) as string ==> {
+            emit(nice, stdOsExecOutput(command), "ok")
+      }
+
+      op sleep (as int64: milliseconds) as bool ==> {
+            emit(nice, stdOsSleep(milliseconds), "ok")
+      }
+
+      #L -- OsSystemContract ------------------------------------------
+      op osUserName () as string ==> {
+            emit(nice, stdOsUserName(), "ok")
+      }
+
+      op osHomeDir () as string ==> {
+            emit(nice, stdOsHomeDir(), "ok")
+      }
+
+      op osTempDir () as string ==> {
+            emit(nice, stdOsTempDir(), "ok")
+      }
+
+      op osCpuCount () as int64 ==> {
+            emit(nice, stdOsCpuCount(), "ok")
+      }
+
+      op osUptime () as int64 ==> {
+            emit(nice, stdOsUptime(), "ok")
+      }
+
+      op osMemoryTotal () as int64 ==> {
+            emit(nice, stdOsMemoryTotal(), "ok")
+      }
+
+      op osMemoryFree () as int64 ==> {
+            emit(nice, stdOsMemoryFree(), "ok")
+      }
+
+      op osMemoryTotalMb () as int64 ==> {
+            mut as int64: m = stdOsMemoryTotal()
+            mut as int64: res = m /i 1048576
+            emit(nice, res, "ok")
+      }
+
+      op osMemoryTotalGb () as int64 ==> {
+            mut as int64: m = stdOsMemoryTotal()
+            mut as int64: res = m /i 1073741824
+            emit(nice, res, "ok")
+      }
+
+      op osMemoryFreeMb () as int64 ==> {
+            mut as int64: m = stdOsMemoryFree()
+            mut as int64: res = m /i 1048576
+            emit(nice, res, "ok")
+      }
+
+      op osMemoryFreeGb () as int64 ==> {
+            mut as int64: m = stdOsMemoryFree()
+            mut as int64: res = m /i 1073741824
+            emit(nice, res, "ok")
+      }
+
+      op osSystemSummary () as string ==> {
+            mut as string: u = stdOsUserName()
+            mut as int64: c = stdOsCpuCount()
+            mut as int64: m = stdOsMemoryTotal()
+            mut as int64: g = m /i 1073741824
+            mut as string: res = "User=" + u + "; CPUs=" + c + "; TotalMem=" + g + "GB"
+            emit(nice, res, "ok")
+      }
+
+      op userName () as string ==> {
+            emit(nice, stdOsUserName(), "ok")
+      }
+
+      op homeDir () as string ==> {
+            emit(nice, stdOsHomeDir(), "ok")
+      }
+
+      op tempDir () as string ==> {
+            emit(nice, stdOsTempDir(), "ok")
+      }
+
+      op cpuCount () as int64 ==> {
+            emit(nice, stdOsCpuCount(), "ok")
+      }
+
+      op uptime () as int64 ==> {
+            emit(nice, stdOsUptime(), "ok")
+      }
+
+      op memoryTotal () as int64 ==> {
+            emit(nice, stdOsMemoryTotal(), "ok")
+      }
+
+      op memoryFree () as int64 ==> {
+            emit(nice, stdOsMemoryFree(), "ok")
+      }
+}

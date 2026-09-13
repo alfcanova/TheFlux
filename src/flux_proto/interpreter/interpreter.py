@@ -1728,6 +1728,10 @@ class Interpreter:
                 return self._eval_datetime_intrinsic(name, node.args)
             if name.startswith("stdFile"):
                 return self._eval_file_signature_intrinsic(name, node.args)
+            if name.startswith("stdOs"):
+                return self._eval_os_intrinsic(name, node.args)
+            if name.startswith("stdNet"):
+                return self._eval_net_intrinsic(name, node.args)
             op_ctx = self._resolve_agent_op(name, agent_qual)
             if op_ctx is not None:
                 return self._exec_agent_op(op_ctx, node.args)
@@ -1878,6 +1882,154 @@ class Interpreter:
         if name == "stdFileIsBinary":
             return Value("bool", fsh.file_is_binary(p))
         raise InterpreterError(f"unknown file signature intrinsic '{name}'")
+
+    def _eval_os_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.os_helpers as osh
+        args = [self._eval(a) for a in raw_args]
+        # OsEnvContract
+        if name == "stdOsGetEnv":
+            return Value("string", osh.os_get_env(str(args[0].data if args else "")))
+        if name == "stdOsGetEnvOrDefault":
+            n = str(args[0].data if len(args) > 0 else "")
+            d = str(args[1].data if len(args) > 1 else "")
+            return Value("string", osh.os_get_env_or_default(n, d))
+        if name == "stdOsSetEnv":
+            n = str(args[0].data if len(args) > 0 else "")
+            v = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", osh.os_set_env(n, v))
+        if name == "stdOsHasEnv":
+            return Value("bool", osh.os_has_env(str(args[0].data if args else "")))
+        if name == "stdOsUnsetEnv":
+            return Value("bool", osh.os_unset_env(str(args[0].data if args else "")))
+        if name == "stdOsListEnv":
+            keys = [Value("string", k) for k in osh.os_list_env()]
+            return Value("list", keys)
+
+        # OsInfoContract
+        if name == "stdOsPlatform":
+            return Value("string", osh.os_platform())
+        if name == "stdOsArch":
+            return Value("string", osh.os_arch())
+        if name == "stdOsFamily":
+            return Value("string", osh.os_family())
+        if name == "stdOsHostname":
+            return Value("string", osh.os_hostname())
+        if name == "stdOsLineSeparator":
+            return Value("string", osh.os_line_separator())
+        if name == "stdOsPathSeparator":
+            return Value("string", osh.os_path_separator())
+        if name == "stdOsDirSeparator":
+            return Value("string", osh.os_dir_separator())
+
+        # OsProcessContract
+        if name == "stdOsGetPid":
+            return Value("int64", osh.os_get_pid())
+        if name == "stdOsGetParentPid":
+            return Value("int64", osh.os_get_parent_pid())
+        if name == "stdOsCwd":
+            return Value("string", osh.os_cwd())
+        if name == "stdOsChdir":
+            return Value("bool", osh.os_chdir(str(args[0].data if args else "")))
+        if name == "stdOsExec":
+            return Value("int64", osh.os_exec(str(args[0].data if args else "")))
+        if name == "stdOsExecOutput":
+            return Value("string", osh.os_exec_output(str(args[0].data if args else "")))
+        if name == "stdOsSleep":
+            return Value("bool", osh.os_sleep(int(args[0].data if args else 0)))
+
+        # OsSystemContract
+        if name == "stdOsUserName":
+            return Value("string", osh.os_user_name())
+        if name == "stdOsHomeDir":
+            return Value("string", osh.os_home_dir())
+        if name == "stdOsTempDir":
+            return Value("string", osh.os_temp_dir())
+        if name == "stdOsCpuCount":
+            return Value("int64", osh.os_cpu_count())
+        if name == "stdOsUptime":
+            return Value("int64", osh.os_uptime())
+        if name == "stdOsMemoryTotal":
+            return Value("int64", osh.os_memory_total())
+        if name == "stdOsMemoryFree":
+            return Value("int64", osh.os_memory_free())
+        raise InterpreterError(f"unknown os intrinsic '{name}'")
+
+    def _eval_net_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.net_helpers as neth
+        args = [self._eval(a) for a in raw_args]
+        # NetUrlContract
+        if name == "stdNetUrlGetScheme":
+            return Value("string", neth.net_url_get_scheme(str(args[0].data if args else "")))
+        if name == "stdNetUrlGetHost":
+            return Value("string", neth.net_url_get_host(str(args[0].data if args else "")))
+        if name == "stdNetUrlGetPort":
+            return Value("int64", neth.net_url_get_port(str(args[0].data if args else "")))
+        if name == "stdNetUrlGetPath":
+            return Value("string", neth.net_url_get_path(str(args[0].data if args else "")))
+        if name == "stdNetUrlGetQuery":
+            return Value("string", neth.net_url_get_query(str(args[0].data if args else "")))
+        if name == "stdNetUrlGetFragment":
+            return Value("string", neth.net_url_get_fragment(str(args[0].data if args else "")))
+        if name == "stdNetUrlEncode":
+            return Value("string", neth.net_url_encode(str(args[0].data if args else "")))
+        if name == "stdNetUrlDecode":
+            return Value("string", neth.net_url_decode(str(args[0].data if args else "")))
+        if name == "stdNetUrlIsValid":
+            return Value("bool", neth.net_url_is_valid(str(args[0].data if args else "")))
+        if name == "stdNetUrlJoin":
+            b = str(args[0].data if len(args) > 0 else "")
+            r = str(args[1].data if len(args) > 1 else "")
+            return Value("string", neth.net_url_join(b, r))
+
+        # NetIpContract
+        if name == "stdNetIpIsValid":
+            return Value("bool", neth.net_ip_is_valid(str(args[0].data if args else "")))
+        if name == "stdNetIpIsV4":
+            return Value("bool", neth.net_ip_is_v4(str(args[0].data if args else "")))
+        if name == "stdNetIpIsV6":
+            return Value("bool", neth.net_ip_is_v6(str(args[0].data if args else "")))
+        if name == "stdNetIpIsLoopback":
+            return Value("bool", neth.net_ip_is_loopback(str(args[0].data if args else "")))
+        if name == "stdNetIpIsPrivate":
+            return Value("bool", neth.net_ip_is_private(str(args[0].data if args else "")))
+        if name == "stdNetResolveHost":
+            return Value("string", neth.net_resolve_host(str(args[0].data if args else "")))
+        if name == "stdNetResolveIp":
+            return Value("string", neth.net_resolve_ip(str(args[0].data if args else "")))
+
+        # NetHttpContract
+        if name == "stdNetHttpGet":
+            return Value("string", neth.net_http_get(str(args[0].data if args else "")))
+        if name == "stdNetHttpGetStatus":
+            return Value("int64", neth.net_http_get_status(str(args[0].data if args else "")))
+        if name == "stdNetHttpPost":
+            u = str(args[0].data if len(args) > 0 else "")
+            b = str(args[1].data if len(args) > 1 else "")
+            c = str(args[2].data if len(args) > 2 else "")
+            return Value("string", neth.net_http_post(u, b, c))
+        if name == "stdNetHttpPut":
+            u = str(args[0].data if len(args) > 0 else "")
+            b = str(args[1].data if len(args) > 1 else "")
+            c = str(args[2].data if len(args) > 2 else "")
+            return Value("string", neth.net_http_put(u, b, c))
+        if name == "stdNetHttpDelete":
+            return Value("int64", neth.net_http_delete(str(args[0].data if args else "")))
+        if name == "stdNetHttpStatusText":
+            return Value("string", neth.net_http_status_text(int(args[0].data if args else 0)))
+
+        # NetSocketContract
+        if name == "stdNetTcpPing":
+            h = str(args[0].data if len(args) > 0 else "")
+            p = int(args[1].data if len(args) > 1 else 0)
+            t = int(args[2].data if len(args) > 2 else 1000)
+            return Value("bool", neth.net_tcp_ping(h, p, t))
+        if name == "stdNetLocalIp":
+            return Value("string", neth.net_local_ip())
+        if name == "stdNetPortIsAvailable":
+            return Value("bool", neth.net_port_is_available(int(args[0].data if args else 0)))
+        if name == "stdNetPing":
+            return Value("bool", neth.net_ping(str(args[0].data if args else "")))
+        raise InterpreterError(f"unknown net intrinsic '{name}'")
 
     def _resolve_agent_op(self, name: str, agent_qual: str = "") -> tuple[Any, Any] | None:
         real = self._op_aliases.get(name, name)

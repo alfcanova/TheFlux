@@ -2637,6 +2637,62 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_file_magic_bytes", "i8*", ["i8*", "i64"])
             self._w.declare_function("flux_std_file_detect_type", "i8*", ["i8*"])
             self._w.declare_function("flux_std_file_is_binary", "i64", ["i8*"])
+            # OsStdLib
+            self._w.declare_function("flux_std_os_get_env", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_os_get_env_or_default", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_os_set_env", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_os_has_env", "i64", ["i8*"])
+            self._w.declare_function("flux_std_os_unset_env", "i64", ["i8*"])
+            self._w.declare_function("flux_std_os_list_env", "i8*", ["i8* (i64, i64)*", "i8* (i8*, i64, i64, i8*)*"])
+            self._w.declare_function("flux_std_os_platform", "i8*", [])
+            self._w.declare_function("flux_std_os_arch", "i8*", [])
+            self._w.declare_function("flux_std_os_family", "i8*", [])
+            self._w.declare_function("flux_std_os_hostname", "i8*", [])
+            self._w.declare_function("flux_std_os_line_separator", "i8*", [])
+            self._w.declare_function("flux_std_os_path_separator", "i8*", [])
+            self._w.declare_function("flux_std_os_dir_separator", "i8*", [])
+            self._w.declare_function("flux_std_os_get_pid", "i64", [])
+            self._w.declare_function("flux_std_os_get_parent_pid", "i64", [])
+            self._w.declare_function("flux_std_os_cwd", "i8*", [])
+            self._w.declare_function("flux_std_os_chdir", "i64", ["i8*"])
+            self._w.declare_function("flux_std_os_exec", "i64", ["i8*"])
+            self._w.declare_function("flux_std_os_exec_output", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_os_sleep", "i64", ["i64"])
+            self._w.declare_function("flux_std_os_user_name", "i8*", [])
+            self._w.declare_function("flux_std_os_home_dir", "i8*", [])
+            self._w.declare_function("flux_std_os_temp_dir", "i8*", [])
+            self._w.declare_function("flux_std_os_cpu_count", "i64", [])
+            self._w.declare_function("flux_std_os_uptime", "i64", [])
+            self._w.declare_function("flux_std_os_memory_total", "i64", [])
+            self._w.declare_function("flux_std_os_memory_free", "i64", [])
+            # NetStdLib
+            self._w.declare_function("flux_std_net_url_get_scheme", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_get_host", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_get_port", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_url_get_path", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_get_query", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_get_fragment", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_encode", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_decode", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_url_is_valid", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_url_join", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_net_ip_is_valid", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_ip_is_v4", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_ip_is_v6", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_ip_is_loopback", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_ip_is_private", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_resolve_host", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_resolve_ip", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_http_get", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_net_http_get_status", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_http_post", "i8*", ["i8*", "i8*", "i8*"])
+            self._w.declare_function("flux_std_net_http_put", "i8*", ["i8*", "i8*", "i8*"])
+            self._w.declare_function("flux_std_net_http_delete", "i64", ["i8*"])
+            self._w.declare_function("flux_std_net_http_status_text", "i8*", ["i64"])
+            self._w.declare_function("flux_std_net_tcp_ping", "i64", ["i8*", "i64", "i64"])
+            self._w.declare_function("flux_std_net_local_ip", "i8*", [])
+            self._w.declare_function("flux_std_net_port_is_available", "i64", ["i64"])
+            self._w.declare_function("flux_std_net_ping", "i64", ["i8*"])
             self._w.begin_function("main", "i32")
             self._new_block("entry")
             frame = self._w.new_local("frame")
@@ -6858,6 +6914,10 @@ class LLVMCodegen:
             return self._gen_std_datetime_intrinsic(name, node.args)
         if name.startswith("stdFile"):
             return self._gen_std_file_signature_intrinsic(name, node.args)
+        if name.startswith("stdOs"):
+            return self._gen_std_os_intrinsic(name, node.args)
+        if name.startswith("stdNet"):
+            return self._gen_std_net_intrinsic(name, node.args)
         if name.startswith(("stdSet", "stdList", "stdMap", "stdCollection")):
             return self._gen_std_collection_intrinsic(name, node.args)
         raise CodegenError(f"unsupported call to '{name}'")
@@ -7065,6 +7125,285 @@ class LLVMCodegen:
             self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
             return (res, "i1")
         raise CodegenError(f"unsupported file signature intrinsic '{name}'")
+
+    def _gen_std_os_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        if name == "stdOsGetEnv":
+            res = self._w.new_local("os_getenv")
+            self._w.emit(f"{res} = call i8* @flux_std_os_get_env(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdOsGetEnvOrDefault":
+            res = self._w.new_local("os_getenvdef")
+            self._w.emit(f"{res} = call i8* @flux_std_os_get_env_or_default(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdOsSetEnv":
+            res64 = self._w.new_local("os_setenv64")
+            self._w.emit(f"{res64} = call i64 @flux_std_os_set_env(i8* {sptr(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("os_setenv")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdOsHasEnv":
+            res64 = self._w.new_local("os_hasenv64")
+            self._w.emit(f"{res64} = call i64 @flux_std_os_has_env(i8* {sptr(0)})")
+            res = self._w.new_local("os_hasenv")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdOsUnsetEnv":
+            res64 = self._w.new_local("os_unsetenv64")
+            self._w.emit(f"{res64} = call i64 @flux_std_os_unset_env(i8* {sptr(0)})")
+            res = self._w.new_local("os_unsetenv")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdOsListEnv":
+            res = self._w.new_local("os_listenv")
+            self._w.emit(f"{res} = call i8* @flux_std_os_list_env(i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)")
+            return (res, "i8*")
+        if name == "stdOsPlatform":
+            res = self._w.new_local("os_plat")
+            self._w.emit(f"{res} = call i8* @flux_std_os_platform()")
+            return (res, "i8*")
+        if name == "stdOsArch":
+            res = self._w.new_local("os_arch")
+            self._w.emit(f"{res} = call i8* @flux_std_os_arch()")
+            return (res, "i8*")
+        if name == "stdOsFamily":
+            res = self._w.new_local("os_fam")
+            self._w.emit(f"{res} = call i8* @flux_std_os_family()")
+            return (res, "i8*")
+        if name == "stdOsHostname":
+            res = self._w.new_local("os_host")
+            self._w.emit(f"{res} = call i8* @flux_std_os_hostname()")
+            return (res, "i8*")
+        if name == "stdOsLineSeparator":
+            res = self._w.new_local("os_linesep")
+            self._w.emit(f"{res} = call i8* @flux_std_os_line_separator()")
+            return (res, "i8*")
+        if name == "stdOsPathSeparator":
+            res = self._w.new_local("os_pathsep")
+            self._w.emit(f"{res} = call i8* @flux_std_os_path_separator()")
+            return (res, "i8*")
+        if name == "stdOsDirSeparator":
+            res = self._w.new_local("os_dirsep")
+            self._w.emit(f"{res} = call i8* @flux_std_os_dir_separator()")
+            return (res, "i8*")
+        if name == "stdOsGetPid":
+            res = self._w.new_local("os_pid")
+            self._w.emit(f"{res} = call i64 @flux_std_os_get_pid()")
+            return (res, "i64")
+        if name == "stdOsGetParentPid":
+            res = self._w.new_local("os_ppid")
+            self._w.emit(f"{res} = call i64 @flux_std_os_get_parent_pid()")
+            return (res, "i64")
+        if name == "stdOsCwd":
+            res = self._w.new_local("os_cwd")
+            self._w.emit(f"{res} = call i8* @flux_std_os_cwd()")
+            return (res, "i8*")
+        if name == "stdOsChdir":
+            res64 = self._w.new_local("os_chdir64")
+            self._w.emit(f"{res64} = call i64 @flux_std_os_chdir(i8* {sptr(0)})")
+            res = self._w.new_local("os_chdir")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdOsExec":
+            res = self._w.new_local("os_exec")
+            self._w.emit(f"{res} = call i64 @flux_std_os_exec(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdOsExecOutput":
+            res = self._w.new_local("os_execout")
+            self._w.emit(f"{res} = call i8* @flux_std_os_exec_output(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdOsSleep":
+            res64 = self._w.new_local("os_sleep64")
+            self._w.emit(f"{res64} = call i64 @flux_std_os_sleep(i64 {i64v(0)})")
+            res = self._w.new_local("os_sleep")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdOsUserName":
+            res = self._w.new_local("os_uname")
+            self._w.emit(f"{res} = call i8* @flux_std_os_user_name()")
+            return (res, "i8*")
+        if name == "stdOsHomeDir":
+            res = self._w.new_local("os_home")
+            self._w.emit(f"{res} = call i8* @flux_std_os_home_dir()")
+            return (res, "i8*")
+        if name == "stdOsTempDir":
+            res = self._w.new_local("os_temp")
+            self._w.emit(f"{res} = call i8* @flux_std_os_temp_dir()")
+            return (res, "i8*")
+        if name == "stdOsCpuCount":
+            res = self._w.new_local("os_cpus")
+            self._w.emit(f"{res} = call i64 @flux_std_os_cpu_count()")
+            return (res, "i64")
+        if name == "stdOsUptime":
+            res = self._w.new_local("os_uptime")
+            self._w.emit(f"{res} = call i64 @flux_std_os_uptime()")
+            return (res, "i64")
+        if name == "stdOsMemoryTotal":
+            res = self._w.new_local("os_memtot")
+            self._w.emit(f"{res} = call i64 @flux_std_os_memory_total()")
+            return (res, "i64")
+        if name == "stdOsMemoryFree":
+            res = self._w.new_local("os_memfree")
+            self._w.emit(f"{res} = call i64 @flux_std_os_memory_free()")
+            return (res, "i64")
+        raise CodegenError(f"unsupported os intrinsic '{name}'")
+
+    def _gen_std_net_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        # NetUrlContract
+        if name == "stdNetUrlGetScheme":
+            res = self._w.new_local("net_scheme")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_get_scheme(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlGetHost":
+            res = self._w.new_local("net_host")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_get_host(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlGetPort":
+            res = self._w.new_local("net_port")
+            self._w.emit(f"{res} = call i64 @flux_std_net_url_get_port(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdNetUrlGetPath":
+            res = self._w.new_local("net_path")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_get_path(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlGetQuery":
+            res = self._w.new_local("net_query")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_get_query(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlGetFragment":
+            res = self._w.new_local("net_frag")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_get_fragment(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlEncode":
+            res = self._w.new_local("net_enc")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_encode(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlDecode":
+            res = self._w.new_local("net_dec")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_decode(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetUrlIsValid":
+            res64 = self._w.new_local("net_valid64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_url_is_valid(i8* {sptr(0)})")
+            res = self._w.new_local("net_valid")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetUrlJoin":
+            res = self._w.new_local("net_join")
+            self._w.emit(f"{res} = call i8* @flux_std_net_url_join(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+
+        # NetIpContract
+        if name == "stdNetIpIsValid":
+            res64 = self._w.new_local("net_ipval64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_ip_is_valid(i8* {sptr(0)})")
+            res = self._w.new_local("net_ipval")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetIpIsV4":
+            res64 = self._w.new_local("net_ipv4_64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_ip_is_v4(i8* {sptr(0)})")
+            res = self._w.new_local("net_ipv4")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetIpIsV6":
+            res64 = self._w.new_local("net_ipv6_64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_ip_is_v6(i8* {sptr(0)})")
+            res = self._w.new_local("net_ipv6")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetIpIsLoopback":
+            res64 = self._w.new_local("net_loop64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_ip_is_loopback(i8* {sptr(0)})")
+            res = self._w.new_local("net_loop")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetIpIsPrivate":
+            res64 = self._w.new_local("net_priv64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_ip_is_private(i8* {sptr(0)})")
+            res = self._w.new_local("net_priv")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetResolveHost":
+            res = self._w.new_local("net_reshost")
+            self._w.emit(f"{res} = call i8* @flux_std_net_resolve_host(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetResolveIp":
+            res = self._w.new_local("net_resip")
+            self._w.emit(f"{res} = call i8* @flux_std_net_resolve_ip(i8* {sptr(0)})")
+            return (res, "i8*")
+
+        # NetHttpContract
+        if name == "stdNetHttpGet":
+            res = self._w.new_local("net_get")
+            self._w.emit(f"{res} = call i8* @flux_std_net_http_get(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdNetHttpGetStatus":
+            res = self._w.new_local("net_getstat")
+            self._w.emit(f"{res} = call i64 @flux_std_net_http_get_status(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdNetHttpPost":
+            res = self._w.new_local("net_post")
+            self._w.emit(f"{res} = call i8* @flux_std_net_http_post(i8* {sptr(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i8*")
+        if name == "stdNetHttpPut":
+            res = self._w.new_local("net_put")
+            self._w.emit(f"{res} = call i8* @flux_std_net_http_put(i8* {sptr(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i8*")
+        if name == "stdNetHttpDelete":
+            res = self._w.new_local("net_del")
+            self._w.emit(f"{res} = call i64 @flux_std_net_http_delete(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdNetHttpStatusText":
+            res = self._w.new_local("net_stattext")
+            self._w.emit(f"{res} = call i8* @flux_std_net_http_status_text(i64 {i64v(0)})")
+            return (res, "i8*")
+
+        # NetSocketContract
+        if name == "stdNetTcpPing":
+            res64 = self._w.new_local("net_tcpping64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_tcp_ping(i8* {sptr(0)}, i64 {i64v(1)}, i64 {i64v(2)})")
+            res = self._w.new_local("net_tcpping")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetLocalIp":
+            res = self._w.new_local("net_locip")
+            self._w.emit(f"{res} = call i8* @flux_std_net_local_ip()")
+            return (res, "i8*")
+        if name == "stdNetPortIsAvailable":
+            res64 = self._w.new_local("net_portavail64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_port_is_available(i64 {i64v(0)})")
+            res = self._w.new_local("net_portavail")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdNetPing":
+            res64 = self._w.new_local("net_ping64")
+            self._w.emit(f"{res64} = call i64 @flux_std_net_ping(i8* {sptr(0)})")
+            res = self._w.new_local("net_ping")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        raise CodegenError(f"unsupported net intrinsic '{name}'")
 
     def _gen_std_collection_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
         def av(i: int) -> tuple[str, str]:
