@@ -93,22 +93,22 @@ $env:PYTHONPATH = "src"
 Para rodar qualquer arquivo .flux em qualquer backend:
 
 ```sh
-# Via Interpretador AST
+# Executar via Interpretador AST
 python flux_in.py flux/ExampleOfArithmetic.flux
 
-# Via Bytecode VM
+# Compilar via Bytecode VM
 python flux_vm.py flux/ExampleOfArithmetic.flux
 
-# Via VM Rust
+# Executar via Bytecode VM
 python flux_vmr.py flux/ExampleOfArithmetic.flux
 
-# Via LLVM Nativo
+# Compilar via LLVM Nativo
 python flux_lv.py flux/ExampleOfArithmetic.flux
 
-# Via WebAssembly Text
+# Compilar via WebAssembly Text
 python flux_wat.py flux/ExampleOfArithmetic.flux
 
-# Via WebAssembly Binário
+# Compilar via WebAssembly Binário
 python flux_was.py flux/ExampleOfArithmetic.flux
 ```
 
