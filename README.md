@@ -122,7 +122,7 @@ O harness backend_compliance.py valida todos os arquivos de teste simultaneament
 python backend_compliance.py
 ```
 
-> **Status Atual**: **236/236 arquivos com 100% de conformidade nos 6 backends** (1416/1416 verificações verdes, 0 divergências, 0 regressões).
+> **Status Atual**: **305/305 arquivos com 100% de conformidade nos 6 backends** (1830/1830 verificações verdes, 0 divergências, 0 regressões).
 
 ---
 
@@ -141,3 +141,6 @@ Acesse http://localhost:8000 para editar, compilar e executar TheFlux no browser
 ## 📄 Licença
 
 Este projeto é desenvolvido para fins de pesquisa e desenvolvimento de linguagens de programação. Consulte a documentação em docs/ para obter detalhes completos da especificação e licença.
+
+               GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007 Copyright (C) 2007 Free Software
