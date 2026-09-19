@@ -35,6 +35,11 @@ TheFlux introduz um modelo expressivo centrado em **contratos** (contract), **ag
 
 ```text
 TheFlux/
+├── docs/                        # Especificação EBNF, gramática e documentação técnica
+├── fdsl/                        # 11 agentes FDSL de exemplo (AgentOf*.fdsl)
+├── flux/                        # 305 programas e suítes de teste (.flux)
+├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
+├── runtime/                     # Suporte de runtime
 ├── src/                         # Núcleo do compilador e backends (src/flux_proto)
 │   └── flux_proto/              # Lexer, Parser, AST, Semântica, VM, LLVM, WAT, WASM
 │       ├── ast/                 # Árvores sintáticas (AST, DDG, grafo de dependência)
@@ -74,29 +79,34 @@ TheFlux/
 │   ├── StatStdLib.fdsl          # Estatística descritiva, distribuições e inferência
 │   ├── StringStdLib.fdsl        # Manipulação e mutação de strings
 │   └── StructStdLib.fdsl        # Estruturas e contratos de dados
-├── fdsl/                        # 11 agentes FDSL de exemplo (AgentOf*.fdsl)
-├── flux/                        # 305 programas e suítes de teste (.flux)
-├── docs/                        # Especificação EBNF, gramática e documentação técnica
+├── t_benchmarks                 # Testes: bechmarks
+├── t_fvmbc/                     # Testes: VM bytecode
+├── t_general/                   # Testes: gerais
+├── t_llvm/                      # Testes: LLVM+CLANG (.exe)
+├── t_wasm-1.0/                  # Testes: WebAssembly Binary versão 1.0
+├── t_wasm-2.0/                  # Testes: WebAssembly Binary versão 2.0
+├── t_wasm-3.0/                  # Testes: WebAssembly Binary versão 3.0
+├── t_wat-1.0/                   # Testes: WebAssembly Text versão 1.0
+├── t_wat-2.0/                   # Testes: WebAssembly Text versão 2.0
+├── t_wat-3.0/                   # Testes: WebAssembly Text versão 3.0
 ├── web_wasm/                    # Frontend web e playground interativo WebAssembly
-├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
-├── runtime/                     # Suporte de runtime
-├── t_general/ t_fvmbc/          # Testes: gerais, VM bytecode
-├── t_llvm/ t_wasm-*             # Testes: LLVM e WebAssembly
-├── t_wat-*                      # Testes: WebAssembly Text
-├── flux_in.py                   # Runner: interpretador AST interativo
-├── flux_vm.py                   # Runner: compilar via VM bytecode
-├── flux_vmr.py                  # Runner: executar bytecode via VM runner
-├── flux_lv.py                   # Runner: compilar via LLVM nativo
-├── flux_wat.py                  # Runner: compilar via WebAssembly Text
-├── flux_was.py                  # Runner: compilar via WebAssembly Binário
+├── backend_compliance.py        # Harness de testes de conformidade dos 6 backends
+├── backend_compliance.md        # Matriz oficial de conformidade dos testes (100% PASS)
+├── backend_compliance_OLD.md    # Matriz oficial de conformidade dos testes (100% PASS) versão anterior
 ├── exemplos_in.py               # Suíte: exemplos via interpretador AST
 ├── exemplos_lv.py               # Suíte: exemplos via LLVM nativo
 ├── exemplos_vm.py               # Suíte: exemplos via VM bytecode
 ├── exemplos_vmr.py              # Suíte: exemplos via VM runner
-├── exemplos_wat.py              # Suíte: exemplos via WebAssembly Text
 ├── exemplos_was.py              # Suíte: exemplos via WebAssembly Binário
-├── backend_compliance.py        # Harness de testes de conformidade dos 6 backends
-└── backend_compliance.md        # Matriz oficial de conformidade dos testes (100% PASS)
+├── exemplos_wat.py              # Suíte: exemplos via WebAssembly Text
+├── flux_in.py                   # Runner: interpretador AST interativo
+├── flux_vm.py                   # Runner: compilar via VM bytecode
+├── flux_vmr.py                  # Runner: executar bytecode via VM runner
+├── flux_lv.py                   # Runner: compilar via LLVM nativo
+├── flux_was.py                  # Runner: compilar via WebAssembly Binário
+└── flux_wat.py                  # Runner: compilar via WebAssembly Text
+
+
 ```
 
 ---
