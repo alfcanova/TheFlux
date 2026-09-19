@@ -1,0 +1,1243 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RegexStdLib
+#L Modulo nativo para operacoes de expressoes regulares (Regex)
+#L Implementacao 100% nativa em TheFlux (sem intrinsicos ou dependencias externas)
+#L Colaboracao nativa com StringStdLib e CharStdLib para maxima performance e DRY
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+use StringStdLib
+use CharStdLib
+
+#L ==============================================================================
+#L 1. Contratos da RegexStdLib
+#L ==============================================================================
+
+contract (RegexSearchContract) {
+      op regexIsMatch (as string: pattern, as string: text) as bool
+      op regexFullMatch (as string: pattern, as string: text) as bool
+      op regexFind (as string: pattern, as string: text) as string
+      op regexFindAll (as string: pattern, as string: text) as list of data
+      op regexFindIndex (as string: pattern, as string: text) as int64
+      op regexFindSpan (as string: pattern, as string: text) as list of data
+      op regexFindAllSpans (as string: pattern, as string: text) as list of data
+      op regexCount (as string: pattern, as string: text) as int64
+}
+
+contract (RegexTransformContract) {
+      op regexReplace (as string: pattern, as string: text, as string: replacement) as string
+      op regexReplaceFirst (as string: pattern, as string: text, as string: replacement) as string
+      op regexReplaceLimit (as string: pattern, as string: text, as string: replacement, as int64: max_count) as string
+      op regexSplit (as string: pattern, as string: text) as list of data
+      op regexSplitLimit (as string: pattern, as string: text, as int64: limit) as list of data
+}
+
+contract (RegexCaptureContract) {
+      op regexCaptureGroups (as string: pattern, as string: text) as map
+      op regexCaptureAll (as string: pattern, as string: text) as list of data
+      op regexExtractGroups (as string: pattern, as string: text) as list of data
+      op regexExtractAllGroups (as string: pattern, as string: text) as list of data
+}
+
+contract (RegexUtilityContract) {
+      op regexEscape (as string: text) as string
+      op regexIsValid (as string: pattern) as bool
+      op regexIsPatternLiteral (as string: pattern) as bool
+      op regexMatchWithFlags (as string: pattern, as string: text, as string: flags) as bool
+}
+
+contract (RegexPresetContract) {
+      op regexIsEmail (as string: text) as bool
+      op regexIsUrl (as string: text) as bool
+      op regexIsUuid (as string: text) as bool
+      op regexIsIpv4 (as string: text) as bool
+      op regexIsNumeric (as string: text) as bool
+      op regexIsDate (as string: text) as bool
+}
+
+#L ==============================================================================
+#L 2. Implementacao do Agente RegexStdLib
+#L ==============================================================================
+
+agent (RegexStdLib) impl RegexSearchContract, RegexTransformContract, RegexCaptureContract, RegexUtilityContract, RegexPresetContract {
+
+      #L --------------------------------------------------------------------------
+      #L Funcoes Auxiliares Internas do Motor de Regex
+      #L --------------------------------------------------------------------------
+
+      op _listLen (as list of data: lst) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in lst) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _isMetaChar (as string: c) as bool ==> {
+            mut as bool: res = (c == "^" or c == "$" or c == "." or c == "*" or c == "+" or c == "?" or c == "[" or c == "]" or c == "(" or c == ")" or c == "{" or c == "}" or c == "\\" or c == "|")
+            emit(nice, res, "ok")
+      }
+
+      op _isPatternLiteral (as string: pattern) as bool ==> {
+            mut as bool: lit = true
+            infinite (c in pattern) {
+                  route {
+                        _isMetaChar(c) ==> {
+                              lit = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, lit, "ok")
+      }
+
+      op _strToInt (as string: text) as int64 ==> {
+            mut as int64: val = 0
+            mut as string: t = stringTrim(text)
+            infinite (c in t) {
+                  route {
+                        charIsDigit(c) ==> {
+                              val = val * 10 + charToDigit(c)
+                        }
+                  }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op _copyMap (as map: src) as map ==> {
+            mut as map: dst = map{}
+            infinite (k in src) {
+                  dst[k] = src[k]
+            }
+            emit(nice, dst, "ok")
+      }
+
+      op _matchAtom (as map: tok, as string: ch) as bool ==> {
+            mut as string: tt = "" + tok["type"]
+            route {
+                  tt == "dot" ==> {
+                        emit(nice, ch != "\n", "ok")
+                  }
+                  tt == "char" ==> {
+                        mut as string: expected = "" + tok["char"]
+                        emit(nice, ch == expected, "ok")
+                  }
+                  tt == "digit" ==> {
+                        emit(nice, charIsDigit(ch), "ok")
+                  }
+                  tt == "nondigit" ==> {
+                        emit(nice, not charIsDigit(ch), "ok")
+                  }
+                  tt == "word" ==> {
+                        emit(nice, charIsAlphanumeric(ch) or ch == "_", "ok")
+                  }
+                  tt == "nonword" ==> {
+                        emit(nice, (not charIsAlphanumeric(ch)) and ch != "_", "ok")
+                  }
+                  tt == "space" ==> {
+                        emit(nice, charIsWhitespace(ch), "ok")
+                  }
+                  tt == "nonspace" ==> {
+                        emit(nice, not charIsWhitespace(ch), "ok")
+                  }
+                  tt == "class" ==> {
+                        mut as bool: hit = false
+                        mut as string: chars = "" + tok["chars"]
+                        route {
+                              stringLength(chars) > 0 and stringContains(chars, ch) ==> {
+                                    hit = true
+                              }
+                        }
+                        route {
+                              not hit ==> {
+                                    mut as string: rng = "" + tok["ranges"]
+                                    mut as int64: r_len = stringLength(rng)
+                                    mut as int64: ri = 1
+                                    infinite (ri < r_len) {
+                                          mut as string: lo = rng[ri]
+                                          mut as string: hi = rng[ri + 1]
+                                          route {
+                                                ch >= lo and ch <= hi ==> {
+                                                      hit = true
+                                                      break
+                                                }
+                                          }
+                                          ri = ri + 2
+                                    }
+                              }
+                        }
+                        mut as bool: neg = (tok["neg"] == true)
+                        route {
+                              neg ==> {
+                                    emit(nice, not hit, "ok")
+                              }
+                              _ ==> {
+                                    emit(nice, hit, "ok")
+                              }
+                        }
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op _parseTokens (as string: pattern) as list of data ==> {
+            mut as int64: len_p = stringLength(pattern)
+            mut as list of data: toks = []
+            mut as int64: tok_count = 0
+            mut as int64: idx = 1
+            mut as int64: group_counter = 0
+
+            infinite (idx <= len_p) {
+                  mut as string: c = pattern[idx]
+                  mut as map: tok = map{}
+
+                  route {
+                        c == "\\" ==> {
+                              route {
+                                    idx + 1 <= len_p ==> {
+                                          mut as string: nxt = pattern[idx + 1]
+                                          idx = idx + 2
+                                          route {
+                                                nxt == "d" ==> { tok["type"] = "digit" }
+                                                nxt == "D" ==> { tok["type"] = "nondigit" }
+                                                nxt == "w" ==> { tok["type"] = "word" }
+                                                nxt == "W" ==> { tok["type"] = "nonword" }
+                                                nxt == "s" ==> { tok["type"] = "space" }
+                                                nxt == "S" ==> { tok["type"] = "nonspace" }
+                                                nxt == "t" ==> {
+                                                      tok["type"] = "char"
+                                                      tok["char"] = "\t"
+                                                }
+                                                nxt == "n" ==> {
+                                                      tok["type"] = "char"
+                                                      tok["char"] = "\n"
+                                                }
+                                                nxt == "r" ==> {
+                                                      tok["type"] = "char"
+                                                      tok["char"] = "\r"
+                                                }
+                                                _ ==> {
+                                                      tok["type"] = "char"
+                                                      tok["char"] = nxt
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          tok["type"] = "char"
+                                          tok["char"] = "\\"
+                                          idx = idx + 1
+                                    }
+                              }
+                        }
+                        c == "." ==> {
+                              tok["type"] = "dot"
+                              idx = idx + 1
+                        }
+                        c == "[" ==> {
+                              mut as int64: j = idx + 1
+                              infinite (j <= len_p) {
+                                    route {
+                                          pattern[j] == "\\" ==> { j = j + 2 }
+                                          pattern[j] == "]" ==> { break }
+                                          _ ==> { j = j + 1 }
+                                    }
+                              }
+                              mut as int64: close_br = j
+                              route { close_br > len_p ==> { close_br = len_p } }
+                              mut as string: content = stringSlice(pattern, idx + 1, close_br - 1)
+                              idx = close_br + 1
+                              tok["type"] = "class"
+                              mut as bool: neg = false
+                              mut as int64: c_idx = 1
+                              mut as int64: c_len = stringLength(content)
+                              route {
+                                    c_len > 0 and content[1] == "^" ==> {
+                                          neg = true
+                                          c_idx = 2
+                                    }
+                              }
+                              tok["neg"] = neg
+                              mut as string: chars = ""
+                              mut as string: ranges = ""
+                              infinite (c_idx <= c_len) {
+                                    mut as bool: is_range = false
+                                    route {
+                                          c_idx + 2 <= c_len ==> {
+                                                route {
+                                                      content[c_idx + 1] == "-" ==> {
+                                                            is_range = true
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    route {
+                                          is_range ==> {
+                                                ranges = ranges + content[c_idx] + content[c_idx + 2]
+                                                c_idx = c_idx + 3
+                                          }
+                                          _ ==> {
+                                                chars = chars + content[c_idx]
+                                                c_idx = c_idx + 1
+                                          }
+                                    }
+                              }
+                              tok["chars"] = chars
+                              tok["ranges"] = ranges
+                        }
+                        c == "(" ==> {
+                              mut as int64: depth = 1
+                              mut as int64: j = idx + 1
+                              infinite (j <= len_p and depth > 0) {
+                                    route {
+                                          pattern[j] == "\\" ==> {
+                                                j = j + 2
+                                          }
+                                          pattern[j] == "(" ==> {
+                                                depth = depth + 1
+                                                j = j + 1
+                                          }
+                                          pattern[j] == ")" ==> {
+                                                depth = depth - 1
+                                                j = j + 1
+                                          }
+                                          _ ==> {
+                                                j = j + 1
+                                          }
+                                    }
+                              }
+                              mut as int64: close_paren = j
+                              mut as string: sub_pat = stringSlice(pattern, idx + 1, close_paren - 2)
+                              idx = close_paren
+                              group_counter = group_counter + 1
+                              tok["type"] = "group"
+                              tok["gid"] = group_counter
+                              mut as list of data: sub_t = _parseTokens(sub_pat)
+                              tok["sub"] = sub_t
+                              tok["sub_len"] = _listLen(sub_t)
+                        }
+                        _ ==> {
+                              tok["type"] = "char"
+                              tok["char"] = c
+                              idx = idx + 1
+                        }
+                  }
+
+                  #L Analise de quantificadores (*, +, ?, {n}, {min,max})
+                  mut as int64: mn = 1
+                  mut as int64: mx = 1
+                  route {
+                        idx <= len_p ==> {
+                              mut as string: q = pattern[idx]
+                              route {
+                                    q == "*" ==> {
+                                          mn = 0
+                                          mx = 999999
+                                          idx = idx + 1
+                                    }
+                                    q == "+" ==> {
+                                          mn = 1
+                                          mx = 999999
+                                          idx = idx + 1
+                                    }
+                                    q == "?" ==> {
+                                          mn = 0
+                                          mx = 1
+                                          idx = idx + 1
+                                    }
+                                    q == "{" ==> {
+                                          mut as int64: sub_rem_len = len_p - idx + 1
+                                          mut as string: rem_p = stringSlice(pattern, idx, len_p)
+                                          mut as int64: cb = stringIndexOf(rem_p, "}")
+                                          route {
+                                                cb > 0 ==> {
+                                                      mut as int64: act_cb = idx + cb - 1
+                                                      mut as string: inner = stringSlice(pattern, idx + 1, act_cb - 1)
+                                                      idx = act_cb + 1
+                                                      route {
+                                                            stringContains(inner, ",") ==> {
+                                                                  mut as list of data: pts = stringSplit(inner, ",")
+                                                                  mn = _strToInt("" + pts[1])
+                                                                  route {
+                                                                        _listLen(pts) >= 2 and stringLength(stringTrim("" + pts[2])) > 0 ==> {
+                                                                              mx = _strToInt("" + pts[2])
+                                                                        }
+                                                                        _ ==> {
+                                                                              mx = 999999
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  mn = _strToInt(inner)
+                                                                  mx = mn
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  tok["min"] = mn
+                  tok["max"] = mx
+                  tok_count = tok_count + 1
+                  toks[tok_count] = tok
+            }
+            emit(nice, toks, "ok")
+      }
+
+      op _matchSeq (as list of data: toks, as int64: t_idx, as int64: num_toks, as string: s, as int64: len_s, as int64: pos, as map: groups) as map ==> {
+            route {
+                  t_idx > num_toks ==> {
+                        mut as map: res_ok = map{}
+                        res_ok["matched"] = true
+                        res_ok["end"] = pos - 1
+                        res_ok["groups"] = groups
+                        emit(nice, res_ok, "ok")
+                  }
+            }
+
+            mut as map: tok = toks[t_idx] as map
+            mut as string: ttype = "" + tok["type"]
+            route {
+                  ttype == "group" ==> {
+                        mut as list of data: sub_toks = tok["sub"] as list of data
+                        mut as int64: sub_len = tok["sub_len"] as int64
+                        mut as int64: gid = tok["gid"] as int64
+                        mut as int64: t_min = tok["min"] as int64
+
+                        #L Tenta casar 1 vez
+                        mut as map: sub_res = _matchSeq(sub_toks, 1, sub_len, s, len_s, pos, groups)
+                        route {
+                              sub_res["matched"] == true ==> {
+                                    mut as int64: sub_end = sub_res["end"] as int64
+                                    mut as map: next_groups = _copyMap(groups)
+                                    mut as list of data: span = []
+                                    span[1] = pos
+                                    span[2] = sub_end
+                                    next_groups["" + gid] = span
+                                    mut as map: next_res = _matchSeq(toks, t_idx + 1, num_toks, s, len_s, sub_end + 1, next_groups)
+                                    route {
+                                          next_res["matched"] == true ==> {
+                                                emit(nice, next_res, "ok")
+                                          }
+                                    }
+                              }
+                        }
+
+                        #L Se min == 0, tenta pular o grupo
+                        route {
+                              t_min == 0 ==> {
+                                    mut as map: skip_res = _matchSeq(toks, t_idx + 1, num_toks, s, len_s, pos, groups)
+                                    route {
+                                          skip_res["matched"] == true ==> {
+                                                emit(nice, skip_res, "ok")
+                                          }
+                                    }
+                              }
+                        }
+
+                        mut as map: fail_m = map{}
+                        fail_m["matched"] = false
+                        fail_m["end"] = -1
+                        fail_m["groups"] = groups
+                        emit(nice, fail_m, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: p = pos
+                        mut as int64: reps = 0
+                        mut as int64: t_max = tok["max"] as int64
+                        mut as int64: t_min = tok["min"] as int64
+
+                        infinite (p <= len_s and reps < t_max) {
+                              mut as string: ch = s[p]
+                              mut as bool: matches = _matchAtom(tok, ch)
+                              route {
+                                    not matches ==> {
+                                          break
+                                    }
+                              }
+                              p = p + 1
+                              reps = reps + 1
+                        }
+
+                        route {
+                              reps < t_min ==> {
+                                    mut as map: fail_reps = map{}
+                                    fail_reps["matched"] = false
+                                    fail_reps["end"] = -1
+                                    fail_reps["groups"] = groups
+                                    emit(nice, fail_reps, "ok")
+                              }
+                        }
+
+                        mut as int64: c = reps
+                        infinite (c >= t_min) {
+                              mut as int64: next_pos = pos + c
+                              mut as map: res_down = _matchSeq(toks, t_idx + 1, num_toks, s, len_s, next_pos, groups)
+                              route {
+                                    res_down["matched"] == true ==> {
+                                          emit(nice, res_down, "ok")
+                                    }
+                              }
+                              c = c - 1
+                        }
+
+                        mut as map: fail_final = map{}
+                        fail_final["matched"] = false
+                        fail_final["end"] = -1
+                        fail_final["groups"] = groups
+                        emit(nice, fail_final, "ok")
+                  }
+            }
+      }
+
+      op _extractGroupsFromMap (as map: gmap, as string: text) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            mut as int64: g = 1
+            infinite (g <= 30) {
+                  mut as string: target_k = "" + g
+                  mut as bool: has_key = false
+                  infinite (k in gmap) {
+                        route {
+                              k == target_k ==> {
+                                    has_key = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not has_key ==> {
+                              break
+                        }
+                        _ ==> {
+                              mut as list of data: sp = gmap[target_k] as list of data
+                              mut as int64: s_idx = sp[1] as int64
+                              mut as int64: e_idx = sp[2] as int64
+                              mut as string: match_str = ""
+                              route {
+                                    s_idx > 0 and e_idx >= s_idx ==> {
+                                          match_str = stringSlice(text, s_idx, e_idx)
+                                    }
+                              }
+                              count = count + 1
+                              res[count] = match_str
+                        }
+                  }
+                  g = g + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _findAllSpansAndGroups (as string: pattern, as string: text) as map ==> {
+            mut as bool: anchor_start = false
+            mut as bool: anchor_end = false
+            mut as string: p = pattern
+            mut as int64: len_p = stringLength(p)
+            mut as int64: len_t = stringLength(text)
+
+            route {
+                  len_p > 0 and stringStartsWith(p, "^") ==> {
+                        anchor_start = true
+                        p = stringDrop(p, 1)
+                        len_p = stringLength(p)
+                  }
+            }
+            route {
+                  len_p > 0 and stringEndsWith(p, "$") ==> {
+                        mut as bool: is_escaped = false
+                        route {
+                              len_p >= 2 ==> {
+                                    route {
+                                          p[len_p - 1] == "\\" ==> {
+                                                is_escaped = true
+                                          }
+                                    }
+                              }
+                        }
+                        route {
+                              not is_escaped ==> {
+                                    anchor_end = true
+                                    p = stringTake(p, len_p - 1)
+                                    len_p = stringLength(p)
+                              }
+                        }
+                  }
+            }
+
+            mut as list of data: spans = []
+            mut as list of data: all_groups = []
+            mut as int64: span_count = 0
+
+            #L Caminho Rapido: se nao ha metacaracteres e nem ancoras, usa busca linear de StringStdLib
+            mut as bool: is_lit = _isPatternLiteral(p)
+            route {
+                  is_lit and (not anchor_start) and (not anchor_end) ==> {
+                        route {
+                              len_p > 0 and len_t >= len_p ==> {
+                                    mut as int64: cur = 1
+                                    infinite (cur <= len_t) {
+                                          mut as string: rem = stringSlice(text, cur, len_t)
+                                          mut as int64: rel_idx = stringIndexOf(rem, p)
+                                          route {
+                                                rel_idx < 1 ==> {
+                                                      break
+                                                }
+                                                _ ==> {
+                                                      mut as int64: s_idx = cur + rel_idx - 1
+                                                      mut as int64: e_idx = s_idx + len_p - 1
+                                                      mut as list of data: sp = []
+                                                      sp[1] = s_idx
+                                                      sp[2] = e_idx
+                                                      span_count = span_count + 1
+                                                      spans[span_count] = sp
+
+                                                      mut as list of data: grp_item = []
+                                                      grp_item[1] = p
+                                                      all_groups[span_count] = grp_item
+
+                                                      cur = e_idx + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                        mut as map: fast_res = map{}
+                        fast_res["spans"] = spans
+                        fast_res["groups"] = all_groups
+                        emit(nice, fast_res, "ok")
+                  }
+            }
+
+            #L Motor de Autômato Regex com Backtracking
+            mut as list of data: toks = _parseTokens(p)
+            mut as int64: num_toks = _listLen(toks)
+
+            route {
+                  anchor_start ==> {
+                        mut as map: m = _matchSeq(toks, 1, num_toks, text, len_t, 1, map{})
+                        route {
+                              m["matched"] == true ==> {
+                                    mut as int64: e_pos = m["end"] as int64
+                                    route {
+                                          (not anchor_end) or (e_pos == len_t) ==> {
+                                                mut as list of data: sp = []
+                                                sp[1] = 1
+                                                sp[2] = e_pos
+                                                span_count = span_count + 1
+                                                spans[span_count] = sp
+                                                mut as list of data: grps = _extractGroupsFromMap(m["groups"] as map, text)
+                                                all_groups[span_count] = grps
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {
+                        mut as int64: cur = 1
+                        infinite (cur <= len_t) {
+                              mut as map: m = _matchSeq(toks, 1, num_toks, text, len_t, cur, map{})
+                              route {
+                                    m["matched"] == true ==> {
+                                          mut as int64: e_pos = m["end"] as int64
+                                          route {
+                                                anchor_end and e_pos != len_t ==> {
+                                                      cur = cur + 1
+                                                }
+                                                _ ==> {
+                                                      mut as list of data: sp = []
+                                                      sp[1] = cur
+                                                      sp[2] = e_pos
+                                                      span_count = span_count + 1
+                                                      spans[span_count] = sp
+                                                      mut as list of data: grps = _extractGroupsFromMap(m["groups"] as map, text)
+                                                      all_groups[span_count] = grps
+
+                                                      mut as int64: next_cur = e_pos + 1
+                                                      route {
+                                                            next_cur <= cur ==> {
+                                                                  next_cur = cur + 1
+                                                            }
+                                                      }
+                                                      cur = next_cur
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          cur = cur + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: res_all = map{}
+            res_all["spans"] = spans
+            res_all["groups"] = all_groups
+            emit(nice, res_all, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. RegexSearchContract
+      #L ==============================================================================
+
+      op regexIsMatch (as string: pattern, as string: text) as bool ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: count = _listLen(sp)
+            emit(nice, count > 0, "ok")
+      }
+
+      op regexFullMatch (as string: pattern, as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as map: m = _findAllSpansAndGroups("^" + pattern + "$", text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: count = _listLen(sp)
+            route {
+                  count > 0 ==> {
+                        mut as list of data: first_sp = sp[1] as list of data
+                        mut as int64: s_idx = first_sp[1] as int64
+                        mut as int64: e_idx = first_sp[2] as int64
+                        emit(nice, s_idx == 1 and e_idx == len_t, "ok")
+                  }
+            }
+            emit(nice, false, "ok")
+      }
+
+      op regexFind (as string: pattern, as string: text) as string ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: count = _listLen(sp)
+            route {
+                  count > 0 ==> {
+                        mut as list of data: first_sp = sp[1] as list of data
+                        mut as int64: s_idx = first_sp[1] as int64
+                        mut as int64: e_idx = first_sp[2] as int64
+                        emit(nice, stringSlice(text, s_idx, e_idx), "ok")
+                  }
+            }
+            emit(nice, "", "ok")
+      }
+
+      op regexFindAll (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (item in sp) {
+                  mut as list of data: s_item = item as list of data
+                  mut as int64: s_idx = s_item[1] as int64
+                  mut as int64: e_idx = s_item[2] as int64
+                  count = count + 1
+                  res[count] = stringSlice(text, s_idx, e_idx)
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexFindIndex (as string: pattern, as string: text) as int64 ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: count = _listLen(sp)
+            route {
+                  count > 0 ==> {
+                        mut as list of data: first_sp = sp[1] as list of data
+                        mut as int64: s_idx = first_sp[1] as int64
+                        emit(nice, s_idx, "ok")
+                  }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op regexFindSpan (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: count = _listLen(sp)
+            route {
+                  count > 0 ==> {
+                        emit(nice, sp[1], "ok")
+                  }
+            }
+            mut as list of data: empty_sp = []
+            empty_sp[1] = 0
+            empty_sp[2] = 0
+            emit(nice, empty_sp, "ok")
+      }
+
+      op regexFindAllSpans (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            emit(nice, m["spans"], "ok")
+      }
+
+      op regexCount (as string: pattern, as string: text) as int64 ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            emit(nice, _listLen(sp), "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. RegexTransformContract
+      #L ==============================================================================
+
+      op regexReplace (as string: pattern, as string: text, as string: replacement) as string ==> {
+            emit(nice, regexReplaceLimit(pattern, text, replacement, -1), "ok")
+      }
+
+      op regexReplaceFirst (as string: pattern, as string: text, as string: replacement) as string ==> {
+            emit(nice, regexReplaceLimit(pattern, text, replacement, 1), "ok")
+      }
+
+      op regexReplaceLimit (as string: pattern, as string: text, as string: replacement, as int64: max_count) as string ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: len_sp = _listLen(sp)
+            route {
+                  len_sp == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+
+            mut as string: res = ""
+            mut as int64: last_pos = 1
+            mut as int64: rep_count = 0
+            mut as int64: len_t = stringLength(text)
+
+            infinite (item in sp) {
+                  route {
+                        max_count > 0 and rep_count >= max_count ==> {
+                              break
+                        }
+                  }
+                  mut as list of data: s_item = item as list of data
+                  mut as int64: s_idx = s_item[1] as int64
+                  mut as int64: e_idx = s_item[2] as int64
+                  route {
+                        s_idx > last_pos ==> {
+                              res = res + stringSlice(text, last_pos, s_idx - 1)
+                        }
+                  }
+                  res = res + replacement
+                  last_pos = e_idx + 1
+                  rep_count = rep_count + 1
+            }
+
+            route {
+                  last_pos <= len_t ==> {
+                        res = res + stringSlice(text, last_pos, len_t)
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexSplit (as string: pattern, as string: text) as list of data ==> {
+            emit(nice, regexSplitLimit(pattern, text, -1), "ok")
+      }
+
+      op regexSplitLimit (as string: pattern, as string: text, as int64: limit) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: len_sp = _listLen(sp)
+            route {
+                  len_sp == 0 ==> {
+                        mut as list of data: single = []
+                        single[1] = text
+                        emit(nice, single, "ok")
+                  }
+            }
+
+            mut as list of data: parts = []
+            mut as int64: count = 0
+            mut as int64: last_pos = 1
+            mut as int64: split_count = 0
+            mut as int64: len_t = stringLength(text)
+
+            infinite (item in sp) {
+                  route {
+                        limit > 0 and split_count >= limit - 1 ==> {
+                              break
+                        }
+                  }
+                  mut as list of data: s_item = item as list of data
+                  mut as int64: s_idx = s_item[1] as int64
+                  mut as int64: e_idx = s_item[2] as int64
+                  mut as string: piece = ""
+                  route {
+                        s_idx > last_pos ==> {
+                              piece = stringSlice(text, last_pos, s_idx - 1)
+                        }
+                  }
+                  count = count + 1
+                  parts[count] = piece
+                  last_pos = e_idx + 1
+                  split_count = split_count + 1
+            }
+
+            mut as string: rem_piece = ""
+            route {
+                  last_pos <= len_t ==> {
+                        rem_piece = stringSlice(text, last_pos, len_t)
+                  }
+            }
+            count = count + 1
+            parts[count] = rem_piece
+            emit(nice, parts, "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. RegexCaptureContract
+      #L ==============================================================================
+
+      op regexExtractGroups (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: all_g = m["groups"] as list of data
+            mut as int64: count = _listLen(all_g)
+            route {
+                  count > 0 ==> {
+                        emit(nice, all_g[1], "ok")
+                  }
+            }
+            mut as list of data: empty_l = []
+            emit(nice, empty_l, "ok")
+      }
+
+      op regexExtractAllGroups (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            emit(nice, m["groups"], "ok")
+      }
+
+      op regexCaptureGroups (as string: pattern, as string: text) as map ==> {
+            mut as list of data: grp_list = regexExtractGroups(pattern, text)
+            mut as map: res = map{}
+            mut as int64: idx = 1
+            infinite (item in grp_list) {
+                  res["" + idx] = item
+                  idx = idx + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexCaptureAll (as string: pattern, as string: text) as list of data ==> {
+            mut as list of data: all_grps = regexExtractAllGroups(pattern, text)
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (grp_item in all_grps) {
+                  mut as list of data: items = grp_item as list of data
+                  mut as map: m = map{}
+                  mut as int64: idx = 1
+                  infinite (sub_item in items) {
+                        m["" + idx] = sub_item
+                        idx = idx + 1
+                  }
+                  count = count + 1
+                  res[count] = m
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. RegexUtilityContract
+      #L ==============================================================================
+
+      op regexEscape (as string: text) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  route {
+                        _isMetaChar(c) ==> {
+                              res = res + "\\" + c
+                        }
+                        _ ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexIsValid (as string: pattern) as bool ==> {
+            mut as int64: paren_depth = 0
+            mut as int64: bracket_depth = 0
+            mut as int64: brace_depth = 0
+            mut as bool: in_escape = false
+            mut as bool: valid = true
+
+            infinite (c in pattern) {
+                  route {
+                        in_escape ==> {
+                              in_escape = false
+                        }
+                        c == "\\" ==> {
+                              in_escape = true
+                        }
+                        c == "(" ==> {
+                              paren_depth = paren_depth + 1
+                        }
+                        c == ")" ==> {
+                              paren_depth = paren_depth - 1
+                              route {
+                                    paren_depth < 0 ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                        c == "[" ==> {
+                              bracket_depth = bracket_depth + 1
+                        }
+                        c == "]" ==> {
+                              bracket_depth = bracket_depth - 1
+                              route {
+                                    bracket_depth < 0 ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                        c == "{" ==> {
+                              brace_depth = brace_depth + 1
+                        }
+                        c == "}" ==> {
+                              brace_depth = brace_depth - 1
+                              route {
+                                    brace_depth < 0 ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  in_escape or paren_depth != 0 or bracket_depth != 0 or brace_depth != 0 ==> {
+                        valid = false
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      op regexIsPatternLiteral (as string: pattern) as bool ==> {
+            mut as bool: lit = _isPatternLiteral(pattern)
+            emit(nice, lit, "ok")
+      }
+
+      op regexMatchWithFlags (as string: pattern, as string: text, as string: flags) as bool ==> {
+            mut as string: p = pattern
+            mut as string: t = text
+            route {
+                  stringContains(flags, "i") ==> {
+                        p = stringLower(pattern)
+                        t = stringLower(text)
+                  }
+            }
+            emit(nice, regexIsMatch(p, t), "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. RegexPresetContract
+      #L ==============================================================================
+
+      op regexIsEmail (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t < 6 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as int64: at_idx = stringIndexOf(text, "@")
+            route {
+                  at_idx <= 1 or at_idx >= len_t ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as string: local_part = stringSlice(text, 1, at_idx - 1)
+            mut as string: domain_part = stringSlice(text, at_idx + 1, len_t)
+
+            #L Local part nao pode comecar ou terminar com ponto
+            route {
+                  stringStartsWith(local_part, ".") or stringEndsWith(local_part, ".") ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            #L Domain part deve ter ao menos um ponto
+            mut as int64: dot_idx = stringIndexOf(domain_part, ".")
+            route {
+                  dot_idx <= 1 or dot_idx >= stringLength(domain_part) ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+
+            #L Validar expressao completa do e-mail
+            mut as bool: match_fmt = regexIsMatch("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", text)
+            emit(nice, match_fmt, "ok")
+      }
+
+      op regexIsUrl (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t < 4 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as string: target = text
+            route {
+                  stringStartsWith(target, "http://") ==> {
+                        target = stringDrop(target, 7)
+                  }
+                  stringStartsWith(target, "https://") ==> {
+                        target = stringDrop(target, 8)
+                  }
+            }
+            mut as int64: dot_pos = stringIndexOf(target, ".")
+            route {
+                  dot_pos <= 1 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as bool: ok = regexIsMatch("^[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}(/.*)?$", target)
+            emit(nice, ok, "ok")
+      }
+
+      op regexIsUuid (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t != 36 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            #L 8-4-4-4-12
+            route {
+                  text[9] != "-" or text[14] != "-" or text[19] != "-" or text[24] != "-" ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as bool: all_hex = true
+            mut as int64: idx = 1
+            infinite (idx <= 36) {
+                  route {
+                        idx != 9 and idx != 14 and idx != 19 and idx != 24 ==> {
+                              mut as string: ch = text[idx]
+                              route {
+                                    not charIsHexDigit(ch) ==> {
+                                          all_hex = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, all_hex, "ok")
+      }
+
+      op regexIsIpv4 (as string: text) as bool ==> {
+            mut as list of data: parts = stringSplit(text, ".")
+            mut as int64: num_parts = _listLen(parts)
+            route {
+                  num_parts != 4 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+
+            mut as bool: valid_ip = true
+            infinite (p in parts) {
+                  mut as string: part_s = "" + p
+                  mut as int64: p_len = stringLength(part_s)
+                  route {
+                        p_len < 1 or p_len > 3 ==> {
+                              valid_ip = false
+                              break
+                        }
+                  }
+                  route {
+                        p_len > 1 and stringStartsWith(part_s, "0") ==> {
+                              valid_ip = false
+                              break
+                        }
+                  }
+                  mut as int64: octet = 0
+                  infinite (c in part_s) {
+                        route {
+                              not charIsDigit(c) ==> {
+                                    valid_ip = false
+                                    break
+                              }
+                        }
+                        octet = octet * 10 + charToDigit(c)
+                  }
+                  route {
+                        octet < 0 or octet > 255 ==> {
+                              valid_ip = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid_ip, "ok")
+      }
+
+      op regexIsNumeric (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as int64: idx = 1
+            route {
+                  text[1] == "+" or text[1] == "-" ==> {
+                        idx = 2
+                  }
+            }
+            route {
+                  idx > len_t ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as bool: is_num = true
+            infinite (idx <= len_t) {
+                  route {
+                        not charIsDigit(text[idx]) ==> {
+                              is_num = false
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, is_num, "ok")
+      }
+
+      op regexIsDate (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t != 10 ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as bool: is_iso = (text[5] == "-" and text[8] == "-")
+            mut as bool: is_br = (text[3] == "/" and text[6] == "/")
+            route {
+                  (not is_iso) and (not is_br) ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+
+            mut as int64: y = 0
+            mut as int64: m = 0
+            mut as int64: d = 0
+
+            route {
+                  is_iso ==> {
+                        y = _strToInt(stringSlice(text, 1, 4))
+                        m = _strToInt(stringSlice(text, 6, 7))
+                        d = _strToInt(stringSlice(text, 9, 10))
+                  }
+                  is_br ==> {
+                        d = _strToInt(stringSlice(text, 1, 2))
+                        m = _strToInt(stringSlice(text, 4, 5))
+                        y = _strToInt(stringSlice(text, 7, 10))
+                  }
+            }
+
+            mut as bool: valid = (y >= 1000 and y <= 9999 and m >= 1 and m <= 12 and d >= 1 and d <= 31)
+            emit(nice, valid, "ok")
+      }
+}

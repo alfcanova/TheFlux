@@ -1,0 +1,30 @@
+#L Contratos de Comportamento
+contract (Animal) {
+      op emitirSom (as string: nome) as string
+}
+
+contract (Domesticavel) {
+      op passear (as string: nome, as string: local) as string
+}
+
+contract (Vacinavel) {
+      op registrarVacina (as string: nome, as string: vacina) as string
+}
+
+#L Agente que herda e implementa os 3 contratos
+agent (AgentOfOOStdLib_CachorroMultiContrato) impl Animal, Domesticavel, Vacinavel {
+      op emitirSom (as string: nome) as string ==> {
+            mut as string: latido = nome + " diz: Au Au! 🐶"
+            emit(nice, latido, "Som emitido")
+      }
+
+      op passear (as string: nome, as string: local) as string ==> {
+            mut as string: msg = nome + " esta passeando alegremente no " + local
+            emit(nice, msg, "Passeio registrado")
+      }
+
+      op registrarVacina (as string: nome, as string: vacina) as string ==> {
+            mut as string: info = "Vacina " + vacina + " aplicada com sucesso em " + nome
+            emit(nice, info, "Vacinacao concluida")
+      }
+}

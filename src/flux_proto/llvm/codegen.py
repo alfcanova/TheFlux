@@ -123,7 +123,7 @@ def _elem_tag(et: str) -> int:
         return 2
     if t in FLOATISH:
         return 3
-    if t.startswith("list of") or t.startswith("set of"):
+    if t.startswith("list of") or t.startswith("set of") or t.startswith("map of") or t in ("map", "data", "result"):
         return 5
     if t == "datetime":
         return 7
@@ -190,6 +190,7 @@ class LLVMCodegen:
         self._function_names: set[str] = set()
         self._function_sigs: dict[str, list[str]] = {}
         self._function_ret: dict[str, str] = {}
+        self._result_ret_types: dict[str, str] = {}
         self._param_tag_slots: dict[str, str] = {}
         self._var_tag_slots: dict[str, str] = {}
         self._var_sval_slots: dict[str, str] = {}
@@ -976,7 +977,17 @@ class LLVMCodegen:
             w.emit("br label %lb_inc")
             w.new_block("lb_num")
             w.emit("%is_flt = icmp eq i64 %igtag, 3")
-            w.emit("br i1 %is_flt, label %lb_flt, label %lb_int")
+            w.emit("br i1 %is_flt, label %lb_flt, label %lb_chk_bool")
+            w.new_block("lb_chk_bool")
+            w.emit("%is_bool = icmp eq i64 %igtag, 2")
+            w.emit("br i1 %is_bool, label %lb_bool, label %lb_int")
+            w.new_block("lb_bool")
+            w.emit("%bv = call i64 @flux_row_val(i8* %data, i64 %iv)")
+            w.emit("%bsel = icmp ne i64 %bv, 0")
+            w.emit("%btf = select i1 %bsel, i8* " + fmt_gep("true") + ", i8* " + fmt_gep("false") + "")
+            w.emit("%cb = call i32 (i8*, i64, i8*, ...) @snprintf(i8* %gep, i64 %rem, i8* " + fstr_fmt + ", i8* %btf)")
+            w.emit("%cbz = zext i32 %cb to i64")
+            w.emit("br label %lb_inc")
             w.new_block("lb_flt")
             w.emit("%fv = call i64 @flux_row_val(i8* %data, i64 %iv)")
             w.emit("%fd = bitcast i64 %fv to double")
@@ -991,7 +1002,7 @@ class LLVMCodegen:
             w.emit("%c4z = zext i32 %c4 to i64")
             w.emit("br label %lb_inc")
             w.new_block("lb_inc")
-            w.emit("%cc = phi i64 [ %c2z, %lb_str ], [ %c3z, %lb_flt ], [ %c4z, %lb_int ], [ %c5z, %lb_nest ]")
+            w.emit("%cc = phi i64 [ %c2z, %lb_str ], [ %c3z, %lb_flt ], [ %cbz, %lb_bool ], [ %c4z, %lb_int ], [ %c5z, %lb_nest ]")
             w.emit("%pc2 = load i64, i64* %pos")
             w.emit("%px = add i64 %pc2, %cc")
             w.emit("store i64 %px, i64* %pos")
@@ -2567,6 +2578,7 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_io_path_dir_name", "i8*", ["i8*"])
             self._w.declare_function("flux_std_io_path_extension", "i8*", ["i8*"])
             self._w.declare_function("flux_std_io_path_join", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_extract_struct_field", "i8*", ["i8*", "i8*"])
             self._w.declare_function("flux_std_io_print_err", "void", ["i8*"])
             self._w.declare_function("flux_std_io_read_lines", "i8*", ["i8*", "i8* (i64, i64)*", "i8* (i8*, i64, i64, i8*)*"])
             self._w.declare_function("flux_std_io_write_lines_helper", "i8*", ["i8*", "i8*", "i64 (i8*)*", "i8* (i8*)*", "i8* (i8*, i64)*", "i32"])
@@ -2834,8 +2846,6 @@ class LLVMCodegen:
             return True
         if item.type_ref is not None and item.type_ref.name.lower().startswith("complex"):
             return False
-        if item.type_ref is not None and (_is_set_type(item.type_ref.name) or _is_list_type(item.type_ref.name) or _is_map_type(item.type_ref.name) or _is_tensor_type(item.type_ref.name)):
-            return False
         if isinstance(item.initializer, ShortCircuitBlock):
             return True
         if isinstance(item.initializer, (AwaitExpr, SpawnExpr)):
@@ -2846,8 +2856,17 @@ class LLVMCodegen:
             if cname in self._function_names:
                 return True
             ret = self._function_ret.get(cname, "")
-            if ret in ("result", ""):
+            if ret == "result":
                 return True
+            return False
+        if isinstance(item.initializer, Identifier) and self._globals.get(item.initializer.name, (None,))[0] == RESULT_TYPE:
+            return True
+        if item.type_ref is not None and item.type_ref.name in (
+            "int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8",
+            "float64", "float32", "string", "char", "bool"
+        ):
+            return False
+        if item.type_ref is not None and (_is_set_type(item.type_ref.name) or _is_list_type(item.type_ref.name) or _is_map_type(item.type_ref.name) or _is_tensor_type(item.type_ref.name)):
             return False
         return False
 
@@ -2926,21 +2945,23 @@ class LLVMCodegen:
                 if name not in self._globals:
                     self._globals[name] = ("i8*", f"@{name}", flux_type)
                     self._w.add_global(name, "i8*", "null")
-                    if item.initializer is not None:
+                    if is_top_level and item.initializer is not None:
                         self._collection_runtime_stores.append((name, item.initializer))
                 continue
             if _is_tensor_type(flux_type):
                 if name not in self._globals:
                     self._globals[name] = ("i8*", f"@{name}", flux_type)
                     self._w.add_global(name, "i8*", "null")
-                    self._tensor_runtime_stores.append((name, item.initializer))
+                    if is_top_level and item.initializer is not None:
+                        self._tensor_runtime_stores.append((name, item.initializer))
                 continue
             if flux_type == "data" and item.initializer is not None and isinstance(
                     item.initializer, (ListLiteral, SetLiteral, MapLiteral, RecordLiteral)):
                 if name not in self._globals:
                     self._globals[name] = ("i8*", f"@{name}", flux_type)
                     self._w.add_global(name, "i8*", "null")
-                    self._collection_runtime_stores.append((name, item.initializer))
+                    if is_top_level:
+                        self._collection_runtime_stores.append((name, item.initializer))
                 continue
             if flux_type in self._structs:
                 self._declare_struct_storage_global(item)
@@ -2954,6 +2975,9 @@ class LLVMCodegen:
                 init_str = "zeroinitializer"
                 if item.type_ref is not None and item.type_ref.name == "result":
                     flux_type = "result"
+                if isinstance(item.initializer, CallExpr):
+                    cname = self._op_aliases.get(_callee_name(item.initializer.callee), _callee_name(item.initializer.callee))
+                    self._result_ret_types[name] = self._function_ret.get(cname, "")
                 if is_top_level and item.initializer is not None and not isinstance(item.initializer, Literal):
                     self._general_runtime_stores.append((name, flux_type, item.initializer))
             else:
@@ -2981,14 +3005,14 @@ class LLVMCodegen:
                         slen = _str_byte_len(item.initializer.value)
                         init_str = f"getelementptr inbounds ([{slen} x i8], [{slen} x i8]* @{sname}, i32 0, i32 0)"
                         llvm_t = "i8*"
-                if (flux_type in FLOAT_FORMATS and flux_type not in ("float64", "float32")
+                if (is_top_level and flux_type in FLOAT_FORMATS and flux_type not in ("float64", "float32")
                         and isinstance(item.initializer, Literal)):
                     init_str = "0.0"
                     self._runtime_stores.append((name, flux_type, norm_float_text(item.initializer.value)))
                 else:
                     if _is_string_type(flux_type):
                         llvm_t = "i8*"
-                        if item.initializer is not None and not isinstance(item.initializer, Literal):
+                        if is_top_level and item.initializer is not None and not isinstance(item.initializer, Literal):
                             self._string_runtime_stores.append((name, item.initializer))
                         if init_str == "zeroinitializer":
                             ename = self._w.get_string_global("")
@@ -3095,34 +3119,97 @@ class LLVMCodegen:
             slots["fields"][f.name] = (a, llvm_t, ft)
         self._pending_enum = {"slots": slots, "enum": node.enum_name}
 
-    def _declare_struct_storage_global(self, item: StorageItem) -> None:
-        sdef = self._structs.get(item.type_ref.name)
+    def _alloc_struct_slots_global(self, prefix: str, sname: str) -> dict:
+        sdef = self._structs.get(sname)
         if sdef is None:
-            raise CodegenError(f"struct '{item.type_ref.name}' not declared")
+            raise CodegenError(f"struct '{sname}' not declared")
         layout = self._struct_layout(sdef)
         slots: dict = {"kind": "global", "fields": {}, "sname": sdef.name}
         for fname, (llvm_t, ft) in layout["fields"].items():
-            gname = f"{item.name}_{fname}"
-            self._w.add_global(gname, llvm_t, "zeroinitializer")
-            slots["fields"][fname] = (f"@{gname}", llvm_t, ft)
-        self._struct_slots[item.name] = slots
+            if ft in self._structs:
+                slots["fields"][fname] = self._alloc_struct_slots_global(f"{prefix}_{fname}", ft)
+            else:
+                gname = f"{prefix}_{fname}"
+                self._w.add_global(gname, llvm_t, "zeroinitializer")
+                slots["fields"][fname] = (f"@{gname}", llvm_t, ft)
+        return slots
 
-    def _declare_struct_storage_local(self, item: StorageItem) -> None:
-        sdef = self._structs.get(item.type_ref.name)
+    def _alloc_struct_slots_local(self, prefix: str, sname: str) -> dict:
+        sdef = self._structs.get(sname)
         if sdef is None:
-            raise CodegenError(f"struct '{item.type_ref.name}' not declared")
+            raise CodegenError(f"struct '{sname}' not declared")
         layout = self._struct_layout(sdef)
         slots: dict = {"kind": "local", "fields": {}, "sname": sdef.name}
         for fname, (llvm_t, ft) in layout["fields"].items():
-            a = self._w.new_local(f"s_{item.name}_{fname}")
-            self._w.emit(f"{a} = alloca {llvm_t}")
-            slots["fields"][fname] = (a, llvm_t, ft)
-        self._struct_slots[item.name] = slots
+            if ft in self._structs:
+                slots["fields"][fname] = self._alloc_struct_slots_local(f"{prefix}_{fname}", ft)
+            else:
+                a = self._w.new_local(f"{prefix}_{fname}")
+                self._w.emit(f"{a} = alloca {llvm_t}")
+                slots["fields"][fname] = (a, llvm_t, ft)
+        return slots
+
+    def _declare_struct_storage_global(self, item: StorageItem) -> None:
+        self._struct_slots[item.name] = self._alloc_struct_slots_global(item.name, item.type_ref.name)
+
+    def _declare_struct_storage_local(self, item: StorageItem) -> None:
+        self._struct_slots[item.name] = self._alloc_struct_slots_local(f"s_{item.name}", item.type_ref.name)
+
+    def _resolve_struct_slot(self, node: ASTNode) -> tuple[str, str, str] | dict | None:
+        if isinstance(node, Identifier):
+            if node.name in self._struct_slots:
+                return self._struct_slots[node.name]
+            return None
+        if isinstance(node, FieldAccess):
+            parent = self._resolve_struct_slot(node.obj)
+            if isinstance(parent, dict) and "fields" in parent:
+                return parent["fields"].get(node.field)
+        return None
 
     def _emit_struct_into(self, init: ASTNode | None, slots: dict) -> None:
-        if init is not None and not isinstance(init, StructInit):
-            raise CodegenError("struct storage requires a StructInit initializer")
         if init is None:
+            return
+        if not isinstance(init, StructInit):
+            val, t = self._emit_expr_text(init)
+            s = self._coerce_to(val, t, "i8*")
+            sdef = self._structs[slots["sname"]]
+            for f in sdef.fields:
+                if f.name in slots["fields"]:
+                    target = slots["fields"][f.name]
+                    fname_gep = self._gep_of_string(f.name)
+                    fstr = self._w.new_local(f"fstr_{f.name}")
+                    self._w.emit(f"{fstr} = call i8* @flux_extract_struct_field(i8* {s}, i8* {fname_gep})")
+                    if isinstance(target, dict):
+                        pass
+                    else:
+                        ptr, llvm_t, ft = target
+                        if ft == "string":
+                            self._w.emit(f"store i8* {fstr}, i8** {ptr}")
+                        elif ft in FLOATISH:
+                            fd = self._w.new_local(f"fd_{f.name}")
+                            self._w.emit(f"{fd} = call double @strtod(i8* {fstr}, i8** null)")
+                            if llvm_t == "float":
+                                ff = self._w.new_local(f"ff_{f.name}")
+                                self._w.emit(f"{ff} = fptrunc double {fd} to float")
+                                self._w.emit(f"store float {ff}, float* {ptr}")
+                            else:
+                                self._w.emit(f"store double {fd}, double* {ptr}")
+                        elif ft == "bool":
+                            t_gep = self._gep_of_string("true")
+                            cmp_r = self._w.new_local(f"fcmp_{f.name}")
+                            self._w.emit(f"{cmp_r} = call i32 @strcmp(i8* {fstr}, i8* {t_gep})")
+                            fb = self._w.new_local(f"fb_{f.name}")
+                            self._w.emit(f"{fb} = icmp eq i32 {cmp_r}, 0")
+                            self._w.emit(f"store i1 {fb}, i1* {ptr}")
+                        else:
+                            fi = self._w.new_local(f"fi_{f.name}")
+                            self._w.emit(f"{fi} = call i64 @atoll(i8* {fstr})")
+                            if llvm_t != "i64":
+                                fitr = self._w.new_local(f"fitr_{f.name}")
+                                self._w.emit(f"{fitr} = trunc i64 {fi} to {llvm_t}")
+                                self._w.emit(f"store {llvm_t} {fitr}, {llvm_t}* {ptr}")
+                            else:
+                                self._w.emit(f"store i64 {fi}, i64* {ptr}")
             return
         sdef = self._structs.get(init.name)
         if sdef is None:
@@ -3130,10 +3217,14 @@ class LLVMCodegen:
         for f in init.fields:
             if f.name not in slots["fields"]:
                 raise CodegenError(f"unknown field '{f.name}' for struct '{init.name}'")
-            ptr, llvm_t, _ = slots["fields"][f.name]
-            val, t = self._emit_expr_text(f.value)
-            val = self._coerce_to(val, t, llvm_t)
-            self._w.emit(f"store {llvm_t} {val}, {llvm_t}* {ptr}")
+            target = slots["fields"][f.name]
+            if isinstance(target, dict):
+                self._emit_struct_into(f.value, target)
+            else:
+                ptr, llvm_t, _ = target
+                val, t = self._emit_expr_text(f.value)
+                val = self._coerce_to(val, t, llvm_t)
+                self._w.emit(f"store {llvm_t} {val}, {llvm_t}* {ptr}")
 
     def _gen_block(self, node: BlockStmt) -> None:
         for stmt in node.body:
@@ -3209,11 +3300,33 @@ class LLVMCodegen:
                     continue
                 if _is_tensor_type(ft):
                     if self._w._in_function:
-                        if it.name not in self._globals:
-                            self._declare_tensor_storage_local(it)
+                        self._declare_tensor_storage_local(it)
                     continue
                 if self._w._in_function:
-                    ft = it.type_ref.name if it.type_ref else "string"
+                    ft = it.type_ref.name if it.type_ref else ""
+                    if not ft and isinstance(it.initializer, CallExpr):
+                        cname = self._op_aliases.get(_callee_name(it.initializer.callee), _callee_name(it.initializer.callee))
+                        ft = self._function_ret.get(cname, "result")
+                    if not ft:
+                        ft = "result" if self._is_result_storage(it) else "string"
+                    if self._is_result_storage(it):
+                        a = self._w.new_local(f"s_res_{it.name}")
+                        self._w.emit(f"{a} = alloca {RESULT_TYPE}")
+                        self._globals[it.name] = (RESULT_TYPE, a, ft)
+                        if isinstance(it.initializer, ShortCircuitBlock):
+                            self._gen_short_circuit(it.initializer, bind_name=it.name)
+                        elif isinstance(it.initializer, CallExpr):
+                            cname = self._op_aliases.get(_callee_name(it.initializer.callee), _callee_name(it.initializer.callee))
+                            self._result_ret_types[it.name] = self._function_ret.get(cname, "")
+                            raw_val, _ = self._emit_raw_call(it.initializer)
+                            self._w.emit(f"store {RESULT_TYPE} {raw_val}, {RESULT_TYPE}* {a}")
+                        elif it.initializer is not None:
+                            val, t = self._emit_expr_text(it.initializer)
+                            val = self._coerce_to(val, t, RESULT_TYPE)
+                            self._w.emit(f"store {RESULT_TYPE} {val}, {RESULT_TYPE}* {a}")
+                        else:
+                            self._w.emit(f"store {RESULT_TYPE} zeroinitializer, {RESULT_TYPE}* {a}")
+                        continue
                     if _is_set_type(ft) or _is_list_type(ft) or _is_map_type(ft) or (ft == "data" and it.initializer is not None and isinstance(it.initializer, (ListLiteral, SetLiteral, MapLiteral, RecordLiteral))):
                         a = self._w.new_local(f"s_{it.name}")
                         self._w.emit(f"{a} = alloca i8*")
@@ -3238,7 +3351,14 @@ class LLVMCodegen:
                         if it.initializer is not None:
                             if isinstance(it.initializer, IndexAccess):
                                 iot = self._flux_type_of(it.initializer.obj)
-                                if _is_map_type(iot):
+                                is_map_init = _is_map_type(iot)
+                                if not is_map_init and iot in ("data", "result", ""):
+                                    if it.initializer.indices and not isinstance(it.initializer.indices[0], SliceSpec):
+                                        i_idx0 = it.initializer.indices[0]
+                                        it0 = self._flux_type_of(i_idx0)
+                                        if _is_string_type(it0) or (isinstance(i_idx0, Literal) and _is_string_type(i_idx0.value_type)):
+                                            is_map_init = True
+                                if is_map_init:
                                     iov, iott = self._emit_expr_text(it.initializer.obj)
                                     iovv = self._coerce_to(iov, iott, "i8*")
                                     ik = self._map_key_text(it.initializer.indices[0])
@@ -3420,7 +3540,13 @@ class LLVMCodegen:
         slots = self._struct_slots[node.owner]
         if node.field not in slots["fields"]:
             raise CodegenError(f"unknown field '{node.field}' for struct '{node.owner}'")
-        ptr, llvm_t, _ = slots["fields"][node.field]
+        target = slots["fields"][node.field]
+        if isinstance(target, dict):
+            if not isinstance(node.value, StructInit):
+                raise CodegenError(f"struct field '{node.field}' requires a StructInit value")
+            self._emit_struct_into(node.value, target)
+            return
+        ptr, llvm_t, _ = target
         val, t = self._emit_expr_text(node.value)
         val = self._coerce_to(val, t, llvm_t)
         self._w.emit(f"store {llvm_t} {val}, {llvm_t}* {ptr}")
@@ -3553,9 +3679,17 @@ class LLVMCodegen:
                         res = self._round_double(res, ft2)
                     self._w.emit(f"store {g_t} {res}, {g_t}* {gv}")
             else:
-                if g_t == RESULT_TYPE and isinstance(node.value, CallExpr) and (self._op_aliases.get(_callee_name(node.value.callee), _callee_name(node.value.callee)) in self._function_names):
-                    raw_val, _ = self._emit_raw_call(node.value)
-                    self._w.emit(f"store {RESULT_TYPE} {raw_val}, {RESULT_TYPE}* {gv}")
+                if g_t == RESULT_TYPE:
+                    if isinstance(node.value, CallExpr) and (self._op_aliases.get(_callee_name(node.value.callee), _callee_name(node.value.callee)) in self._function_names):
+                        cname = self._op_aliases.get(_callee_name(node.value.callee), _callee_name(node.value.callee))
+                        self._result_ret_types[node.name] = self._function_ret.get(cname, "")
+                        raw_val, _ = self._emit_raw_call(node.value)
+                        self._w.emit(f"store {RESULT_TYPE} {raw_val}, {RESULT_TYPE}* {gv}")
+                    elif val_t == RESULT_TYPE:
+                        self._w.emit(f"store {RESULT_TYPE} {val_ll}, {RESULT_TYPE}* {gv}")
+                    else:
+                        c_val = self._coerce_to(val_ll, val_t, RESULT_TYPE)
+                        self._w.emit(f"store {RESULT_TYPE} {c_val}, {RESULT_TYPE}* {gv}")
                 else:
                     val_ll = self._coerce_to(val_ll, val_t, g_t)
                     if g_t == "double":
@@ -3768,33 +3902,44 @@ class LLVMCodegen:
                 item_ft = self._flux_type_of(item)
                 if isinstance(item, IndexAccess):
                     iot = self._flux_type_of(item.obj)
-                    if (_is_list_type(iot) or iot == "data") and len(item.indices) == 1 and not isinstance(item.indices[0], SliceSpec):
-                        iov, iott = self._emit_expr_text(item.obj)
-                        iovv = self._coerce_to(iov, iott, "i8*")
-                        iiv, iit = self._emit_expr_text(item.indices[0])
-                        iivv = self._coerce_to(iiv, iit, "i64")
-                        idata = self._w.new_local("idata")
-                        self._w.emit(f"{idata} = call i8* @flux_list_data(i8* {iovv})")
-                        itag = self._w.new_local("itag")
-                        self._w.emit(f"{itag} = call i64 @flux_row_tag(i8* {idata}, i64 {iivv})")
-                        ival = self._w.new_local("ival")
-                        self._w.emit(f"{ival} = call i64 @flux_row_val(i8* {idata}, i64 {iivv})")
-                        isval = self._w.new_local("isval")
-                        self._w.emit(f"{isval} = call i8* @flux_row_sval(i8* {idata}, i64 {iivv})")
-                        isp = self._w.new_local("isvp")
-                        self._w.emit(f"{isp} = ptrtoint i8* {isval} to i64")
-                        self._w.emit(f"call void @flux_row_set(i8* {ld}, i64 {i}, i64 {itag}, i64 {ival}, i64 {isp})")
-                        continue
-                    elif (_is_map_type(iot) or iot == "map") and len(item.indices) == 1 and not isinstance(item.indices[0], SliceSpec):
-                        iov, iott = self._emit_expr_text(item.obj)
-                        iovv = self._coerce_to(iov, iott, "i8*")
-                        ik = self._map_key_text(item.indices[0])
-                        itag = self._w.new_local("itag")
-                        self._w.emit(f"{itag} = call i64 @flux_map_get_tag(i8* {iovv}, i8* {ik})")
-                        ival = self._w.new_local("ival")
-                        self._w.emit(f"{ival} = call i64 @flux_map_get(i8* {iovv}, i8* {ik})")
-                        self._w.emit(f"call void @flux_row_set(i8* {ld}, i64 {i}, i64 {itag}, i64 {ival}, i64 {ival})")
-                        continue
+                    if len(item.indices) == 1 and not isinstance(item.indices[0], SliceSpec):
+                        idx0 = item.indices[0]
+                        it0 = self._flux_type_of(idx0)
+                        is_map_item = _is_map_type(iot) or iot == "map" or (
+                            iot in ("data", "result", "")
+                            and (_is_string_type(it0) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)))
+                        )
+                        if is_map_item:
+                            iov, iott = self._emit_expr_text(item.obj)
+                            iovv = self._coerce_to(iov, iott, "i8*")
+                            ik = self._map_key_text(item.indices[0])
+                            itag = self._w.new_local("itag")
+                            self._w.emit(f"{itag} = call i64 @flux_map_get_tag(i8* {iovv}, i8* {ik})")
+                            ival = self._w.new_local("ival")
+                            self._w.emit(f"{ival} = call i64 @flux_map_get(i8* {iovv}, i8* {ik})")
+                            is_str = self._w.new_local("is_str_map")
+                            self._w.emit(f"{is_str} = icmp eq i64 {itag}, 4")
+                            sp = self._w.new_local("sp_map")
+                            self._w.emit(f"{sp} = select i1 {is_str}, i64 {ival}, i64 0")
+                            self._w.emit(f"call void @flux_row_set(i8* {ld}, i64 {i}, i64 {itag}, i64 {ival}, i64 {sp})")
+                            continue
+                        elif _is_list_type(iot) or iot in ("data", "result", ""):
+                            iov, iott = self._emit_expr_text(item.obj)
+                            iovv = self._coerce_to(iov, iott, "i8*")
+                            iiv, iit = self._emit_expr_text(item.indices[0])
+                            iivv = self._coerce_to(iiv, iit, "i64")
+                            idata = self._w.new_local("idata")
+                            self._w.emit(f"{idata} = call i8* @flux_list_data(i8* {iovv})")
+                            itag = self._w.new_local("itag")
+                            self._w.emit(f"{itag} = call i64 @flux_row_tag(i8* {idata}, i64 {iivv})")
+                            ival = self._w.new_local("ival")
+                            self._w.emit(f"{ival} = call i64 @flux_row_val(i8* {idata}, i64 {iivv})")
+                            isval = self._w.new_local("isval")
+                            self._w.emit(f"{isval} = call i8* @flux_row_sval(i8* {idata}, i64 {iivv})")
+                            isp = self._w.new_local("isvp")
+                            self._w.emit(f"{isp} = ptrtoint i8* {isval} to i64")
+                            self._w.emit(f"call void @flux_row_set(i8* {ld}, i64 {i}, i64 {itag}, i64 {ival}, i64 {isp})")
+                            continue
                 if isinstance(item, ListLiteral) or _is_list_type(item_ft) or _is_set_type(item_ft) or _is_map_type(item_ft):
                     sp = self._w.new_local("svp")
                     self._w.emit(f"{sp} = ptrtoint i8* {v} to i64")
@@ -3815,6 +3960,23 @@ class LLVMCodegen:
                     itag = self._param_tag_slots[item.name]
                     v64 = self._coerce_to(v, t, "i64")
                     self._w.emit(f"call void @flux_row_set(i8* {ld}, i64 {i}, i64 {itag}, i64 {v64}, i64 0)")
+                elif isinstance(item, Identifier) and item.name in self._globals and self._globals[item.name][0] == RESULT_TYPE:
+                    g_t, gv, ft = self._globals[item.name]
+                    local = self._w.new_local("id_res")
+                    self._w.emit(f"{local} = load {RESULT_TYPE}, {RESULT_TYPE}* {gv}")
+                    val_i = self._w.new_local("id_res_v")
+                    self._w.emit(f"{val_i} = extractvalue {RESULT_TYPE} {local}, 1")
+                    tag_d = self._w.new_local("id_res_tagd")
+                    self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {local}, 2")
+                    tag_i = self._w.new_local("id_res_tagi")
+                    self._w.emit(f"{tag_i} = fptosi double {tag_d} to i64")
+                    if ft not in ("data", "result", ""):
+                        tag_i = str(_elem_tag(ft))
+                    is_str = self._w.new_local("is_str_row")
+                    self._w.emit(f"{is_str} = icmp eq i64 {tag_i}, 4")
+                    sp = self._w.new_local("sp_row")
+                    self._w.emit(f"{sp} = select i1 {is_str}, i64 {val_i}, i64 0")
+                    self._w.emit(f"call void @flux_row_set(i8* {ld}, i64 {i}, i64 {tag_i}, i64 {val_i}, i64 {sp})")
                 else:
                     itag, v64, sv = self._elem_encoding(t, v, item_ft)
                     sp = self._w.new_local("svp")
@@ -4093,8 +4255,7 @@ class LLVMCodegen:
         self._new_block(end_b)
         return buf
 
-    def _gen_struct_to_buf(self, name: str) -> str:
-        info = self._struct_slots[name]
+    def _gen_struct_slots_to_buf(self, info: dict) -> str:
         sdef = self._structs[info["sname"]]
         buf = self._w.new_local("sbuf")
         self._w.emit(f"{buf} = alloca i8, i64 1024")
@@ -4105,37 +4266,50 @@ class LLVMCodegen:
         cur_len = self._w.new_local("cur_len")
         self._w.emit(f"{cur_len} = call i64 @strlen(i8* {buf})")
         for j, f in enumerate(sdef.fields):
-            ptr, llvm_t, ft = info["fields"][f.name]
-            fval = self._w.new_local(f"sf_{f.name}")
-            self._w.emit(f"{fval} = load {llvm_t}, {llvm_t}* {ptr}")
+            target = info["fields"][f.name]
             prefix = (", ." if j > 0 else ".") + f"{f.name}: "
             tail_ptr = self._w.new_local(f"stail_{j}")
             self._w.emit(f"{tail_ptr} = getelementptr i8, i8* {buf}, i64 {cur_len}")
             rem_size = self._w.new_local(f"srem_{j}")
             self._w.emit(f"{rem_size} = sub i64 1024, {cur_len}")
-            if ft == "string":
+            if isinstance(target, dict):
+                sub_buf = self._gen_struct_slots_to_buf(target)
                 fmt_s = prefix + "%s"
                 fn = self._w.get_string_global(fmt_s)
                 fl = _str_byte_len(fmt_s)
-                self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {fval})")
-            elif ft == "datetime":
-                dt_tmp = self._w.new_local(f"dt_tmp_{j}")
-                self._w.emit(f"{dt_tmp} = alloca i8, i64 64")
-                self._w.emit(f"call i8* @flux_datetime_to_buf(i64 {fval}, i8* {dt_tmp})")
-                fmt_s = prefix + "%s"
-                fn = self._w.get_string_global(fmt_s)
-                fl = _str_byte_len(fmt_s)
-                self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {dt_tmp})")
-            elif ft in FLOATISH:
-                fmt_s = prefix + "%g"
-                fn = self._w.get_string_global(fmt_s)
-                fl = _str_byte_len(fmt_s)
-                self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), {llvm_t} {fval})")
+                self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {sub_buf})")
             else:
-                fmt_s = prefix + "%lld"
-                fn = self._w.get_string_global(fmt_s)
-                fl = _str_byte_len(fmt_s)
-                self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), {llvm_t} {fval})")
+                ptr, llvm_t, ft = target
+                fval = self._w.new_local(f"sf_{f.name}")
+                self._w.emit(f"{fval} = load {llvm_t}, {llvm_t}* {ptr}")
+                if ft == "string":
+                    fmt_s = prefix + "%s"
+                    fn = self._w.get_string_global(fmt_s)
+                    fl = _str_byte_len(fmt_s)
+                    self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {fval})")
+                elif ft == "datetime":
+                    dt_tmp = self._w.new_local(f"dt_tmp_{j}")
+                    self._w.emit(f"{dt_tmp} = alloca i8, i64 64")
+                    self._w.emit(f"call i8* @flux_datetime_to_buf(i64 {fval}, i8* {dt_tmp})")
+                    fmt_s = prefix + "%s"
+                    fn = self._w.get_string_global(fmt_s)
+                    fl = _str_byte_len(fmt_s)
+                    self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {dt_tmp})")
+                elif ft in FLOATISH:
+                    fmb = self._w.new_local(f"fmb_{j}")
+                    self._w.emit(f"{fmb} = alloca i8, i64 64")
+                    fs = self._w.new_local(f"fs_{j}")
+                    fd = fval if llvm_t == "double" else self._coerce_to_double(fval, llvm_t)
+                    self._w.emit(f"{fs} = call i8* @flux_fmt_double(double {fd}, i8* {fmb})")
+                    fmt_s = prefix + "%s"
+                    fn = self._w.get_string_global(fmt_s)
+                    fl = _str_byte_len(fmt_s)
+                    self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {fs})")
+                else:
+                    fmt_s = prefix + "%lld"
+                    fn = self._w.get_string_global(fmt_s)
+                    fl = _str_byte_len(fmt_s)
+                    self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), {llvm_t} {fval})")
             cur_len = self._w.new_local(f"cur_len_{j}")
             self._w.emit(f"{cur_len} = call i64 @strlen(i8* {buf})")
         tail_ptr = self._w.new_local("stail_close")
@@ -4146,6 +4320,9 @@ class LLVMCodegen:
         c_len = _str_byte_len(")")
         self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{c_len} x i8], [{c_len} x i8]* @{c_name}, i32 0, i32 0))")
         return buf
+
+    def _gen_struct_to_buf(self, name: str) -> str:
+        return self._gen_struct_slots_to_buf(self._struct_slots[name])
 
     def _flux_type_of(self, node: ASTNode) -> str:
         if isinstance(node, Literal):
@@ -4170,10 +4347,16 @@ class LLVMCodegen:
             if node.name in self._enum_slots:
                 return "enum"
         if isinstance(node, FieldAccess):
+            target = self._resolve_struct_slot(node)
+            if target is not None:
+                if isinstance(target, dict):
+                    return target.get("sname", "struct")
+                return target[2]
             if isinstance(node.obj, Identifier) and node.obj.name in self._struct_slots:
                 st = self._struct_slots[node.obj.name]
                 if node.field in st["fields"]:
-                    return st["fields"][node.field][2]
+                    target = st["fields"][node.field]
+                    return target.get("sname", "struct") if isinstance(target, dict) else target[2]
             if node.field == "val":
                 obj_t = self._flux_type_of(node.obj)
                 if obj_t:
@@ -4191,6 +4374,12 @@ class LLVMCodegen:
                     return et
                 return f"tensor[{', '.join(str(d) for d in dims[k:])}] of {et}"
             if _is_map_type(ft) or ft == "data":
+                if node.indices and isinstance(node.indices[0], Literal) and _is_string_type(node.indices[0].value_type):
+                    sval = str(node.indices[0].value)
+                    if sval in ("__contract__", "__type__", "method", "msg", "sta", "status", "action"):
+                        return "string"
+                    if sval in ("__valid__", "valid", "active", "ativo"):
+                        return "bool"
                 return "data"
             if ft == "string" or ft.startswith("string"):
                 return "string"
@@ -4376,7 +4565,14 @@ class LLVMCodegen:
         bt = self._flux_type_of(base)
         bv, bvt = self._emit_expr_text(base)
         cp = self._coerce_to(bv, bvt, "i8*")
-        if _is_map_type(bt):
+        is_map = _is_map_type(bt)
+        if not is_map and bt in ("data", "result", ""):
+            if chain:
+                idx0 = chain[0]
+                it = self._flux_type_of(idx0)
+                if _is_string_type(it) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)):
+                    is_map = True
+        if is_map:
             if len(chain) != 1:
                 raise CodegenError("nested map index access is not supported on LLVM target")
             k = self._map_key_text(chain[0])
@@ -4476,9 +4672,9 @@ class LLVMCodegen:
             return ("0", "i64")
         if isinstance(node, Identifier):
             if node.name in self._struct_slots:
-                return ("0", "i64")
+                return (self._gen_struct_to_buf(node.name), "i8*")
             if node.name in self._enum_slots:
-                return ("0", "i64")
+                return (self._gen_enum_to_buf(node.name), "i8*")
             return self._gen_identifier_text(node)
         if isinstance(node, StructInit):
             raise CodegenError(f"struct init expression not supported in this context on LLVM target")
@@ -4617,6 +4813,7 @@ class LLVMCodegen:
             raise CodegenError("emit accepts only a single declared identifier as value, expressions are not allowed")
         vnode = node.value_expr if node.value_expr is not None else Identifier(name=node.value)
         val, t = self._emit_expr_text(vnode)
+        vnode_ft = self._flux_type_of(vnode)
         if t == RESULT_TYPE:
             vi = self._w.new_local("vcast")
             self._w.emit(f"{vi} = extractvalue {RESULT_TYPE} {val}, 1")
@@ -4643,16 +4840,16 @@ class LLVMCodegen:
             self._w.emit(f"{i_bits} = bitcast double {i_val} to i64")
             vi = i_bits
             vd = r_val
-        elif _is_string_type(t) or t == "i8*":
-            cast = self._w.new_local("vcast")
-            self._w.emit(f"{cast} = ptrtoint {t} {val} to i64")
-            vi = cast
-            vd = "4.0"
-        elif _is_list_type(t) or _is_map_type(t) or _is_set_type(t):
+        elif _is_list_type(vnode_ft) or _is_map_type(vnode_ft) or _is_set_type(vnode_ft) or _is_list_type(t) or _is_map_type(t) or _is_set_type(t):
             cast = self._w.new_local("vcast")
             self._w.emit(f"{cast} = ptrtoint {t} {val} to i64")
             vi = cast
             vd = "5.0"
+        elif _is_string_type(t) or _is_string_type(vnode_ft) or t == "i8*":
+            cast = self._w.new_local("vcast")
+            self._w.emit(f"{cast} = ptrtoint {t} {val} to i64")
+            vi = cast
+            vd = "4.0"
         elif t == "i128":
             vi = self._coerce_to(val, "i128", "i64")
             vd = "1.0"
@@ -4726,6 +4923,14 @@ class LLVMCodegen:
         return r
 
     def _gen_field_access_text(self, node: FieldAccess) -> tuple[str, str]:
+        target = self._resolve_struct_slot(node)
+        if target is not None:
+            if isinstance(target, dict):
+                raise CodegenError(f"field access '{node.field}' yielded a struct, not a value")
+            ptr, llvm_t, _ = target
+            r = self._w.new_local(f"f{node.field}")
+            self._w.emit(f"{r} = load {llvm_t}, {llvm_t}* {ptr}")
+            return (r, llvm_t)
         if isinstance(node.obj, Identifier) and node.obj.name in self._struct_slots:
             slots = self._struct_slots[node.obj.name]
             if node.field not in slots["fields"]:
@@ -4770,23 +4975,24 @@ class LLVMCodegen:
                     self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {res_val}, 3")
                     return (r, "i8*")
                 if node.field == "val":
-                    if g_ft in FLOATISH or g_ft in ("float", "float64", "float32", "float16", "double"):
+                    ret_t = self._result_ret_types.get(node.obj.name, g_ft)
+                    if ret_t in FLOATISH or ret_t in ("float", "float64", "float32", "float16", "double"):
                         r = self._w.new_local(f"f{node.field}")
                         self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {res_val}, 2")
                         return (r, "double")
-                    if g_ft == "bool":
+                    if ret_t == "bool":
                         r = self._w.new_local(f"f{node.field}")
                         self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {res_val}, 1")
                         rb = self._w.new_local(f"f{node.field}b")
                         self._w.emit(f"{rb} = icmp ne i64 {r}, 0")
                         return (rb, "i1")
-                    if g_ft == "char":
+                    if ret_t == "char":
                         r = self._w.new_local(f"f{node.field}")
                         self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {res_val}, 1")
                         rc = self._w.new_local(f"f{node.field}c")
                         self._w.emit(f"{rc} = trunc i64 {r} to i32")
                         return (rc, "i32")
-                    if _is_string_type(g_ft) or _is_set_type(g_ft) or _is_list_type(g_ft) or _is_map_type(g_ft):
+                    if _is_string_type(ret_t) or _is_set_type(ret_t) or _is_list_type(ret_t) or _is_map_type(ret_t):
                         r = self._w.new_local(f"f{node.field}")
                         self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {res_val}, 1")
                         rp = self._w.new_local(f"f{node.field}p")
@@ -5602,12 +5808,28 @@ class LLVMCodegen:
             return self._gen_tensor_access_text(node)
         ov, ott = self._emit_expr_text(node.obj)
         ovv = self._coerce_to(ov, ott, "i8*")
-        if _is_map_type(ot):
+        is_map = _is_map_type(ot)
+        if not is_map and ot in ("data", "result", ""):
+            if node.indices and not isinstance(node.indices[0], SliceSpec):
+                idx0 = node.indices[0]
+                it = self._flux_type_of(idx0)
+                if _is_string_type(it) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)):
+                    is_map = True
+        if is_map:
             if node.indices and isinstance(node.indices[0], SliceSpec):
                 raise CodegenError("slice access is not supported on map")
             k = self._map_key_text(node.indices[0])
             r = self._w.new_local("mval")
             self._w.emit(f"{r} = call i64 @flux_map_get(i8* {ovv}, i8* {k})")
+            ret_ft = self._flux_type_of(node)
+            if ret_ft == "string":
+                sp = self._w.new_local("msp")
+                self._w.emit(f"{sp} = inttoptr i64 {r} to i8*")
+                return (sp, "i8*")
+            if ret_ft == "bool":
+                bp = self._w.new_local("mbool")
+                self._w.emit(f"{bp} = icmp ne i64 {r}, 0")
+                return (bp, "i1")
             return (r, "i64")
         if ot == "string" or ot.startswith("string"):
             if node.indices and isinstance(node.indices[0], SliceSpec):
@@ -6049,15 +6271,37 @@ class LLVMCodegen:
         if not isinstance(base, Identifier):
             raise CodegenError("index assignment requires a collection variable")
         ot = self._flux_type_of(base)
-        if _is_map_type(ot):
+        is_map_base = _is_map_type(ot)
+        if not is_map_base and ot in ("data", "result", ""):
+            if node.indices and not isinstance(node.indices[0], SliceSpec):
+                idx0 = node.indices[0]
+                it = self._flux_type_of(idx0)
+                if _is_string_type(it) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)):
+                    is_map_base = True
+        if is_map_base:
             if len(extra) + 1 != 1:
                 raise CodegenError("nested map index assignment is not supported on LLVM target")
             ov, ott = self._emit_expr_text(base)
             ovv = self._coerce_to(ov, ott, "i8*")
             k = self._map_key_text(node.indices[0])
-            if isinstance(node.value, IndexAccess):
+            if isinstance(node.value, CallExpr) and (self._function_ret.get(_callee_name(node.value.callee), "") == "data" or self._flux_type_of(node.value) == "data"):
+                r, _ = self._emit_raw_call(node.value)
+                vv = self._w.new_local("dcall_v")
+                self._w.emit(f"{vv} = extractvalue {RESULT_TYPE} {r}, 1")
+                tag_d = self._w.new_local("dcall_tagd")
+                self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {r}, 2")
+                tag = self._w.new_local("dcall_tagi")
+                self._w.emit(f"{tag} = fptosi double {tag_d} to i64")
+            elif isinstance(node.value, IndexAccess):
                 iot = self._flux_type_of(node.value.obj)
-                if _is_map_type(iot):
+                is_map_val = _is_map_type(iot)
+                if not is_map_val and iot in ("data", "result", ""):
+                    if node.value.indices and not isinstance(node.value.indices[0], SliceSpec):
+                        v_idx0 = node.value.indices[0]
+                        it0 = self._flux_type_of(v_idx0)
+                        if _is_string_type(it0) or (isinstance(v_idx0, Literal) and _is_string_type(v_idx0.value_type)):
+                            is_map_val = True
+                if is_map_val:
                     iov, iott = self._emit_expr_text(node.value.obj)
                     iovv = self._coerce_to(iov, iott, "i8*")
                     ik = self._map_key_text(node.value.indices[0])
@@ -6103,6 +6347,19 @@ class LLVMCodegen:
                 self._w.emit(f"{tag} = load i64, i64* {tptr}")
                 v, vt = self._emit_expr_text(node.value)
                 vv = self._coerce_to(v, vt, "i64")
+            elif isinstance(node.value, Identifier) and node.value.name in self._globals and self._globals[node.value.name][0] == RESULT_TYPE:
+                g_t, gv, g_ft = self._globals[node.value.name]
+                res_val = self._w.new_local("res_map_val")
+                self._w.emit(f"{res_val} = load {RESULT_TYPE}, {RESULT_TYPE}* {gv}")
+                vv = self._w.new_local("dcall_v")
+                self._w.emit(f"{vv} = extractvalue {RESULT_TYPE} {res_val}, 1")
+                if g_ft in ("data", "result", ""):
+                    tag_d = self._w.new_local("dcall_tagd")
+                    self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {res_val}, 2")
+                    tag = self._w.new_local("dcall_tagi")
+                    self._w.emit(f"{tag} = fptosi double {tag_d} to i64")
+                else:
+                    tag = str(_elem_tag(g_ft))
             else:
                 v, vt = self._emit_expr_text(node.value)
                 vft = self._flux_type_of(node.value)
@@ -6147,7 +6404,22 @@ class LLVMCodegen:
             raise CodegenError(f"index assignment requires a collection variable, got '{ot}'")
         ov, ott = self._emit_expr_text(base)
         ovv = self._coerce_to(ov, ott, "i8*")
-        if isinstance(node.value, IndexAccess):
+        if isinstance(node.value, CallExpr) and (self._function_ret.get(_callee_name(node.value.callee), "") == "data" or self._flux_type_of(node.value) == "data"):
+            r, _ = self._emit_raw_call(node.value)
+            v64 = self._w.new_local("dcall_v")
+            self._w.emit(f"{v64} = extractvalue {RESULT_TYPE} {r}, 1")
+            tag_d = self._w.new_local("dcall_tagd")
+            self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {r}, 2")
+            tag = self._w.new_local("dcall_tagi")
+            self._w.emit(f"{tag} = fptosi double {tag_d} to i64")
+            sp = self._w.new_local("sp")
+            self._w.emit(f"{sp} = inttoptr i64 {v64} to i8*")
+            is_str = self._w.new_local("is_str")
+            self._w.emit(f"{is_str} = icmp eq i64 {tag}, 4")
+            sv_res = self._w.new_local("sv_res")
+            self._w.emit(f"{sv_res} = select i1 {is_str}, i8* {sp}, i8* null")
+            sv = sv_res
+        elif isinstance(node.value, IndexAccess):
             iot = self._flux_type_of(node.value.obj)
             if _is_map_type(iot):
                 iov, iott = self._emit_expr_text(node.value.obj)
@@ -6198,6 +6470,26 @@ class LLVMCodegen:
             v, vt = self._emit_expr_text(node.value)
             v64 = self._coerce_to(v, vt, "i64")
             sp = self._w.new_local("sptr")
+            self._w.emit(f"{sp} = inttoptr i64 {v64} to i8*")
+            is_str = self._w.new_local("is_str")
+            self._w.emit(f"{is_str} = icmp eq i64 {tag}, 4")
+            sv_res = self._w.new_local("sv_res")
+            self._w.emit(f"{sv_res} = select i1 {is_str}, i8* {sp}, i8* null")
+            sv = sv_res
+        elif isinstance(node.value, Identifier) and node.value.name in self._globals and self._globals[node.value.name][0] == RESULT_TYPE:
+            g_t, gv, g_ft = self._globals[node.value.name]
+            res_val = self._w.new_local("res_list_val")
+            self._w.emit(f"{res_val} = load {RESULT_TYPE}, {RESULT_TYPE}* {gv}")
+            v64 = self._w.new_local("dcall_v")
+            self._w.emit(f"{v64} = extractvalue {RESULT_TYPE} {res_val}, 1")
+            if g_ft in ("data", "result", ""):
+                tag_d = self._w.new_local("dcall_tagd")
+                self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {res_val}, 2")
+                tag = self._w.new_local("dcall_tagi")
+                self._w.emit(f"{tag} = fptosi double {tag_d} to i64")
+            else:
+                tag = str(_elem_tag(g_ft))
+            sp = self._w.new_local("sp")
             self._w.emit(f"{sp} = inttoptr i64 {v64} to i8*")
             is_str = self._w.new_local("is_str")
             self._w.emit(f"{is_str} = icmp eq i64 {tag}, 4")
@@ -6689,6 +6981,11 @@ class LLVMCodegen:
                     p64 = self._w.new_local("enump")
                     self._w.emit(f"{p64} = ptrtoint i8* {estr} to i64")
                     args.append(f"i64 {p64}")
+                elif is_data and isinstance(a, Identifier) and (ft_arg in self._structs or a.name in self._struct_slots):
+                    sstr = self._gen_struct_to_buf(a.name)
+                    p64 = self._w.new_local("structp")
+                    self._w.emit(f"{p64} = ptrtoint i8* {sstr} to i64")
+                    args.append(f"i64 {p64}")
                 elif is_data and t in ("double", "float"):
                     dv = self._coerce_to_double(v, t)
                     b64 = self._w.new_local("fbits")
@@ -6700,18 +6997,100 @@ class LLVMCodegen:
             if op is not None:
                 for i, p in enumerate(op.params):
                     if p.type_ref and p.type_ref.name == "data":
-                        ft = self._flux_type_of(node.args[i])
-                        if isinstance(node.args[i], EnumVariant) or ft in self._enums or (isinstance(node.args[i], Identifier) and node.args[i].name in self._enum_slots):
+                        arg_node = node.args[i]
+                        ft = self._flux_type_of(arg_node)
+                        if isinstance(arg_node, EnumVariant) or ft in self._enums or (isinstance(arg_node, Identifier) and (arg_node.name in self._enum_slots or arg_node.name in self._struct_slots or ft in self._structs)):
                             args.append("i64 4")
                             continue
+                        if isinstance(arg_node, Identifier) and arg_node.name in self._var_tag_slots:
+                            tptr = self._var_tag_slots[arg_node.name]
+                            ltag = self._w.new_local("argtag")
+                            self._w.emit(f"{ltag} = load i64, i64* {tptr}")
+                            args.append(f"i64 {ltag}")
+                            continue
+                        if isinstance(arg_node, Identifier) and arg_node.name in self._param_tag_slots:
+                            args.append(f"i64 {self._param_tag_slots[arg_node.name]}")
+                            continue
+                        if isinstance(arg_node, Identifier) and self._globals.get(arg_node.name, (None,))[0] == RESULT_TYPE:
+                            g_t, a, _ = self._globals[arg_node.name]
+                            res = self._w.new_local("res_t")
+                            self._w.emit(f"{res} = load {RESULT_TYPE}, {RESULT_TYPE}* {a}")
+                            tag_d = self._w.new_local("res_tagd")
+                            self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {res}, 2")
+                            tag_i = self._w.new_local("res_tagi")
+                            self._w.emit(f"{tag_i} = fptosi double {tag_d} to i64")
+                            args.append(f"i64 {tag_i}")
+                            continue
+                        if isinstance(arg_node, IndexAccess):
+                            base = arg_node.obj
+                            bt = self._flux_type_of(base)
+                            is_map_idx = _is_map_type(bt) or bt == "map"
+                            if not is_map_idx and bt in ("data", "result", ""):
+                                idx0 = arg_node.indices[0] if arg_node.indices else None
+                                if idx0 and not isinstance(idx0, SliceSpec):
+                                    it0 = self._flux_type_of(idx0)
+                                    if _is_string_type(it0) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)):
+                                        is_map_idx = True
+                            if is_map_idx:
+                                bv, bvt = self._emit_expr_text(base)
+                                cp = self._coerce_to(bv, bvt, "i8*")
+                                k = self._map_key_text(arg_node.indices[0])
+                                mtag = self._w.new_local("mtag")
+                                self._w.emit(f"{mtag} = call i64 @flux_map_get_tag(i8* {cp}, i8* {k})")
+                                args.append(f"i64 {mtag}")
+                                continue
+                            elif _is_list_type(bt) or bt == "data":
+                                bv, bvt = self._emit_expr_text(base)
+                                cp = self._coerce_to(bv, bvt, "i8*")
+                                iv, it = self._emit_expr_text(arg_node.indices[0])
+                                ivv = self._coerce_to(iv, it, "i64")
+                                ld = self._w.new_local("ldata")
+                                self._w.emit(f"{ld} = call i8* @flux_list_data(i8* {cp})")
+                                ltag = self._w.new_local("ltag")
+                                self._w.emit(f"{ltag} = call i64 @flux_row_tag(i8* {ld}, i64 {ivv})")
+                                args.append(f"i64 {ltag}")
+                                continue
                         if not ft or ft == "data":
-                            v, t = self._emit_expr_text(node.args[i])
+                            v, t = self._emit_expr_text(arg_node)
                             ft = ("string" if t == "i8*" else ("float64" if t in ("double", "float") else "int64"))
                         args.append(f"i64 {_elem_tag(ft)}")
             r = self._w.new_local(f"c_{name}")
             self._w.emit(f"{r} = call {RESULT_TYPE} @f_{name}({', '.join(args)})")
             return (r, RESULT_TYPE)
-        raise CodegenError(f"cannot emit raw call for '{name}'")
+        v, vt = self._gen_call(node)
+        if vt == RESULT_TYPE:
+            return (v, RESULT_TYPE)
+        sta = self._gep_of_string("nice")
+        msg = self._gep_of_string("ok")
+        vi = "0"
+        vd = "0.0"
+        if vt == "i1":
+            vi_ext = self._w.new_local("res_ext")
+            self._w.emit(f"{vi_ext} = zext i1 {v} to i64")
+            vi = vi_ext
+            vd = "2.0"
+        elif vt in ("double", "float"):
+            vd = self._coerce_to_double(v, vt)
+            vi_bit = self._w.new_local("res_bits")
+            self._w.emit(f"{vi_bit} = bitcast double {vd} to i64")
+            vi = vi_bit
+        elif vt == "i8*":
+            vi_ptr = self._w.new_local("res_ptr")
+            self._w.emit(f"{vi_ptr} = ptrtoint i8* {v} to i64")
+            vi = vi_ptr
+            vd = "4.0"
+        elif vt in ("i64", "i32", "i16", "i8"):
+            vi = self._coerce_to(v, vt, "i64")
+            vd = "1.0"
+        r0 = self._w.new_local("raw_res0")
+        self._w.emit(f"{r0} = insertvalue {RESULT_TYPE} undef, i8* {sta}, 0")
+        r1 = self._w.new_local("raw_res1")
+        self._w.emit(f"{r1} = insertvalue {RESULT_TYPE} {r0}, i64 {vi}, 1")
+        r2 = self._w.new_local("raw_res2")
+        self._w.emit(f"{r2} = insertvalue {RESULT_TYPE} {r1}, double {vd}, 2")
+        r3 = self._w.new_local("raw_res3")
+        self._w.emit(f"{r3} = insertvalue {RESULT_TYPE} {r2}, i8* {msg}, 3")
+        return (r3, RESULT_TYPE)
 
     def _gen_call(self, node: CallExpr) -> tuple[str, str]:
         name = _callee_name(node.callee)
@@ -8323,10 +8702,16 @@ class LLVMCodegen:
         for ci, f in enumerate(fields):
             if f.name not in slots_fields:
                 raise CodegenError(f"unknown field '{f.name}' for pattern subject")
-            ptr, llvm_t, ft = slots_fields[f.name]
+            slot_target = slots_fields[f.name]
             fv = f.value
             if isinstance(fv, WildcardPattern):
                 continue
+            if isinstance(slot_target, dict):
+                if isinstance(fv, IdentifierPattern):
+                    self._struct_slots[fv.name] = slot_target
+                    continue
+                raise CodegenError("nested field pattern not supported on LLVM target")
+            ptr, llvm_t, ft = slot_target
             if isinstance(fv, LiteralPattern):
                 lv = fv.value
                 lt = lv.value_type.lower()
@@ -8500,9 +8885,28 @@ class LLVMCodegen:
             fv = self._load_result_frame()
             self._w.emit(f"{sta} = extractvalue {RESULT_TYPE} {fv}, 0")
         if bind_name is not None:
-            _, gv, _ = self._globals[bind_name]
+            g_t, gv, _ = self._globals[bind_name]
             if raw_val is not None and raw_t == RESULT_TYPE:
-                self._w.emit(f"store {RESULT_TYPE} {raw_val}, {RESULT_TYPE}* {gv}")
+                if g_t == RESULT_TYPE:
+                    self._w.emit(f"store {RESULT_TYPE} {raw_val}, {RESULT_TYPE}* {gv}")
+                else:
+                    v64 = self._w.new_local("scb_v")
+                    self._w.emit(f"{v64} = extractvalue {RESULT_TYPE} {raw_val}, 1")
+                    if g_t == "double":
+                        vd = self._w.new_local("scb_vd")
+                        self._w.emit(f"{vd} = extractvalue {RESULT_TYPE} {raw_val}, 2")
+                        self._w.emit(f"store double {vd}, double* {gv}")
+                    elif g_t == "i8*":
+                        vp = self._w.new_local("scb_vp")
+                        self._w.emit(f"{vp} = inttoptr i64 {v64} to i8*")
+                        self._w.emit(f"store i8* {vp}, i8** {gv}")
+                    elif g_t == "i1":
+                        vb = self._w.new_local("scb_vb")
+                        self._w.emit(f"{vb} = trunc i64 {v64} to i1")
+                        self._w.emit(f"store i1 {vb}, i1* {gv}")
+                    else:
+                        vi = self._coerce_to(v64, "i64", g_t)
+                        self._w.emit(f"store {g_t} {vi}, {g_t}* {gv}")
             else:
                 bind_fail = f"scbf_{idx}"
                 bind_ok = f"scbok_{idx}"
@@ -8519,7 +8923,17 @@ class LLVMCodegen:
                 self._w.emit(f"br i1 {fisf}, label %{bind_fail}, label %{bind_ok}")
 
                 self._new_block(bind_fail)
-                self._w.emit(f"store {RESULT_TYPE} {fv}, {RESULT_TYPE}* {gv}")
+                if g_t == RESULT_TYPE:
+                    self._w.emit(f"store {RESULT_TYPE} {fv}, {RESULT_TYPE}* {gv}")
+                else:
+                    if g_t == "double":
+                        self._w.emit(f"store double 0.0, double* {gv}")
+                    elif g_t == "i8*":
+                        self._w.emit(f"store i8* null, i8** {gv}")
+                    elif g_t == "i1":
+                        self._w.emit(f"store i1 0, i1* {gv}")
+                    else:
+                        self._w.emit(f"store {g_t} 0, {g_t}* {gv}")
                 self._w.emit(f"br label %{bind_end}")
 
                 self._new_block(bind_ok)
@@ -8530,7 +8944,13 @@ class LLVMCodegen:
                 elen = _str_byte_len("")
                 egep = f"getelementptr inbounds ([{elen} x i8], [{elen} x i8]* @{ename}, i32 0, i32 0)"
                 struct = self._build_result_struct(ngep, raw_val, "0.0", egep)
-                self._w.emit(f"store {RESULT_TYPE} {struct}, {RESULT_TYPE}* {gv}")
+                if g_t == RESULT_TYPE:
+                    self._w.emit(f"store {RESULT_TYPE} {struct}, {RESULT_TYPE}* {gv}")
+                else:
+                    val = self._coerce_to(raw_val, raw_t, g_t)
+                    self._w.emit(f"store {g_t} {val}, {g_t}* {gv}")
+                    if self._result_frame is not None:
+                        self._w.emit(f"store {RESULT_TYPE} {struct}, {RESULT_TYPE}* {self._result_frame}")
                 self._w.emit(f"br label %{bind_end}")
 
                 self._new_block(bind_end)
@@ -8564,7 +8984,26 @@ class LLVMCodegen:
         if bind_name is not None:
             g_t, gv, _ = self._globals[bind_name]
             rv = self._load_result_frame()
-            self._w.emit(f"store {RESULT_TYPE} {rv}, {RESULT_TYPE}* {gv}")
+            if g_t == RESULT_TYPE:
+                self._w.emit(f"store {RESULT_TYPE} {rv}, {RESULT_TYPE}* {gv}")
+            else:
+                v64 = self._w.new_local("scend_v")
+                self._w.emit(f"{v64} = extractvalue {RESULT_TYPE} {rv}, 1")
+                if g_t == "double":
+                    vd = self._w.new_local("scend_vd")
+                    self._w.emit(f"{vd} = extractvalue {RESULT_TYPE} {rv}, 2")
+                    self._w.emit(f"store double {vd}, double* {gv}")
+                elif g_t == "i8*":
+                    vp = self._w.new_local("scend_vp")
+                    self._w.emit(f"{vp} = inttoptr i64 {v64} to i8*")
+                    self._w.emit(f"store i8* {vp}, i8** {gv}")
+                elif g_t == "i1":
+                    vb = self._w.new_local("scend_vb")
+                    self._w.emit(f"{vb} = trunc i64 {v64} to i1")
+                    self._w.emit(f"store i1 {vb}, i1* {gv}")
+                else:
+                    vi = self._coerce_to(v64, "i64", g_t)
+                    self._w.emit(f"store {g_t} {vi}, {g_t}* {gv}")
 
     def _bind_sc_arm(self, arm: ShortCircuitArm) -> None:
         self._gen_emit(EmitStmt(status=arm.status, value=arm.value, message=arm.message))

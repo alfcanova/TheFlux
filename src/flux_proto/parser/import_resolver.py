@@ -116,16 +116,28 @@ def _find_project_root(source_path: str) -> str:
 
 
 def _search_fdsl(name: str, source_dir: str, project_root: str) -> str | None:
-    if "StdLib" in name:
+    filename = name if name.endswith(".fdsl") else f"{name}.fdsl"
+
+    # Se o sufixo for *StdLib.fdsl busca em stdlib
+    if filename.endswith("StdLib.fdsl"):
         search_paths = [
-            os.path.join(project_root, "stdlib", f"{name}.fdsl"),
-            os.path.join(source_dir, "stdlib", f"{name}.fdsl"),
+            os.path.join(project_root, "stdlib", filename),
+            os.path.join(source_dir, "stdlib", filename),
+        ]
+    # Se o prefixo for AgentOf*.fdsl busca em fdsl
+    elif filename.startswith("AgentOf"):
+        search_paths = [
+            os.path.join(project_root, "fdsl", filename),
+            os.path.join(source_dir, "fdsl", filename),
+            os.path.join(source_dir, filename),
         ]
     else:
         search_paths = [
-            os.path.join(project_root, "fdsl", f"{name}.fdsl"),
-            os.path.join(source_dir, "fdsl", f"{name}.fdsl"),
-            os.path.join(source_dir, f"{name}.fdsl"),
+            os.path.join(project_root, "fdsl", filename),
+            os.path.join(source_dir, "fdsl", filename),
+            os.path.join(source_dir, filename),
+            os.path.join(project_root, "stdlib", filename),
+            os.path.join(source_dir, "stdlib", filename),
         ]
     for path in search_paths:
         if os.path.exists(path):
@@ -136,9 +148,10 @@ def _search_fdsl(name: str, source_dir: str, project_root: str) -> str | None:
 def _load_fdsl(name: str, source_dir: str, project_root: str) -> FdslFile:
     fdsl_path = _search_fdsl(name, source_dir, project_root)
     if fdsl_path is None:
-        target_folder = "stdlib" if "StdLib" in name else "fdsl"
+        filename = name if name.endswith(".fdsl") else f"{name}.fdsl"
+        target_folder = "stdlib" if filename.endswith("StdLib.fdsl") else "fdsl"
         raise ImportError(
-            f"use '{name}': arquivo fdsl '{name}.fdsl' não encontrado na pasta '{target_folder}'"
+            f"use '{name}': arquivo fdsl '{filename}' não encontrado na pasta '{target_folder}'"
         )
 
     with open(fdsl_path, "rb") as f:

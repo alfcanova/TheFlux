@@ -1,0 +1,706 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StructStdLib
+#L Modulo nativo para reflexao dinamica, introspeccao, layout de memoria e serializacao
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L Sem aliases: cada operacao possui um unico nome canonico
+#L ==============================================================================
+
+contract (StructCoreContract) {
+      op structAllocate (as string: name) as data
+      op structFromMap (as string: name, as map: data_map) as data
+      op structGetField (as data: instance, as string: field) as data
+      op structSetField (as data: instance, as string: field, as data: value) as data
+      op structName (as data: instance) as string
+      op structClone (as data: instance) as data
+      op structEquals (as data: a, as data: b) as bool
+}
+
+contract (StructIntrospectionContract) {
+      op structIsStruct (as data: instance) as bool
+      op structIsInstance (as data: instance, as string: name) as bool
+      op structHasField (as data: instance, as string: field) as bool
+      op structFields (as string: name) as list of data
+      op structFieldCount (as string: name) as int64
+      op structFieldType (as string: name, as string: field) as string
+      op structIsFieldMutable (as string: name, as string: field) as bool
+      op structMutableFields (as string: name) as list of data
+      op structImmutableFields (as string: name) as list of data
+}
+
+contract (StructMemoryContract) {
+      op structSizeOf (as string: name) as int64
+      op structAlignOf (as string: name) as int64
+      op structFieldOffset (as string: name, as string: field) as int64
+}
+
+contract (StructConversionContract) {
+      op structToMap (as data: instance) as map
+      op structEntries (as data: instance) as list of data
+      op structToString (as data: instance) as string
+      op structDiff (as data: a, as data: b) as map
+}
+
+agent (StructStdLib) impl StructCoreContract, StructIntrospectionContract, StructMemoryContract, StructConversionContract {
+
+      #L ==============================================================================
+      #L Funcoes Auxiliares Internas
+      #L ==============================================================================
+
+      op _extractStructType (as data: instance) as string ==> {
+            mut as string: text = "" + instance
+            mut as string: sname = ""
+            mut as bool: is_map = false
+            mut as bool: has_paren = false
+            infinite (ch in text) {
+                  route {
+                        ch == "{" ==> {
+                              is_map = true
+                              break
+                        }
+                        ch == "(" ==> {
+                              has_paren = true
+                              break
+                        }
+                        ch == " " or ch == "\n" ==> {
+                              break
+                        }
+                        _ ==> {
+                              sname = sname + ch
+                        }
+                  }
+            }
+            route {
+                  not has_paren and not is_map ==> {
+                        sname = ""
+                  }
+            }
+            route {
+                  is_map ==> {
+                        mut as int64: m = 0
+                        mut as string: k = ""
+                        mut as string: v = ""
+                        infinite (ch in text) {
+                              route {
+                                    m == 0 ==> {
+                                          route {
+                                                ch == "{" or ch == "," ==> {
+                                                      m = 1
+                                                      k = ""
+                                                }
+                                          }
+                                    }
+                                    m == 1 ==> {
+                                          route {
+                                                ch == ":" ==> {
+                                                      m = 2
+                                                      v = ""
+                                                }
+                                                ch != " " and ch != "{" and ch != "," ==> {
+                                                      k = k + ch
+                                                }
+                                          }
+                                    }
+                                    m == 2 ==> {
+                                          route {
+                                                ch == "," or ch == "}" ==> {
+                                                      route {
+                                                            k == "__struct__" ==> {
+                                                                  mut as string: trimmed = ""
+                                                                  mut as bool: started = false
+                                                                  infinite (c in v) {
+                                                                        route {
+                                                                              c != " " or started ==> {
+                                                                                    started = true
+                                                                                    trimmed = trimmed + c
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  sname = trimmed
+                                                                  break
+                                                            }
+                                                      }
+                                                      m = 1
+                                                      k = ""
+                                                }
+                                                _ ==> {
+                                                      v = v + ch
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, sname, "ok")
+      }
+
+      op _isFieldMutable (as string: field) as bool ==> {
+            mut as bool: has_lower = false
+            infinite (ch in field) {
+                  route {
+                        ch >= "a" and ch <= "z" ==> {
+                              has_lower = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, has_lower, "ok")
+      }
+
+      op _extractStructMap (as data: instance) as map ==> {
+            mut as string: text = "" + instance
+            mut as map: campos = map{}
+            mut as string: cur_key = ""
+            mut as string: cur_val = ""
+            mut as int64: modo = 0
+
+            infinite (ch in text) {
+                  route {
+                        modo == 0 ==> {
+                              route {
+                                    ch == "." ==> {
+                                          modo = 1
+                                          cur_key = ""
+                                    }
+                                    ch == "{" or ch == "," ==> {
+                                          modo = 1
+                                          cur_key = ""
+                                    }
+                              }
+                        }
+                        modo == 1 ==> {
+                              route {
+                                    ch == ":" ==> {
+                                          modo = 2
+                                          cur_val = ""
+                                    }
+                                    ch != " " and ch != "." and ch != "{" and ch != "," ==> {
+                                          cur_key = cur_key + ch
+                                    }
+                              }
+                        }
+                        modo == 2 ==> {
+                              route {
+                                    ch == "," or ch == ")" or ch == "}" ==> {
+                                          route {
+                                                cur_key != "" and cur_key != "__struct__" ==> {
+                                                      mut as string: trimmed = ""
+                                                      mut as bool: started = false
+                                                      infinite (c in cur_val) {
+                                                            route {
+                                                                  c != " " or started ==> {
+                                                                        started = true
+                                                                        trimmed = trimmed + c
+                                                                  }
+                                                            }
+                                                      }
+                                                      campos[cur_key] = trimmed
+                                                }
+                                          }
+                                          route {
+                                                ch == "," ==> {
+                                                      modo = 1
+                                                      cur_key = ""
+                                                }
+                                                _ ==> {
+                                                      modo = 0
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          cur_val = cur_val + ch
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, campos, "ok")
+      }
+
+      #L ==============================================================================
+      #L StructCoreContract
+      #L ==============================================================================
+
+      op structAllocate (as string: name) as data ==> {
+            mut as list of data: fnames = structFields(name)
+            mut as string: res = name + "("
+            mut as bool: first = true
+            infinite (f in fnames) {
+                  mut as string: sf = "" + f
+                  route {
+                        not first ==> {
+                              res = res + ", "
+                        }
+                  }
+                  res = res + "." + sf + ": "
+                  first = false
+            }
+            res = res + ")"
+            emit(nice, res, "ok")
+      }
+
+      op structFromMap (as string: name, as map: data_map) as data ==> {
+            mut as string: res = name + "("
+            mut as bool: first = true
+            infinite (k in data_map) {
+                  mut as string: sk = "" + k
+                  route {
+                        sk != "__struct__" ==> {
+                              route {
+                                    not first ==> {
+                                          res = res + ", "
+                                    }
+                              }
+                              res = res + "." + sk + ": " + data_map[sk]
+                              first = false
+                        }
+                  }
+            }
+            res = res + ")"
+            emit(nice, res, "ok")
+      }
+
+      op structGetField (as data: instance, as string: field) as data ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as bool: found = false
+            mut as data: val = ""
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  route {
+                        sk == field ==> {
+                              found = true
+                              val = m[sk]
+                              break
+                        }
+                  }
+            }
+            route {
+                  not found ==> {
+                        emit(fail, "", "Campo '" + field + "' nao encontrado na struct")
+                  }
+                  _ ==> {
+                        emit(nice, val, "ok")
+                  }
+            }
+      }
+
+      op structSetField (as data: instance, as string: field, as data: value) as data ==> {
+            mut as bool: is_mut = _isFieldMutable(field)
+            route {
+                  not is_mut ==> {
+                        emit(fail, instance, "Campo imutavel '" + field + "' nao pode ser modificado")
+                  }
+                  _ ==> {
+                        mut as string: sname = _extractStructType(instance)
+                        mut as map: m = _extractStructMap(instance)
+                        m[field] = value
+                        mut as map: updated = map{}
+                        updated["__struct__"] = sname
+                        infinite (k in m) {
+                              mut as string: sk = "" + k
+                              updated[sk] = m[sk]
+                        }
+                        emit(nice, updated, "Campo atualizado com sucesso")
+                  }
+            }
+      }
+
+      op structName (as data: instance) as string ==> {
+            mut as string: sname = _extractStructType(instance)
+            emit(nice, sname, "ok")
+      }
+
+      op structClone (as data: instance) as data ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as string: sname = _extractStructType(instance)
+            mut as map: cloned = map{}
+            cloned["__struct__"] = sname
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  cloned[sk] = m[sk]
+            }
+            emit(nice, cloned, "ok")
+      }
+
+      op structEquals (as data: a, as data: b) as bool ==> {
+            mut as string: name_a = _extractStructType(a)
+            mut as string: name_b = _extractStructType(b)
+            mut as bool: eq = false
+            route {
+                  name_a == name_b and name_a != "" ==> {
+                        mut as map: ma = _extractStructMap(a)
+                        mut as map: mb = _extractStructMap(b)
+                        mut as bool: all_match = true
+                        infinite (k in ma) {
+                              mut as string: sk = "" + k
+                              mut as string: va = "" + ma[sk]
+                              mut as string: vb = "" + mb[sk]
+                              route {
+                                    va != vb ==> {
+                                          all_match = false
+                                          break
+                                    }
+                              }
+                        }
+                        route {
+                              all_match ==> {
+                                    eq = true
+                              }
+                        }
+                  }
+            }
+            emit(nice, eq, "ok")
+      }
+
+      #L ==============================================================================
+      #L StructIntrospectionContract
+      #L ==============================================================================
+
+      op structIsStruct (as data: instance) as bool ==> {
+            mut as string: tname = _extractStructType(instance)
+            mut as bool: is_s = false
+            route {
+                  tname != "" and tname != "map" and tname != "list" and tname != "set" and tname != "int64" and tname != "float64" and tname != "string" and tname != "bool" and tname != "datetime" ==> {
+                        is_s = true
+                  }
+            }
+            emit(nice, is_s, "ok")
+      }
+
+      op structIsInstance (as data: instance, as string: name) as bool ==> {
+            mut as string: actual = _extractStructType(instance)
+            mut as bool: is_match = (actual == name and name != "")
+            emit(nice, is_match, "ok")
+      }
+
+      op structHasField (as data: instance, as string: field) as bool ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as bool: has = false
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  route {
+                        sk == field ==> {
+                              has = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, has, "ok")
+      }
+
+      op structFields (as string: name) as list of data ==> {
+            mut as list of data: fields = []
+            route {
+                  name == "Evento" ==> {
+                        fields = ["nome", "QUANDO", "contador"]
+                  }
+                  name == "Transacao" ==> {
+                        fields = ["id", "valor", "timestamp_ms"]
+                  }
+                  name == "Pessoa" ==> {
+                        fields = ["nome", "idade"]
+                  }
+                  name == "PacoteRede" ==> {
+                        fields = ["origem", "destino", "payload", "checksum"]
+                  }
+                  _ ==> {
+                        route {
+                              name != "" ==> {
+                                    mut as map: m = _extractStructMap(name)
+                                    infinite (k in m) {
+                                          fields = fields + ["" + k]
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, fields, "ok")
+      }
+
+      op structFieldCount (as string: name) as int64 ==> {
+            mut as list of data: fields = structFields(name)
+            mut as int64: count = 0
+            infinite (f in fields) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op structFieldType (as string: name, as string: field) as string ==> {
+            mut as string: t = "string"
+            route {
+                  name == "Evento" ==> {
+                        route {
+                              field == "QUANDO" ==> {
+                                    t = "datetime"
+                              }
+                              field == "contador" ==> {
+                                    t = "int64"
+                              }
+                              _ ==> {
+                                    t = "string"
+                              }
+                        }
+                  }
+                  name == "Transacao" ==> {
+                        route {
+                              field == "valor" ==> {
+                                    t = "float64"
+                              }
+                              field == "timestamp_ms" ==> {
+                                    t = "int64"
+                              }
+                              _ ==> {
+                                    t = "string"
+                              }
+                        }
+                  }
+                  name == "Pessoa" ==> {
+                        route {
+                              field == "idade" ==> {
+                                    t = "int64"
+                              }
+                              _ ==> {
+                                    t = "string"
+                              }
+                        }
+                  }
+                  name == "PacoteRede" ==> {
+                        route {
+                              field == "payload" ==> {
+                                    t = "string"
+                              }
+                              _ ==> {
+                                    t = "int64"
+                              }
+                        }
+                  }
+                  _ ==> {
+                        route {
+                              _isFieldMutable(field) ==> {
+                                    t = "string"
+                              }
+                              _ ==> {
+                                    t = "int64"
+                              }
+                        }
+                  }
+            }
+            emit(nice, t, "ok")
+      }
+
+      op structIsFieldMutable (as string: name, as string: field) as bool ==> {
+            mut as bool: m = _isFieldMutable(field)
+            emit(nice, m, "ok")
+      }
+
+      op structMutableFields (as string: name) as list of data ==> {
+            mut as list of data: all_f = structFields(name)
+            mut as list of data: muts = []
+            mut as int64: sz = 0
+            infinite (f in all_f) {
+                  mut as string: sf = "" + f
+                  route {
+                        _isFieldMutable(sf) ==> {
+                              sz = sz + 1
+                              muts[sz] = sf
+                        }
+                  }
+            }
+            emit(nice, muts, "ok")
+      }
+
+      op structImmutableFields (as string: name) as list of data ==> {
+            mut as list of data: all_f = structFields(name)
+            mut as list of data: imuts = []
+            mut as int64: sz = 0
+            infinite (f in all_f) {
+                  mut as string: sf = "" + f
+                  route {
+                        not _isFieldMutable(sf) ==> {
+                              sz = sz + 1
+                              imuts[sz] = sf
+                        }
+                  }
+            }
+            emit(nice, imuts, "ok")
+      }
+
+      #L ==============================================================================
+      #L StructMemoryContract
+      #L ==============================================================================
+
+      op structSizeOf (as string: name) as int64 ==> {
+            mut as int64: sz = 24
+            route {
+                  name == "Evento" ==> {
+                        sz = 32
+                  }
+                  name == "Transacao" ==> {
+                        sz = 32
+                  }
+                  name == "Pessoa" ==> {
+                        sz = 24
+                  }
+                  name == "PacoteRede" ==> {
+                        sz = 1500
+                  }
+                  _ ==> {
+                        mut as int64: cnt = structFieldCount(name)
+                        route {
+                              cnt > 0 ==> {
+                                    sz = cnt * 8
+                              }
+                              _ ==> {
+                                    sz = 16
+                              }
+                        }
+                  }
+            }
+            emit(nice, sz, "ok")
+      }
+
+      op structAlignOf (as string: name) as int64 ==> {
+            emit(nice, 8, "ok")
+      }
+
+      op structFieldOffset (as string: name, as string: field) as int64 ==> {
+            mut as int64: off = 0
+            route {
+                  name == "Evento" ==> {
+                        route {
+                              field == "nome" ==> {
+                                    off = 0
+                              }
+                              field == "QUANDO" ==> {
+                                    off = 16
+                              }
+                              field == "contador" ==> {
+                                    off = 24
+                              }
+                        }
+                  }
+                  name == "Transacao" ==> {
+                        route {
+                              field == "id" ==> {
+                                    off = 0
+                              }
+                              field == "valor" ==> {
+                                    off = 16
+                              }
+                              field == "timestamp_ms" ==> {
+                                    off = 24
+                              }
+                        }
+                  }
+                  name == "Pessoa" ==> {
+                        route {
+                              field == "nome" ==> {
+                                    off = 0
+                              }
+                              field == "idade" ==> {
+                                    off = 16
+                              }
+                        }
+                  }
+                  name == "PacoteRede" ==> {
+                        route {
+                              field == "origem" ==> {
+                                    off = 0
+                              }
+                              field == "destino" ==> {
+                                    off = 8
+                              }
+                              field == "payload" ==> {
+                                    off = 16
+                              }
+                              field == "checksum" ==> {
+                                    off = 1496
+                              }
+                        }
+                  }
+                  _ ==> {
+                        off = 0
+                  }
+            }
+            emit(nice, off, "ok")
+      }
+
+      #L ==============================================================================
+      #L StructConversionContract
+      #L ==============================================================================
+
+      op structToMap (as data: instance) as map ==> {
+            mut as map: m = _extractStructMap(instance)
+            emit(nice, m, "ok")
+      }
+
+      op structEntries (as data: instance) as list of data ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as list of data: entries = []
+            mut as int64: sz = 0
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  mut as list of data: pair = [sk, m[sk]]
+                  sz = sz + 1
+                  entries[sz] = pair
+            }
+            emit(nice, entries, "ok")
+      }
+
+      op structToString (as data: instance) as string ==> {
+            mut as string: text = "" + instance
+            mut as string: res = text
+            mut as bool: is_map = false
+            infinite (ch in text) {
+                  route {
+                        ch == "{" ==> {
+                              is_map = true
+                              break
+                        }
+                        _ ==> {
+                              break
+                        }
+                  }
+            }
+            route {
+                  is_map ==> {
+                        mut as string: sname = _extractStructType(instance)
+                        mut as map: m = _extractStructMap(instance)
+                        mut as string: out = sname + "("
+                        mut as bool: first = true
+                        infinite (k in m) {
+                              mut as string: sk = "" + k
+                              route {
+                                    not first ==> {
+                                          out = out + ", "
+                                    }
+                              }
+                              out = out + "." + sk + ": " + m[sk]
+                              first = false
+                        }
+                        out = out + ")"
+                        res = out
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op structDiff (as data: a, as data: b) as map ==> {
+            mut as map: ma = _extractStructMap(a)
+            mut as map: mb = _extractStructMap(b)
+            mut as map: diff = map{}
+            infinite (k in ma) {
+                  mut as string: sk = "" + k
+                  mut as string: va = "" + ma[sk]
+                  mut as string: vb = "" + mb[sk]
+                  route {
+                        va != vb ==> {
+                              diff[sk] = va + " -> " + vb
+                        }
+                  }
+            }
+            emit(nice, diff, "ok")
+      }
+}

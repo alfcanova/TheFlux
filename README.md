@@ -13,7 +13,7 @@ TheFlux introduz um modelo expressivo centrado em **contratos** (contract), **ag
 - **Paradigma Orientado a Agentes & Contratos**: Separação clara entre especificações de interface e implementações reativas.
 - **Tipagem Estática Expressiva**: Suporte a inteiros primitivos, ponto flutuante com formatos para ML, tensores/matrizes, coleções e tipos de data/hora nativos.
 - **Arquitetura Multi-Backend (6 Alvos de Execução)**: O mesmo código-fonte TheFlux executa com exata paridade comportamental em todos os ambientes.
-- **Biblioteca Padrão Abrangente (stdlib)**: 16 bibliotecas modulares cobrindo desde álgebra linear e SIMD até criptografia, rede e relógio monotônico.
+- **Biblioteca Padrão Abrangente (stdlib)**: 18 bibliotecas modulares cobrindo desde formatos estruturados (JSON, CSV, YAML 1.2, TOML), álgebra linear e SIMD até criptografia, rede e relógio monotônico.
 - **Playground Web**: Ambiente interativo WebAssembly no navegador (web_wasm/).
 
 ---
@@ -43,19 +43,21 @@ TheFlux/
 │   ├── DateTimeStdLib.fdsl      # Data, tempo, fuso horário, relógio monotônico
 │   ├── DebugStdLib.fdsl         # Debug de programas
 │   ├── FileSignatureStdLib.fdsl # Assinatura, autenticação de arquivos e diretórios
+│   ├── FormatStdLib.fdsl        # Formatos estruturados (JSON, CSV, YAML 1.2, TOML, Base64, URL)
 │   ├── HashStdLib.fdsl          # Criptografia, checksums, hashes rápidos
 │   ├── IoStdLib.fdsl            # Arquivos, diretórios, inspeção
 │   ├── LinAlgStdLib.fdsl        # Álgebra linear, vetores, matrizes, autovalores
 │   ├── ListStdLib.fdsl          # Listas e sequências
-│   ├── MapStdLib.fdsl           # Matemática fundamental, trigonometria, estatística
+│   ├── MapStdLib.fdsl           # Dicionários, mapas chave-valor, entradas e transformações
 │   ├── MathStdLib.fdsl          # Matemática fundamental, trigonometria, estatística
 │   ├── NetStdLib.fdsl           # Redes, sockets, HTTP
 │   ├── OsStdLib.fdsl            # Processos, ambiente, sistema operacional
 │   ├── RandomStdLib.fdsl        # Geradores pseudo-aleatórios e distribuições
 │   ├── SetStdLib.fdsl           # Teoria e álgebra de conjuntos
 │   ├── SimdStdLib.fdsl          # Operações vetoriais aceleradas
+│   ├── StatStdLib.fdsl          # Estatística descritiva, distribuições e inferência
 │   └── StringStdLib.fdsl        # Manipulação e mutação de strings
-├── flux/                        # Mais de 200 programas e suítes de teste (.flux)
+├── flux/                        # 236 programas e suítes de teste (.flux)
 ├── docs/                        # Especificação EBNF, gramática e documentação técnica
 ├── specs/                       # Especificações estruturadas de funcionalidades
 ├── openspec/                    # Sistema de mudanças e propostas OpenSpec
@@ -120,7 +122,7 @@ O harness backend_compliance.py valida todos os arquivos de teste simultaneament
 python backend_compliance.py
 ```
 
-> **Status Atual**: **223/223 arquivos com 100% de conformidade nos 6 backends** (0 regressões).
+> **Status Atual**: **236/236 arquivos com 100% de conformidade nos 6 backends** (1416/1416 verificações verdes, 0 divergências, 0 regressões).
 
 ---
 

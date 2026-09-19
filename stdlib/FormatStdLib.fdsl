@@ -1,0 +1,1964 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Modulo nativo para parsing, serializacao e codificacao de formatos (JSON, CSV, YAML 1.2, TOML, Encodings)
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas)
+#L Regra: 1-index para humanos e 0-index para maquinas
+#L ==============================================================================
+
+contract (FormatJsonContract) {
+      op formatParseJson (as string: json_text) as data
+      op formatStringifyJson (as data: val) as string
+      op formatIsValidJson (as string: json_text) as bool
+      op formatMinifyJson (as string: json_text) as string
+      op formatPrettyJson (as string: json_text, as int64: indent_size) as string
+
+      #L Aliases
+      op parseJson (as string: json_text) as data
+      op stringifyJson (as data: val) as string
+      op isValidJson (as string: json_text) as bool
+      op minifyJson (as string: json_text) as string
+      op prettyJson (as string: json_text, as int64: indent_size) as string
+}
+
+contract (FormatCsvContract) {
+      op formatParseCsvRows (as string: csv_text, as string: delimiter) as list of data
+      op formatParseCsvTable (as string: csv_text, as string: delimiter) as list of data
+      op formatStringifyCsvRows (as list of data: rows, as string: delimiter) as string
+      op formatStringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string
+      op formatIsValidCsv (as string: csv_text, as string: delimiter) as bool
+
+      #L Aliases
+      op parseCsvRows (as string: csv_text, as string: delimiter) as list of data
+      op parseCsvTable (as string: csv_text, as string: delimiter) as list of data
+      op stringifyCsvRows (as list of data: rows, as string: delimiter) as string
+      op stringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string
+      op isValidCsv (as string: csv_text, as string: delimiter) as bool
+}
+
+contract (FormatYamlContract) {
+      op formatParseYaml (as string: yaml_text) as data
+      op formatParseYamlAll (as string: yaml_text) as list of data
+      op formatStringifyYaml (as data: val) as string
+      op formatStringifyYamlAll (as list of data: docs) as string
+      op formatIsValidYaml (as string: yaml_text) as bool
+
+      #L Aliases
+      op parseYaml (as string: yaml_text) as data
+      op parseYamlAll (as string: yaml_text) as list of data
+      op stringifyYaml (as data: val) as string
+      op stringifyYamlAll (as list of data: docs) as string
+      op isValidYaml (as string: yaml_text) as bool
+}
+
+contract (FormatTomlContract) {
+      op formatParseToml (as string: toml_text) as map
+      op formatStringifyToml (as map: data_map) as string
+      op formatIsValidToml (as string: toml_text) as bool
+
+      #L Aliases
+      op parseToml (as string: toml_text) as map
+      op stringifyToml (as map: data_map) as string
+      op isValidToml (as string: toml_text) as bool
+}
+
+contract (FormatEncodingContract) {
+      op formatEncodeBase64 (as string: text) as string
+      op formatDecodeBase64 (as string: b64_text) as string
+      op formatIsValidBase64 (as string: b64_text) as bool
+      op formatParseQueryString (as string: query_text) as map
+      op formatStringifyQueryString (as map: params) as string
+
+      #L Aliases
+      op encodeBase64 (as string: text) as string
+      op decodeBase64 (as string: b64_text) as string
+      op isValidBase64 (as string: b64_text) as bool
+      op parseQueryString (as string: query_text) as map
+      op stringifyQueryString (as map: params) as string
+}
+
+agent (FormatStdLib) impl FormatJsonContract, FormatCsvContract, FormatYamlContract, FormatTomlContract, FormatEncodingContract {
+
+      #L ==============================================================================
+      #L Utilitarios Internos de Apoio Textual (_fmt*)
+      #L ==============================================================================
+
+      op _fmtStrLen (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) {
+                  len = len + 1
+            }
+            emit(nice, len, "ok")
+      }
+
+      op _fmtCharAt (as string: text, as int64: idx) as string ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  idx < 1 or idx > len ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = text[idx]
+            emit(nice, res, "ok")
+      }
+
+      op _fmtIsWs (as string: c) as bool ==> {
+            mut as bool: res = (c == " " or c == "\t" or c == "\n" or c == "\r")
+            emit(nice, res, "ok")
+      }
+
+      op _fmtTrimStart (as string: text) as string ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  len == 0 ==> { emit(nice, empty, "ok") }
+            }
+            mut as int64: start = 1
+            infinite (start <= len) {
+                  mut as string: c = _fmtCharAt(text, start)
+                  route {
+                        _fmtIsWs(c) ==> { start = start + 1 }
+                        _ ==> { break }
+                  }
+            }
+            route {
+                  start > len ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = text[start .. len]
+            emit(nice, res, "ok")
+      }
+
+      op _fmtTrimEnd (as string: text) as string ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  len == 0 ==> { emit(nice, empty, "ok") }
+            }
+            mut as int64: end = len
+            infinite (end >= 1) {
+                  mut as string: c = _fmtCharAt(text, end)
+                  route {
+                        _fmtIsWs(c) ==> { end = end - 1 }
+                        _ ==> { break }
+                  }
+            }
+            route {
+                  end < 1 ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = text[1 .. end]
+            emit(nice, res, "ok")
+      }
+
+      op _fmtTrim (as string: text) as string ==> {
+            mut as string: s1 = _fmtTrimStart(text)
+            mut as string: s2 = _fmtTrimEnd(s1)
+            emit(nice, s2, "ok")
+      }
+
+      op _fmtCharToDigit (as string: c) as int64 ==> {
+            mut as int64: d = -1
+            route {
+                  c == "0" ==> { d = 0 }
+                  c == "1" ==> { d = 1 }
+                  c == "2" ==> { d = 2 }
+                  c == "3" ==> { d = 3 }
+                  c == "4" ==> { d = 4 }
+                  c == "5" ==> { d = 5 }
+                  c == "6" ==> { d = 6 }
+                  c == "7" ==> { d = 7 }
+                  c == "8" ==> { d = 8 }
+                  c == "9" ==> { d = 9 }
+            }
+            emit(nice, d, "ok")
+      }
+
+      op _fmtCharToHexDigit (as string: c) as int64 ==> {
+            mut as int64: hd = -1
+            route {
+                  c >= "0" and c <= "9" ==> { hd = _fmtCharToDigit(c) }
+                  c == "a" or c == "A" ==> { hd = 10 }
+                  c == "b" or c == "B" ==> { hd = 11 }
+                  c == "c" or c == "C" ==> { hd = 12 }
+                  c == "d" or c == "D" ==> { hd = 13 }
+                  c == "e" or c == "E" ==> { hd = 14 }
+                  c == "f" or c == "F" ==> { hd = 15 }
+            }
+            emit(nice, hd, "ok")
+      }
+
+      op _fmtParseInt (as string: text) as int64 ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as int64: zero = 0
+            route {
+                  len == 0 ==> { emit(nice, zero, "ok") }
+            }
+            mut as bool: neg = false
+            mut as int64: start = 1
+            route {
+                  _fmtCharAt(text, 1) == "-" ==> {
+                        neg = true
+                        start = 2
+                  }
+                  _fmtCharAt(text, 1) == "+" ==> {
+                        start = 2
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start .. len) {
+                  mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                  route {
+                        d >= 0 ==> { res = res * 10 + d }
+                  }
+            }
+            route {
+                  neg ==> {
+                        mut as int64: neg_res = 0 - res
+                        emit(nice, neg_res, "ok")
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _fmtParseFloat (as string: text) as float64 ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as float64: zero_f = 0.0
+            route {
+                  len == 0 ==> { emit(nice, zero_f, "ok") }
+            }
+            mut as bool: neg = false
+            mut as int64: start = 1
+            route {
+                  _fmtCharAt(text, 1) == "-" ==> {
+                        neg = true
+                        start = 2
+                  }
+                  _fmtCharAt(text, 1) == "+" ==> {
+                        start = 2
+                  }
+            }
+            mut as int64: dot_idx = -1
+            infinite (i in start .. len) {
+                  route {
+                        _fmtCharAt(text, i) == "." and dot_idx == -1 ==> {
+                              dot_idx = i
+                        }
+                  }
+            }
+            mut as float64: int_part = 0.0
+            mut as float64: frac_part = 0.0
+            route {
+                  dot_idx == -1 ==> {
+                        infinite (i in start .. len) {
+                              mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                              route {
+                                    d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                              }
+                        }
+                  }
+                  dot_idx != -1 ==> {
+                        infinite (i in start .. dot_idx - 1) {
+                              mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                              route {
+                                    d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                              }
+                        }
+                        mut as float64: divisor = 10.0
+                        infinite (i in dot_idx + 1 .. len) {
+                              mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                              route {
+                                    d >= 0 ==> {
+                                          frac_part = frac_part + ((d as float64) /f divisor)
+                                          divisor = divisor * 10.0
+                                    }
+                              }
+                        }
+                  }
+            }
+            mut as float64: val = int_part + frac_part
+            route {
+                  neg ==> {
+                        mut as float64: neg_val = 0.0 - val
+                        emit(nice, neg_val, "ok")
+                  }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op _fmtOrd (as string: ch) as int64 ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as int64: c35 = 35
+            mut as int64: c10 = 10
+            mut as int64: c9 = 9
+            mut as int64: c13 = 13
+            route {
+                  ch == "#" ==> { emit(nice, c35, "ok") }
+                  ch == "\n" ==> { emit(nice, c10, "ok") }
+                  ch == "\t" ==> { emit(nice, c9, "ok") }
+                  ch == "\r" ==> { emit(nice, c13, "ok") }
+            }
+            mut as int64: idx = 1
+            mut as int64: found_code = 0
+            infinite (c in ascii_table) {
+                  route {
+                        c == ch and found_code == 0 ==> {
+                              mut as int64: code_val = 31 + idx
+                              route {
+                                    code_val >= 35 ==> { code_val = code_val + 1 }
+                              }
+                              found_code = code_val
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_code, "ok")
+      }
+
+      op _fmtChr (as int64: code) as string ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as string: ch_hash = "#"
+            mut as string: ch_nl = "\n"
+            mut as string: ch_tab = "\t"
+            mut as string: ch_cr = "\r"
+            mut as string: empty = ""
+            route {
+                  code == 35 ==> { emit(nice, ch_hash, "ok") }
+                  code == 10 ==> { emit(nice, ch_nl, "ok") }
+                  code == 9 ==> { emit(nice, ch_tab, "ok") }
+                  code == 13 ==> { emit(nice, ch_cr, "ok") }
+                  code >= 32 and code <= 126 ==> {
+                        mut as int64: pos = code - 31
+                        route {
+                              code > 35 ==> { pos = pos - 1 }
+                        }
+                        mut as string: res = ascii_table[pos]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, empty, "ok")
+      }
+
+      op _fmtSplitLines (as string: text) as list of string ==> {
+            mut as list of string: lines = []
+            mut as int64: len = _fmtStrLen(text)
+            route {
+                  len == 0 ==> { emit(nice, lines, "ok") }
+            }
+            mut as string: curr = ""
+            mut as int64: line_count = 0
+            infinite (i in 1 .. len) {
+                  mut as string: c = _fmtCharAt(text, i)
+                  route {
+                        c == "\r" ==> {
+                              #L Ignora carriage return
+                        }
+                        c == "\n" ==> {
+                              line_count = line_count + 1
+                              lines[line_count] = curr
+                              curr = ""
+                        }
+                        c != "\r" and c != "\n" ==> {
+                              curr = curr + c
+                        }
+                  }
+            }
+            line_count = line_count + 1
+            lines[line_count] = curr
+            emit(nice, lines, "ok")
+      }
+
+      op _fmtContains (as string: text, as string: needle) as bool ==> {
+            mut as int64: len_t = _fmtStrLen(text)
+            mut as int64: len_n = _fmtStrLen(needle)
+            mut as bool: b_true = true
+            mut as bool: b_false = false
+            route {
+                  len_n == 0 ==> { emit(nice, b_true, "ok") }
+                  len_n > len_t ==> { emit(nice, b_false, "ok") }
+            }
+            mut as int64: limit = len_t - len_n + 1
+            mut as bool: found = false
+            infinite (i in 1 .. limit) {
+                  route {
+                        text[i .. i + len_n - 1] == needle ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. FormatJsonContract
+      #L ==============================================================================
+
+      op _jsonSkipWs (as string: text, as int64: idx, as int64: len) as int64 ==> {
+            mut as int64: curr = idx
+            infinite (curr <= len) {
+                  route {
+                        _fmtIsWs(_fmtCharAt(text, curr)) ==> { curr = curr + 1 }
+                        _ ==> { break }
+                  }
+            }
+            emit(nice, curr, "ok")
+      }
+
+      op _jsonParseString (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as string: res = ""
+            mut as int64: curr = idx + 1
+            infinite (curr <= len) {
+                  mut as string: c = _fmtCharAt(text, curr)
+                  route {
+                        c == "\"" ==> {
+                              curr = curr + 1
+                              break
+                        }
+                        c == "\\" ==> {
+                              curr = curr + 1
+                              route {
+                                    curr <= len ==> {
+                                          mut as string: esc = _fmtCharAt(text, curr)
+                                          route {
+                                                esc == "n" ==> { res = res + "\n" }
+                                                esc == "t" ==> { res = res + "\t" }
+                                                esc == "r" ==> { res = res + "\r" }
+                                                esc == "\"" ==> { res = res + "\"" }
+                                                esc == "\\" ==> { res = res + "\\" }
+                                                esc == "/" ==> { res = res + "/" }
+                                                _ ==> { res = res + esc }
+                                          }
+                                          curr = curr + 1
+                                    }
+                              }
+                        }
+                        c != "\"" and c != "\\" ==> {
+                              res = res + c
+                              curr = curr + 1
+                        }
+                  }
+            }
+            mut as list of data: ret = [res, curr]
+            emit(nice, ret, "ok")
+      }
+
+      op _jsonParseNumber (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as string: raw = ""
+            mut as int64: curr = idx
+            mut as bool: has_dot = false
+            infinite (curr <= len) {
+                  mut as string: c = _fmtCharAt(text, curr)
+                  route {
+                        (c >= "0" and c <= "9") or c == "-" or c == "+" ==> {
+                              raw = raw + c
+                              curr = curr + 1
+                        }
+                        c == "." ==> {
+                              has_dot = true
+                              raw = raw + c
+                              curr = curr + 1
+                        }
+                        c == "e" or c == "E" ==> {
+                              raw = raw + c
+                              curr = curr + 1
+                        }
+                        _ ==> { break }
+                  }
+            }
+            route {
+                  has_dot ==> {
+                        mut as float64: fval = _fmtParseFloat(raw)
+                        mut as list of data: ret_f = [fval, curr]
+                        emit(nice, ret_f, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: ival = _fmtParseInt(raw)
+                        mut as list of data: ret_i = [ival, curr]
+                        emit(nice, ret_i, "ok")
+                  }
+            }
+      }
+
+      op _jsonParseArray (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as list of data: arr = []
+            mut as int64: curr = idx + 1
+            curr = _jsonSkipWs(text, curr, len)
+            route {
+                  curr <= len and _fmtCharAt(text, curr) == "]" ==> {
+                        mut as int64: next_c = curr + 1
+                        mut as list of data: ret_empty = [arr, next_c]
+                        emit(nice, ret_empty, "ok")
+                  }
+            }
+            mut as int64: arr_len = 0
+            infinite (curr <= len) {
+                  mut as list of data: item_res = _jsonParseValue(text, curr, len)
+                  curr = item_res[2] as int64
+                  arr_len = arr_len + 1
+                  arr[arr_len] = item_res[1]
+                  curr = _jsonSkipWs(text, curr, len)
+                  route {
+                        curr <= len and _fmtCharAt(text, curr) == "," ==> {
+                              curr = curr + 1
+                              curr = _jsonSkipWs(text, curr, len)
+                        }
+                        curr <= len and _fmtCharAt(text, curr) == "]" ==> {
+                              curr = curr + 1
+                              break
+                        }
+                        _ ==> { break }
+                  }
+            }
+            mut as list of data: ret = [arr, curr]
+            emit(nice, ret, "ok")
+      }
+
+      op _jsonParseObject (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as map: obj = map{}
+            mut as int64: curr = idx + 1
+            curr = _jsonSkipWs(text, curr, len)
+            route {
+                  curr <= len and _fmtCharAt(text, curr) == "}" ==> {
+                        mut as int64: next_c = curr + 1
+                        mut as list of data: ret_empty = [obj, next_c]
+                        emit(nice, ret_empty, "ok")
+                  }
+            }
+            infinite (curr <= len) {
+                  route {
+                        _fmtCharAt(text, curr) != "\"" ==> { break }
+                  }
+                  mut as list of data: k_res = _jsonParseString(text, curr, len)
+                  mut as string: key = k_res[1] as string
+                  curr = k_res[2] as int64
+                  curr = _jsonSkipWs(text, curr, len)
+                  route {
+                        curr <= len and _fmtCharAt(text, curr) == ":" ==> {
+                              curr = curr + 1
+                        }
+                  }
+                  curr = _jsonSkipWs(text, curr, len)
+                  mut as list of data: v_res = _jsonParseValue(text, curr, len)
+                  curr = v_res[2] as int64
+                  obj[key] = v_res[1]
+                  curr = _jsonSkipWs(text, curr, len)
+                  route {
+                        curr <= len and _fmtCharAt(text, curr) == "," ==> {
+                              curr = curr + 1
+                              curr = _jsonSkipWs(text, curr, len)
+                        }
+                        curr <= len and _fmtCharAt(text, curr) == "}" ==> {
+                              curr = curr + 1
+                              break
+                        }
+                        _ ==> { break }
+                  }
+            }
+            mut as list of data: ret = [obj, curr]
+            emit(nice, ret, "ok")
+      }
+
+      op _jsonParseValue (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as int64: curr = _jsonSkipWs(text, idx, len)
+            mut as string: empty = ""
+            route {
+                  curr > len ==> {
+                        mut as list of data: ret_eof = [empty, curr]
+                        emit(nice, ret_eof, "ok")
+                  }
+            }
+            mut as string: c = _fmtCharAt(text, curr)
+            route {
+                  c == "{" ==> {
+                        mut as list of data: ret_obj = _jsonParseObject(text, curr, len)
+                        emit(nice, ret_obj, "ok")
+                  }
+                  c == "[" ==> {
+                        mut as list of data: ret_arr = _jsonParseArray(text, curr, len)
+                        emit(nice, ret_arr, "ok")
+                  }
+                  c == "\"" ==> {
+                        mut as list of data: ret_str = _jsonParseString(text, curr, len)
+                        emit(nice, ret_str, "ok")
+                  }
+                  c == "t" and curr + 3 <= len and text[curr .. curr + 3] == "true" ==> {
+                        mut as bool: b_true = true
+                        mut as int64: next_idx = curr + 4
+                        mut as list of data: ret_t = [b_true, next_idx]
+                        emit(nice, ret_t, "ok")
+                  }
+                  c == "f" and curr + 4 <= len and text[curr .. curr + 4] == "false" ==> {
+                        mut as bool: b_false = false
+                        mut as int64: next_idx = curr + 5
+                        mut as list of data: ret_f = [b_false, next_idx]
+                        emit(nice, ret_f, "ok")
+                  }
+                  c == "n" and curr + 3 <= len and text[curr .. curr + 3] == "null" ==> {
+                        mut as int64: next_idx = curr + 4
+                        mut as list of data: ret_n = [empty, next_idx]
+                        emit(nice, ret_n, "ok")
+                  }
+                  (c >= "0" and c <= "9") or c == "-" or c == "+" ==> {
+                        mut as list of data: ret_num = _jsonParseNumber(text, curr, len)
+                        emit(nice, ret_num, "ok")
+                  }
+            }
+            mut as int64: next_c = curr + 1
+            mut as list of data: ret_def = [empty, next_c]
+            emit(nice, ret_def, "ok")
+      }
+
+      op formatParseJson (as string: json_text) as data ==> {
+            mut as int64: len = _fmtStrLen(json_text)
+            route {
+                  len == 0 ==> {
+                        mut as map: m_empty = map{}
+                        emit(nice, m_empty, "ok")
+                  }
+            }
+            mut as list of data: res = _jsonParseValue(json_text, 1, len)
+            mut as data: parsed_val = res[1]
+            emit(nice, parsed_val, "ok")
+      }
+
+      op formatStringifyJson (as data: val) as string ==> {
+            mut as string: res = ""
+            mut as string: s = "" + val
+            mut as int64: len_s = _fmtStrLen(s)
+            route {
+                  len_s >= 2 and _fmtCharAt(s, 1) == "{" and _fmtCharAt(s, len_s) == "}" ==> {
+                        mut as map: m = val as map
+                        res = "{"
+                        mut as bool: first = true
+                        infinite (k in m) {
+                              route {
+                                    not first ==> { res = res + ", " }
+                                    first ==> { first = false }
+                              }
+                              mut as string: sub_str = formatStringifyJson(m[k])
+                              route {
+                                    sub_str == "1" and _fmtContains(s, k + ": true") ==> { sub_str = "true" }
+                                    sub_str == "0" and _fmtContains(s, k + ": false") ==> { sub_str = "false" }
+                              }
+                              res = res + "\"" + k + "\": " + sub_str
+                        }
+                        res = res + "}"
+                        emit(nice, res, "ok")
+                  }
+                  len_s >= 2 and _fmtCharAt(s, 1) == "[" and _fmtCharAt(s, len_s) == "]" ==> {
+                        mut as list of data: l = val as list of data
+                        res = "["
+                        mut as bool: first = true
+                        infinite (item in l) {
+                              route {
+                                    not first ==> { res = res + ", " }
+                                    first ==> { first = false }
+                              }
+                              mut as string: sub_str = formatStringifyJson(item)
+                              res = res + sub_str
+                        }
+                        res = res + "]"
+                        emit(nice, res, "ok")
+                  }
+                  s == "true" ==> {
+                        mut as string: st = "true"
+                        emit(nice, st, "ok")
+                  }
+                  s == "false" ==> {
+                        mut as string: sf = "false"
+                        emit(nice, sf, "ok")
+                  }
+                  _ ==> {
+                        mut as bool: is_num = true
+                        mut as int64: i = 1
+                        route {
+                              len_s == 0 ==> { is_num = false }
+                              len_s > 0 and (_fmtCharAt(s, 1) == "-" or _fmtCharAt(s, 1) == "+") ==> { i = 2 }
+                        }
+                        infinite (i <= len_s) {
+                              mut as string: ch = _fmtCharAt(s, i)
+                              route {
+                                    (ch < "0" or ch > "9") and ch != "." ==> {
+                                          is_num = false
+                                          break
+                                    }
+                              }
+                              i = i + 1
+                        }
+                        route {
+                              is_num and len_s > 0 ==> { emit(nice, s, "ok") }
+                        }
+                        mut as string: quoted = "\"" + s + "\""
+                        emit(nice, quoted, "ok")
+                  }
+            }
+      }
+
+      op formatIsValidJson (as string: json_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(json_text)
+            mut as bool: b_false = false
+            mut as bool: b_true = true
+            route {
+                  len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as int64: start = _jsonSkipWs(json_text, 1, len)
+            route {
+                  start > len ==> { emit(nice, b_false, "ok") }
+            }
+            mut as string: c = _fmtCharAt(json_text, start)
+            route {
+                  c == "{" ==> {
+                        mut as int64: end_idx = len
+                        infinite (end_idx >= 1) {
+                              route {
+                                    _fmtIsWs(_fmtCharAt(json_text, end_idx)) ==> { end_idx = end_idx - 1 }
+                                    _ ==> { break }
+                              }
+                        }
+                        route {
+                              end_idx < start or _fmtCharAt(json_text, end_idx) != "}" ==> { emit(nice, b_false, "ok") }
+                        }
+                        mut as string: inner = _fmtTrim(json_text[start + 1 .. end_idx - 1])
+                        route {
+                              _fmtStrLen(inner) == 0 ==> { emit(nice, b_true, "ok") }
+                              not _fmtContains(inner, ":") or not _fmtContains(inner, "\"") ==> { emit(nice, b_false, "ok") }
+                        }
+                        emit(nice, b_true, "ok")
+                  }
+                  c == "[" ==> {
+                        mut as int64: end_idx = len
+                        infinite (end_idx >= 1) {
+                              route {
+                                    _fmtIsWs(_fmtCharAt(json_text, end_idx)) ==> { end_idx = end_idx - 1 }
+                                    _ ==> { break }
+                              }
+                        }
+                        route {
+                              end_idx < start or _fmtCharAt(json_text, end_idx) != "]" ==> { emit(nice, b_false, "ok") }
+                        }
+                        emit(nice, b_true, "ok")
+                  }
+                  c == "\"" ==> {
+                        mut as bool: res_str = (len >= 2 and _fmtCharAt(json_text, len) == "\"")
+                        emit(nice, res_str, "ok")
+                  }
+                  c == "t" ==> {
+                        mut as bool: res_t = (_fmtTrim(json_text) == "true")
+                        emit(nice, res_t, "ok")
+                  }
+                  c == "f" ==> {
+                        mut as bool: res_f = (_fmtTrim(json_text) == "false")
+                        emit(nice, res_f, "ok")
+                  }
+                  c == "n" ==> {
+                        mut as bool: res_n = (_fmtTrim(json_text) == "null")
+                        emit(nice, res_n, "ok")
+                  }
+                  (c >= "0" and c <= "9") or c == "-" ==> { emit(nice, b_true, "ok") }
+            }
+            emit(nice, b_false, "ok")
+      }
+
+      op formatMinifyJson (as string: json_text) as string ==> {
+            mut as int64: len = _fmtStrLen(json_text)
+            mut as string: res = ""
+            mut as bool: in_quotes = false
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(json_text, i)
+                  route {
+                        c == "\"" ==> {
+                              in_quotes = not in_quotes
+                              res = res + c
+                        }
+                        c == "\\" and in_quotes ==> {
+                              res = res + c
+                              route {
+                                    i + 1 <= len ==> {
+                                          i = i + 1
+                                          res = res + _fmtCharAt(json_text, i)
+                                    }
+                              }
+                        }
+                        in_quotes and c != "\"" and c != "\\" ==> {
+                              res = res + c
+                        }
+                        not in_quotes ==> {
+                              route {
+                                    not _fmtIsWs(c) ==> { res = res + c }
+                              }
+                        }
+                  }
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatPrettyJson (as string: json_text, as int64: indent_size) as string ==> {
+            mut as string: mini = formatMinifyJson(json_text)
+            mut as int64: len = _fmtStrLen(mini)
+            mut as string: res = ""
+            mut as int64: depth = 0
+            mut as bool: in_quotes = false
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(mini, i)
+                  route {
+                        c == "\"" ==> {
+                              in_quotes = not in_quotes
+                              res = res + c
+                        }
+                        in_quotes ==> {
+                              res = res + c
+                        }
+                        not in_quotes ==> {
+                              route {
+                                    c == "{" or c == "[" ==> {
+                                          depth = depth + 1
+                                          res = res + c + "\n"
+                                          infinite (k in 1 .. depth * indent_size) { res = res + " " }
+                                    }
+                                    c == "}" or c == "]" ==> {
+                                          depth = depth - 1
+                                          res = res + "\n"
+                                          infinite (k in 1 .. depth * indent_size) { res = res + " " }
+                                          res = res + c
+                                    }
+                                    c == "," ==> {
+                                          res = res + ",\n"
+                                          infinite (k in 1 .. depth * indent_size) { res = res + " " }
+                                    }
+                                    c == ":" ==> {
+                                          res = res + ": "
+                                    }
+                                    c != "{" and c != "[" and c != "}" and c != "]" and c != "," and c != ":" ==> {
+                                          res = res + c
+                                    }
+                              }
+                        }
+                  }
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L Aliases JSON
+      op parseJson (as string: json_text) as data ==> {
+            mut as data: r = formatParseJson(json_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyJson (as data: val) as string ==> {
+            mut as string: r = formatStringifyJson(val)
+            emit(nice, r, "ok")
+      }
+      op isValidJson (as string: json_text) as bool ==> {
+            mut as bool: r = formatIsValidJson(json_text)
+            emit(nice, r, "ok")
+      }
+      op minifyJson (as string: json_text) as string ==> {
+            mut as string: r = formatMinifyJson(json_text)
+            emit(nice, r, "ok")
+      }
+      op prettyJson (as string: json_text, as int64: indent_size) as string ==> {
+            mut as string: r = formatPrettyJson(json_text, indent_size)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. FormatCsvContract (RFC 4180)
+      #L ==============================================================================
+
+      op formatParseCsvRows (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: rows = []
+            mut as int64: len = _fmtStrLen(csv_text)
+            route {
+                  len == 0 ==> { emit(nice, rows, "ok") }
+            }
+            mut as list of data: curr_row = []
+            mut as string: curr_cell = ""
+            mut as bool: in_quotes = false
+            mut as int64: row_count = 0
+            mut as int64: col_count = 0
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(csv_text, i)
+                  route {
+                        c == "\"" ==> {
+                              route {
+                                    in_quotes and i + 1 <= len and _fmtCharAt(csv_text, i + 1) == "\"" ==> {
+                                          curr_cell = curr_cell + "\""
+                                          i = i + 1
+                                    }
+                                    _ ==> {
+                                          in_quotes = not in_quotes
+                                    }
+                              }
+                        }
+                        c == delimiter and not in_quotes ==> {
+                              col_count = col_count + 1
+                              curr_row[col_count] = curr_cell
+                              curr_cell = ""
+                        }
+                        (c == "\n" or c == "\r") and not in_quotes ==> {
+                              route {
+                                    c == "\r" and i + 1 <= len and _fmtCharAt(csv_text, i + 1) == "\n" ==> {
+                                          i = i + 1
+                                    }
+                              }
+                              col_count = col_count + 1
+                              curr_row[col_count] = curr_cell
+                              curr_cell = ""
+                              row_count = row_count + 1
+                              rows[row_count] = curr_row
+                              curr_row = []
+                              col_count = 0
+                        }
+                        c != "\"" and (c != delimiter or in_quotes) and (c != "\n" or in_quotes) and (c != "\r" or in_quotes) ==> {
+                              curr_cell = curr_cell + c
+                        }
+                  }
+                  i = i + 1
+            }
+            route {
+                  col_count > 0 or _fmtStrLen(curr_cell) > 0 or _fmtStrLen("" + curr_row) > 2 ==> {
+                        col_count = col_count + 1
+                        curr_row[col_count] = curr_cell
+                        row_count = row_count + 1
+                        rows[row_count] = curr_row
+                  }
+            }
+            emit(nice, rows, "ok")
+      }
+
+      op formatParseCsvTable (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: all_rows = formatParseCsvRows(csv_text, delimiter)
+            mut as int64: total_rows = 0
+            mut as list of data: empty_list = []
+            infinite (r in all_rows) { total_rows = total_rows + 1 }
+            route {
+                  total_rows <= 1 ==> { emit(nice, empty_list, "ok") }
+            }
+            mut as list of data: headers = all_rows[1] as list of data
+            mut as int64: num_cols = 0
+            infinite (h in headers) { num_cols = num_cols + 1 }
+
+            mut as list of data: table = []
+            mut as int64: t_idx = 0
+            infinite (r_idx in 2 .. total_rows) {
+                  mut as list of data: row = all_rows[r_idx] as list of data
+                  mut as map: record = map{}
+                  infinite (c_idx in 1 .. num_cols) {
+                        mut as string: col_name = "" + headers[c_idx]
+                        mut as string: cell_val = ""
+                        route {
+                              c_idx <= num_cols ==> { cell_val = "" + row[c_idx] }
+                        }
+                        record[col_name] = cell_val
+                  }
+                  t_idx = t_idx + 1
+                  table[t_idx] = record
+            }
+            emit(nice, table, "ok")
+      }
+
+      op formatStringifyCsvRows (as list of data: rows, as string: delimiter) as string ==> {
+            mut as string: res = ""
+            mut as bool: first_row = true
+            infinite (r in rows) {
+                  route {
+                        not first_row ==> { res = res + "\n" }
+                        first_row ==> { first_row = false }
+                  }
+                  mut as list of data: cols = r as list of data
+                  mut as bool: first_col = true
+                  infinite (c in cols) {
+                        route {
+                              not first_col ==> { res = res + delimiter }
+                              first_col ==> { first_col = false }
+                        }
+                        mut as string: cell = "" + c
+                        mut as bool: needs_quote = _fmtContains(cell, delimiter) or _fmtContains(cell, "\"") or _fmtContains(cell, "\n")
+                        route {
+                              needs_quote ==> {
+                                    mut as string: esc_cell = ""
+                                    infinite (ch in cell) {
+                                          route {
+                                                ch == "\"" ==> { esc_cell = esc_cell + "\"\"" }
+                                                ch != "\"" ==> { esc_cell = esc_cell + ch }
+                                          }
+                                    }
+                                    res = res + "\"" + esc_cell + "\""
+                              }
+                              not needs_quote ==> {
+                                    res = res + cell
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatStringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string ==> {
+            mut as list of data: rows = []
+            mut as int64: r_count = 1
+            rows[1] = headers
+            infinite (rec in records) {
+                  mut as map: m = rec as map
+                  mut as list of data: row = []
+                  mut as int64: c_idx = 0
+                  infinite (h in headers) {
+                        c_idx = c_idx + 1
+                        row[c_idx] = "" + m["" + h]
+                  }
+                  r_count = r_count + 1
+                  rows[r_count] = row
+            }
+            mut as string: res = formatStringifyCsvRows(rows, delimiter)
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidCsv (as string: csv_text, as string: delimiter) as bool ==> {
+            mut as list of data: rows = formatParseCsvRows(csv_text, delimiter)
+            mut as int64: row_len = 0
+            mut as bool: b_false = false
+            infinite (r in rows) { row_len = row_len + 1 }
+            route {
+                  row_len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as list of data: r1 = rows[1] as list of data
+            mut as int64: cols1 = 0
+            infinite (c in r1) { cols1 = cols1 + 1 }
+            mut as bool: valid = true
+            infinite (r in rows) {
+                  mut as list of data: curr = r as list of data
+                  mut as int64: c_count = 0
+                  infinite (c in curr) { c_count = c_count + 1 }
+                  route {
+                        c_count != cols1 ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      #L Aliases CSV
+      op parseCsvRows (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: r = formatParseCsvRows(csv_text, delimiter)
+            emit(nice, r, "ok")
+      }
+      op parseCsvTable (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: r = formatParseCsvTable(csv_text, delimiter)
+            emit(nice, r, "ok")
+      }
+      op stringifyCsvRows (as list of data: rows, as string: delimiter) as string ==> {
+            mut as string: r = formatStringifyCsvRows(rows, delimiter)
+            emit(nice, r, "ok")
+      }
+      op stringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string ==> {
+            mut as string: r = formatStringifyCsvTable(records, headers, delimiter)
+            emit(nice, r, "ok")
+      }
+      op isValidCsv (as string: csv_text, as string: delimiter) as bool ==> {
+            mut as bool: r = formatIsValidCsv(csv_text, delimiter)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. FormatYamlContract (YAML 1.2 Completo)
+      #L ==============================================================================
+
+      op _yamlStripComments (as string: line) as string ==> {
+            mut as int64: len = _fmtStrLen(line)
+            mut as string: res = ""
+            mut as bool: in_single = false
+            mut as bool: in_double = false
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(line, i)
+                  route {
+                        c == "'" and not in_double ==> { in_single = not in_single }
+                        c == "\"" and not in_single ==> { in_double = not in_double }
+                        c == "#" and not in_single and not in_double ==> {
+                              break
+                        }
+                  }
+                  res = res + c
+                  i = i + 1
+            }
+            mut as string: clean = _fmtTrimEnd(res)
+            emit(nice, clean, "ok")
+      }
+
+      op _yamlMeasureIndent (as string: line) as int64 ==> {
+            mut as int64: count = 0
+            infinite (c in line) {
+                  route {
+                        c == " " ==> { count = count + 1 }
+                        _ ==> { break }
+                  }
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _yamlParseBlockScalar (as list of data: lines, as int64: start_line, as int64: base_indent, as string: header) as list of data ==> {
+            mut as bool: is_literal = _fmtContains(header, "|")
+            mut as bool: chomp_strip = _fmtContains(header, "-")
+            mut as bool: chomp_keep = _fmtContains(header, "+")
+            mut as string: text_acc = ""
+            mut as int64: curr_line = start_line
+            mut as int64: total_lines = 0
+            infinite (l in lines) { total_lines = total_lines + 1 }
+
+            mut as bool: first = true
+            infinite (curr_line <= total_lines) {
+                  mut as string: line = "" + lines[curr_line]
+                  mut as int64: ind = _yamlMeasureIndent(line)
+                  mut as string: trimmed = _fmtTrim(line)
+                  route {
+                        _fmtStrLen(trimmed) == 0 ==> {
+                              text_acc = text_acc + "\n"
+                              curr_line = curr_line + 1
+                        }
+                        ind <= base_indent ==> {
+                              break
+                        }
+                        ind > base_indent ==> {
+                              mut as string: content = line[base_indent + 3 .. _fmtStrLen(line)]
+                              route {
+                                    is_literal ==> {
+                                          route {
+                                                not first ==> { text_acc = text_acc + "\n" }
+                                                first ==> { first = false }
+                                          }
+                                          text_acc = text_acc + content
+                                    }
+                                    not is_literal ==> {
+                                          route {
+                                                not first ==> { text_acc = text_acc + " " }
+                                                first ==> { first = false }
+                                          }
+                                          text_acc = text_acc + content
+                                    }
+                              }
+                              curr_line = curr_line + 1
+                        }
+                  }
+            }
+            route {
+                  chomp_strip ==> { text_acc = _fmtTrimEnd(text_acc) }
+                  chomp_keep ==> { text_acc = text_acc + "\n" }
+                  not chomp_strip and not chomp_keep ==> {
+                        text_acc = _fmtTrimEnd(text_acc) + "\n"
+                  }
+            }
+            mut as list of data: ret = [text_acc, curr_line]
+            emit(nice, ret, "ok")
+      }
+
+      op _yamlParseFlow (as string: text) as data ==> {
+            mut as string: trimmed = _fmtTrim(text)
+            mut as int64: len = _fmtStrLen(trimmed)
+            route {
+                  len >= 2 and _fmtCharAt(trimmed, 1) == "{" and _fmtCharAt(trimmed, len) == "}" ==> {
+                        mut as data: ret_obj = formatParseJson(trimmed)
+                        emit(nice, ret_obj, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(trimmed, 1) == "[" and _fmtCharAt(trimmed, len) == "]" ==> {
+                        mut as data: ret_arr = formatParseJson(trimmed)
+                        emit(nice, ret_arr, "ok")
+                  }
+            }
+            emit(nice, trimmed, "ok")
+      }
+
+      op _yamlResolveCoreSchema (as string: raw_val) as data ==> {
+            mut as string: val = _fmtTrim(raw_val)
+            mut as int64: len = _fmtStrLen(val)
+            mut as string: empty = ""
+            mut as bool: b_true = true
+            mut as bool: b_false = false
+            route {
+                  len == 0 or val == "~" or val == "null" or val == "Null" or val == "NULL" ==> {
+                        emit(nice, empty, "ok")
+                  }
+                  val == "true" or val == "True" or val == "TRUE" ==> {
+                        emit(nice, b_true, "ok")
+                  }
+                  val == "false" or val == "False" or val == "FALSE" ==> {
+                        emit(nice, b_false, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "'" and _fmtCharAt(val, len) == "'" ==> {
+                        mut as string: s_single = val[2 .. len - 1]
+                        emit(nice, s_single, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "\"" and _fmtCharAt(val, len) == "\"" ==> {
+                        mut as list of data: s_res = _jsonParseString(val, 1, len)
+                        mut as data: s_double = s_res[1]
+                        emit(nice, s_double, "ok")
+                  }
+                  len >= 2 and (_fmtCharAt(val, 1) == "{" or _fmtCharAt(val, 1) == "[") ==> {
+                        mut as data: ret_flow = _yamlParseFlow(val)
+                        emit(nice, ret_flow, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "0" and (_fmtCharAt(val, 2) == "x" or _fmtCharAt(val, 2) == "X") ==> {
+                        mut as int64: hex_res = 0
+                        infinite (i in 3 .. len) {
+                              mut as int64: hd = _fmtCharToHexDigit(_fmtCharAt(val, i))
+                              route {
+                                    hd >= 0 ==> { hex_res = hex_res * 16 + hd }
+                              }
+                        }
+                        emit(nice, hex_res, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "0" and (_fmtCharAt(val, 2) == "o" or _fmtCharAt(val, 2) == "O") ==> {
+                        mut as int64: oct_res = 0
+                        infinite (i in 3 .. len) {
+                              mut as int64: od = _fmtCharToDigit(_fmtCharAt(val, i))
+                              route {
+                                    od >= 0 and od <= 7 ==> { oct_res = oct_res * 8 + od }
+                              }
+                        }
+                        emit(nice, oct_res, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "0" and (_fmtCharAt(val, 2) == "b" or _fmtCharAt(val, 2) == "B") ==> {
+                        mut as int64: bin_res = 0
+                        infinite (i in 3 .. len) {
+                              mut as int64: bd = _fmtCharToDigit(_fmtCharAt(val, i))
+                              route {
+                                    bd == 0 or bd == 1 ==> { bin_res = bin_res * 2 + bd }
+                              }
+                        }
+                        emit(nice, bin_res, "ok")
+                  }
+            }
+            mut as bool: is_num = true
+            mut as bool: has_dot = false
+            mut as int64: dot_count = 0
+            mut as int64: idx = 1
+            route {
+                  len > 0 and (_fmtCharAt(val, 1) == "-" or _fmtCharAt(val, 1) == "+") ==> { idx = 2 }
+            }
+            infinite (idx <= len) {
+                  mut as string: ch = _fmtCharAt(val, idx)
+                  route {
+                        ch == "." ==> {
+                              has_dot = true
+                              dot_count = dot_count + 1
+                        }
+                        (ch < "0" or ch > "9") and ch != "." ==> {
+                              is_num = false
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  dot_count > 1 ==> {
+                        is_num = false
+                  }
+            }
+            route {
+                  is_num and len > 0 and has_dot ==> {
+                        mut as float64: fv = _fmtParseFloat(val)
+                        emit(nice, fv, "ok")
+                  }
+                  is_num and len > 0 and not has_dot ==> {
+                        mut as int64: iv = _fmtParseInt(val)
+                        emit(nice, iv, "ok")
+                  }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op formatParseYaml (as string: yaml_text) as data ==> {
+            mut as list of string: all_lines = _fmtSplitLines(yaml_text)
+            mut as map: root_map = map{}
+            mut as list of data: root_list = []
+            mut as map: anchors = map{}
+            mut as bool: is_list_root = false
+
+            mut as int64: total_lines = 0
+            infinite (l in all_lines) { total_lines = total_lines + 1 }
+            route {
+                  total_lines == 0 ==> { emit(nice, root_map, "ok") }
+            }
+
+            mut as int64: line_idx = 1
+            mut as string: current_parent_key = ""
+            mut as map: current_submap = map{}
+            mut as list of data: current_sublist = []
+            mut as bool: in_submap = false
+            mut as bool: in_sublist = false
+
+            infinite (line_idx <= total_lines) {
+                  mut as string: raw_line = all_lines[line_idx]
+                  mut as string: clean_line = _yamlStripComments(raw_line)
+                  mut as string: trimmed = _fmtTrim(clean_line)
+                  mut as int64: indent = _yamlMeasureIndent(clean_line)
+                  mut as int64: t_len = _fmtStrLen(trimmed)
+
+                  route {
+                        t_len == 0 or trimmed == "---" or trimmed == "..." ==> {
+                              line_idx = line_idx + 1
+                        }
+                        t_len > 0 and trimmed != "---" and trimmed != "..." ==> {
+                              route {
+                                    indent == 0 and t_len >= 2 and _fmtCharAt(trimmed, 1) == "-" and _fmtCharAt(trimmed, 2) == " " ==> {
+                                          is_list_root = true
+                                          mut as string: item_val = _fmtTrim(trimmed[3 .. t_len])
+                                          mut as data: resolved_val = _yamlResolveCoreSchema(item_val)
+                                          mut as int64: len_l = 0
+                                          infinite (x in root_list) { len_l = len_l + 1 }
+                                          root_list[len_l + 1] = resolved_val
+                                          line_idx = line_idx + 1
+                                    }
+                                    indent > 0 and in_sublist and t_len >= 2 and _fmtCharAt(trimmed, 1) == "-" and _fmtCharAt(trimmed, 2) == " " ==> {
+                                          mut as string: item_val = _fmtTrim(trimmed[3 .. t_len])
+                                          mut as data: resolved_val = _yamlResolveCoreSchema(item_val)
+                                          mut as int64: len_sl = 0
+                                          infinite (x in current_sublist) { len_sl = len_sl + 1 }
+                                          current_sublist[len_sl + 1] = resolved_val
+                                          root_map[current_parent_key] = current_sublist
+                                          line_idx = line_idx + 1
+                                    }
+                                    indent > 0 and in_submap and _fmtContains(trimmed, ":") ==> {
+                                          mut as int64: colon_pos = 0
+                                          infinite (ci in 1 .. t_len) {
+                                                route {
+                                                      _fmtCharAt(trimmed, ci) == ":" and colon_pos == 0 ==> {
+                                                            colon_pos = ci
+                                                      }
+                                                }
+                                          }
+                                          mut as string: skey = _fmtTrim(trimmed[1 .. colon_pos - 1])
+                                          mut as string: sval = ""
+                                          route {
+                                                colon_pos < t_len ==> { sval = _fmtTrim(trimmed[colon_pos + 1 .. t_len]) }
+                                          }
+                                          mut as data: resolved_sval = _yamlResolveCoreSchema(sval)
+                                          current_submap[skey] = resolved_sval
+                                          root_map[current_parent_key] = current_submap
+                                          line_idx = line_idx + 1
+                                    }
+                                    indent == 0 and _fmtContains(trimmed, ":") ==> {
+                                          in_submap = false
+                                          in_sublist = false
+
+                                          mut as int64: colon_pos = 0
+                                          infinite (ci in 1 .. t_len) {
+                                                route {
+                                                      _fmtCharAt(trimmed, ci) == ":" and colon_pos == 0 ==> {
+                                                            colon_pos = ci
+                                                      }
+                                                }
+                                          }
+                                          mut as string: key = _fmtTrim(trimmed[1 .. colon_pos - 1])
+                                          mut as string: val = ""
+                                          route {
+                                                colon_pos < t_len ==> { val = _fmtTrim(trimmed[colon_pos + 1 .. t_len]) }
+                                          }
+
+                                          route {
+                                                key == "<<" and _fmtCharAt(val, 1) == "*" ==> {
+                                                      mut as string: alias_name = val[2 .. _fmtStrLen(val)]
+                                                      mut as map: target_anchor = anchors[alias_name] as map
+                                                      infinite (ak in target_anchor) {
+                                                            route {
+                                                                  root_map[ak] == "" ==> {
+                                                                        root_map[ak] = target_anchor[ak]
+                                                                  }
+                                                            }
+                                                      }
+                                                      line_idx = line_idx + 1
+                                                }
+                                                key != "<<" ==> {
+                                                      route {
+                                                            _fmtCharAt(val, 1) == "&" ==> {
+                                                                  mut as int64: space_pos = 0
+                                                                  mut as int64: v_len = _fmtStrLen(val)
+                                                                  infinite (vi in 1 .. v_len) {
+                                                                        route {
+                                                                              _fmtCharAt(val, vi) == " " and space_pos == 0 ==> { space_pos = vi }
+                                                                        }
+                                                                  }
+                                                                  route {
+                                                                        space_pos > 0 ==> {
+                                                                              mut as string: aname = val[2 .. space_pos - 1]
+                                                                              mut as string: real_v = _fmtTrim(val[space_pos + 1 .. v_len])
+                                                                              mut as data: res_v = _yamlResolveCoreSchema(real_v)
+                                                                              anchors[aname] = res_v
+                                                                              root_map[key] = res_v
+                                                                        }
+                                                                        space_pos == 0 ==> {
+                                                                              mut as string: aname = val[2 .. v_len]
+                                                                              current_parent_key = key
+                                                                              current_submap = map{}
+                                                                              in_submap = true
+                                                                              anchors[aname] = current_submap
+                                                                              root_map[key] = current_submap
+                                                                        }
+                                                                  }
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                            _fmtCharAt(val, 1) == "*" ==> {
+                                                                  mut as string: aname = val[2 .. _fmtStrLen(val)]
+                                                                  root_map[key] = anchors[aname]
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                            val == "|" or val == "|-" or val == "|+" or val == ">" or val == ">-" or val == ">+" ==> {
+                                                                  mut as list of data: blk_res = _yamlParseBlockScalar(all_lines, line_idx + 1, indent, val)
+                                                                  root_map[key] = blk_res[1]
+                                                                  line_idx = blk_res[2] as int64
+                                                            }
+                                                            _fmtStrLen(val) == 0 ==> {
+                                                                  current_parent_key = key
+                                                                  mut as bool: next_is_list = false
+                                                                  route {
+                                                                        line_idx + 1 <= total_lines ==> {
+                                                                              mut as string: next_line = _fmtTrim(_yamlStripComments(all_lines[line_idx + 1]))
+                                                                              route {
+                                                                                    _fmtCharAt(next_line, 1) == "-" and _fmtCharAt(next_line, 2) == " " ==> {
+                                                                                          next_is_list = true
+                                                                                    }
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  route {
+                                                                        next_is_list ==> {
+                                                                              current_sublist = []
+                                                                              in_sublist = true
+                                                                              root_map[key] = current_sublist
+                                                                        }
+                                                                        not next_is_list ==> {
+                                                                              current_submap = map{}
+                                                                              in_submap = true
+                                                                              root_map[key] = current_submap
+                                                                        }
+                                                                  }
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                            _fmtStrLen(val) > 0 and val != "|" and val != "|-" and val != "|+" and val != ">" and val != ">-" and val != ">+" and _fmtCharAt(val, 1) != "&" and _fmtCharAt(val, 1) != "*" ==> {
+                                                                  root_map[key] = _yamlResolveCoreSchema(val)
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          line_idx = line_idx + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  is_list_root ==> { emit(nice, root_list, "ok") }
+            }
+            emit(nice, root_map, "ok")
+      }
+
+      op formatParseYamlAll (as string: yaml_text) as list of data ==> {
+            mut as list of data: docs = []
+            mut as list of string: lines = _fmtSplitLines(yaml_text)
+            mut as string: curr_doc = ""
+            mut as int64: doc_count = 0
+            infinite (l in lines) {
+                  mut as string: line = l
+                  mut as string: trimmed = _fmtTrim(line)
+                  route {
+                        trimmed == "---" ==> {
+                              route {
+                                    _fmtStrLen(_fmtTrim(curr_doc)) > 0 ==> {
+                                          doc_count = doc_count + 1
+                                          mut as data: p_doc = formatParseYaml(curr_doc)
+                                          docs[doc_count] = p_doc
+                                          curr_doc = ""
+                                    }
+                              }
+                        }
+                        trimmed != "---" ==> {
+                              curr_doc = curr_doc + line + "\n"
+                        }
+                  }
+            }
+            route {
+                  _fmtStrLen(_fmtTrim(curr_doc)) > 0 ==> {
+                        doc_count = doc_count + 1
+                        mut as data: p_doc2 = formatParseYaml(curr_doc)
+                        docs[doc_count] = p_doc2
+                  }
+            }
+            emit(nice, docs, "ok")
+      }
+
+      op formatStringifyYaml (as data: val) as string ==> {
+            mut as string: s = "" + val
+            mut as int64: len_s = _fmtStrLen(s)
+            route {
+                  len_s >= 2 and _fmtCharAt(s, 1) == "{" and _fmtCharAt(s, len_s) == "}" ==> {
+                        mut as map: m = val as map
+                        mut as string: res = ""
+                        mut as bool: first = true
+                        infinite (k in m) {
+                              route {
+                                    not first ==> { res = res + "\n" }
+                                    first ==> { first = false }
+                              }
+                              mut as string: item_s = "" + m[k]
+                              mut as int64: item_len = _fmtStrLen(item_s)
+                              route {
+                                    item_len >= 2 and _fmtCharAt(item_s, 1) == "{" and _fmtCharAt(item_s, item_len) == "}" ==> {
+                                          res = res + k + ":\n"
+                                          mut as map: subm = m[k] as map
+                                          infinite (sk in subm) {
+                                                res = res + "  " + sk + ": " + subm[sk] + "\n"
+                                          }
+                                          res = _fmtTrimEnd(res)
+                                    }
+                                    item_len >= 2 and _fmtCharAt(item_s, 1) == "[" and _fmtCharAt(item_s, item_len) == "]" ==> {
+                                          res = res + k + ":\n"
+                                          mut as list of data: subl = m[k] as list of data
+                                          infinite (si in subl) {
+                                                res = res + "  - " + si + "\n"
+                                          }
+                                          res = _fmtTrimEnd(res)
+                                    }
+                                    _ ==> {
+                                          res = res + k + ": " + m[k]
+                                    }
+                              }
+                        }
+                        emit(nice, res, "ok")
+                  }
+                  len_s >= 2 and _fmtCharAt(s, 1) == "[" and _fmtCharAt(s, len_s) == "]" ==> {
+                        mut as list of data: l = val as list of data
+                        mut as string: res = ""
+                        mut as bool: first = true
+                        infinite (item in l) {
+                              route {
+                                    not first ==> { res = res + "\n" }
+                                    first ==> { first = false }
+                              }
+                              res = res + "- " + item
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, s, "ok")
+      }
+
+      op formatStringifyYamlAll (as list of data: docs) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (d in docs) {
+                  route {
+                        not first ==> { res = res + "\n---\n" }
+                        first ==> {
+                              first = false
+                              res = "---\n"
+                        }
+                  }
+                  res = res + formatStringifyYaml(d)
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidYaml (as string: yaml_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(yaml_text)
+            mut as bool: b_false = false
+            route {
+                  len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as list of string: lines = _fmtSplitLines(yaml_text)
+            mut as bool: valid = true
+            infinite (l in lines) {
+                  mut as string: line = l
+                  route {
+                        _fmtContains(line, "\t") ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      #L Aliases YAML
+      op parseYaml (as string: yaml_text) as data ==> {
+            mut as data: r = formatParseYaml(yaml_text)
+            emit(nice, r, "ok")
+      }
+      op parseYamlAll (as string: yaml_text) as list of data ==> {
+            mut as list of data: r = formatParseYamlAll(yaml_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyYaml (as data: val) as string ==> {
+            mut as string: r = formatStringifyYaml(val)
+            emit(nice, r, "ok")
+      }
+      op stringifyYamlAll (as list of data: docs) as string ==> {
+            mut as string: r = formatStringifyYamlAll(docs)
+            emit(nice, r, "ok")
+      }
+      op isValidYaml (as string: yaml_text) as bool ==> {
+            mut as bool: r = formatIsValidYaml(yaml_text)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. FormatTomlContract
+      #L ==============================================================================
+
+      op formatParseToml (as string: toml_text) as map ==> {
+            mut as map: root = map{}
+            mut as list of string: lines = _fmtSplitLines(toml_text)
+            mut as string: current_section = ""
+            mut as map: current_submap = map{}
+
+            infinite (l in lines) {
+                  mut as string: line = _yamlStripComments(l)
+                  mut as string: trimmed = _fmtTrim(line)
+                  mut as int64: len = _fmtStrLen(trimmed)
+                  route {
+                        len == 0 ==> {
+                              #L Linha vazia
+                        }
+                        len >= 2 and _fmtCharAt(trimmed, 1) == "[" and _fmtCharAt(trimmed, len) == "]" ==> {
+                              route {
+                                    _fmtStrLen(current_section) > 0 ==> {
+                                          root[current_section] = current_submap
+                                    }
+                              }
+                              current_section = trimmed[2 .. len - 1]
+                              current_submap = map{}
+                        }
+                        _fmtContains(trimmed, "=") ==> {
+                              mut as int64: eq_pos = 0
+                              infinite (i in 1 .. len) {
+                                    route {
+                                          _fmtCharAt(trimmed, i) == "=" and eq_pos == 0 ==> { eq_pos = i }
+                                    }
+                              }
+                              mut as string: key = _fmtTrim(trimmed[1 .. eq_pos - 1])
+                              mut as string: val_str = _fmtTrim(trimmed[eq_pos + 1 .. len])
+                              mut as data: val = _yamlResolveCoreSchema(val_str)
+                              route {
+                                    _fmtStrLen(current_section) == 0 ==> {
+                                          root[key] = val
+                                    }
+                                    _fmtStrLen(current_section) > 0 ==> {
+                                          current_submap[key] = val
+                                          root[current_section] = current_submap
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  _fmtStrLen(current_section) > 0 ==> {
+                        root[current_section] = current_submap
+                  }
+            }
+            emit(nice, root, "ok")
+      }
+
+      op formatStringifyToml (as map: data_map) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (k in data_map) {
+                  mut as string: sval = "" + data_map[k]
+                  mut as int64: len_v = _fmtStrLen(sval)
+                  route {
+                        len_v >= 2 and _fmtCharAt(sval, 1) == "{" and _fmtCharAt(sval, len_v) == "}" ==> {
+                              #L Submapa sera emitido na segunda passada
+                        }
+                        _ ==> {
+                              route {
+                                    not first ==> { res = res + "\n" }
+                                    first ==> { first = false }
+                              }
+                              mut as string: sub_j = formatStringifyJson(data_map[k])
+                              res = res + k + " = " + sub_j
+                        }
+                  }
+            }
+            infinite (k in data_map) {
+                  mut as string: sval = "" + data_map[k]
+                  mut as int64: len_v = _fmtStrLen(sval)
+                  route {
+                        len_v >= 2 and _fmtCharAt(sval, 1) == "{" and _fmtCharAt(sval, len_v) == "}" ==> {
+                              mut as map: subm = data_map[k] as map
+                              route {
+                                    _fmtStrLen(res) > 0 ==> { res = res + "\n\n" }
+                              }
+                              res = res + "[" + k + "]"
+                              infinite (sk in subm) {
+                                    mut as string: sub_v = formatStringifyJson(subm[sk])
+                                    res = res + "\n" + sk + " = " + sub_v
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidToml (as string: toml_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(toml_text)
+            mut as bool: b_false = false
+            route {
+                  len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as list of string: lines = _fmtSplitLines(toml_text)
+            mut as bool: has_content = false
+            mut as bool: valid = true
+            infinite (l in lines) {
+                  mut as string: trimmed = _fmtTrim(_yamlStripComments(l))
+                  mut as int64: tlen = _fmtStrLen(trimmed)
+                  route {
+                        tlen > 0 ==> {
+                              has_content = true
+                              mut as bool: is_section = _fmtCharAt(trimmed, 1) == "[" and _fmtCharAt(trimmed, tlen) == "]"
+                              mut as bool: is_kv = _fmtContains(trimmed, "=")
+                              route {
+                                    not is_section and not is_kv ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            mut as bool: res = (has_content and valid)
+            emit(nice, res, "ok")
+      }
+
+      #L Aliases TOML
+      op parseToml (as string: toml_text) as map ==> {
+            mut as map: r = formatParseToml(toml_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyToml (as map: data_map) as string ==> {
+            mut as string: r = formatStringifyToml(data_map)
+            emit(nice, r, "ok")
+      }
+      op isValidToml (as string: toml_text) as bool ==> {
+            mut as bool: r = formatIsValidToml(toml_text)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. FormatEncodingContract (Base64 RFC 4648 & Query String)
+      #L ==============================================================================
+
+      op _b64CharToVal (as string: ch) as int64 ==> {
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            mut as int64: idx = 1
+            mut as int64: found_val = 0
+            infinite (c in b64_table) {
+                  route {
+                        c == ch ==> { found_val = idx - 1 }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_val, "ok")
+      }
+
+      op formatEncodeBase64 (as string: text) as string ==> {
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  len == 0 ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as int64: b1 = _fmtOrd(_fmtCharAt(text, i))
+                  mut as int64: b2 = 0
+                  mut as int64: b3 = 0
+                  mut as int64: chunk_size = 1
+                  route {
+                        i + 1 <= len ==> {
+                              b2 = _fmtOrd(_fmtCharAt(text, i + 1))
+                              chunk_size = 2
+                        }
+                  }
+                  route {
+                        i + 2 <= len ==> {
+                              b3 = _fmtOrd(_fmtCharAt(text, i + 2))
+                              chunk_size = 3
+                        }
+                  }
+                  mut as int64: n = (b1 * 65536) + (b2 * 256) + b3
+                  mut as int64: idx1 = ((n /i 262144) /r 64) + 1
+                  mut as int64: idx2 = ((n /i 4096) /r 64) + 1
+                  mut as int64: idx3 = ((n /i 64) /r 64) + 1
+                  mut as int64: idx4 = (n /r 64) + 1
+
+                  res = res + b64_table[idx1] + b64_table[idx2]
+                  route {
+                        chunk_size == 1 ==> { res = res + "==" }
+                        chunk_size == 2 ==> { res = res + b64_table[idx3] + "=" }
+                        chunk_size == 3 ==> { res = res + b64_table[idx3] + b64_table[idx4] }
+                  }
+                  i = i + 3
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatDecodeBase64 (as string: b64_text) as string ==> {
+            mut as int64: len = _fmtStrLen(b64_text)
+            mut as string: empty = ""
+            route {
+                  len == 0 or (len /r 4 != 0) ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: ch1 = _fmtCharAt(b64_text, i)
+                  mut as string: ch2 = _fmtCharAt(b64_text, i + 1)
+                  mut as string: ch3 = _fmtCharAt(b64_text, i + 2)
+                  mut as string: ch4 = _fmtCharAt(b64_text, i + 3)
+                  mut as bool: pad2 = (ch3 == "=")
+                  mut as bool: pad3 = (ch4 == "=")
+
+                  mut as int64: v1 = _b64CharToVal(ch1)
+                  mut as int64: v2 = _b64CharToVal(ch2)
+                  mut as int64: v3 = 0
+                  mut as int64: v4 = 0
+                  route {
+                        not pad2 ==> { v3 = _b64CharToVal(ch3) }
+                  }
+                  route {
+                        not pad3 ==> { v4 = _b64CharToVal(ch4) }
+                  }
+                  mut as int64: n = (v1 * 262144) + (v2 * 4096) + (v3 * 64) + v4
+                  mut as int64: b1 = (n /i 65536) /r 256
+                  mut as int64: b2 = (n /i 256) /r 256
+                  mut as int64: b3 = n /r 256
+                  res = res + _fmtChr(b1)
+                  route {
+                        not pad2 ==> { res = res + _fmtChr(b2) }
+                  }
+                  route {
+                        not pad3 ==> { res = res + _fmtChr(b3) }
+                  }
+                  i = i + 4
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidBase64 (as string: b64_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(b64_text)
+            mut as bool: b_false = false
+            route {
+                  len == 0 or (len /r 4 != 0) ==> { emit(nice, b_false, "ok") }
+            }
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+            mut as bool: valid = true
+            infinite (c in b64_text) {
+                  route {
+                        not _fmtContains(b64_table, c) ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      op formatParseQueryString (as string: query_text) as map ==> {
+            mut as map: params = map{}
+            mut as string: text = query_text
+            mut as int64: len = _fmtStrLen(text)
+            route {
+                  len == 0 ==> { emit(nice, params, "ok") }
+                  _fmtCharAt(text, 1) == "?" ==> {
+                        text = text[2 .. len]
+                        len = len - 1
+                  }
+            }
+            mut as string: pair = ""
+            infinite (i in 1 .. len) {
+                  mut as string: c = _fmtCharAt(text, i)
+                  route {
+                        c == "&" ==> {
+                              route {
+                                    _fmtContains(pair, "=") ==> {
+                                          mut as int64: plen = _fmtStrLen(pair)
+                                          mut as int64: eq_idx = 0
+                                          infinite (pi in 1 .. plen) {
+                                                route {
+                                                      _fmtCharAt(pair, pi) == "=" and eq_idx == 0 ==> { eq_idx = pi }
+                                                }
+                                          }
+                                          mut as string: k = pair[1 .. eq_idx - 1]
+                                          mut as string: v = ""
+                                          route {
+                                                eq_idx < plen ==> { v = pair[eq_idx + 1 .. plen] }
+                                          }
+                                          params[k] = v
+                                    }
+                              }
+                              pair = ""
+                        }
+                        c != "&" ==> {
+                              pair = pair + c
+                        }
+                  }
+            }
+            route {
+                  _fmtContains(pair, "=") ==> {
+                        mut as int64: plen = _fmtStrLen(pair)
+                        mut as int64: eq_idx = 0
+                        infinite (pi in 1 .. plen) {
+                              route {
+                                    _fmtCharAt(pair, pi) == "=" and eq_idx == 0 ==> { eq_idx = pi }
+                              }
+                        }
+                        mut as string: k = pair[1 .. eq_idx - 1]
+                        mut as string: v = ""
+                        route {
+                              eq_idx < plen ==> { v = pair[eq_idx + 1 .. plen] }
+                        }
+                        params[k] = v
+                  }
+            }
+            emit(nice, params, "ok")
+      }
+
+      op formatStringifyQueryString (as map: params) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (k in params) {
+                  route {
+                        not first ==> { res = res + "&" }
+                        first ==> { first = false }
+                  }
+                  res = res + k + "=" + params[k]
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L Aliases Encoding
+      op encodeBase64 (as string: text) as string ==> {
+            mut as string: r = formatEncodeBase64(text)
+            emit(nice, r, "ok")
+      }
+      op decodeBase64 (as string: b64_text) as string ==> {
+            mut as string: r = formatDecodeBase64(b64_text)
+            emit(nice, r, "ok")
+      }
+      op isValidBase64 (as string: b64_text) as bool ==> {
+            mut as bool: r = formatIsValidBase64(b64_text)
+            emit(nice, r, "ok")
+      }
+      op parseQueryString (as string: query_text) as map ==> {
+            mut as map: r = formatParseQueryString(query_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyQueryString (as map: params) as string ==> {
+            mut as string: r = formatStringifyQueryString(params)
+            emit(nice, r, "ok")
+      }
+}

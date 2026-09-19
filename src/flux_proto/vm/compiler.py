@@ -603,12 +603,13 @@ class Compiler:
         inc_asc = f"{prefix}_inc_asc"
         inc_label = f"{prefix}_inc"
 
+        dir_var = f"__iter_dir_{prefix}"
         self._compile_expr(coll.left)
-        self._emit(Op.STORE, name)
+        self._emit(Op.DECLARE, name)
         self._compile_expr(coll.left)
         self._compile_expr(coll.right)
         self._emit(Op.GT)
-        self._emit(Op.STORE, "__iter_dir")
+        self._emit(Op.DECLARE, dir_var)
 
         saved_break = self._loop_break
         saved_continue = self._loop_continue
@@ -618,7 +619,7 @@ class Compiler:
         self._loop_scope_depth = self._scope_depth
 
         self._label(loop_label)
-        self._emit(Op.LOAD, "__iter_dir")
+        self._emit(Op.LOAD, dir_var)
         self._emit_jz(asc_label)
         self._emit(Op.LOAD, name)
         self._compile_expr(coll.right)
@@ -636,7 +637,7 @@ class Compiler:
             self._compile_block(node.body)
 
         self._label(inc_label)
-        self._emit(Op.LOAD, "__iter_dir")
+        self._emit(Op.LOAD, dir_var)
         self._emit_jz(inc_asc)
         self._emit(Op.LOAD, name)
         self._emit(Op.PUSH, 1)

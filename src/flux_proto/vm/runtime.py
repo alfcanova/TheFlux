@@ -227,7 +227,7 @@ def _fmt(v: object) -> object:
     if isinstance(v, _Chr):
         return chr(v.cp)
     if isinstance(v, dict) and "sta" in v:
-        return v["val"]
+        return _fmt(v["val"])
     if isinstance(v, _DT):
         return str(v)
     if isinstance(v, dict) and "flux_type" in v:

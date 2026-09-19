@@ -168,7 +168,7 @@
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseConvertStdLib_ConvertBaseContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseConvertStdLib_ConvertComplexContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseConvertStdLib_ConvertComplexContract.flux               |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseConvertStdLib_ConvertEncodingContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseConvertStdLib_ConvertNumericContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseConvertStdLib_ConvertParsingContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -201,95 +201,125 @@
 | ExampleOfUseFileSignatureStdLib_FileDirectorySignatureContract.flux |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseFileSignatureStdLib_FileFormatSignatureContract.flux    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseFileSignatureStdLib_FileHashSignatureContract.flux      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseFormatStdLib_FormatCsvContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseFormatStdLib_FormatEncodingContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseFormatStdLib_FormatJsonContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseFormatStdLib_FormatTomlContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseFormatStdLib_FormatYamlContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseHashStdLib_HashChecksumContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseHashStdLib_HashCryptoContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseHashStdLib_HashDistributedContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseHashStdLib_HashIntegerContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseHashStdLib_HashSecurityContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseIoStdLib_IoDirectoryContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 15
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseHashStdLib_HashCryptoContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseHashStdLib_HashDistributedContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseHashStdLib_HashIntegerContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseHashStdLib_HashSecurityContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseIoStdLib_IoDirectoryContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseIoStdLib_IoFileContract.flux                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseIoStdLib_IoFileInspectionContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseIoStdLib_IoFileLineContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseIoStdLib_IoInputContract.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseIoStdLib_IoPathContract.flux                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseIoStdLib_IoPrintContract.flux                           |  ✅  |  ❌  |  ❌  |  ✅  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_MatrixEigenContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_MatrixEigenvectors.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 16
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseIoStdLib_IoPrintContract.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_MatrixEigenContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_MatrixEigenvectors.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_MatrixFactoryContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_MatrixQRContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_MatrixSVDContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_Tensor3x3x3.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_TensorArithmeticContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorEinsumContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorElementwiseContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorMathContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorMultilinearContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 17
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseLinAlgStdLib_TensorCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_TensorEinsumContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_TensorElementwiseContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_TensorMathContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_TensorMultilinearContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_TensorReductionContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_TensorStridesContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_TensorTransformContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_VectorGeometryContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseListStdLib_ListAccessContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseListStdLib_ListAggregateContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseListStdLib_ListBasicContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseListStdLib_ListCombinatorContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseListStdLib_ListMutationContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseListStdLib_ListSearchContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 18
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseListStdLib_ListAggregateContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseListStdLib_ListBasicContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseListStdLib_ListCombinatorContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseListStdLib_ListMutationContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseListStdLib_ListSearchContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseListStdLib_ListSelectionContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseListStdLib_ListTransformContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseListStdLib_ListUtilityContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMapStdLib_MapAccessContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMapStdLib_MapAggregateContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMapStdLib_MapBasicContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMapStdLib_MapEntryContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMapStdLib_MapMutationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMapStdLib_MapRelationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMapStdLib_MapSearchContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 19
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseMapStdLib_MapBasicContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMapStdLib_MapEntryContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMapStdLib_MapMutationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMapStdLib_MapRelationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMapStdLib_MapSearchContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMapStdLib_MapSelectionContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMapStdLib_MapTransformContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMapStdLib_MapUtilityContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMathStdLib_AngleConversionContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMathStdLib_BasicArithmeticContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMathStdLib_CombinatoricsContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMathStdLib_ExponentialLogContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMathStdLib_FloatElementaryContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMathStdLib_HyperbolicContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseMathStdLib_MathConstantsContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 20
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseMathStdLib_CombinatoricsContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMathStdLib_ExponentialLogContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMathStdLib_FloatElementaryContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMathStdLib_HyperbolicContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMathStdLib_MathConstantsContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMathStdLib_RootsAndRoundingContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMathStdLib_SpecialFunctionsContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseMathStdLib_TrigonometryContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseNetStdLib_NetHttpContract.flux                          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseNetStdLib_NetIpContract.flux                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+
+### Tabela de conformidade — página 21
+
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseNetStdLib_NetSocketContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseNetStdLib_NetUrlContract.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdlib_EncapsulamentoImutabilidadeCampos.flux         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdlib_EncapsulamentoModuloAgente.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdlib_HerancaComportamentoContratos.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdlib_HerancaDadosComposicao.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdLib_OOCastingContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdLib_OODispatchContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdLib_OOIntrospectionContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdLib_OOLifecycleContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+
+### Tabela de conformidade — página 22
+
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseOOStdLib_OOValidationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdlib_PolimorfismoDinamico.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOOStdlib_PolimorfismoEstaticoCompilacao.flux            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseOsStdLib_OsEnvContract.flux                             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseOsStdLib_OsInfoContract.flux                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseOsStdLib_OsProcessContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -298,62 +328,87 @@
 | ExampleOfUseRandomStdLib_RandomGeneratorContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseRandomStdLib_RandomSequenceContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
-### Tabela de conformidade — página 21
+### Tabela de conformidade — página 23
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseRandomStdLib_RandomUtilityContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseRegexStdLib_RegexCaptureContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseRegexStdLib_RegexPresetContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseRegexStdLib_RegexSearchContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseRegexStdLib_RegexTransformContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseRegexStdLib_RegexUtilityContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetAccessContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetAggregateContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetAlgebraContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetBasicContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+
+### Tabela de conformidade — página 24
+
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseSetStdLib_SetMutationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetRelationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetSearchContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetSelectionContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSetStdLib_SetTransformContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSetStdLib_SetUtilityContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatCentralTendencyContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatCorrelationContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatDispersionContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatDistributionContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
-### Tabela de conformidade — página 22
+### Tabela de conformidade — página 25
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
-| ExampleOfUseSetStdLib_SetUtilityContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatInferenceContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatOrderAndQuantilesContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatShapeContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatSummaryContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringAccessContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringBasicContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringMutationContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringSearchContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringSelectionContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringTransformContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+
+### Tabela de conformidade — página 26
+
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseStringStdLib_StringUtilityContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringValidationContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStructStdLib_StructConversionContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStructStdLib_StructCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStructStdLib_StructIntrospectionContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStructStdLib_StructMemoryContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
--   IN : ✅  219 of  219 — ✅
--   VM : ❌  218 of  219 — ❌
--  VMR : ❌  218 of  219 — ❌
-- LLVM : ✅  219 of  219 — ✅
--  WAT : ✅  219 of  219 — ✅
-- WASM : ✅  219 of  219 — ✅
--  ALL : ❌ 1312 of 1314 — ❌
+-   IN : ✅  256 of  256 — ✅
+-   VM : ✅  256 of  256 — ✅
+-  VMR : ✅  256 of  256 — ✅
+- LLVM : ❌  255 of  256 — ❌
+-  WAT : ✅  256 of  256 — ✅
+- WASM : ✅  256 of  256 — ✅
+-  ALL : ❌ 1535 of 1536 — ❌
 
 ### Regressão:
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
-| ExampleOfUseIoStdLib_IoPrintContract.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseIoStdLib_IoPrintContract.flux                           |  ✅  |  ❌  |  ❌  |  ✅  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseConvertStdLib_ConvertComplexContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseConvertStdLib_ConvertComplexContract.flux               |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
-### ExampleOfUseIoStdLib_IoPrintContract.flux
+### ExampleOfUseConvertStdLib_ConvertComplexContract.flux
 
-| in                                                                        | vm                 | vmr                | llvm                                                                      | wat                                                                       | wasm                                                                      |
-| ------------------------------------------------------------------------- | ------------------ | ------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| ==================================================                        | (sem saida/falhou) | (sem saida/falhou) | ==================================================                        | ==================================================                        | ==================================================                        |
-|   Exemplo: IoPrintContract (4 Operacoes)                                  |                    |                    |   Exemplo: IoPrintContract (4 Operacoes)                                  |   Exemplo: IoPrintContract (4 Operacoes)                                  |   Exemplo: IoPrintContract (4 Operacoes)                                  |
-| ==================================================                        |                    |                    | ==================================================                        | ==================================================                        | ==================================================                        |
-| Mensagem via echo                                                         |                    |                    | Mensagem via echo                                                         | Mensagem via echo                                                         | Mensagem via echo                                                         |
-| 1. echo("Mensagem via echo"): Mensagem via echo                           |                    |                    | 1. echo("Mensagem via echo"): Mensagem via echo                           | 1. echo("Mensagem via echo"): Mensagem via echo                           | 1. echo("Mensagem via echo"): Mensagem via echo                           |
-| Mensagem via printLn                                                      |                    |                    | Mensagem via printLn                                                      | Mensagem via printLn                                                      | Mensagem via printLn                                                      |
-| 2. printLn("Mensagem via printLn"): Mensagem via printLn                  |                    |                    | 2. printLn("Mensagem via printLn"): Mensagem via printLn                  | 2. printLn("Mensagem via printLn"): Mensagem via printLn                  | 2. printLn("Mensagem via printLn"): Mensagem via printLn                  |
-| Mensagem via printLine                                                    |                    |                    | Mensagem via printLine                                                    | Mensagem via printLine                                                    | Mensagem via printLine                                                    |
-| 3. printLine("Mensagem via printLine"): Mensagem via printLine            |                    |                    | 3. printLine("Mensagem via printLine"): Mensagem via printLine            | 3. printLine("Mensagem via printLine"): Mensagem via printLine            | 3. printLine("Mensagem via printLine"): Mensagem via printLine            |
-| 4. printErr("Mensagem stderr via printErr"): Mensagem stderr via printErr |                    |                    | 4. printErr("Mensagem stderr via printErr"): Mensagem stderr via printErr | 4. printErr("Mensagem stderr via printErr"): Mensagem stderr via printErr | 4. printErr("Mensagem stderr via printErr"): Mensagem stderr via printErr |
+| in                                                                   | vm                                                                   | vmr                                                                  | llvm               | wat                                                                  | wasm                                                                 |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------ | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| ==================================================                   | ==================================================                   | ==================================================                   | (sem saida/falhou) | ==================================================                   | ==================================================                   |
+|   Exemplo: ConvertComplexContract (Numeros Complexos)                |   Exemplo: ConvertComplexContract (Numeros Complexos)                |   Exemplo: ConvertComplexContract (Numeros Complexos)                |                    |   Exemplo: ConvertComplexContract (Numeros Complexos)                |   Exemplo: ConvertComplexContract (Numeros Complexos)                |
+| ==================================================                   | ==================================================                   | ==================================================                   |                    | ==================================================                   | ==================================================                   |
+| 1. convertToComplex(1.5, -2.5) [complex64]: 1.5 - 2.5i               | 1. convertToComplex(1.5, -2.5) [complex64]: 1.5 - 2.5i               | 1. convertToComplex(1.5, -2.5) [complex64]: 1.5 - 2.5i               |                    | 1. convertToComplex(1.5, -2.5) [complex64]: 1.5 - 2.5i               | 1. convertToComplex(1.5, -2.5) [complex64]: 1.5 - 2.5i               |
+|    convertToComplex32(3.14, 2.71) [complex32]: 3.140625 + 2.7109375i |    convertToComplex32(3.14, 2.71) [complex32]: 3.140625 + 2.7109375i |    convertToComplex32(3.14, 2.71) [complex32]: 3.140625 + 2.7109375i |                    |    convertToComplex32(3.14, 2.71) [complex32]: 3.140625 + 2.7109375i |    convertToComplex32(3.14, 2.71) [complex32]: 3.140625 + 2.7109375i |
+|    convertToComplex128(10.5, 20.25) [complex128]: 10.5 + 20.25i      |    convertToComplex128(10.5, 20.25) [complex128]: 10.5 + 20.25i      |    convertToComplex128(10.5, 20.25) [complex128]: 10.5 + 20.25i      |                    |    convertToComplex128(10.5, 20.25) [complex128]: 10.5 + 20.25i      |    convertToComplex128(10.5, 20.25) [complex128]: 10.5 + 20.25i      |
+| 2. Soma de complexos: 2.0 + 0.0i                                     | 2. Soma de complexos: 2.0 + 0.0i                                     | 2. Soma de complexos: 2.0 + 0.0i                                     |                    | 2. Soma de complexos: 2.0 + 0.0i                                     | 2. Soma de complexos: 2.0 + 0.0i                                     |
+| 3. convertComplexToList(c64): [1.5 - 2.5i]                           | 3. convertComplexToList(c64): [1.5 - 2.5i]                           | 3. convertComplexToList(c64): [1.5 - 2.5i]                           |                    | 3. convertComplexToList(c64): [1.5 - 2.5i]                           | 3. convertComplexToList(c64): [1.5 - 2.5i]                           |
 

@@ -2458,7 +2458,7 @@ class Interpreter:
                             return None
                         if isinstance(r, ContinueStmt):
                             break
-                        if isinstance(r, EmitStmt):
+                        if (isinstance(r, Value) and r.type_name in ("nice", "fail", "emit")) or isinstance(r, EmitStmt):
                             self._env.exit_scope()
                             return r
                     self._env.exit_scope()
@@ -2466,6 +2466,8 @@ class Interpreter:
                     r = self._exec(stmt.body)
                     if isinstance(r, (BreakStmt, EmitStmt)):
                         return None
+                    if isinstance(r, Value) and r.type_name in ("nice", "fail", "emit"):
+                        return r
 
     def _exec_infinite_iterator(self, stmt: InfiniteStmt) -> None:
         coll = stmt.iterator.collection
@@ -2521,7 +2523,7 @@ class Interpreter:
                         return None
                     if isinstance(r, ContinueStmt):
                         break
-                    if isinstance(r, EmitStmt):
+                    if (isinstance(r, Value) and r.type_name in ("nice", "fail", "emit")) or isinstance(r, EmitStmt):
                         self._env.exit_scope()
                         return r
                 self._env.exit_scope()
@@ -2551,7 +2553,7 @@ class Interpreter:
             type_name=stmt.status or "emit",
             data=val.data,
             message=str(msg.data) if msg.data is not None else "",
-            value_type=val.value_type,
+            value_type=val.value_type or val.type_name,
         )
 
     def _is_fail_status(self, val: Value) -> bool:

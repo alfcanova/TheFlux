@@ -2256,6 +2256,32 @@ int64_t flux_std_net_ping(const char *host) {
     return (host && *host) ? 1 : 0;
 }
 
+char *flux_extract_struct_field(const char *s, const char *field) {
+    if (!s || !field) {
+        char *e = (char *)malloc(1);
+        e[0] = '\0';
+        return e;
+    }
+    char pattern[128];
+    snprintf(pattern, sizeof(pattern), ".%s: ", field);
+    const char *p = strstr(s, pattern);
+    if (!p) {
+        char *e = (char *)malloc(1);
+        e[0] = '\0';
+        return e;
+    }
+    p += strlen(pattern);
+    const char *end = p;
+    while (*end && *end != ')' && !(end[0] == ',' && end[1] == ' ' && end[2] == '.')) {
+        end++;
+    }
+    size_t len = (size_t)(end - p);
+    char *res = (char *)malloc(len + 1);
+    memcpy(res, p, len);
+    res[len] = '\0';
+    return res;
+}
+
 
 
 

@@ -1,0 +1,17 @@
+#L Contrato com operacoes monomorficas
+contract (FormatadorAnimal) {
+      op formatarCachorro (as string: nome, as string: raca) as string
+      op formatarGato (as string: nome, as string: pelagem) as string
+}
+
+agent (AgentOfOOStdLib_PolimorfismoEstatico) impl FormatadorAnimal {
+      op formatarCachorro (as string: nome, as string: raca) as string ==> {
+            mut as string: msg = "[Cão] " + nome + " | Raca: " + raca
+            emit(nice, msg, "Monomorfizacao de Cachorro")
+      }
+
+      op formatarGato (as string: nome, as string: pelagem) as string ==> {
+            mut as string: msg = "[Gato] " + nome + " | Pelagem: " + pelagem
+            emit(nice, msg, "Monomorfizacao de Gato")
+      }
+}

@@ -400,6 +400,20 @@ class _WatCodegen:
     def _is_map_type(self, ft: str) -> bool:
         return ft.lower() == "map"
 
+    def _is_map_access(self, node: ASTNode) -> bool:
+        if not isinstance(node, IndexAccess):
+            return False
+        ot = self._infer_type(node.obj)
+        if self._is_map_type(ot):
+            return True
+        if ot in ("data", "result", "") and node.indices:
+            idx = node.indices[0]
+            if self._is_str_type(self._infer_type(idx)):
+                return True
+            if isinstance(idx, Literal) and getattr(idx, "value_type", "").lower() in ("string", "str"):
+                return True
+        return False
+
     def _is_set_type(self, ft: str) -> bool:
         t = ft.lower()
         return t.startswith("set of") or t == "set"
@@ -535,7 +549,11 @@ class _WatCodegen:
                         return "int64"
                     if cname in self._user_funcs:
                         return self._user_funcs[cname]["return_type"]
-                return "int64"
+                elif node.obj is not None:
+                    ot = self._infer_type(node.obj)
+                    if ot not in ("data", "result", ""):
+                        return ot
+                return "data"
             ftype = self._field_type(node)
             if ftype is not None:
                 return ftype
@@ -1927,6 +1945,73 @@ class _WatCodegen:
         lines.append(f"{I}  (i32.store8 (i32.add (local.get $buf) (i32.const 2)) (i32.or (i32.and (i32.shr_u (local.get $cp) (i32.const 6)) (i32.const 63)) (i32.const 128)))")
         lines.append(f"{I}  (i32.store8 (i32.add (local.get $buf) (i32.const 3)) (i32.or (i32.and (local.get $cp) (i32.const 63)) (i32.const 128)))")
         lines.append(f"{I}  (return (i32.const 4))")
+        lines.append(f"{I})")
+        lines.append("")
+        lines.append(f"{I}(func $flux_extract_struct_field (param $s i64) (param $f i64) (result i64)")
+        lines.append(f"{I}  (local $s_ptr i32)")
+        lines.append(f"{I}  (local $s_len i32)")
+        lines.append(f"{I}  (local $f_ptr i32)")
+        lines.append(f"{I}  (local $f_len i32)")
+        lines.append(f"{I}  (local $limit i32)")
+        lines.append(f"{I}  (local $i i32)")
+        lines.append(f"{I}  (local $k i32)")
+        lines.append(f"{I}  (local $match i32)")
+        lines.append(f"{I}  (local $val_ptr i32)")
+        lines.append(f"{I}  (local $j i32)")
+        lines.append(f"{I}  (local $c i32)")
+        lines.append(f"{I}  (local $val_len i32)")
+        lines.append(f"{I}  (local.set $s_ptr (i32.wrap_i64 (i64.shr_u (local.get $s) (i64.const 32))))")
+        lines.append(f"{I}  (local.set $s_len (i32.wrap_i64 (i64.and (local.get $s) (i64.const 0xFFFFFFFF))))")
+        lines.append(f"{I}  (local.set $f_ptr (i32.wrap_i64 (i64.shr_u (local.get $f) (i64.const 32))))")
+        lines.append(f"{I}  (local.set $f_len (i32.wrap_i64 (i64.and (local.get $f) (i64.const 0xFFFFFFFF))))")
+        lines.append(f"{I}  (if (i32.lt_u (local.get $s_len) (local.get $f_len)) (then (return (i64.const 0))))")
+        lines.append(f"{I}  (local.set $limit (i32.add (i32.sub (local.get $s_len) (local.get $f_len)) (i32.const 1)))")
+        lines.append(f"{I}  (local.set $i (i32.const 0))")
+        lines.append(f"{I}  (block $b_found")
+        lines.append(f"{I}    (loop $l_search")
+        lines.append(f"{I}      (if (i32.ge_u (local.get $i) (local.get $limit)) (then (return (i64.const 0))))")
+        lines.append(f"{I}      (local.set $match (i32.const 1))")
+        lines.append(f"{I}      (local.set $k (i32.const 0))")
+        lines.append(f"{I}      (block $b_chk")
+        lines.append(f"{I}        (loop $l_chk")
+        lines.append(f"{I}          (if (i32.ge_u (local.get $k) (local.get $f_len)) (then (br $b_chk)))")
+        lines.append(f"{I}          (if (i32.ne")
+        lines.append(f"{I}                (i32.load8_u (i32.add (i32.add (local.get $s_ptr) (local.get $i)) (local.get $k)))")
+        lines.append(f"{I}                (i32.load8_u (i32.add (local.get $f_ptr) (local.get $k))))")
+        lines.append(f"{I}            (then (local.set $match (i32.const 0)) (br $b_chk))")
+        lines.append(f"{I}          )")
+        lines.append(f"{I}          (local.set $k (i32.add (local.get $k) (i32.const 1)))")
+        lines.append(f"{I}          (br $l_chk)")
+        lines.append(f"{I}        )")
+        lines.append(f"{I}      )")
+        lines.append(f"{I}      (if (local.get $match) (then (br $b_found)))")
+        lines.append(f"{I}      (local.set $i (i32.add (local.get $i) (i32.const 1)))")
+        lines.append(f"{I}      (br $l_search)")
+        lines.append(f"{I}    )")
+        lines.append(f"{I}  )")
+        lines.append(f"{I}  (local.set $val_ptr (i32.add (i32.add (local.get $s_ptr) (local.get $i)) (local.get $f_len)))")
+        lines.append(f"{I}  (local.set $j (local.get $val_ptr))")
+        lines.append(f"{I}  (block $b_end")
+        lines.append(f"{I}    (loop $l_end")
+        lines.append(f"{I}      (if (i32.ge_u (local.get $j) (i32.add (local.get $s_ptr) (local.get $s_len))) (then (br $b_end)))")
+        lines.append(f"{I}      (local.set $c (i32.load8_u (local.get $j)))")
+        lines.append(f"{I}      (if (i32.eq (local.get $c) (i32.const 41)) (then (br $b_end)))")
+        lines.append(f"{I}      (if (i32.and (i32.eq (local.get $c) (i32.const 44))")
+        lines.append(f"{I}                   (i32.lt_u (i32.add (local.get $j) (i32.const 2)) (i32.add (local.get $s_ptr) (local.get $s_len))))")
+        lines.append(f"{I}        (then")
+        lines.append(f"{I}          (if (i32.and")
+        lines.append(f"{I}                (i32.eq (i32.load8_u (i32.add (local.get $j) (i32.const 1))) (i32.const 32))")
+        lines.append(f"{I}                (i32.eq (i32.load8_u (i32.add (local.get $j) (i32.const 2))) (i32.const 46)))")
+        lines.append(f"{I}            (then (br $b_end))")
+        lines.append(f"{I}          )")
+        lines.append(f"{I}        )")
+        lines.append(f"{I}      )")
+        lines.append(f"{I}      (local.set $j (i32.add (local.get $j) (i32.const 1)))")
+        lines.append(f"{I}      (br $l_end)")
+        lines.append(f"{I}    )")
+        lines.append(f"{I}  )")
+        lines.append(f"{I}  (local.set $val_len (i32.sub (local.get $j) (local.get $val_ptr)))")
+        lines.append(f"{I}  (return (i64.or (i64.shl (i64.extend_i32_u (local.get $val_ptr)) (i64.const 32)) (i64.extend_i32_u (local.get $val_len))))")
         lines.append(f"{I})")
         lines.append("")
         lines.append(f"{I}(func $str_to_i64 (param $s i64) (result i64)")
@@ -3785,7 +3870,8 @@ class _WatCodegen:
             return ("(i32.const 0)", "i32")
         if isinstance(node, Identifier):
             if node.name in self._struct_slots:
-                return ("", "struct")
+                s_fat = self._gen_struct_to_str(node.name, fb, body, I)
+                return (s_fat, "i64")
             if node.name in self._enum_slots:
                 eslot = self._enum_slots[node.name]
                 edef = self._enums.get(eslot["enum"])
@@ -3819,6 +3905,8 @@ class _WatCodegen:
             self._gen_struct_init(node, fb, body, I)
             return ("", "struct")
         if isinstance(node, FieldAccess):
+            if self._resolve_struct_slot(node) is not None:
+                return self._gen_struct_field_access(node, fb, body, I)
             if isinstance(node.obj, Identifier) and node.obj.name in self._struct_slots:
                 return self._gen_struct_field_access(node, fb, body, I)
             if isinstance(node.obj, StructInit):
@@ -3847,9 +3935,10 @@ class _WatCodegen:
                         return (obj_v, obj_vt)
                     return ("(local.get $__fr_val)", "i64")
                 if node.field == "sta":
-                    return ("(local.get $__fr_sta)", "i32")
-                return ("(local.get $__fr_msg)", "i32")
-            return ("(i32.const 0)", "i32")
+                    return (self._fat_expr("(local.get $__fr_sta)", "(call $strlen (local.get $__fr_sta))"), "i64")
+                if node.field == "msg":
+                    return (self._fat_expr("(local.get $__fr_msg)", "(call $strlen (local.get $__fr_msg))"), "i64")
+                return ("(i32.const 0)", "i32")
         if isinstance(node, BinaryOp):
             return self._gen_binary_op(node, fb, body, I)
         if isinstance(node, UnaryOp):
@@ -4209,7 +4298,13 @@ class _WatCodegen:
                     v = f"(i64.reinterpret_f64 {v})"
                 elif vt == "i32":
                     v = f"(i64.extend_i32_u {v})"
-                if isinstance(item, IndexAccess) and (self._is_list_type(self._infer_type(item.obj)) or self._infer_type(item.obj) == "data"):
+                if self._is_map_access(item):
+                    src_obj, src_vt = self._gen_expr(item.obj, fb, body, I)
+                    src_op = fb.new_i32()
+                    body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
+                    src_kf = self._map_key_fat(item.indices[0], fb, body, I)
+                    tag_expr = f"(call $map_get_tag (local.get {src_op}) {src_kf})"
+                elif isinstance(item, IndexAccess) and (self._is_list_type(self._infer_type(item.obj)) or self._infer_type(item.obj) == "data"):
                     src_obj, src_vt = self._gen_expr(item.obj, fb, body, I)
                     src_op = fb.new_i32()
                     body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
@@ -4498,7 +4593,10 @@ class _WatCodegen:
             body.append(f"{I}(local.set {bp} (i32.wrap_i64 {bv}))")
         else:
             body.append(f"{I}(local.set {bp} {bv})")
-        is_map = self._is_map_type(bt)
+        is_map = self._is_map_type(bt) or (
+            bt in ("data", "result", "")
+            and (self._is_str_type(self._infer_type(chain[-1])) or (isinstance(chain[-1], Literal) and chain[-1].value_type.lower() in ("string", "str")))
+        )
         if is_map:
             if len(chain) != 1:
                 raise WatError("nested map index access is not supported on WAT target")
@@ -4533,7 +4631,11 @@ class _WatCodegen:
                 return self._gen_tensor_slice(node, ot, fb, body, I)
             return self._gen_tensor_read(node, ot, fb, body, I)
         ov, ovt = self._gen_expr(node.obj, fb, body, I)
-        if self._is_map_type(ot):
+        is_map = self._is_map_type(ot) or (
+            ot in ("data", "result", "")
+            and (self._is_str_type(self._infer_type(node.indices[0])) or (isinstance(node.indices[0], Literal) and node.indices[0].value_type.lower() in ("string", "str")))
+        )
+        if is_map:
             op = fb.new_i32()
             body.append(f"{I}(local.set {op} {self._fit_wat(ov, ovt, 'i32')})")
             if node.indices and isinstance(node.indices[0], SliceSpec):
@@ -4640,11 +4742,15 @@ class _WatCodegen:
             v = f"(i64.reinterpret_f64 {v})"
         elif vt == "i32":
             v = f"(i64.extend_i32_u {v})"
-        if self._is_map_type(ot):
+        is_map = self._is_map_type(ot) or (
+            ot in ("data", "result", "")
+            and (self._is_str_type(self._infer_type(idxs[0])) or (isinstance(idxs[0], Literal) and getattr(idxs[0], "value_type", "").lower() in ("string", "str")))
+        )
+        if is_map:
             if len(idxs) != 1:
                 raise WatError("nested map index assignment is not supported on WAT target")
             kf = self._map_key_fat(idxs[0], fb, body, I)
-            if isinstance(node.value, IndexAccess) and self._is_map_type(self._infer_type(node.value.obj)):
+            if self._is_map_access(node.value):
                 src_obj, src_vt = self._gen_expr(node.value.obj, fb, body, I)
                 src_op = fb.new_i32()
                 body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
@@ -4678,7 +4784,13 @@ class _WatCodegen:
         if len(idxs) == 1:
             iv, _ = self._gen_expr(idxs[0], fb, body, I)
             et = self._list_elem_type(ot)
-            if isinstance(node.value, IndexAccess) and (self._is_list_type(self._infer_type(node.value.obj)) or self._infer_type(node.value.obj) == "data"):
+            if self._is_map_access(node.value):
+                src_obj, src_vt = self._gen_expr(node.value.obj, fb, body, I)
+                src_op = fb.new_i32()
+                body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
+                src_kf = self._map_key_fat(node.value.indices[0], fb, body, I)
+                tag = f"(call $map_get_tag (local.get {src_op}) {src_kf})"
+            elif isinstance(node.value, IndexAccess) and (self._is_list_type(self._infer_type(node.value.obj)) or self._infer_type(node.value.obj) == "data"):
                 src_obj, src_vt = self._gen_expr(node.value.obj, fb, body, I)
                 src_op = fb.new_i32()
                 body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
@@ -4704,7 +4816,13 @@ class _WatCodegen:
             body.append(f"{I}(local.set {np} (i32.wrap_i64 (call $list_row_val (local.get {cp}) (i32.wrap_i64 {iv}))))")
             cp = np
         iv, _ = self._gen_expr(idxs[-1], fb, body, I)
-        if isinstance(node.value, IndexAccess) and (self._is_list_type(self._infer_type(node.value.obj)) or self._infer_type(node.value.obj) == "data"):
+        if self._is_map_access(node.value):
+            src_obj, src_vt = self._gen_expr(node.value.obj, fb, body, I)
+            src_op = fb.new_i32()
+            body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
+            src_kf = self._map_key_fat(node.value.indices[0], fb, body, I)
+            tag = f"(call $map_get_tag (local.get {src_op}) {src_kf})"
+        elif isinstance(node.value, IndexAccess) and (self._is_list_type(self._infer_type(node.value.obj)) or self._infer_type(node.value.obj) == "data"):
             src_obj, src_vt = self._gen_expr(node.value.obj, fb, body, I)
             src_op = fb.new_i32()
             body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
@@ -4826,52 +4944,174 @@ class _WatCodegen:
             fields[f.name] = wt
         return {"fields": fields}
 
-    def _declare_struct_storage_global(self, it: StorageItem, body: list[str] | None) -> None:
-        sdef = self._structs.get(it.type_ref.name)
+    def _alloc_struct_slots_global(self, prefix: str, sname: str) -> dict:
+        sdef = self._structs.get(sname)
         if sdef is None:
-            raise WatError(f"struct '{it.type_ref.name}' not declared")
-        layout = self._struct_layout(sdef)
-        slots: dict = {"fields": {}}
-        for fname, wt in layout["fields"].items():
-            gname = f"${it.name}_flux_{fname}"
-            slots["fields"][fname] = (gname, wt)
-            ft = "float64" if wt == "f64" else ("string" if self._struct_field_is_str(it.type_ref.name, fname) else "int64")
-            self._globals[f"{it.name}_flux_{fname}"] = (ft, wt)
-        self._struct_slots[it.name] = {"kind": "global", "slots": slots, "sname": sdef.name}
-        if body is not None:
+            raise WatError(f"struct '{sname}' not declared")
+        slots: dict = {"fields": {}, "sname": sdef.name, "kind": "global"}
+        for f in sdef.fields:
+            fname = f.name
+            raw_t = f.type_ref.name if f.type_ref else "int64"
+            if raw_t in self._structs:
+                slots["fields"][fname] = self._alloc_struct_slots_global(f"{prefix}_{fname}", raw_t)
+            else:
+                wt = self._wtype(raw_t)
+                gname = f"${prefix}_{fname}"
+                slots["fields"][fname] = (gname, wt)
+                if raw_t in ("bool", "boolean"):
+                    ft = "bool"
+                elif wt == "f64":
+                    ft = "float64"
+                elif self._struct_field_is_str(sdef.name, fname):
+                    ft = "string"
+                else:
+                    ft = "int64"
+                self._globals[f"{prefix}_{fname}"] = (ft, wt)
+        return slots
+
+    def _alloc_struct_slots_local(self, prefix: str, sname: str, fb: _FuncBuilder) -> dict:
+        sdef = self._structs.get(sname)
+        if sdef is None:
+            raise WatError(f"struct '{sname}' not declared")
+        slots: dict = {"fields": {}, "sname": sdef.name, "kind": "local"}
+        for f in sdef.fields:
+            fname = f.name
+            raw_t = f.type_ref.name if f.type_ref else "int64"
+            if raw_t in self._structs:
+                slots["fields"][fname] = self._alloc_struct_slots_local(f"{prefix}_{fname}", raw_t, fb)
+            else:
+                wt = self._wtype(raw_t)
+                lid = fb.new_i64() if wt == "i64" else (fb.new_f64() if wt == "f64" else fb.new_i32())
+                slots["fields"][fname] = (lid, wt)
+        return slots
+
+    def _declare_struct_storage_global(self, it: StorageItem, body: list[str] | None) -> None:
+        slots = self._alloc_struct_slots_global(f"{it.name}_flux", it.type_ref.name)
+        self._struct_slots[it.name] = {"kind": "global", "slots": slots, "sname": it.type_ref.name}
+        if body is not None and it.initializer is not None:
             self._emit_struct_into(it.initializer, slots, None, body, "    ", is_global=True)
 
     def _declare_struct_storage_local(self, it: StorageItem, fb: _FuncBuilder, body: list[str], I: str) -> None:
-        sdef = self._structs.get(it.type_ref.name)
-        if sdef is None:
-            raise WatError(f"struct '{it.type_ref.name}' not declared")
-        layout = self._struct_layout(sdef)
-        slots: dict = {"fields": {}}
-        for fname, wt in layout["fields"].items():
-            lid = fb.new_i64() if wt == "i64" else (fb.new_f64() if wt == "f64" else fb.new_i32())
-            slots["fields"][fname] = (lid, wt)
-        self._struct_slots[it.name] = {"kind": "local", "slots": slots, "sname": sdef.name}
+        slots = self._alloc_struct_slots_local(f"{it.name}_flux", it.type_ref.name, fb)
+        self._struct_slots[it.name] = {"kind": "local", "slots": slots, "sname": it.type_ref.name}
         if it.initializer:
             self._emit_struct_into(it.initializer, slots, fb, body, I, is_global=False)
+
+    def _resolve_struct_slot(self, node: ASTNode) -> tuple[str, str] | dict | None:
+        if isinstance(node, Identifier):
+            if node.name in self._struct_slots:
+                return self._struct_slots[node.name]["slots"]
+            return None
+        if isinstance(node, FieldAccess):
+            parent = self._resolve_struct_slot(node.obj)
+            if isinstance(parent, dict) and "fields" in parent:
+                return parent["fields"].get(node.field)
+        return None
 
     def _emit_struct_into(self, init: ASTNode | None, slots: dict, fb: _FuncBuilder | None, body: list[str], I: str, is_global: bool) -> None:
         op = "global.set" if is_global else "local.set"
         if init is None:
-            for name, (sid, wt) in slots["fields"].items():
-                zero = "(i64.const 0)" if wt == "i64" else ("(f64.const 0.0)" if wt == "f64" else "(i32.const 0)")
-                body.append(f"{I}({op} {sid} {zero})")
+            for name, target in slots["fields"].items():
+                if isinstance(target, dict):
+                    self._emit_struct_into(None, target, fb, body, I, is_global=is_global)
+                else:
+                    sid, wt = target
+                    zero = "(i64.const 0)" if wt == "i64" else ("(f64.const 0.0)" if wt == "f64" else "(i32.const 0)")
+                    body.append(f"{I}({op} {sid} {zero})")
             return
         if not isinstance(init, StructInit):
-            raise WatError(f"struct storage requires a StructInit initializer")
+            v, vt = self._gen_expr(init, fb, body, I)
+            s_fat = fb.new_i64()
+            body.append(f"{I}(local.set {s_fat} {self._fit_wat(v, vt, 'i64')})")
+            sdef = self._structs[slots["sname"]]
+            for f in sdef.fields:
+                if f.name in slots["fields"]:
+                    target = slots["fields"][f.name]
+                    pat = f".{f.name}: "
+                    p_fat = f"(i64.const {self._fat_const(pat)})"
+                    fstr = fb.new_i64()
+                    body.append(f"{I}(local.set {fstr} (call $flux_extract_struct_field (local.get {s_fat}) {p_fat}))")
+                    if isinstance(target, dict):
+                        pass
+                    else:
+                        sid, wt = target
+                        ft = f.type_ref.name if f.type_ref else "int64"
+                        if ft == "string":
+                            body.append(f"{I}({op} {sid} (local.get {fstr}))")
+                        elif wt == "f64":
+                            body.append(f"{I}({op} {sid} (call $str_to_f64 (local.get {fstr})))")
+                        elif ft in ("bool", "boolean"):
+                            t_fat = f"(i64.const {self._fat_const('true')})"
+                            body.append(f"{I}({op} {sid} (call $str_eq (local.get {fstr}) {t_fat}))")
+                        else:
+                            body.append(f"{I}({op} {sid} (call $str_to_i64 (local.get {fstr})))")
+            return
         sdef = self._structs.get(init.name)
         if sdef is None:
             raise WatError(f"struct '{init.name}' not declared")
         for f in init.fields:
             if f.name not in slots["fields"]:
                 raise WatError(f"unknown field '{f.name}' for struct '{init.name}'")
-            lid, wt = slots["fields"][f.name]
-            val, _ = self._gen_expr(f.value, fb, body, I)
-            body.append(f"{I}({op} {lid} {val})")
+            target = slots["fields"][f.name]
+            if isinstance(target, dict):
+                self._emit_struct_into(f.value, target, fb, body, I, is_global=is_global)
+            else:
+                lid, wt = target
+                val, _ = self._gen_expr(f.value, fb, body, I)
+                body.append(f"{I}({op} {lid} {val})")
+
+    def _gen_struct_slots_to_str(self, info: dict, fb: _FuncBuilder, body: list[str], I: str) -> str:
+        sdef = self._structs[info["sname"]]
+        slots = info
+        buf = fb.new_i32()
+        tt = fb.new_i32()
+        cnt = fb.new_i32()
+        fat = fb.new_i64()
+        head = f"{sdef.name}("
+        hoff = self._alloc_str(head)
+        hlen = len(head.encode("utf-8"))
+        body.append(f"{I}(local.set {buf} (call $strbuf_new (i32.const 1024)))")
+        body.append(f"{I}(call $strappend (local.get {buf}) (i64.const {(hoff << 32) | hlen}))")
+        for j, f in enumerate(sdef.fields):
+            if j > 0:
+                c_off = self._alloc_str(", ")
+                body.append(f"{I}(call $strappend (local.get {buf}) (i64.const {(c_off << 32) | 2}))")
+            fl = f".{f.name}: "
+            flo = self._alloc_str(fl)
+            fllen = len(fl.encode("utf-8"))
+            body.append(f"{I}(call $strappend (local.get {buf}) (i64.const {(flo << 32) | fllen}))")
+            target = slots["fields"][f.name]
+            if isinstance(target, dict):
+                nested_fat = self._gen_struct_slots_to_str(target, fb, body, I)
+                body.append(f"{I}(call $strappend (local.get {buf}) {nested_fat})")
+            else:
+                wt = target[1]
+                slot_id = target[0]
+                sget = "global.get" if slot_id.startswith("$") else "local.get"
+                ft = f.type_ref.name if f.type_ref else "int64"
+                if ft == "datetime":
+                    body.append(f"{I}(local.set {tt} (call $flux_alloc (i32.const 64)))")
+                    body.append(f"{I}(local.set {cnt} (call $dt_to_str ({sget} {slot_id}) (local.get {tt})))")
+                    body.append(f"{I}(local.set {fat} {self._fat_expr('(local.get ' + tt + ')', '(local.get ' + cnt + ')')})")
+                    body.append(f"{I}(call $strappend (local.get {buf}) (local.get {fat}))")
+                elif wt == "f64":
+                    self._append_f64(f"({sget} {slot_id})", fb, body, I, buf, tt, cnt, fat)
+                elif self._struct_field_is_str(sdef.name, f.name):
+                    body.append(f"{I}(call $strappend (local.get {buf}) ({sget} {slot_id}))")
+                else:
+                    body.append(f"{I}(local.set {tt} (call $flux_alloc (i32.const 64)))")
+                    body.append(f"{I}(local.set {cnt} (call $i64_to_str ({sget} {slot_id}) (local.get {tt})))")
+                    body.append(f"{I}(local.set {fat} {self._fat_expr('(local.get ' + tt + ')', '(local.get ' + cnt + ')')})")
+                    body.append(f"{I}(call $strappend (local.get {buf}) (local.get {fat}))")
+        close_off = self._alloc_str(")")
+        body.append(f"{I}(call $strappend (local.get {buf}) (i64.const {(close_off << 32) | 1}))")
+        body.append(f"{I}(call $strbuf_done (local.get {buf}))")
+        res_fat = fb.new_i64()
+        body.append(f"{I}(local.set {res_fat} {self._fat_expr(f'(i32.add (local.get {buf}) (i32.const 4))', f'(i32.load (local.get {buf}))')})")
+        return f"(local.get {res_fat})"
+
+    def _gen_struct_to_str(self, name: str, fb: _FuncBuilder, body: list[str], I: str) -> str:
+        return self._gen_struct_slots_to_str(self._struct_slots[name]["slots"], fb, body, I)
 
     def _gen_struct_init(self, node: StructInit, fb: _FuncBuilder, body: list[str], I: str) -> None:
         sdef = self._structs.get(node.name)
@@ -4890,6 +5130,13 @@ class _WatCodegen:
         self._pending_struct = {"slots": {"fields": fslots}}
 
     def _gen_struct_field_access(self, node: FieldAccess, fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        target = self._resolve_struct_slot(node)
+        if target is not None:
+            if isinstance(target, dict):
+                raise WatError(f"field access '{node.field}' yielded a struct, not a value")
+            lid, wt = target
+            sget = "global.get" if lid.startswith("$") else "local.get"
+            return (f"({sget} {lid})", wt)
         slots = self._struct_slots[node.obj.name]["slots"]
         if node.field not in slots["fields"]:
             raise WatError(f"unknown field '{node.field}' for struct '{node.obj.name}'")
@@ -4905,12 +5152,36 @@ class _WatCodegen:
         slots = self._struct_slots[node.owner]["slots"]
         if node.field not in slots["fields"]:
             raise WatError(f"unknown field '{node.field}' for struct '{node.owner}'")
-        lid, wt = slots["fields"][node.field]
+        target = slots["fields"][node.field]
+        if isinstance(target, dict):
+            if not isinstance(node.value, StructInit):
+                raise WatError(f"struct field '{node.field}' requires a StructInit value")
+            self._emit_struct_into(node.value, target, fb, body, I, is_global=(target.get("kind") == "global"))
+            return
+        lid, wt = target
         val, _ = self._gen_expr(node.value, fb, body, I)
-        op = "global.set" if self._struct_slots[node.owner]["kind"] == "global" else "local.set"
+        op = "global.set" if lid.startswith("$") else "local.set"
         body.append(f"{I}({op} {lid} {val})")
 
     def _field_type(self, node: FieldAccess) -> str | None:
+        parent = self._resolve_struct_slot(node.obj)
+        if isinstance(parent, dict) and "sname" in parent:
+            sdef = self._structs.get(parent["sname"])
+            if sdef is not None:
+                for f in sdef.fields:
+                    if f.name == node.field:
+                        ft = f.type_ref.name if f.type_ref else "int64"
+                        if ft in ("bool", "boolean"):
+                            return "bool"
+                        if ft == "datetime":
+                            return "datetime"
+                        if self._is_str_type(ft):
+                            return "string"
+                        target = parent["fields"].get(node.field)
+                        if target is not None and not isinstance(target, dict):
+                            wt = target[1]
+                            return "float64" if wt == "f64" else "int64"
+                        return "int64"
         if isinstance(node.obj, Identifier):
             if node.obj.name in self._struct_slots:
                 st = self._struct_slots[node.obj.name]
@@ -4919,6 +5190,8 @@ class _WatCodegen:
                     for f in sdef.fields:
                         if f.name == node.field:
                             ft = f.type_ref.name if f.type_ref else "int64"
+                            if ft in ("bool", "boolean"):
+                                return "bool"
                             if ft == "datetime":
                                 return "datetime"
                             if self._is_str_type(ft):
@@ -4933,6 +5206,8 @@ class _WatCodegen:
                 for f in sdef.fields:
                     if f.name == node.field:
                         ft = f.type_ref.name if f.type_ref else "int64"
+                        if ft in ("bool", "boolean"):
+                            return "bool"
                         if ft == "datetime":
                             return "datetime"
                         if self._is_str_type(ft):
@@ -5004,8 +5279,9 @@ class _WatCodegen:
                 body.append(f"{I}(local.set {fat} (i64.or (i64.shl (i64.extend_i32_u (local.get {tt})) (i64.const 32)) (i64.extend_i32_u (local.get {cnt}))))")
                 body.append(f"{I}(call $strappend (local.get {buf}) (local.get {fat}))")
             else:
+                v64 = self._fit_wat(v, vt, "i64")
                 body.append(f"{I}(local.set {tt} (call $flux_alloc (i32.const 64)))")
-                body.append(f"{I}(local.set {cnt} (call $i64_to_str {v} (local.get {tt})))")
+                body.append(f"{I}(local.set {cnt} (call $i64_to_str {v64} (local.get {tt})))")
                 body.append(f"{I}(local.set {fat} (i64.or (i64.shl (i64.extend_i32_u (local.get {tt})) (i64.const 32)) (i64.extend_i32_u (local.get {cnt}))))")
                 body.append(f"{I}(call $strappend (local.get {buf}) (local.get {fat}))")
         body.append(f"{I}(call $strbuf_done (local.get {buf}))")
@@ -6032,7 +6308,7 @@ class _WatCodegen:
                     wt = slots["fields"][f.name][1]
                     slot_id = slots["fields"][f.name][0]
                     if wt == "f64":
-                        self._append_f64(f"({get} {slot_id})", fb, body, I + "    ", f"(local.get {buf})", tt, cnt, fat)
+                        self._append_f64(f"({get} {slot_id})", fb, body, I + "    ", buf, tt, cnt, fat)
                     elif self._enum_field_is_str(edef, f.name):
                         body.append(f"{I}    (call $strappend (local.get {buf}) ({get} {slot_id}))")
                     else:
@@ -6081,7 +6357,7 @@ class _WatCodegen:
                 body.append(f"{I}(local.set {fat} {self._fat_expr('(local.get ' + tt + ')', '(local.get ' + cnt + ')')})")
                 body.append(f"{I}(call $strappend (local.get {buf}) (local.get {fat}))")
             elif wt == "f64":
-                self._append_f64(f"({get} {slot_id})", fb, body, I, f"(local.get {buf})", tt, cnt, fat)
+                self._append_f64(f"({get} {slot_id})", fb, body, I, buf, tt, cnt, fat)
             elif self._struct_field_is_str(sdef.name, f.name):
                 body.append(f"{I}(call $strappend (local.get {buf}) ({get} {slot_id}))")
             else:
@@ -6277,12 +6553,13 @@ class _WatCodegen:
                 body.append(f"{I}(local.set {cnt} (call $dt_to_str {val} (local.get {buf})))")
                 body.append(f"{I}(call $print_str (local.get {buf}) (local.get {cnt}))")
             else:
-                val, _ = self._gen_expr(p, fb, body, I)
+                val, vt = self._gen_expr(p, fb, body, I)
+                v64 = self._fit_wat(val, vt, "i64")
                 buf = fb.new_i32()
                 cnt = fb.new_i32()
                 buf_off = self._itoa_buf_off()
                 body.append(f"{I}(local.set {buf} (i32.const {buf_off}))")
-                body.append(f"{I}(local.set {cnt} (call $i64_to_str {val} (local.get {buf})))")
+                body.append(f"{I}(local.set {cnt} (call $i64_to_str {v64} (local.get {buf})))")
                 body.append(f"{I}(call $print_str (local.get {buf}) (local.get {cnt}))")
         if newline:
             nl_off = self._alloc_str("\n")
@@ -6711,13 +6988,21 @@ class _WatCodegen:
         if name in self._user_funcs:
             info = self._user_funcs[name]
             arg_slots = []
+            arg_val_slots = []
             for k, a in enumerate(node.args):
                 av, at = self._gen_expr(a, fb, body, I)
                 pw = info["params"][k][1] if k < len(info["params"]) else "i64"
+                pft = info["params"][k][2] if k < len(info["params"]) and len(info["params"][k]) > 2 else ""
                 if pw == "i32":
                     if at == "i32":
                         slot = fb.new_i32()
                         body.append(f"{I}(local.set {slot} {av})")
+                    elif self._is_char_type(pft) and (self._is_str_type(self._infer_type(a)) or (isinstance(a, IndexAccess) and self._is_str_type(self._infer_type(a.obj)))):
+                        slot = fb.new_i32()
+                        str_tmp = fb.new_i64()
+                        body.append(f"{I}(local.set {str_tmp} {self._fit_wat(av, at, 'i64')})")
+                        char_val = f"(i32.load8_u (i32.wrap_i64 (i64.shr_u (local.get {str_tmp}) (i64.const 32))))"
+                        body.append(f"{I}(local.set {slot} {char_val})")
                     else:
                         slot = fb.new_i32()
                         body.append(f"{I}(local.set {slot} (i32.wrap_i64 {av}))")
@@ -6739,9 +7024,42 @@ class _WatCodegen:
                         slot = fb.new_i64()
                         body.append(f"{I}(local.set {slot} {av})")
                 arg_slots.append(f"(local.get {slot})")
+                arg_val_slots.append(slot)
             for k, (_, _, pft) in enumerate(info["params"]):
                 if pft == "data":
-                    arg_slots.append(f"(i32.const {self._list_tag_of(self._infer_type(node.args[k]))})")
+                    if k < len(node.args):
+                        arg_node = node.args[k]
+                        if isinstance(arg_node, Identifier) and arg_node.name in self._param_tag_slots:
+                            arg_slots.append(f"(local.get {self._param_tag_slots[arg_node.name]})")
+                        elif isinstance(arg_node, IndexAccess):
+                            bt = self._infer_type(arg_node.obj)
+                            if self._is_map_type(bt) or bt == "map":
+                                src_obj, src_vt = self._gen_expr(arg_node.obj, fb, body, I)
+                                src_op = fb.new_i32()
+                                body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
+                                src_kf = self._map_key_fat(arg_node.indices[0], fb, body, I)
+                                tag_loc = fb.new_i32()
+                                body.append(f"{I}(local.set {tag_loc} (call $map_get_tag (local.get {src_op}) {src_kf}))")
+                                arg_slots.append(f"(local.get {tag_loc})")
+                            elif self._is_list_type(bt) or bt == "data":
+                                src_obj, src_vt = self._gen_expr(arg_node.obj, fb, body, I)
+                                src_op = fb.new_i32()
+                                body.append(f"{I}(local.set {src_op} {self._fit_wat(src_obj, src_vt, 'i32')})")
+                                src_iv, _ = self._gen_expr(arg_node.indices[0], fb, body, I)
+                                tag_loc = fb.new_i32()
+                                body.append(f"{I}(local.set {tag_loc} (call $list_row_tag (local.get {src_op}) (i32.wrap_i64 {src_iv})))")
+                                arg_slots.append(f"(local.get {tag_loc})")
+                            else:
+                                arg_slots.append("(i32.const 1)")
+                        elif self._infer_type(arg_node) != "data":
+                            arg_slots.append(f"(i32.const {self._list_tag_of(self._infer_type(arg_node))})")
+                        else:
+                            v = f"(local.get {arg_val_slots[k]})"
+                            tag_loc = fb.new_i32()
+                            body.append(f"{I}(local.set {tag_loc} (select (i32.const 5) (select (i32.const 4) (i32.const 1) (i32.gt_u (i32.wrap_i64 (i64.shr_u {v} (i64.const 32))) (i32.const 0))) (i32.and (i64.eqz (i64.shr_u {v} (i64.const 32))) (i32.ge_u (i32.wrap_i64 {v}) (global.get $flux_heap_start)))))")
+                            arg_slots.append(f"(local.get {tag_loc})")
+                    else:
+                        arg_slots.append("(i32.const 1)")
             body.append(f"{I}(call ${name} {' '.join(arg_slots)})")
             body.append(f"{I}(local.set $__fr_msg)")
             body.append(f"{I}(local.set $__fr_val)")
@@ -7180,6 +7498,8 @@ class _WatCodegen:
                 return self._local_vars[node.name][1] == "bool"
             if node.name in self._globals:
                 return self._globals[node.name][0] == "bool"
+        if isinstance(node, FieldAccess):
+            return self._field_type(node) in ("bool", "boolean")
         return False
 
     def _sc_set(self, name: str, expr: str, fb: _FuncBuilder, body: list[str], I: str, expr_type: str | None = None) -> None:
@@ -7553,7 +7873,13 @@ class _WatCodegen:
                 for f in pat.fields:
                     if f.name not in struct_subject["slots"]["fields"]:
                         raise WatError(f"unknown field '{f.name}' for struct '{pat.name}'")
-                    lid, wt = struct_subject["slots"]["fields"][f.name]
+                    target = struct_subject["slots"]["fields"][f.name]
+                    if isinstance(target, dict):
+                        if isinstance(f.value, IdentifierPattern):
+                            self._struct_slots[f.value.name] = {"kind": struct_subject["kind"], "slots": target, "sname": target.get("sname", "")}
+                            continue
+                        raise WatError("nested struct pattern not supported on WAT target")
+                    lid, wt = target
                     is_str = self._struct_field_is_str(pat.name, f.name)
                     self._gen_wat_pattern_field(f, fb, lid, wt, is_str, sget, body, arm_I, next_name)
                 self._gen_wat_guard(arm, fb, body, arm_I + "    ", next_name)

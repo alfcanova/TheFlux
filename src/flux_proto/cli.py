@@ -125,8 +125,8 @@ def main(argv: list[str] | None = None) -> int:
             raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
 
         fvmbc_path = output_path + ".fvmbc"
-        with open(fvmbc_path, "w") as f:
-            json.dump(bc, f, indent=2, default=_bc_default)
+        with open(fvmbc_path, "w", encoding="utf-8") as f:
+            json.dump(bc, f, indent=2, default=_bc_default, ensure_ascii=False)
         print(f"Bytecode written to {fvmbc_path}", file=sys.stderr)
     elif target == "wat":
         from flux_proto.wat.codegen import generate_wat

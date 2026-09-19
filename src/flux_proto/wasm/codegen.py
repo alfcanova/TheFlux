@@ -6159,6 +6159,20 @@ class _WasmCodegen:
         t = ft.lower()
         return t in ("string", "str") or t.startswith("string(")
 
+    def _is_map_access(self, node: ASTNode) -> bool:
+        if not isinstance(node, IndexAccess):
+            return False
+        ot = self._infer_type(node.obj)
+        if _is_map_type(ot):
+            return True
+        if ot in ("data", "result", "") and node.indices:
+            idx = node.indices[0]
+            if self._is_str_type(self._infer_type(idx)):
+                return True
+            if isinstance(idx, Literal) and getattr(idx, "value_type", "").lower() in ("string", "str"):
+                return True
+        return False
+
     def _is_char_node(self, p: ASTNode) -> bool:
         if isinstance(p, Identifier) and p.name in self._decl_types:
             return self._decl_types[p.name].lower() == "char"
@@ -6182,6 +6196,10 @@ class _WasmCodegen:
                 return "list of int64"
             return self._infer_type(node.right)
         if isinstance(node, Literal):
+            if node.value_type.lower() in ("int", "int64", "int32", "int16", "int8", "uint8", "uint16", "uint32", "uint64"):
+                return "int64"
+            if node.value_type.lower() in ("float", "float64", "float32"):
+                return "float64"
             return node.value_type.lower()
         if isinstance(node, FieldAccess):
             if node.field in ("sta", "status", "msg", "message"):
@@ -6189,9 +6207,15 @@ class _WasmCodegen:
             if node.field in ("val", "value"):
                 if isinstance(node.obj, CallExpr):
                     cname = node.obj.callee.name if isinstance(node.obj.callee, Identifier) else ""
+                    cname = self._op_aliases.get(cname, cname)
                     if cname in self._user_funcs:
                         return self._user_funcs[cname]["return_type"]
-                return "int64"
+                elif isinstance(node.obj, Identifier) and node.obj.name in self._result_vars:
+                    res = self._result_vars[node.obj.name]
+                    wt = res[4] if len(res) > 4 else I64
+                    if wt == F64:
+                        return "float64"
+                return "data"
             ftype = self._field_type(node)
             if ftype is not None:
                 return ftype
@@ -6424,6 +6448,10 @@ class _WasmCodegen:
                     wt = _wtype(ft)
                     if it.name not in self._local_vars and it.name not in self._result_vars:
                         if isinstance(it.initializer, (CallExpr, ShortCircuitBlock)):
+                            if ft == "data" and isinstance(it.initializer, CallExpr):
+                                ret_t = self._infer_type(it.initializer)
+                                if _is_float_type(ret_t):
+                                    wt = F64
                             if wt == F64:
                                 val_slot = fb.new_f64()
                             elif wt == I32:
@@ -6516,6 +6544,10 @@ class _WasmCodegen:
                     wt = _wtype(ft)
                     if it.name not in self._globals and it.name not in self._result_vars:
                         if isinstance(it.initializer, (CallExpr, ShortCircuitBlock)):
+                            if ft == "data" and isinstance(it.initializer, CallExpr):
+                                ret_t = self._infer_type(it.initializer)
+                                if _is_float_type(ret_t):
+                                    wt = F64
                             if wt == F64:
                                 val_init = bytes([OP_F64_CONST]) + struct.pack("<d", 0.0)
                             elif wt == I32:
@@ -6794,10 +6826,11 @@ class _WasmCodegen:
                 elif res_t != "float64" and wt == F64:
                     fb.byte(OP_F64_CONVERT_I64_S)
         ft = self._decl_types.get(node.name)
-        if wt == F64 and ft in FMT_CONSTS and ft != "float64":
-            if not _is_float_type(rt) and not compound:
+        if wt == F64 and not compound:
+            if not _is_float_type(rt):
                 fb.byte(OP_F64_CONVERT_I64_S)
-            self._emit_round(fb, ft)
+            if ft in FMT_CONSTS and ft != "float64":
+                self._emit_round(fb, ft)
         if node.name in self._sc_vars:
             kind, idx = self._sc_vars[node.name]
             if kind == "local":
@@ -6971,37 +7004,38 @@ class _WasmCodegen:
             fb.emit_end()
         fb.emit_end()
 
-    def _gen_struct_var_print(self, name: str, fb: FuncBody) -> None:
-        kind, slots = self._struct_slots[name]
+    def _gen_struct_slots_to_str(self, slots: dict, sbuf: int, fb: FuncBody) -> None:
         struct_name = slots.get("_type_name", "")
         sdef = self._structs[struct_name]
-        print_str_idx = self._helper_funcs["$print_str"]
+        kind = slots.get("kind", "local")
         head = f"{sdef.name}("
-        hoff = self._alloc_str(head)
-        hlen = len(head.encode("utf-8"))
-        fb.i32_const(hoff)
-        fb.i32_const(hlen)
+        self._emit_fat_const(head, fb)
+        tmp = fb.new_i64()
+        fb.local_set(tmp)
+        fb.local_get(sbuf)
+        fb.local_get(tmp)
         fb.byte(0x10)
-        fb.uleb(print_str_idx)
+        fb.uleb(self._helper_funcs["$strappend"])
         for j, f in enumerate(sdef.fields):
             if j > 0:
-                c_off = self._alloc_str(", ")
-                fb.i32_const(c_off)
-                fb.i32_const(2)
+                self._emit_fat_const(", ", fb)
+                fb.local_set(tmp)
+                fb.local_get(sbuf)
+                fb.local_get(tmp)
                 fb.byte(0x10)
-                fb.uleb(print_str_idx)
+                fb.uleb(self._helper_funcs["$strappend"])
             fl = f".{f.name}: "
-            flo = self._alloc_str(fl)
-            fllen = len(fl.encode("utf-8"))
-            fb.i32_const(flo)
-            fb.i32_const(fllen)
+            self._emit_fat_const(fl, fb)
+            fb.local_set(tmp)
+            fb.local_get(sbuf)
+            fb.local_get(tmp)
             fb.byte(0x10)
-            fb.uleb(print_str_idx)
-            fslot, wt = slots["fields"][f.name]
-            if kind == "global":
-                fb.global_get(fslot)
-            else:
-                fb.local_get(fslot)
+            fb.uleb(self._helper_funcs["$strappend"])
+            target = slots["fields"][f.name]
+            if isinstance(target, dict):
+                self._gen_struct_slots_to_str(target, sbuf, fb)
+                continue
+            fslot, wt = target[:2]
             ft = f.type_ref.name if f.type_ref else "int64"
             if ft == "datetime":
                 buf = fb.new_i32()
@@ -7010,20 +7044,30 @@ class _WasmCodegen:
                 fb.byte(0x10)
                 fb.uleb(self._helper_funcs["$flux_alloc"])
                 fb.local_set(buf)
+                if kind == "global":
+                    fb.global_get(fslot)
+                else:
+                    fb.local_get(fslot)
                 fb.local_get(buf)
                 fb.byte(0x10)
                 fb.uleb(self._helper_funcs["$dt_to_str"])
                 fb.local_set(cnt)
-                fb.local_get(buf)
-                fb.local_get(cnt)
+                self._emit_runtime_fat(fb, buf, cnt)
+                fb.local_set(tmp)
+                fb.local_get(sbuf)
+                fb.local_get(tmp)
                 fb.byte(0x10)
-                fb.uleb(print_str_idx)
+                fb.uleb(self._helper_funcs["$strappend"])
             elif self._struct_field_is_str(sdef.name, f.name):
-                fp = fb.new_i64()
-                fb.local_set(fp)
-                self._emit_fat_split(fp, fb)
+                if kind == "global":
+                    fb.global_get(fslot)
+                else:
+                    fb.local_get(fslot)
+                fb.local_set(tmp)
+                fb.local_get(sbuf)
+                fb.local_get(tmp)
                 fb.byte(0x10)
-                fb.uleb(print_str_idx)
+                fb.uleb(self._helper_funcs["$strappend"])
             elif wt == F64:
                 buf = fb.new_i32()
                 cnt = fb.new_i32()
@@ -7031,14 +7075,20 @@ class _WasmCodegen:
                 fb.byte(0x10)
                 fb.uleb(self._helper_funcs["$flux_alloc"])
                 fb.local_set(buf)
+                if kind == "global":
+                    fb.global_get(fslot)
+                else:
+                    fb.local_get(fslot)
                 fb.local_get(buf)
                 fb.byte(0x10)
                 fb.uleb(self._helper_funcs["$f64_to_str"])
                 fb.local_set(cnt)
-                fb.local_get(buf)
-                fb.local_get(cnt)
+                self._emit_runtime_fat(fb, buf, cnt)
+                fb.local_set(tmp)
+                fb.local_get(sbuf)
+                fb.local_get(tmp)
                 fb.byte(0x10)
-                fb.uleb(print_str_idx)
+                fb.uleb(self._helper_funcs["$strappend"])
             else:
                 buf = fb.new_i32()
                 cnt = fb.new_i32()
@@ -7046,19 +7096,58 @@ class _WasmCodegen:
                 fb.byte(0x10)
                 fb.uleb(self._helper_funcs["$flux_alloc"])
                 fb.local_set(buf)
+                if kind == "global":
+                    fb.global_get(fslot)
+                else:
+                    fb.local_get(fslot)
                 fb.local_get(buf)
                 fb.byte(0x10)
                 fb.uleb(self._helper_funcs["$i64_to_str"])
                 fb.local_set(cnt)
-                fb.local_get(buf)
-                fb.local_get(cnt)
+                self._emit_runtime_fat(fb, buf, cnt)
+                fb.local_set(tmp)
+                fb.local_get(sbuf)
+                fb.local_get(tmp)
                 fb.byte(0x10)
-                fb.uleb(print_str_idx)
-        close_off = self._alloc_str(")")
-        fb.i32_const(close_off)
-        fb.i32_const(1)
+                fb.uleb(self._helper_funcs["$strappend"])
+        self._emit_fat_const(")", fb)
+        fb.local_set(tmp)
+        fb.local_get(sbuf)
+        fb.local_get(tmp)
         fb.byte(0x10)
-        fb.uleb(print_str_idx)
+        fb.uleb(self._helper_funcs["$strappend"])
+
+    def _gen_struct_to_str(self, name: str, fb: FuncBody) -> int:
+        kind, slots = self._struct_slots[name]
+        sbuf = fb.new_i32()
+        fb.i32_const(1024)
+        fb.byte(0x10)
+        fb.uleb(self._helper_funcs["$strbuf_new"])
+        fb.local_set(sbuf)
+        self._gen_struct_slots_to_str(slots, sbuf, fb)
+        fb.local_get(sbuf)
+        fb.byte(0x10)
+        fb.uleb(self._helper_funcs["$strbuf_done"])
+        tl = fb.new_i32()
+        fb.local_get(sbuf)
+        fb.byte(OP_I32_LOAD)
+        fb.put(encode_memarg(2, 0))
+        fb.local_set(tl)
+        tptr = fb.new_i32()
+        fb.local_get(sbuf)
+        fb.i32_const(4)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(tptr)
+        self._emit_runtime_fat(fb, tptr, tl)
+        return I64
+
+    def _gen_struct_var_print(self, name: str, fb: FuncBody) -> None:
+        self._gen_struct_to_str(name, fb)
+        fp = fb.new_i64()
+        fb.local_set(fp)
+        self._emit_fat_split(fp, fb)
+        fb.byte(0x10)
+        fb.uleb(self._helper_funcs["$print_str"])
 
     def _gen_complex_value(self, node: ASTNode, fb: FuncBody) -> tuple[int, int]:
         try:
@@ -7537,7 +7626,11 @@ class _WasmCodegen:
                     self._gen_expr(base, fb)
                     fb.byte(OP_I32_WRAP_I64)
                     fb.local_set(lp)
-                    if _is_map_type(bt):
+                    is_map = _is_map_type(bt) or (
+                        bt in ("data", "result", "")
+                        and (self._is_str_type(self._infer_type(chain[-1])) or (isinstance(chain[-1], Literal) and getattr(chain[-1], "value_type", "").lower() in ("string", "str")))
+                    )
+                    if is_map:
                         if len(chain) != 1:
                             raise WasmError("nested map index access is not supported on this target")
                         self._map_key_fat(chain[0], fb)
@@ -7808,7 +7901,7 @@ class _WasmCodegen:
             return I32
         if isinstance(node, Identifier):
             if node.name in self._struct_slots:
-                return I64
+                return self._gen_struct_to_str(node.name, fb)
             if node.name in self._enum_slots:
                 kind, eslots = self._enum_slots[node.name]
                 tag = eslots["tag"]
@@ -7849,8 +7942,17 @@ class _WasmCodegen:
             self._gen_decl_struct_init(node, fb)
             return I64
         if isinstance(node, FieldAccess):
-            if isinstance(node.obj, Identifier) and node.obj.name in self._struct_slots:
-                return self._gen_struct_field_access(node, fb)
+            target = self._resolve_struct_slot(node)
+            if target is not None:
+                if isinstance(target, dict):
+                    raise WasmError(f"field access '{node.field}' yielded a struct, not a value")
+                sid, wt = target[:2]
+                kind = self._resolve_struct_kind(node)
+                if kind == "global":
+                    fb.global_get(sid)
+                else:
+                    fb.local_get(sid)
+                return wt
             if isinstance(node.obj, StructInit):
                 self._gen_decl_struct_init(node.obj, fb)
                 if self._pending_struct is None:
@@ -7859,7 +7961,8 @@ class _WasmCodegen:
                 self._pending_struct = None
                 if node.field not in slots["fields"]:
                     raise WasmError(f"unknown field '{node.field}' for struct '{node.obj.name}'")
-                lid, wt = slots["fields"][node.field]
+                target = slots["fields"][node.field]
+                lid, wt = target[:2]
                 fb.local_get(lid)
                 return wt
             if node.field in ("sta", "status", "val", "value", "msg", "message"):
@@ -7869,11 +7972,25 @@ class _WasmCodegen:
                     kind, sta, val, msg = res[:4]
                     wt = res[4] if len(res) > 4 else _wtype(self._decl_types.get(node.obj.name, "int64"))
                     slot = {"val": val, "sta": sta, "msg": msg}[f]
+                    if f in ("sta", "msg"):
+                        p_loc = fb.new_i32()
+                        if kind == "local":
+                            fb.local_get(slot)
+                        else:
+                            fb.global_get(slot)
+                        fb.local_set(p_loc)
+                        len_loc = fb.new_i32()
+                        fb.local_get(p_loc)
+                        fb.byte(0x10)
+                        fb.uleb(self._helper_funcs["$strlen"])
+                        fb.local_set(len_loc)
+                        self._emit_runtime_fat(fb, p_loc, len_loc)
+                        return I64
                     if kind == "local":
                         fb.local_get(slot)
                     else:
                         fb.global_get(slot)
-                    return I32 if f in ("sta", "msg") else wt
+                    return wt
                 if f == "val" and isinstance(node.obj, CallExpr):
                     return self._gen_call(node.obj, fb)
                 if node.obj is not None:
@@ -7891,8 +8008,16 @@ class _WasmCodegen:
                             return I64
                     fb.local_get(self._fr_val)
                     return I64
+                p_loc = fb.new_i32()
                 fb.local_get(self._fr_sta if f == "sta" else self._fr_msg)
-                return I32
+                fb.local_set(p_loc)
+                len_loc = fb.new_i32()
+                fb.local_get(p_loc)
+                fb.byte(0x10)
+                fb.uleb(self._helper_funcs["$strlen"])
+                fb.local_set(len_loc)
+                self._emit_runtime_fat(fb, p_loc, len_loc)
+                return I64
             return I64
         if isinstance(node, BinaryOp):
             return self._gen_binary_op(node, fb)
@@ -8166,6 +8291,17 @@ class _WasmCodegen:
         tgt_low = tgt.lower()
         if tgt_low in ("string", "str"):
             return self._gen_cast_to_str(node.expr, fb, vwt)
+        if tgt_low in ("bool", "boolean"):
+            if _is_str_type(src) and "$str_to_bool" in self._helper_funcs:
+                fb.byte(0x10)
+                fb.uleb(self._helper_funcs["$str_to_bool"])
+                return I32
+            if vwt == I64:
+                fb.byte(OP_I32_WRAP_I64)
+            elif vwt == F64:
+                fb.byte(OP_I64_TRUNC_F64_S)
+                fb.byte(OP_I32_WRAP_I64)
+            return I32
         if tgt_low == "char":
             if _is_str_type(src):
                 tmp = fb.new_i64()
@@ -8517,45 +8653,87 @@ class _WasmCodegen:
             fields[f.name] = wt
         return {"fields": fields}
 
-    def _declare_struct_storage_global(self, it: StorageItem) -> None:
-        sdef = self._structs.get(it.type_ref.name)
+    def _alloc_struct_slots_global(self, prefix: str, sname: str) -> dict:
+        sdef = self._structs.get(sname)
         if sdef is None:
-            raise WasmError(f"struct '{it.type_ref.name}' not declared")
-        layout = self._struct_layout(sdef)
-        slots: dict = {"fields": {}, "_type_name": sdef.name}
-        for fname, wt in layout["fields"].items():
-            slots["fields"][fname] = (self._new_global(wt), wt)
+            raise WasmError(f"struct '{sname}' not declared")
+        slots: dict = {"fields": {}, "_type_name": sdef.name, "kind": "global"}
+        for f in sdef.fields:
+            fname = f.name
+            raw_t = f.type_ref.name if f.type_ref else "int64"
+            if raw_t in self._structs:
+                slots["fields"][fname] = self._alloc_struct_slots_global(f"{prefix}_{fname}", raw_t)
+            else:
+                wt = _wtype(raw_t)
+                gid = self._new_global(wt)
+                slots["fields"][fname] = (gid, wt)
+        return slots
+
+    def _alloc_struct_slots_local(self, prefix: str, sname: str, fb: FuncBody) -> dict:
+        sdef = self._structs.get(sname)
+        if sdef is None:
+            raise WasmError(f"struct '{sname}' not declared")
+        slots: dict = {"fields": {}, "_type_name": sdef.name, "kind": "local"}
+        for f in sdef.fields:
+            fname = f.name
+            raw_t = f.type_ref.name if f.type_ref else "int64"
+            if raw_t in self._structs:
+                slots["fields"][fname] = self._alloc_struct_slots_local(f"{prefix}_{fname}", raw_t, fb)
+            else:
+                wt = _wtype(raw_t)
+                if wt == F64:
+                    lid = fb.new_f64()
+                elif wt == I32:
+                    lid = fb.new_i32()
+                else:
+                    lid = fb.new_i64()
+                slots["fields"][fname] = (lid, wt)
+        return slots
+
+    def _declare_struct_storage_global(self, it: StorageItem) -> None:
+        slots = self._alloc_struct_slots_global(f"{it.name}_flux", it.type_ref.name)
         self._struct_slots[it.name] = ("global", slots)
 
     def _declare_struct_storage_local(self, it: StorageItem, fb: FuncBody) -> None:
-        sdef = self._structs.get(it.type_ref.name)
-        if sdef is None:
-            raise WasmError(f"struct '{it.type_ref.name}' not declared")
-        layout = self._struct_layout(sdef)
-        slots: dict = {"fields": {}, "_type_name": sdef.name}
-        for fname, wt in layout["fields"].items():
-            if wt == F64:
-                lid = fb.new_f64()
-            elif wt == I32:
-                lid = fb.new_i32()
-            else:
-                lid = fb.new_i64()
-            slots["fields"][fname] = (lid, wt)
+        slots = self._alloc_struct_slots_local(f"{it.name}_flux", it.type_ref.name, fb)
         self._struct_slots[it.name] = ("local", slots)
+
+    def _resolve_struct_slot(self, node: ASTNode) -> tuple[int, int] | dict | None:
+        if isinstance(node, Identifier):
+            if node.name in self._struct_slots:
+                return self._struct_slots[node.name][1]
+            return None
+        if isinstance(node, FieldAccess):
+            parent = self._resolve_struct_slot(node.obj)
+            if isinstance(parent, dict) and "fields" in parent:
+                return parent["fields"].get(node.field)
+        return None
+
+    def _resolve_struct_kind(self, node: ASTNode) -> str:
+        if isinstance(node, Identifier):
+            if node.name in self._struct_slots:
+                return self._struct_slots[node.name][0]
+        if isinstance(node, FieldAccess):
+            return self._resolve_struct_kind(node.obj)
+        return "local"
 
     def _emit_struct_into(self, init: ASTNode | None, slots: dict, fb: FuncBody, is_global: bool) -> None:
         if init is None:
-            for name, (sid, wt) in slots["fields"].items():
-                if wt == F64:
-                    fb.f64_const(0.0)
-                elif wt == I32:
-                    fb.i32_const(0)
+            for name, target in slots["fields"].items():
+                if isinstance(target, dict):
+                    self._emit_struct_into(None, target, fb, is_global)
                 else:
-                    fb.i64_const(0)
-                if is_global:
-                    fb.global_set(sid)
-                else:
-                    fb.local_set(sid)
+                    sid, wt = target[:2]
+                    if wt == F64:
+                        fb.f64_const(0.0)
+                    elif wt == I32:
+                        fb.i32_const(0)
+                    else:
+                        fb.i64_const(0)
+                    if is_global:
+                        fb.global_set(sid)
+                    else:
+                        fb.local_set(sid)
             return
         if not isinstance(init, StructInit):
             raise WasmError("struct storage requires a StructInit initializer")
@@ -8565,40 +8743,44 @@ class _WasmCodegen:
         for f in init.fields:
             if f.name not in slots["fields"]:
                 raise WasmError(f"unknown field '{f.name}' for struct '{init.name}'")
-            sid, _ = slots["fields"][f.name]
-            self._gen_expr(f.value, fb)
-            if is_global:
-                fb.global_set(sid)
+            target = slots["fields"][f.name]
+            if isinstance(target, dict):
+                self._emit_struct_into(f.value, target, fb, is_global)
             else:
-                fb.local_set(sid)
+                sid, _ = target[:2]
+                self._gen_expr(f.value, fb)
+                if is_global:
+                    fb.global_set(sid)
+                else:
+                    fb.local_set(sid)
 
     def _gen_decl_struct_init(self, node: StructInit, fb: FuncBody) -> int:
         sdef = self._structs.get(node.name)
         if sdef is None:
             raise WasmError(f"struct '{node.name}' not declared")
-        layout = self._struct_layout(sdef)
-        fslots: dict[str, tuple[int, int]] = {}
-        for f in node.fields:
-            if f.name not in layout["fields"]:
-                raise WasmError(f"unknown field '{f.name}' for struct '{node.name}'")
-            wt = layout["fields"][f.name]
-            if wt == F64:
-                lid = fb.new_f64()
-            elif wt == I32:
-                lid = fb.new_i32()
-            else:
-                lid = fb.new_i64()
-            self._gen_expr(f.value, fb)
-            fb.local_set(lid)
-            fslots[f.name] = (lid, wt)
-        self._pending_struct = {"slots": {"fields": fslots}}
+        slots = self._alloc_struct_slots_local(f"{node.name}_init", node.name, fb)
+        self._emit_struct_into(node, slots, fb, is_global=False)
+        self._pending_struct = {"slots": slots}
         return I64
 
     def _gen_struct_field_access(self, node: FieldAccess, fb: FuncBody) -> int:
-        kind, slots = self._struct_slots[node.obj.name]
+        target = self._resolve_struct_slot(node)
+        if target is not None:
+            if isinstance(target, dict):
+                raise WasmError(f"field access '{node.field}' yielded a struct, not a value")
+            sid, wt = target[:2]
+            kind = self._resolve_struct_kind(node)
+            if kind == "global":
+                fb.global_get(sid)
+            else:
+                fb.local_get(sid)
+            return wt
+        slots = self._struct_slots[node.obj.name][1]
         if node.field not in slots["fields"]:
             raise WasmError(f"unknown field '{node.field}' for struct '{node.obj.name}'")
-        sid, wt = slots["fields"][node.field]
+        target = slots["fields"][node.field]
+        sid, wt = target[:2]
+        kind = self._struct_slots[node.obj.name][0]
         if kind == "global":
             fb.global_get(sid)
         else:
@@ -8628,6 +8810,13 @@ class _WasmCodegen:
     def _emit_elem_tag(self, expr: ASTNode, val_local: int, fb: FuncBody) -> None:
         if isinstance(expr, Identifier) and expr.name in self._param_tag_slots:
             fb.local_get(self._param_tag_slots[expr.name])
+            return
+        if self._is_map_access(expr):
+            self._gen_expr(expr.obj, fb)
+            fb.byte(OP_I32_WRAP_I64)
+            self._map_key_fat(expr.indices[0], fb)
+            fb.byte(0x10)
+            fb.uleb(self._helper_funcs["$map_get_tag"])
             return
         if isinstance(expr, IndexAccess) and (_is_list_type(self._infer_type(expr.obj)) or self._infer_type(expr.obj) == "data"):
             self._gen_expr(expr.obj, fb)
@@ -8693,7 +8882,12 @@ class _WasmCodegen:
         if _is_float_type(self._infer_type(node.value)):
             fb.byte(OP_I64_REINTERPRET_F64)
         fb.local_set(v64)
-        if _is_map_type(ot):
+        is_map = _is_map_type(ot) or (
+            ot in ("data", "result", "")
+            and idxs
+            and (self._is_str_type(self._infer_type(idxs[0])) or (isinstance(idxs[0], Literal) and getattr(idxs[0], "value_type", "").lower() in ("string", "str")))
+        )
+        if is_map:
             if len(idxs) != 1:
                 raise WasmError("nested map index assignment is not supported on this target")
             self._emit_get_var(base.name, fb)
@@ -8769,7 +8963,13 @@ class _WasmCodegen:
         kind, slots = self._struct_slots[node.owner]
         if node.field not in slots["fields"]:
             raise WasmError(f"unknown field '{node.field}' for struct '{node.owner}'")
-        sid, _ = slots["fields"][node.field]
+        target = slots["fields"][node.field]
+        if isinstance(target, dict):
+            if not isinstance(node.value, StructInit):
+                raise WasmError(f"struct field '{node.field}' requires a StructInit value")
+            self._emit_struct_into(node.value, target, fb, is_global=(target.get("kind") == "global"))
+            return
+        sid, _ = target[:2]
         self._gen_expr(node.value, fb)
         if kind == "global":
             fb.global_set(sid)
@@ -8777,6 +8977,24 @@ class _WasmCodegen:
             fb.local_set(sid)
 
     def _field_type(self, node: FieldAccess) -> str | None:
+        parent = self._resolve_struct_slot(node.obj)
+        if isinstance(parent, dict) and "_type_name" in parent:
+            sdef = self._structs.get(parent["_type_name"])
+            if sdef is not None:
+                for f in sdef.fields:
+                    if f.name == node.field:
+                        ft = f.type_ref.name if f.type_ref else "int64"
+                        if ft in ("bool", "boolean"):
+                            return "bool"
+                        if ft == "datetime":
+                            return "datetime"
+                        if _is_str_type(ft):
+                            return "string"
+                        target = parent["fields"].get(node.field)
+                        if target is not None and not isinstance(target, dict):
+                            wt = target[1]
+                            return "float64" if wt == F64 else "int64"
+                        return "int64"
         if isinstance(node.obj, Identifier):
             if node.obj.name in self._struct_slots:
                 _, slots = self._struct_slots[node.obj.name]
@@ -8786,6 +9004,8 @@ class _WasmCodegen:
                     for f in sdef.fields:
                         if f.name == node.field:
                             ft = f.type_ref.name if f.type_ref else "int64"
+                            if ft in ("bool", "boolean"):
+                                return "bool"
                             if ft == "datetime":
                                 return "datetime"
                             if _is_str_type(ft):
@@ -8794,8 +9014,10 @@ class _WasmCodegen:
                 if self._struct_field_is_str(sname, node.field):
                     return "string"
                 if node.field in slots["fields"]:
-                    wt = slots["fields"][node.field][1]
-                    return "float64" if wt == F64 else ("int64" if wt == I64 else "int32")
+                    target = slots["fields"][node.field]
+                    if not isinstance(target, dict):
+                        wt = target[1]
+                        return "float64" if wt == F64 else ("int64" if wt == I64 else "int32")
             if node.obj.name in self._result_vars:
                 return "int64"
         if isinstance(node.obj, StructInit):
@@ -8804,6 +9026,8 @@ class _WasmCodegen:
                 for f in sdef.fields:
                     if f.name == node.field:
                         ft = f.type_ref.name if f.type_ref else "int64"
+                        if ft in ("bool", "boolean"):
+                            return "bool"
                         if ft == "datetime":
                             return "datetime"
                         if _is_str_type(ft):
@@ -9640,6 +9864,66 @@ class _WasmCodegen:
                     "<=": OP_F64_LE, ">": OP_F64_GT, ">=": OP_F64_GE,
                 }[op]
                 fb.byte(fop)
+                fb.byte(OP_I64_EXTEND_I32_U)
+                return
+            if op in ("==", "!=") and (lt in ("data", "any") or rt in ("data", "any")):
+                rc64 = fb.new_i64()
+                lc64 = fb.new_i64()
+                fb.local_set(rc64)
+                fb.local_set(lc64)
+                ptra = fb.new_i32()
+                ptrb = fb.new_i32()
+                res_slot = fb.new_i32()
+
+                fb.local_get(lc64)
+                fb.i64_const(32)
+                fb.byte(OP_I64_SHR_U)
+                fb.byte(OP_I32_WRAP_I64)
+                fb.local_set(ptra)
+
+                fb.local_get(rc64)
+                fb.i64_const(32)
+                fb.byte(OP_I64_SHR_U)
+                fb.byte(OP_I32_WRAP_I64)
+                fb.local_set(ptrb)
+
+                fb.local_get(ptra)
+                fb.i32_const(0)
+                fb.byte(OP_I32_GT_U)
+                fb.local_get(ptra)
+                fb.i32_const(0x70000000)
+                fb.byte(OP_I32_LT_U)
+                fb.byte(OP_I32_AND)
+
+                fb.local_get(ptrb)
+                fb.i32_const(0)
+                fb.byte(OP_I32_GT_U)
+                fb.local_get(ptrb)
+                fb.i32_const(0x70000000)
+                fb.byte(OP_I32_LT_U)
+                fb.byte(OP_I32_AND)
+
+                fb.byte(OP_I32_AND)
+
+                fb.byte(OP_IF)
+                fb.put(b"\x40")
+                fb.local_get(lc64)
+                fb.local_get(rc64)
+                fb.byte(0x10)
+                fb.uleb(self._helper_funcs["$str_eq"])
+                if op == "!=":
+                    fb.byte(OP_I32_EQZ)
+                fb.local_set(res_slot)
+                fb.byte(OP_ELSE)
+                fb.local_get(lc64)
+                fb.local_get(rc64)
+                if op == "==":
+                    fb.byte(OP_I64_EQ)
+                else:
+                    fb.byte(OP_I64_NE)
+                fb.local_set(res_slot)
+                fb.byte(OP_END)
+                fb.local_get(res_slot)
                 fb.byte(OP_I64_EXTEND_I32_U)
                 return
             iop = {
@@ -11913,7 +12197,12 @@ class _WasmCodegen:
             fb.uleb(self._helper_funcs["$list_slice"])
             fb.byte(OP_I64_EXTEND_I32_U)
             return I64
-        if _is_map_type(ot):
+        is_map = _is_map_type(ot) or (
+            ot in ("data", "result", "")
+            and node.indices
+            and (self._is_str_type(self._infer_type(node.indices[0])) or (isinstance(node.indices[0], Literal) and getattr(node.indices[0], "value_type", "").lower() in ("string", "str")))
+        )
+        if is_map:
             self._gen_expr(node.obj, fb)
             fb.byte(OP_I32_WRAP_I64)
             self._map_key_fat(node.indices[0], fb)
@@ -12070,6 +12359,8 @@ class _WasmCodegen:
             return False
         if isinstance(node, Identifier):
             return self._decl_types.get(node.name) == "bool"
+        if isinstance(node, FieldAccess):
+            return self._field_type(node) in ("bool", "boolean")
         return self._infer_type(node) == "bool"
 
     def _sc_set(self, name: str, fb: FuncBody) -> None:
@@ -12269,7 +12560,13 @@ class _WasmCodegen:
                 for f in pat.fields:
                     if f.name not in struct_subject["slots"]["fields"]:
                         raise WasmError(f"unknown field '{f.name}' for struct '{pat.name}'")
-                    sid, wt = struct_subject["slots"]["fields"][f.name]
+                    target = struct_subject["slots"]["fields"][f.name]
+                    if isinstance(target, dict):
+                        if isinstance(f.value, IdentifierPattern):
+                            self._struct_slots[f.value.name] = (struct_subject["kind"], target)
+                            continue
+                        raise WasmError("nested struct pattern not supported on WASM target")
+                    sid, wt = target[:2]
                     self._gen_wasm_pattern_field(f, fb, sid, wt, sget, next_depth,
                                                  is_str=self._struct_field_is_str(pat.name, f.name))
                 self._gen_wasm_guard(arm, fb, next_depth)
