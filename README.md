@@ -35,33 +35,66 @@ TheFlux introduz um modelo expressivo centrado em **contratos** (contract), **ag
 
 ```text
 TheFlux/
-├── src/                         # Núcleo do compilador e backends
+├── src/                         # Núcleo do compilador e backends (src/flux_proto)
 │   └── flux_proto/              # Lexer, Parser, AST, Semântica, VM, LLVM, WAT, WASM
+│       ├── ast/                 # Árvores sintáticas (AST, DDG, grafo de dependência)
+│       ├── lexer/ - parser/     # Análise léxica e sintática
+│       ├── semantic/            # Análise semântica, símbolos e tipos
+│       ├── interpreter/         # Interpretador AST interativo
+│       ├── macro/               # Sistema de macros
+│       ├── vm/                  # Bytecode + máquina virtual (.fvmbc)
+│       ├── llvm/                # Emissão LLVM IR nativo
+│       ├── wasm/ - wat/         # Backends WebAssembly (binário e texto)
+│       └── telemetry/           # Diagnóstico e instrumentação
 ├── stdlib/                      # Bibliotecas Padrão em FDSL (.fdsl)
 │   ├── CharStdLib.fdsl          # Manipulação e mutação de char
 │   ├── ConvertStdLib.fdsl       # Conversões numéricas, bases, parsing
 │   ├── DateTimeStdLib.fdsl      # Data, tempo, fuso horário, relógio monotônico
 │   ├── DebugStdLib.fdsl         # Debug de programas
 │   ├── FileSignatureStdLib.fdsl # Assinatura, autenticação de arquivos e diretórios
+│   ├── FinStdLib.fdsl           # Cálculos financeiros
 │   ├── FormatStdLib.fdsl        # Formatos estruturados (JSON, CSV, YAML 1.2, TOML, Base64, URL)
+│   ├── FsmStdLib.fdsl           # Máquinas de estados finitos
+│   ├── GfxStdLib.fdsl           # Gráficos e renderização
+│   ├── GuiStdLib.fdsl           # Interface gráfica
 │   ├── HashStdLib.fdsl          # Criptografia, checksums, hashes rápidos
 │   ├── IoStdLib.fdsl            # Arquivos, diretórios, inspeção
 │   ├── LinAlgStdLib.fdsl        # Álgebra linear, vetores, matrizes, autovalores
 │   ├── ListStdLib.fdsl          # Listas e sequências
+│   ├── LowLevelStdLib.fdsl      # Operações de baixo nível
 │   ├── MapStdLib.fdsl           # Dicionários, mapas chave-valor, entradas e transformações
 │   ├── MathStdLib.fdsl          # Matemática fundamental, trigonometria, estatística
 │   ├── NetStdLib.fdsl           # Redes, sockets, HTTP
+│   ├── OoStdLib.fdsl            # Orientação a objetos
 │   ├── OsStdLib.fdsl            # Processos, ambiente, sistema operacional
+│   ├── PhysStdLib.fdsl          # Física e simulações
 │   ├── RandomStdLib.fdsl        # Geradores pseudo-aleatórios e distribuições
+│   ├── RegexStdLib.fdsl         # Expressões regulares
 │   ├── SetStdLib.fdsl           # Teoria e álgebra de conjuntos
-│   ├── SimdStdLib.fdsl          # Operações vetoriais aceleradas
 │   ├── StatStdLib.fdsl          # Estatística descritiva, distribuições e inferência
-│   └── StringStdLib.fdsl        # Manipulação e mutação de strings
-├── flux/                        # 236 programas e suítes de teste (.flux)
+│   ├── StringStdLib.fdsl        # Manipulação e mutação de strings
+│   └── StructStdLib.fdsl        # Estruturas e contratos de dados
+├── fdsl/                        # 11 agentes FDSL de exemplo (AgentOf*.fdsl)
+├── flux/                        # 305 programas e suítes de teste (.flux)
 ├── docs/                        # Especificação EBNF, gramática e documentação técnica
-├── specs/                       # Especificações estruturadas de funcionalidades
-├── openspec/                    # Sistema de mudanças e propostas OpenSpec
 ├── web_wasm/                    # Frontend web e playground interativo WebAssembly
+├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
+├── runtime/                     # Suporte de runtime
+├── t_general/ t_fvmbc/          # Testes: gerais, VM bytecode
+├── t_llvm/ t_wasm-*             # Testes: LLVM e WebAssembly
+├── t_wat-*                      # Testes: WebAssembly Text
+├── flux_in.py                   # Runner: interpretador AST interativo
+├── flux_vm.py                   # Runner: compilar via VM bytecode
+├── flux_vmr.py                  # Runner: executar bytecode via VM runner
+├── flux_lv.py                   # Runner: compilar via LLVM nativo
+├── flux_wat.py                  # Runner: compilar via WebAssembly Text
+├── flux_was.py                  # Runner: compilar via WebAssembly Binário
+├── exemplos_in.py               # Suíte: exemplos via interpretador AST
+├── exemplos_lv.py               # Suíte: exemplos via LLVM nativo
+├── exemplos_vm.py               # Suíte: exemplos via VM bytecode
+├── exemplos_vmr.py              # Suíte: exemplos via VM runner
+├── exemplos_wat.py              # Suíte: exemplos via WebAssembly Text
+├── exemplos_was.py              # Suíte: exemplos via WebAssembly Binário
 ├── backend_compliance.py        # Harness de testes de conformidade dos 6 backends
 └── backend_compliance.md        # Matriz oficial de conformidade dos testes (100% PASS)
 ```
