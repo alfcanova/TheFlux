@@ -13,7 +13,7 @@ TheFlux introduz um modelo expressivo centrado em **contratos** (contract), **ag
 - **Paradigma Orientado a Agentes & Contratos**: Separação clara entre especificações de interface e implementações reativas.
 - **Tipagem Estática Expressiva**: Suporte a inteiros primitivos, ponto flutuante com formatos para ML, tensores/matrizes, coleções e tipos de data/hora nativos.
 - **Arquitetura Multi-Backend (6 Alvos de Execução)**: O mesmo código-fonte TheFlux executa com exata paridade comportamental em todos os ambientes.
-- **Biblioteca Padrão Abrangente (stdlib)**: 18 bibliotecas modulares cobrindo desde formatos estruturados (JSON, CSV, YAML 1.2, TOML), álgebra linear e SIMD até criptografia, rede e relógio monotônico.
+- **Biblioteca Padrão Abrangente (stdlib)**: Bibliotecas modulares cobrindo desde formatos estruturados (JSON, CSV, YAML 1.2, TOML), álgebra linear e SIMD até criptografia, rede e relógio monotônico.
 - **Playground Web**: Ambiente interativo WebAssembly no navegador (web_wasm/).
 
 ---
