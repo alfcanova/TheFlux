@@ -1,0 +1,988 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Modulo nativo para operacoes de baixo nivel, manipulacao cirurgica de bits,
+#L bytes, ordenacao (endianness), alinhamento de memoria e buffers binarios.
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas/intrinsicos).
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas.
+#L ==============================================================================
+
+#L ==============================================================================
+#L Contratos
+#L ==============================================================================
+
+contract (LowLevelConstantsContract) {
+      op mask8 () as int64
+      op mask16 () as int64
+      op mask32 () as int64
+      op mask64 () as int64
+      op int8Min () as int64
+      op int8Max () as int64
+      op uint8Max () as int64
+      op int16Min () as int64
+      op int16Max () as int64
+      op uint16Max () as int64
+      op int32Min () as int64
+      op int32Max () as int64
+      op uint32Max () as int64
+      op int64Min () as int64
+      op int64Max () as int64
+      op sizeByte () as int64
+      op sizeHWord () as int64
+      op sizeWord () as int64
+      op sizeDWord () as int64
+      op bitsByte () as int64
+      op bitsHWord () as int64
+      op bitsWord () as int64
+      op bitsDWord () as int64
+      op pageSize4K () as int64
+      op pageSizeHuge2M () as int64
+      op cacheLineSize () as int64
+      op endianLittle () as int64
+      op endianBig () as int64
+}
+
+contract (LowLevelBitwiseContract) {
+      op lowBitAnd (as int64: a, as int64: b) as int64
+      op lowBitOr (as int64: a, as int64: b) as int64
+      op lowBitXor (as int64: a, as int64: b) as int64
+      op lowBitNot (as int64: a) as int64
+      op lowBitNand (as int64: a, as int64: b) as int64
+      op lowBitNor (as int64: a, as int64: b) as int64
+      op lowBitXnor (as int64: a, as int64: b) as int64
+}
+
+contract (LowLevelShiftRotateContract) {
+      op lowShiftLeft (as int64: value, as int64: bits) as int64
+      op lowShiftRight (as int64: value, as int64: bits) as int64
+      op lowShiftRightLogical (as int64: value, as int64: bits) as int64
+      op lowRotateLeft (as int64: value, as int64: bits, as int64: width) as int64
+      op lowRotateRight (as int64: value, as int64: bits, as int64: width) as int64
+      op lowRotateLeft64 (as int64: value, as int64: bits) as int64
+      op lowRotateRight64 (as int64: value, as int64: bits) as int64
+      op lowRotateLeft32 (as int64: value, as int64: bits) as int64
+      op lowRotateRight32 (as int64: value, as int64: bits) as int64
+}
+
+contract (LowLevelBitInspectionContract) {
+      op lowBitCheck (as int64: value, as int64: bit_index) as bool
+      op lowBitSet (as int64: value, as int64: bit_index) as int64
+      op lowBitClear (as int64: value, as int64: bit_index) as int64
+      op lowBitToggle (as int64: value, as int64: bit_index) as int64
+      op lowBitWrite (as int64: value, as int64: bit_index, as bool: state) as int64
+      op lowPopCount (as int64: value) as int64
+      op lowCountLeadingZeros (as int64: value, as int64: width) as int64
+      op lowCountTrailingZeros (as int64: value) as int64
+      op lowParity (as int64: value) as int64
+      op lowReverseBits (as int64: value, as int64: width) as int64
+      op lowBitExtract (as int64: value, as int64: start_bit, as int64: num_bits) as int64
+      op lowBitInsert (as int64: target, as int64: source, as int64: start_bit, as int64: num_bits) as int64
+}
+
+contract (LowLevelEndiannessContract) {
+      op lowByteSwap16 (as int64: v) as int64
+      op lowByteSwap32 (as int64: v) as int64
+      op lowByteSwap64 (as int64: v) as int64
+      op lowHostToNetwork16 (as int64: v) as int64
+      op lowNetworkToHost16 (as int64: v) as int64
+      op lowHostToNetwork32 (as int64: v) as int64
+      op lowNetworkToHost32 (as int64: v) as int64
+      op lowHostToNetwork64 (as int64: v) as int64
+      op lowNetworkToHost64 (as int64: v) as int64
+}
+
+contract (LowLevelAlignmentContract) {
+      op lowIsAligned (as int64: address, as int64: alignment) as bool
+      op lowAlignForward (as int64: address, as int64: alignment) as int64
+      op lowAlignBackward (as int64: address, as int64: alignment) as int64
+      op lowAlignmentPadding (as int64: address, as int64: alignment) as int64
+      op lowAddressOffset (as int64: base_address, as int64: offset_bytes) as int64
+      op lowAddressDifference (as int64: addr1, as int64: addr2) as int64
+}
+
+contract (LowLevelMemoryAccessContract) {
+      op lowMemoryInit (as int64: size_bytes) as map
+      op lowMemoryPeekByte (as map: mem, as int64: address) as int64
+      op lowMemoryPokeByte (as map: mem, as int64: address, as int64: value) as map
+      op lowMemoryPeekHWord (as map: mem, as int64: address) as int64
+      op lowMemoryPokeHWord (as map: mem, as int64: address, as int64: value) as map
+      op lowMemoryPeekWord (as map: mem, as int64: address) as int64
+      op lowMemoryPokeWord (as map: mem, as int64: address, as int64: value) as map
+      op lowMemoryPeekDWord (as map: mem, as int64: address) as int64
+      op lowMemoryPokeDWord (as map: mem, as int64: address, as int64: value) as map
+      op lowByteGet (as int64: value, as int64: byte_index) as int64
+      op lowByteSet (as int64: value, as int64: byte_index, as int64: byte_val) as int64
+      op lowHWordGet (as int64: value, as int64: hword_index) as int64
+      op lowWordGet (as int64: value, as int64: word_index) as int64
+      op lowMakeHWord (as int64: b0, as int64: b1) as int64
+      op lowMakeWord (as int64: b0, as int64: b1, as int64: b2, as int64: b3) as int64
+      op lowMakeDWord (as int64: w0, as int64: w1) as int64
+}
+
+contract (LowLevelBlockMemoryContract) {
+      op lowMemoryCopy (as map: mem, as int64: src_addr, as int64: dst_addr, as int64: count) as map
+      op lowMemorySet (as map: mem, as int64: dst_addr, as int64: byte_val, as int64: count) as map
+      op lowMemoryCompare (as map: mem, as int64: addr1, as int64: addr2, as int64: count) as int64
+      op lowMemoryClear (as map: mem, as int64: address, as int64: count) as map
+      op lowMemoryDump (as map: mem, as int64: address, as int64: count) as string
+}
+
+contract (LowLevelBufferContract) {
+      op lowBufferNew (as int64: capacity) as map
+      op lowBufferLength (as map: buf) as int64
+      op lowBufferCapacity (as map: buf) as int64
+      op lowBufferWriteByte (as map: buf, as int64: val) as map
+      op lowBufferWriteHWord (as map: buf, as int64: val) as map
+      op lowBufferWriteWord (as map: buf, as int64: val) as map
+      op lowBufferWriteDWord (as map: buf, as int64: val) as map
+      op lowBufferReadByte (as map: buf, as int64: offset) as int64
+      op lowBufferReadHWord (as map: buf, as int64: offset) as int64
+      op lowBufferReadWord (as map: buf, as int64: offset) as int64
+      op lowBufferReadDWord (as map: buf, as int64: offset) as int64
+      op lowBufferToHex (as map: buf) as string
+      op lowBufferFromHex (as string: hex_str) as map
+}
+
+#L ==============================================================================
+#L Agente LowLevelStdLib
+#L ==============================================================================
+
+agent (LowLevelStdLib) impl LowLevelConstantsContract, LowLevelBitwiseContract, LowLevelShiftRotateContract, LowLevelBitInspectionContract, LowLevelEndiannessContract, LowLevelAlignmentContract, LowLevelMemoryAccessContract, LowLevelBlockMemoryContract, LowLevelBufferContract {
+
+      #L =====================================================================
+      #L Utilitarios Internos
+      #L =====================================================================
+
+      op _hexDigit (as int64: d) as string ==> {
+            mut as int64: v = d & 15
+            route {
+                  v == 0 ==> { emit(nice, "0", "ok") }
+                  v == 1 ==> { emit(nice, "1", "ok") }
+                  v == 2 ==> { emit(nice, "2", "ok") }
+                  v == 3 ==> { emit(nice, "3", "ok") }
+                  v == 4 ==> { emit(nice, "4", "ok") }
+                  v == 5 ==> { emit(nice, "5", "ok") }
+                  v == 6 ==> { emit(nice, "6", "ok") }
+                  v == 7 ==> { emit(nice, "7", "ok") }
+                  v == 8 ==> { emit(nice, "8", "ok") }
+                  v == 9 ==> { emit(nice, "9", "ok") }
+                  v == 10 ==> { emit(nice, "A", "ok") }
+                  v == 11 ==> { emit(nice, "B", "ok") }
+                  v == 12 ==> { emit(nice, "C", "ok") }
+                  v == 13 ==> { emit(nice, "D", "ok") }
+                  v == 14 ==> { emit(nice, "E", "ok") }
+                  v == 15 ==> { emit(nice, "F", "ok") }
+                  _ ==> { emit(nice, "0", "ok") }
+            }
+      }
+
+      op _byteToHex (as int64: b) as string ==> {
+            mut as int64: val = b & 255
+            mut as int64: hi = (val >>> 4) & 15
+            mut as int64: lo = val & 15
+            mut as string: res = _hexDigit(hi) + _hexDigit(lo)
+            emit(nice, res, "ok")
+      }
+
+      op _hexCharVal (as string: ch) as int64 ==> {
+            route {
+                  ch == "0" ==> { emit(nice, 0, "ok") }
+                  ch == "1" ==> { emit(nice, 1, "ok") }
+                  ch == "2" ==> { emit(nice, 2, "ok") }
+                  ch == "3" ==> { emit(nice, 3, "ok") }
+                  ch == "4" ==> { emit(nice, 4, "ok") }
+                  ch == "5" ==> { emit(nice, 5, "ok") }
+                  ch == "6" ==> { emit(nice, 6, "ok") }
+                  ch == "7" ==> { emit(nice, 7, "ok") }
+                  ch == "8" ==> { emit(nice, 8, "ok") }
+                  ch == "9" ==> { emit(nice, 9, "ok") }
+                  ch == "A" or ch == "a" ==> { emit(nice, 10, "ok") }
+                  ch == "B" or ch == "b" ==> { emit(nice, 11, "ok") }
+                  ch == "C" or ch == "c" ==> { emit(nice, 12, "ok") }
+                  ch == "D" or ch == "d" ==> { emit(nice, 13, "ok") }
+                  ch == "E" or ch == "e" ==> { emit(nice, 14, "ok") }
+                  ch == "F" or ch == "f" ==> { emit(nice, 15, "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op _memHasKey (as map: m, as string: target_key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in m) {
+                  route {
+                        k == target_key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelConstantsContract
+      #L =====================================================================
+
+      op mask8 () as int64 ==> { emit(nice, 255, "ok") }
+      op mask16 () as int64 ==> { emit(nice, 65535, "ok") }
+      op mask32 () as int64 ==> { emit(nice, 4294967295, "ok") }
+      op mask64 () as int64 ==> { emit(nice, -1, "ok") }
+
+      op int8Min () as int64 ==> { emit(nice, -128, "ok") }
+      op int8Max () as int64 ==> { emit(nice, 127, "ok") }
+      op uint8Max () as int64 ==> { emit(nice, 255, "ok") }
+
+      op int16Min () as int64 ==> { emit(nice, -32768, "ok") }
+      op int16Max () as int64 ==> { emit(nice, 32767, "ok") }
+      op uint16Max () as int64 ==> { emit(nice, 65535, "ok") }
+
+      op int32Min () as int64 ==> { emit(nice, -2147483648, "ok") }
+      op int32Max () as int64 ==> { emit(nice, 2147483647, "ok") }
+      op uint32Max () as int64 ==> { emit(nice, 4294967295, "ok") }
+
+      op int64Min () as int64 ==> {
+            #L Minimo de 64 bits em complemento de dois
+            mut as int64: min_val = 0 - 9223372036854775807 - 1
+            emit(nice, min_val, "ok")
+      }
+      op int64Max () as int64 ==> { emit(nice, 9223372036854775807, "ok") }
+
+      op sizeByte () as int64 ==> { emit(nice, 1, "ok") }
+      op sizeHWord () as int64 ==> { emit(nice, 2, "ok") }
+      op sizeWord () as int64 ==> { emit(nice, 4, "ok") }
+      op sizeDWord () as int64 ==> { emit(nice, 8, "ok") }
+
+      op bitsByte () as int64 ==> { emit(nice, 8, "ok") }
+      op bitsHWord () as int64 ==> { emit(nice, 16, "ok") }
+      op bitsWord () as int64 ==> { emit(nice, 32, "ok") }
+      op bitsDWord () as int64 ==> { emit(nice, 64, "ok") }
+
+      op pageSize4K () as int64 ==> { emit(nice, 4096, "ok") }
+      op pageSizeHuge2M () as int64 ==> { emit(nice, 2097152, "ok") }
+      op cacheLineSize () as int64 ==> { emit(nice, 64, "ok") }
+      op endianLittle () as int64 ==> { emit(nice, 1, "ok") }
+      op endianBig () as int64 ==> { emit(nice, 2, "ok") }
+
+      #L =====================================================================
+      #L LowLevelBitwiseContract
+      #L =====================================================================
+
+      op lowBitAnd (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, a & b, "ok")
+      }
+      op lowBitOr (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, a | b, "ok")
+      }
+      op lowBitXor (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, a ^ b, "ok")
+      }
+      op lowBitNot (as int64: a) as int64 ==> {
+            emit(nice, ~a, "ok")
+      }
+      op lowBitNand (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, ~(a & b), "ok")
+      }
+      op lowBitNor (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, ~(a | b), "ok")
+      }
+      op lowBitXnor (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, ~(a ^ b), "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelShiftRotateContract
+      #L =====================================================================
+
+      op lowShiftLeft (as int64: value, as int64: bits) as int64 ==> {
+            route {
+                  bits <= 0 ==> { emit(nice, value, "ok") }
+                  bits >= 64 ==> { emit(nice, 0, "ok") }
+            }
+            emit(nice, value << bits, "ok")
+      }
+
+      op lowShiftRight (as int64: value, as int64: bits) as int64 ==> {
+            route {
+                  bits <= 0 ==> { emit(nice, value, "ok") }
+                  bits >= 64 ==> {
+                        route {
+                              value < 0 ==> { emit(nice, -1, "ok") }
+                              _ ==> { emit(nice, 0, "ok") }
+                        }
+                  }
+            }
+            emit(nice, value >> bits, "ok")
+      }
+
+      op lowShiftRightLogical (as int64: value, as int64: bits) as int64 ==> {
+            route {
+                  bits <= 0 ==> { emit(nice, value, "ok") }
+                  bits >= 64 ==> { emit(nice, 0, "ok") }
+            }
+            emit(nice, value >>> bits, "ok")
+      }
+
+      op lowRotateLeft64 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: s = bits /r 64
+            route {
+                  s < 0 ==> { s = s + 64 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: res = (value << s) | (value >>> (64 - s))
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateRight64 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: s = bits /r 64
+            route {
+                  s < 0 ==> { s = s + 64 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: res = (value >>> s) | (value << (64 - s))
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateLeft32 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: v32 = value & 4294967295
+            mut as int64: s = bits /r 32
+            route {
+                  s < 0 ==> { s = s + 32 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, v32, "ok") }
+            }
+            mut as int64: res = ((v32 << s) | (v32 >>> (32 - s))) & 4294967295
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateRight32 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: v32 = value & 4294967295
+            mut as int64: s = bits /r 32
+            route {
+                  s < 0 ==> { s = s + 32 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, v32, "ok") }
+            }
+            mut as int64: res = ((v32 >>> s) | (v32 << (32 - s))) & 4294967295
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateLeft (as int64: value, as int64: bits, as int64: width) as int64 ==> {
+            route {
+                  width == 64 ==> { emit(nice, lowRotateLeft64(value, bits), "ok") }
+                  width == 32 ==> { emit(nice, lowRotateLeft32(value, bits), "ok") }
+            }
+            mut as int64: mask = 255
+            route {
+                  width == 16 ==> { mask = 65535 }
+            }
+            mut as int64: vw = value & mask
+            mut as int64: s = bits /r width
+            route {
+                  s < 0 ==> { s = s + width }
+            }
+            route {
+                  s == 0 ==> { emit(nice, vw, "ok") }
+            }
+            mut as int64: res = ((vw << s) | (vw >>> (width - s))) & mask
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateRight (as int64: value, as int64: bits, as int64: width) as int64 ==> {
+            route {
+                  width == 64 ==> { emit(nice, lowRotateRight64(value, bits), "ok") }
+                  width == 32 ==> { emit(nice, lowRotateRight32(value, bits), "ok") }
+            }
+            mut as int64: mask = 255
+            route {
+                  width == 16 ==> { mask = 65535 }
+            }
+            mut as int64: vw = value & mask
+            mut as int64: s = bits /r width
+            route {
+                  s < 0 ==> { s = s + width }
+            }
+            route {
+                  s == 0 ==> { emit(nice, vw, "ok") }
+            }
+            mut as int64: res = ((vw >>> s) | (vw << (width - s))) & mask
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelBitInspectionContract
+      #L =====================================================================
+
+      op lowBitCheck (as int64: value, as int64: bit_index) as bool ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, false, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: bit = (value >>> shift) & 1
+            emit(nice, bit == 1, "ok")
+      }
+
+      op lowBitSet (as int64: value, as int64: bit_index) as int64 ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: mask = 1 << shift
+            emit(nice, value | mask, "ok")
+      }
+
+      op lowBitClear (as int64: value, as int64: bit_index) as int64 ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: mask = 1 << shift
+            emit(nice, value & (~mask), "ok")
+      }
+
+      op lowBitToggle (as int64: value, as int64: bit_index) as int64 ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: mask = 1 << shift
+            emit(nice, value ^ mask, "ok")
+      }
+
+      op lowBitWrite (as int64: value, as int64: bit_index, as bool: state) as int64 ==> {
+            route {
+                  state ==> { emit(nice, lowBitSet(value, bit_index), "ok") }
+                  _ ==> { emit(nice, lowBitClear(value, bit_index), "ok") }
+            }
+      }
+
+      op lowPopCount (as int64: value) as int64 ==> {
+            mut as int64: count = 0
+            mut as int64: v = value
+            infinite (i in 1 .. 64) {
+                  route {
+                        (v & 1) == 1 ==> {
+                              count = count + 1
+                        }
+                  }
+                  v = v >>> 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op lowCountLeadingZeros (as int64: value, as int64: width) as int64 ==> {
+            mut as int64: w = width
+            route {
+                  w < 1 ==> { w = 64 }
+                  w > 64 ==> { w = 64 }
+            }
+            mut as int64: zeros = 0
+            infinite (i in w .. 1) {
+                  mut as int64: bit = (value >>> (i - 1)) & 1
+                  route {
+                        bit == 1 ==> { break }
+                        _ ==> { zeros = zeros + 1 }
+                  }
+            }
+            emit(nice, zeros, "ok")
+      }
+
+      op lowCountTrailingZeros (as int64: value) as int64 ==> {
+            route {
+                  value == 0 ==> { emit(nice, 64, "ok") }
+            }
+            mut as int64: zeros = 0
+            infinite (i in 1 .. 64) {
+                  mut as int64: bit = (value >>> (i - 1)) & 1
+                  route {
+                        bit == 1 ==> { break }
+                        _ ==> { zeros = zeros + 1 }
+                  }
+            }
+            emit(nice, zeros, "ok")
+      }
+
+      op lowParity (as int64: value) as int64 ==> {
+            mut as int64: pop = lowPopCount(value)
+            emit(nice, pop /r 2, "ok")
+      }
+
+      op lowReverseBits (as int64: value, as int64: width) as int64 ==> {
+            mut as int64: w = width
+            route {
+                  w < 1 ==> { w = 64 }
+                  w > 64 ==> { w = 64 }
+            }
+            mut as int64: res = 0
+            infinite (i in 1 .. w) {
+                  mut as int64: bit = (value >>> (i - 1)) & 1
+                  route {
+                        bit == 1 ==> {
+                              mut as int64: dst_shift = w - i
+                              res = res | (1 << dst_shift)
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op lowBitExtract (as int64: value, as int64: start_bit, as int64: num_bits) as int64 ==> {
+            route {
+                  num_bits <= 0 or start_bit < 1 or start_bit > 64 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = start_bit - 1
+            mut as int64: n = num_bits
+            route {
+                  n > 64 ==> { n = 64 }
+            }
+            mut as int64: mask = -1
+            route {
+                  n < 64 ==> { mask = (1 << n) - 1 }
+            }
+            mut as int64: res = (value >>> shift) & mask
+            emit(nice, res, "ok")
+      }
+
+      op lowBitInsert (as int64: target, as int64: source, as int64: start_bit, as int64: num_bits) as int64 ==> {
+            route {
+                  num_bits <= 0 or start_bit < 1 or start_bit > 64 ==> { emit(nice, target, "ok") }
+            }
+            mut as int64: shift = start_bit - 1
+            mut as int64: n = num_bits
+            route {
+                  n > 64 ==> { n = 64 }
+            }
+            mut as int64: mask = -1
+            route {
+                  n < 64 ==> { mask = (1 << n) - 1 }
+            }
+            mut as int64: clear_mask = ~(mask << shift)
+            mut as int64: clean_target = target & clear_mask
+            mut as int64: ins_val = (source & mask) << shift
+            emit(nice, clean_target | ins_val, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelEndiannessContract
+      #L =====================================================================
+
+      op lowByteSwap16 (as int64: v) as int64 ==> {
+            mut as int64: b0 = v & 255
+            mut as int64: b1 = (v >>> 8) & 255
+            mut as int64: res = (b0 << 8) | b1
+            emit(nice, res, "ok")
+      }
+
+      op lowByteSwap32 (as int64: v) as int64 ==> {
+            mut as int64: b0 = v & 255
+            mut as int64: b1 = (v >>> 8) & 255
+            mut as int64: b2 = (v >>> 16) & 255
+            mut as int64: b3 = (v >>> 24) & 255
+            mut as int64: res = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
+            emit(nice, res, "ok")
+      }
+
+      op lowByteSwap64 (as int64: v) as int64 ==> {
+            mut as int64: b0 = v & 255
+            mut as int64: b1 = (v >>> 8) & 255
+            mut as int64: b2 = (v >>> 16) & 255
+            mut as int64: b3 = (v >>> 24) & 255
+            mut as int64: b4 = (v >>> 32) & 255
+            mut as int64: b5 = (v >>> 40) & 255
+            mut as int64: b6 = (v >>> 48) & 255
+            mut as int64: b7 = (v >>> 56) & 255
+            mut as int64: res = (b0 << 56) | (b1 << 48) | (b2 << 40) | (b3 << 32) | (b4 << 24) | (b5 << 16) | (b6 << 8) | b7
+            emit(nice, res, "ok")
+      }
+
+      op lowHostToNetwork16 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap16(v), "ok")
+      }
+      op lowNetworkToHost16 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap16(v), "ok")
+      }
+
+      op lowHostToNetwork32 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap32(v), "ok")
+      }
+      op lowNetworkToHost32 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap32(v), "ok")
+      }
+
+      op lowHostToNetwork64 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap64(v), "ok")
+      }
+      op lowNetworkToHost64 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap64(v), "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelAlignmentContract
+      #L =====================================================================
+
+      op lowIsAligned (as int64: address, as int64: alignment) as bool ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, false, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            emit(nice, rem == 0, "ok")
+      }
+
+      op lowAlignForward (as int64: address, as int64: alignment) as int64 ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, address, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            route {
+                  rem == 0 ==> { emit(nice, address, "ok") }
+            }
+            emit(nice, address + (alignment - rem), "ok")
+      }
+
+      op lowAlignBackward (as int64: address, as int64: alignment) as int64 ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, address, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            emit(nice, address - rem, "ok")
+      }
+
+      op lowAlignmentPadding (as int64: address, as int64: alignment) as int64 ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            route {
+                  rem == 0 ==> { emit(nice, 0, "ok") }
+            }
+            emit(nice, alignment - rem, "ok")
+      }
+
+      op lowAddressOffset (as int64: base_address, as int64: offset_bytes) as int64 ==> {
+            emit(nice, base_address + offset_bytes, "ok")
+      }
+
+      op lowAddressDifference (as int64: addr1, as int64: addr2) as int64 ==> {
+            emit(nice, addr1 - addr2, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelMemoryAccessContract (Memoria Virtual e MMIO)
+      #L =====================================================================
+
+      op lowMemoryInit (as int64: size_bytes) as map ==> {
+            mut as map: m = map{}
+            m["size"] = size_bytes
+            emit(nice, m, "ok")
+      }
+
+      op lowMemoryPeekByte (as map: mem, as int64: address) as int64 ==> {
+            mut as string: k = "" + address
+            mut as int64: val = 0
+            route {
+                  _memHasKey(mem, k) ==> {
+                        val = mem[k] as int64
+                  }
+            }
+            emit(nice, val & 255, "ok")
+      }
+
+      op lowMemoryPokeByte (as map: mem, as int64: address, as int64: value) as map ==> {
+            mut as string: k = "" + address
+            mem[k] = value & 255
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPokeHWord (as map: mem, as int64: address, as int64: value) as map ==> {
+            mut as int64: b0 = value & 255
+            mut as int64: b1 = (value >>> 8) & 255
+            mem["" + address] = b0
+            mem["" + (address + 1)] = b1
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPeekHWord (as map: mem, as int64: address) as int64 ==> {
+            mut as int64: b0 = lowMemoryPeekByte(mem, address)
+            mut as int64: b1 = lowMemoryPeekByte(mem, address + 1)
+            mut as int64: res = b0 | (b1 << 8)
+            emit(nice, res, "ok")
+      }
+
+      op lowMemoryPokeWord (as map: mem, as int64: address, as int64: value) as map ==> {
+            mut as int64: b0 = value & 255
+            mut as int64: b1 = (value >>> 8) & 255
+            mut as int64: b2 = (value >>> 16) & 255
+            mut as int64: b3 = (value >>> 24) & 255
+            mem["" + address] = b0
+            mem["" + (address + 1)] = b1
+            mem["" + (address + 2)] = b2
+            mem["" + (address + 3)] = b3
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPeekWord (as map: mem, as int64: address) as int64 ==> {
+            mut as int64: b0 = lowMemoryPeekByte(mem, address)
+            mut as int64: b1 = lowMemoryPeekByte(mem, address + 1)
+            mut as int64: b2 = lowMemoryPeekByte(mem, address + 2)
+            mut as int64: b3 = lowMemoryPeekByte(mem, address + 3)
+            mut as int64: res = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+            emit(nice, res, "ok")
+      }
+
+      op lowMemoryPokeDWord (as map: mem, as int64: address, as int64: value) as map ==> {
+            infinite (i in 0 .. 7) {
+                  mut as int64: b = (value >>> (i * 8)) & 255
+                  mem["" + (address + i)] = b
+            }
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPeekDWord (as map: mem, as int64: address) as int64 ==> {
+            mut as int64: res = 0
+            infinite (i in 0 .. 7) {
+                  mut as int64: b = lowMemoryPeekByte(mem, address + i)
+                  res = res | (b << (i * 8))
+            }
+            emit(nice, res, "ok")
+      }
+
+      op lowByteGet (as int64: value, as int64: byte_index) as int64 ==> {
+            route {
+                  byte_index < 1 or byte_index > 8 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = (byte_index - 1) * 8
+            emit(nice, (value >>> shift) & 255, "ok")
+      }
+
+      op lowByteSet (as int64: value, as int64: byte_index, as int64: byte_val) as int64 ==> {
+            route {
+                  byte_index < 1 or byte_index > 8 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = (byte_index - 1) * 8
+            mut as int64: mask = 255 << shift
+            mut as int64: clean = value & (~mask)
+            mut as int64: ins = (byte_val & 255) << shift
+            emit(nice, clean | ins, "ok")
+      }
+
+      op lowHWordGet (as int64: value, as int64: hword_index) as int64 ==> {
+            route {
+                  hword_index < 1 or hword_index > 4 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = (hword_index - 1) * 16
+            emit(nice, (value >>> shift) & 65535, "ok")
+      }
+
+      op lowWordGet (as int64: value, as int64: word_index) as int64 ==> {
+            route {
+                  word_index < 1 or word_index > 2 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = (word_index - 1) * 32
+            emit(nice, (value >>> shift) & 4294967295, "ok")
+      }
+
+      op lowMakeHWord (as int64: b0, as int64: b1) as int64 ==> {
+            emit(nice, (b0 & 255) | ((b1 & 255) << 8), "ok")
+      }
+
+      op lowMakeWord (as int64: b0, as int64: b1, as int64: b2, as int64: b3) as int64 ==> {
+            mut as int64: res = (b0 & 255) | ((b1 & 255) << 8) | ((b2 & 255) << 16) | ((b3 & 255) << 24)
+            emit(nice, res, "ok")
+      }
+
+      op lowMakeDWord (as int64: w0, as int64: w1) as int64 ==> {
+            mut as int64: res = (w0 & 4294967295) | ((w1 & 4294967295) << 32)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelBlockMemoryContract
+      #L =====================================================================
+
+      op lowMemoryCopy (as map: mem, as int64: src_addr, as int64: dst_addr, as int64: count) as map ==> {
+            route {
+                  count <= 0 or src_addr == dst_addr ==> { emit(nice, mem, "ok") }
+            }
+            infinite (i in 0 .. (count - 1)) {
+                  mut as int64: b = lowMemoryPeekByte(mem, src_addr + i)
+                  mem["" + (dst_addr + i)] = b
+            }
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemorySet (as map: mem, as int64: dst_addr, as int64: byte_val, as int64: count) as map ==> {
+            route {
+                  count <= 0 ==> { emit(nice, mem, "ok") }
+            }
+            mut as int64: b = byte_val & 255
+            infinite (i in 0 .. (count - 1)) {
+                  mem["" + (dst_addr + i)] = b
+            }
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryCompare (as map: mem, as int64: addr1, as int64: addr2, as int64: count) as int64 ==> {
+            route {
+                  count <= 0 or addr1 == addr2 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: cmp = 0
+            infinite (i in 0 .. (count - 1)) {
+                  mut as int64: b1 = lowMemoryPeekByte(mem, addr1 + i)
+                  mut as int64: b2 = lowMemoryPeekByte(mem, addr2 + i)
+                  route {
+                        b1 < b2 ==> {
+                              cmp = -1
+                              break
+                        }
+                        b1 > b2 ==> {
+                              cmp = 1
+                              break
+                        }
+                  }
+            }
+            emit(nice, cmp, "ok")
+      }
+
+      op lowMemoryClear (as map: mem, as int64: address, as int64: count) as map ==> {
+            emit(nice, lowMemorySet(mem, address, 0, count), "ok")
+      }
+
+      op lowMemoryDump (as map: mem, as int64: address, as int64: count) as string ==> {
+            route {
+                  count <= 0 ==> { emit(nice, "", "ok") }
+            }
+            mut as string: out = ""
+            infinite (i in 0 .. (count - 1)) {
+                  mut as int64: b = lowMemoryPeekByte(mem, address + i)
+                  mut as string: h = _byteToHex(b)
+                  route {
+                        i == 0 ==> { out = h }
+                        _ ==> { out = out + " " + h }
+                  }
+            }
+            emit(nice, out, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelBufferContract
+      #L =====================================================================
+
+      op lowBufferNew (as int64: capacity) as map ==> {
+            mut as map: buf = map{}
+            buf["cap"] = capacity
+            buf["len"] = 0
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferLength (as map: buf) as int64 ==> {
+            mut as int64: l = buf["len"] as int64
+            emit(nice, l, "ok")
+      }
+
+      op lowBufferCapacity (as map: buf) as int64 ==> {
+            mut as int64: c = buf["cap"] as int64
+            emit(nice, c, "ok")
+      }
+
+      op lowBufferWriteByte (as map: buf, as int64: val) as map ==> {
+            mut as int64: cur_len = buf["len"] as int64
+            mut as string: k = "b_" + cur_len
+            buf[k] = val & 255
+            buf["len"] = cur_len + 1
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferWriteHWord (as map: buf, as int64: val) as map ==> {
+            buf = lowBufferWriteByte(buf, val & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 8) & 255)
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferWriteWord (as map: buf, as int64: val) as map ==> {
+            buf = lowBufferWriteByte(buf, val & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 8) & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 16) & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 24) & 255)
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferWriteDWord (as map: buf, as int64: val) as map ==> {
+            infinite (i in 0 .. 7) {
+                  buf = lowBufferWriteByte(buf, (val >>> (i * 8)) & 255)
+            }
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferReadByte (as map: buf, as int64: offset) as int64 ==> {
+            mut as string: k = "b_" + offset
+            mut as int64: val = 0
+            route {
+                  _memHasKey(buf, k) ==> {
+                        val = buf[k] as int64
+                  }
+            }
+            emit(nice, val & 255, "ok")
+      }
+
+      op lowBufferReadHWord (as map: buf, as int64: offset) as int64 ==> {
+            mut as int64: b0 = lowBufferReadByte(buf, offset)
+            mut as int64: b1 = lowBufferReadByte(buf, offset + 1)
+            mut as int64: res = b0 | (b1 << 8)
+            emit(nice, res, "ok")
+      }
+
+      op lowBufferReadWord (as map: buf, as int64: offset) as int64 ==> {
+            mut as int64: b0 = lowBufferReadByte(buf, offset)
+            mut as int64: b1 = lowBufferReadByte(buf, offset + 1)
+            mut as int64: b2 = lowBufferReadByte(buf, offset + 2)
+            mut as int64: b3 = lowBufferReadByte(buf, offset + 3)
+            mut as int64: res = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+            emit(nice, res, "ok")
+      }
+
+      op lowBufferReadDWord (as map: buf, as int64: offset) as int64 ==> {
+            mut as int64: res = 0
+            infinite (i in 0 .. 7) {
+                  mut as int64: b = lowBufferReadByte(buf, offset + i)
+                  res = res | (b << (i * 8))
+            }
+            emit(nice, res, "ok")
+      }
+
+      op lowBufferToHex (as map: buf) as string ==> {
+            mut as int64: l = buf["len"] as int64
+            route {
+                  l <= 0 ==> { emit(nice, "", "ok") }
+            }
+            mut as string: hex_out = ""
+            infinite (i in 0 .. (l - 1)) {
+                  mut as int64: b = lowBufferReadByte(buf, i)
+                  hex_out = hex_out + _byteToHex(b)
+            }
+            emit(nice, hex_out, "ok")
+      }
+
+      op lowBufferFromHex (as string: hex_str) as map ==> {
+            mut as int64: slen = 0
+            infinite (c in hex_str) { slen = slen + 1 }
+            mut as int64: n_bytes = slen /i 2
+            mut as map: buf = lowBufferNew(n_bytes)
+            route {
+                  n_bytes <= 0 ==> { emit(nice, buf, "ok") }
+            }
+            infinite (i in 1 .. n_bytes) {
+                  mut as int64: idx = (i - 1) * 2 + 1
+                  mut as string: ch1 = hex_str[idx]
+                  mut as string: ch2 = hex_str[idx + 1]
+                  mut as int64: v1 = _hexCharVal(ch1)
+                  mut as int64: v2 = _hexCharVal(ch2)
+                  mut as int64: b = (v1 << 4) | v2
+                  buf = lowBufferWriteByte(buf, b)
+            }
+            emit(nice, buf, "ok")
+      }
+}

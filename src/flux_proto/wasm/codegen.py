@@ -231,7 +231,9 @@ def _list_tag_of(ft: str) -> int:
         return 5
     if t == "data":
         return 0
-    return 1
+    if t in ("int64", "int32", "int16", "int8", "uint64", "uint32", "uint16", "uint8", "int", "uint"):
+        return 1
+    return 4
 
 
 class _WasmCodegen:
@@ -2701,6 +2703,7 @@ class _WasmCodegen:
         self._helper_funcs["$print_fat"] = self._build_print_fat()
         self._helper_funcs["$print_fat_nl"] = self._build_print_fat_nl()
         self._helper_funcs["$streq"] = self._build_streq()
+        self._helper_funcs["$flux_extract_struct_field"] = self._build_flux_extract_struct_field()
         self._helper_funcs["$flux_read_line"] = self._build_flux_read_line()
         self._helper_funcs["$valid_float"] = self._build_valid_float()
         self._helper_funcs["$dt_num"] = self._build_dt_num()
@@ -2828,6 +2831,248 @@ class _WasmCodegen:
         fb.emit_end()
         fb.i32_const(1)
         fb.byte(OP_RETURN)
+        idx = self._mod.add_function(sig)
+        self._mod.add_code(fb.get_locals_decls(), fb.get_bytes())
+        return idx
+
+    def _build_flux_extract_struct_field(self) -> int:
+        sig = self._mod.add_type([I64, I64], [I64])
+        fb = FuncBody(num_params=2)
+        s_ptr = fb.new_i32()
+        s_len = fb.new_i32()
+        f_ptr = fb.new_i32()
+        f_len = fb.new_i32()
+        limit = fb.new_i32()
+        i = fb.new_i32()
+        k = fb.new_i32()
+        match = fb.new_i32()
+        val_ptr = fb.new_i32()
+        j = fb.new_i32()
+        c = fb.new_i32()
+        depth = fb.new_i32()
+        in_str = fb.new_i32()
+        val_len = fb.new_i32()
+
+        # s_ptr = (s >> 32) & 0xFFFFFFFF
+        fb.local_get(0)
+        fb.i64_const(32)
+        fb.byte(OP_I64_SHR_U)
+        fb.byte(OP_I32_WRAP_I64)
+        fb.local_set(s_ptr)
+
+        # s_len = s & 0xFFFFFFFF
+        fb.local_get(0)
+        fb.i64_const(0xFFFFFFFF)
+        fb.byte(OP_I64_AND)
+        fb.byte(OP_I32_WRAP_I64)
+        fb.local_set(s_len)
+
+        # f_ptr = (f >> 32) & 0xFFFFFFFF
+        fb.local_get(1)
+        fb.i64_const(32)
+        fb.byte(OP_I64_SHR_U)
+        fb.byte(OP_I32_WRAP_I64)
+        fb.local_set(f_ptr)
+
+        # f_len = f & 0xFFFFFFFF
+        fb.local_get(1)
+        fb.i64_const(0xFFFFFFFF)
+        fb.byte(OP_I64_AND)
+        fb.byte(OP_I32_WRAP_I64)
+        fb.local_set(f_len)
+
+        # if s_len < f_len: return 0
+        fb.local_get(s_len)
+        fb.local_get(f_len)
+        fb.byte(OP_I32_LT_U)
+        fb.byte(OP_IF)
+        fb.put(b"\x40")
+        fb.i64_const(0)
+        fb.byte(OP_RETURN)
+        fb.byte(OP_END)
+
+        # limit = (s_len - f_len) + 1
+        fb.local_get(s_len)
+        fb.local_get(f_len)
+        fb.byte(OP_I32_SUB)
+        fb.i32_const(1)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(limit)
+
+        fb.i32_const(0)
+        fb.local_set(i)
+
+        fb.emit_block()
+        b_found = fb.label_depth
+        fb.emit_loop()
+        l_search = fb.label_depth
+
+        fb.local_get(i)
+        fb.local_get(limit)
+        fb.byte(OP_I32_GE_U)
+        fb.byte(OP_IF)
+        fb.put(b"\x40")
+        fb.i64_const(0)
+        fb.byte(OP_RETURN)
+        fb.byte(OP_END)
+
+        fb.i32_const(0)
+        fb.local_set(k)
+
+        fb.emit_block()
+        b_chk = fb.label_depth
+        fb.emit_loop()
+        l_chk = fb.label_depth
+
+        fb.local_get(k)
+        fb.local_get(f_len)
+        fb.byte(OP_I32_GE_U)
+        fb.br_if(self._br_depth(fb, b_chk))
+
+        fb.local_get(s_ptr)
+        fb.local_get(i)
+        fb.byte(OP_I32_ADD)
+        fb.local_get(k)
+        fb.byte(OP_I32_ADD)
+        fb.byte(OP_I32_LOAD8_U)
+        fb.put(encode_memarg(0, 0))
+
+        fb.local_get(f_ptr)
+        fb.local_get(k)
+        fb.byte(OP_I32_ADD)
+        fb.byte(OP_I32_LOAD8_U)
+        fb.put(encode_memarg(0, 0))
+
+        fb.byte(OP_I32_NE)
+        fb.br_if(self._br_depth(fb, b_chk))
+
+        fb.local_get(k)
+        fb.i32_const(1)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(k)
+        fb.br(self._br_depth(fb, l_chk))
+
+        fb.emit_end()
+        fb.emit_end()
+
+        fb.local_get(k)
+        fb.local_get(f_len)
+        fb.byte(OP_I32_EQ)
+        fb.br_if(self._br_depth(fb, b_found))
+
+        fb.local_get(i)
+        fb.i32_const(1)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(i)
+        fb.br(self._br_depth(fb, l_search))
+
+        fb.emit_end()
+        fb.emit_end()
+
+        # val_ptr = s_ptr + i + f_len
+        fb.local_get(s_ptr)
+        fb.local_get(i)
+        fb.byte(OP_I32_ADD)
+        fb.local_get(f_len)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(val_ptr)
+
+        fb.local_get(val_ptr)
+        fb.local_set(j)
+
+        fb.emit_block()
+        b_end = fb.label_depth
+        fb.emit_loop()
+        l_end = fb.label_depth
+
+        fb.local_get(j)
+        fb.local_get(s_ptr)
+        fb.local_get(s_len)
+        fb.byte(OP_I32_ADD)
+        fb.byte(OP_I32_GE_U)
+        fb.br_if(self._br_depth(fb, b_end))
+
+        fb.local_get(j)
+        fb.byte(OP_I32_LOAD8_U)
+        fb.put(encode_memarg(0, 0))
+        fb.local_set(c)
+
+        # if c == 34 (quote): in_str = 1 - in_str
+        fb.local_get(c)
+        fb.i32_const(34)
+        fb.byte(OP_I32_EQ)
+        fb.emit_if()
+        fb.i32_const(1)
+        fb.local_get(in_str)
+        fb.byte(OP_I32_SUB)
+        fb.local_set(in_str)
+        fb.emit_else()
+        # else: if in_str == 0:
+        fb.local_get(in_str)
+        fb.byte(OP_I32_EQZ)
+        fb.emit_if()
+        # if c == 40 ('('): depth += 1
+        fb.local_get(c)
+        fb.i32_const(40)
+        fb.byte(OP_I32_EQ)
+        fb.emit_if()
+        fb.local_get(depth)
+        fb.i32_const(1)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(depth)
+        fb.emit_end()
+        # if c == 41 (')'):
+        fb.local_get(c)
+        fb.i32_const(41)
+        fb.byte(OP_I32_EQ)
+        fb.emit_if()
+        fb.local_get(depth)
+        fb.byte(OP_I32_EQZ)
+        fb.emit_if()
+        fb.br(self._br_depth(fb, b_end))
+        fb.emit_else()
+        fb.local_get(depth)
+        fb.i32_const(1)
+        fb.byte(OP_I32_SUB)
+        fb.local_set(depth)
+        fb.emit_end()
+        fb.emit_end()
+        # if depth == 0 and c == 44 (','): break
+        fb.local_get(depth)
+        fb.byte(OP_I32_EQZ)
+        fb.local_get(c)
+        fb.i32_const(44)
+        fb.byte(OP_I32_EQ)
+        fb.byte(OP_I32_AND)
+        fb.br_if(self._br_depth(fb, b_end))
+        fb.emit_end()
+        fb.emit_end()
+
+        fb.local_get(j)
+        fb.i32_const(1)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(j)
+        fb.br(self._br_depth(fb, l_end))
+
+        fb.emit_end()
+        fb.emit_end()
+
+        # val_len = j - val_ptr
+        fb.local_get(j)
+        fb.local_get(val_ptr)
+        fb.byte(OP_I32_SUB)
+        fb.local_set(val_len)
+
+        # return (val_ptr << 32) | val_len
+        fb.local_get(val_ptr)
+        fb.byte(OP_I64_EXTEND_I32_U)
+        fb.i64_const(32)
+        fb.byte(OP_I64_SHL)
+        fb.local_get(val_len)
+        fb.byte(OP_I64_EXTEND_I32_U)
+        fb.byte(OP_I64_OR)
+        fb.byte(OP_RETURN)
+
         idx = self._mod.add_function(sig)
         self._mod.add_code(fb.get_locals_decls(), fb.get_bytes())
         return idx
@@ -5915,6 +6160,13 @@ class _WasmCodegen:
                     changed = True
         self._enums = {e.name: e for e in program.enums}
         self._structs = {s.name: s for s in program.structs}
+        for f in program.imports.values():
+            if f is None:
+                continue
+            for e in getattr(f, "enums", []):
+                self._enums[e.name] = e
+            for s in getattr(f, "structs", []):
+                self._structs[s.name] = s
 
         all_storages = list(program.storages) + [s for f in program.imports.values() for s in f.storages] + [s for f in program.imports.values() for a in f.agents if a.body for s in a.body.storages]
         for s in all_storages:
@@ -6189,6 +6441,8 @@ class _WasmCodegen:
             return self._infer_type(node.operand)
         if isinstance(node, CastExpr):
             return node.target_type.name
+        if isinstance(node, StructInit):
+            return node.name
         if isinstance(node, DataflowExpr):
             if isinstance(node.right, DataflowCastSink):
                 return node.right.target_type.name
@@ -6758,8 +7012,6 @@ class _WasmCodegen:
         if node.name in self._struct_slots:
             if node.op != "=":
                 raise WasmError(f"operator '{node.op}' not supported on struct '{node.name}'")
-            if not isinstance(node.value, StructInit):
-                raise WasmError(f"struct '{node.name}' requires a StructInit value")
             kind, slots = self._struct_slots[node.name]
             self._emit_struct_into(node.value, slots, fb, is_global=(kind == "global"))
             return
@@ -7117,8 +7369,7 @@ class _WasmCodegen:
         fb.byte(0x10)
         fb.uleb(self._helper_funcs["$strappend"])
 
-    def _gen_struct_to_str(self, name: str, fb: FuncBody) -> int:
-        kind, slots = self._struct_slots[name]
+    def _gen_struct_slots_to_fat_str(self, slots: dict, fb: FuncBody) -> int:
         sbuf = fb.new_i32()
         fb.i32_const(1024)
         fb.byte(0x10)
@@ -7140,6 +7391,10 @@ class _WasmCodegen:
         fb.local_set(tptr)
         self._emit_runtime_fat(fb, tptr, tl)
         return I64
+
+    def _gen_struct_to_str(self, name: str, fb: FuncBody) -> int:
+        kind, slots = self._struct_slots[name]
+        return self._gen_struct_slots_to_fat_str(slots, fb)
 
     def _gen_struct_var_print(self, name: str, fb: FuncBody) -> None:
         self._gen_struct_to_str(name, fb)
@@ -7945,7 +8200,7 @@ class _WasmCodegen:
             target = self._resolve_struct_slot(node)
             if target is not None:
                 if isinstance(target, dict):
-                    raise WasmError(f"field access '{node.field}' yielded a struct, not a value")
+                    return self._gen_struct_slots_to_fat_str(target, fb)
                 sid, wt = target[:2]
                 kind = self._resolve_struct_kind(node)
                 if kind == "global":
@@ -8379,6 +8634,8 @@ class _WasmCodegen:
                 return I64
             self._emit_scalar_cast(src, tgt, fb)
             return F64 if tgt in FLOATISH else I64
+        if tgt in self._structs:
+            return I64
         raise WasmError(f"cast to '{tgt}' is not supported on wasm target")
 
     def _gen_dataflow(self, node: DataflowExpr, fb: FuncBody) -> int:
@@ -8438,6 +8695,8 @@ class _WasmCodegen:
                     vwt = I64
                 self._emit_scalar_cast(src, tgt, fb)
                 return F64 if tgt in FLOATISH else I64
+            if tgt in self._structs:
+                return I64
             raise WasmError(f"cast to '{tgt}' is not supported on wasm target")
         if isinstance(right, Identifier) and right.name in ("print", "println"):
             self._gen_print_arg(node.left, True, fb)
@@ -8717,6 +8976,51 @@ class _WasmCodegen:
             return self._resolve_struct_kind(node.obj)
         return "local"
 
+    def _emit_struct_from_fat_str(self, s_fat_loc: int, slots: dict, fb: FuncBody, is_global: bool) -> None:
+        sname = slots.get("_type_name", "")
+        sdef = self._structs.get(sname)
+        if sdef is not None:
+            for f in sdef.fields:
+                if f.name in slots["fields"]:
+                    target = slots["fields"][f.name]
+                    pat = f".{f.name}: "
+                    p_fat = self._alloc_str(pat)
+                    pat_len = len(pat.encode("utf-8"))
+                    fat_val = (p_fat << 32) | pat_len
+                    fb.local_get(s_fat_loc)
+                    fb.i64_const(fat_val)
+                    fb.byte(0x10)
+                    fb.uleb(self._helper_funcs["$flux_extract_struct_field"])
+                    fstr = fb.new_i64()
+                    fb.local_set(fstr)
+                    if isinstance(target, dict):
+                        self._emit_struct_from_fat_str(fstr, target, fb, is_global)
+                    else:
+                        sid, fwt = target[:2]
+                        ft = f.type_ref.name if f.type_ref else "int64"
+                        if ft == "string":
+                            fb.local_get(fstr)
+                        elif fwt == F64:
+                            fb.local_get(fstr)
+                            fb.byte(0x10)
+                            fb.uleb(self._helper_funcs["$str_to_f64"])
+                        elif ft in ("bool", "boolean"):
+                            t_fat_off = self._alloc_str("true")
+                            t_fat = (t_fat_off << 32) | 4
+                            fb.local_get(fstr)
+                            fb.i64_const(t_fat)
+                            fb.byte(0x10)
+                            fb.uleb(self._helper_funcs["$streq"])
+                            fb.byte(OP_I64_EXTEND_I32_U)
+                        else:
+                            fb.local_get(fstr)
+                            fb.byte(0x10)
+                            fb.uleb(self._helper_funcs["$str_to_i64"])
+                        if is_global:
+                            fb.global_set(sid)
+                        else:
+                            fb.local_set(sid)
+
     def _emit_struct_into(self, init: ASTNode | None, slots: dict, fb: FuncBody, is_global: bool) -> None:
         if init is None:
             for name, target in slots["fields"].items():
@@ -8736,7 +9040,13 @@ class _WasmCodegen:
                         fb.local_set(sid)
             return
         if not isinstance(init, StructInit):
-            raise WasmError("struct storage requires a StructInit initializer")
+            vwt = self._gen_expr(init, fb)
+            s_fat = fb.new_i64()
+            if vwt == I32:
+                fb.byte(OP_I64_EXTEND_I32_U)
+            fb.local_set(s_fat)
+            self._emit_struct_from_fat_str(s_fat, slots, fb, is_global)
+            return
         sdef = self._structs.get(init.name)
         if sdef is None:
             raise WasmError(f"struct '{init.name}' not declared")
@@ -8761,13 +9071,33 @@ class _WasmCodegen:
         slots = self._alloc_struct_slots_local(f"{node.name}_init", node.name, fb)
         self._emit_struct_into(node, slots, fb, is_global=False)
         self._pending_struct = {"slots": slots}
+        sbuf = fb.new_i32()
+        fb.i32_const(1024)
+        fb.byte(0x10)
+        fb.uleb(self._helper_funcs["$strbuf_new"])
+        fb.local_set(sbuf)
+        self._gen_struct_slots_to_str(slots, sbuf, fb)
+        fb.local_get(sbuf)
+        fb.byte(0x10)
+        fb.uleb(self._helper_funcs["$strbuf_done"])
+        tl = fb.new_i32()
+        fb.local_get(sbuf)
+        fb.byte(OP_I32_LOAD)
+        fb.put(encode_memarg(2, 0))
+        fb.local_set(tl)
+        tptr = fb.new_i32()
+        fb.local_get(sbuf)
+        fb.i32_const(4)
+        fb.byte(OP_I32_ADD)
+        fb.local_set(tptr)
+        self._emit_runtime_fat(fb, tptr, tl)
         return I64
 
     def _gen_struct_field_access(self, node: FieldAccess, fb: FuncBody) -> int:
         target = self._resolve_struct_slot(node)
         if target is not None:
             if isinstance(target, dict):
-                raise WasmError(f"field access '{node.field}' yielded a struct, not a value")
+                return self._gen_struct_slots_to_fat_str(target, fb)
             sid, wt = target[:2]
             kind = self._resolve_struct_kind(node)
             if kind == "global":
@@ -8779,6 +9109,8 @@ class _WasmCodegen:
         if node.field not in slots["fields"]:
             raise WasmError(f"unknown field '{node.field}' for struct '{node.obj.name}'")
         target = slots["fields"][node.field]
+        if isinstance(target, dict):
+            return self._gen_struct_slots_to_fat_str(target, fb)
         sid, wt = target[:2]
         kind = self._struct_slots[node.obj.name][0]
         if kind == "global":
@@ -9174,6 +9506,7 @@ class _WasmCodegen:
             fb.local_set(lid)
             fslots[f.name] = lid
         self._pending_enum = {"slots": {"tag": tslot, "fields": fslots}}
+        fb.local_get(tslot)
         return I64
 
     def _gen_interpolated_string(self, node: InterpolatedString, fb: FuncBody) -> int:
@@ -12309,6 +12642,60 @@ class _WasmCodegen:
             self._decl_types[p.name] = pft
             if _is_str_type(pft):
                 self._str_vars.add(p.name)
+            if pft in self._structs:
+                slots = self._alloc_struct_slots_local(f"p_{p.name}", pft, fb)
+                self._struct_slots[p.name] = ("local", slots)
+                sdef = self._structs[pft]
+                for f in sdef.fields:
+                    if f.name in slots["fields"]:
+                        target = slots["fields"][f.name]
+                        pat = f".{f.name}: "
+                        p_fat = self._alloc_str(pat)
+                        pat_len = len(pat.encode("utf-8"))
+                        fat_val = (p_fat << 32) | pat_len
+                        fb.local_get(i)
+                        fb.i64_const(fat_val)
+                        fb.byte(0x10)
+                        fb.uleb(self._helper_funcs["$flux_extract_struct_field"])
+                        fstr = fb.new_i64()
+                        fb.local_set(fstr)
+                        if not isinstance(target, dict):
+                            sid, fwt = target[:2]
+                            ft = f.type_ref.name if f.type_ref else "int64"
+                            if ft == "string":
+                                fb.local_get(fstr)
+                                fb.local_set(sid)
+                            elif fwt == F64:
+                                fb.local_get(fstr)
+                                fb.byte(0x10)
+                                fb.uleb(self._helper_funcs["$str_to_f64"])
+                                fb.local_set(sid)
+                            elif ft in ("bool", "boolean"):
+                                t_fat_off = self._alloc_str("true")
+                                t_fat = (t_fat_off << 32) | 4
+                                fb.local_get(fstr)
+                                fb.i64_const(t_fat)
+                                fb.byte(0x10)
+                                fb.uleb(self._helper_funcs["$streq"])
+                                fb.byte(OP_I64_EXTEND_I32_U)
+                                fb.local_set(sid)
+                            else:
+                                fb.local_get(fstr)
+                                fb.byte(0x10)
+                                fb.uleb(self._helper_funcs["$str_to_i64"])
+                                fb.local_set(sid)
+            if pft in self._enums:
+                edef = self._enums[pft]
+                layout = self._enum_layout(edef)
+                eslots: dict = {"tag": i, "fields": {}, "_type_name": edef.name}
+                for fname, wt_field in layout["fields"].items():
+                    if wt_field == F64:
+                        eslots["fields"][fname] = fb.new_f64()
+                    elif wt_field == I32:
+                        eslots["fields"][fname] = fb.new_i32()
+                    else:
+                        eslots["fields"][fname] = fb.new_i64()
+                self._enum_slots[p.name] = ("local", eslots)
         self._in_op = True
         try:
             if op.body:
@@ -12456,6 +12843,7 @@ class _WasmCodegen:
             vt = I64
         elif isinstance(node.subject, EnumVariant) and node.subject.enum_name in self._enums:
             self._gen_decl_enum_variant(node.subject, fb)
+            fb.byte(OP_DROP)
             enum_subject = {"kind": "local", "slots": self._pending_enum["slots"]}
             self._pending_enum = None
             vt = I64
@@ -12465,6 +12853,7 @@ class _WasmCodegen:
             vt = I64
         elif isinstance(node.subject, StructInit):
             self._gen_decl_struct_init(node.subject, fb)
+            fb.byte(OP_DROP)
             if self._pending_struct is None:
                 raise WasmError("internal: struct init did not produce slots")
             struct_subject = {"kind": "local", "slots": self._pending_struct["slots"]}

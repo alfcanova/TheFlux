@@ -41,6 +41,11 @@ def _check_reassigns(ast: ASTNode, st: SymbolTable, diags: list[Diagnostic]) -> 
 
 def _check_struct_field_assigns(ast: ASTNode, st: SymbolTable, diags: list[Diagnostic]) -> None:
     structs = {s.name: s for s in _walk_nodes(ast, StructDef)}
+    for fdsl in getattr(ast, "imports", {}).values():
+        if fdsl is None:
+            continue
+        for s in getattr(fdsl, "structs", []):
+            structs[s.name] = s
     var_types: dict[str, str] = {}
     for sd in _walk_nodes(ast, StorageDecl):
         for item in sd.items:

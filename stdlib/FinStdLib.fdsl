@@ -1,0 +1,1299 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Modulo nativo para Calculos Financeiros, Engenharia Economica e Precisao Bancaria
+#L Implementacao 100% nativa em TheFlux (tolerancia zero a erros de arredondamento)
+#L Ponto Fixo de Alta Precisao: 8 casas decimais (10^8)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L Sem aliases: cada operacao possui um unico identificador canonico
+#L ==============================================================================
+
+#L --- Modos de Arredondamento Contabil ---
+enum (RoundingMode) {
+      FinHalfEven
+      FinHalfUp
+      FinUp
+      FinDown
+}
+
+#L --- Tipo FinDecimal (Ponto Fixo 10^8) ---
+struct (FinDecimal) {
+      mut: .raw: int64
+      mut: .scale: int64
+}
+
+#L --- Parcela de Amortizacao ---
+struct (AmortizationInstallment) {
+      mut: .month: int64
+      mut: .payment: FinDecimal
+      mut: .amortization: FinDecimal
+      mut: .interest: FinDecimal
+      mut: .balance: FinDecimal
+}
+
+#L ==============================================================================
+#L 1. FinDecimalContract
+#L ==============================================================================
+contract (FinDecimalContract) {
+      op finCreateDecimal (as string: value) as FinDecimal
+      op finFromInt (as int64: value) as FinDecimal
+      op finFromFloat (as float64: value) as FinDecimal
+      op finDecimalToString (as FinDecimal: val) as string
+      op finDecimalToFloat (as FinDecimal: val) as float64
+      op finAdd (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finSubtract (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finMultiply (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finDivide (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finRound (as FinDecimal: val, as int64: decimals, as RoundingMode: mode) as FinDecimal
+      op finAbs (as FinDecimal: val) as FinDecimal
+      op finNegate (as FinDecimal: val) as FinDecimal
+      op finMin (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finMax (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finClamp (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as FinDecimal
+      op finSplit (as FinDecimal: amount, as int64: parts) as list of data
+      op finAllocate (as FinDecimal: amount, as list of data: weights) as list of data
+}
+
+#L ==============================================================================
+#L 2. FinComparisonContract
+#L ==============================================================================
+contract (FinComparisonContract) {
+      op finEquals (as FinDecimal: a, as FinDecimal: b) as bool
+      op finCompare (as FinDecimal: a, as FinDecimal: b) as int64
+      op finGt (as FinDecimal: a, as FinDecimal: b) as bool
+      op finGte (as FinDecimal: a, as FinDecimal: b) as bool
+      op finLt (as FinDecimal: a, as FinDecimal: b) as bool
+      op finLte (as FinDecimal: a, as FinDecimal: b) as bool
+      op finIsZero (as FinDecimal: val) as bool
+      op finIsPositive (as FinDecimal: val) as bool
+      op finIsNegative (as FinDecimal: val) as bool
+      op finBetween (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as bool
+      op finIsValidBalance (as FinDecimal: val) as bool
+}
+
+#L ==============================================================================
+#L 3. FinTimeValueOfMoneyContract
+#L ==============================================================================
+contract (FinTimeValueOfMoneyContract) {
+      op finSimpleInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal
+      op finCompoundInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal
+      op finPresentValue (as FinDecimal: future_value, as float64: rate, as int64: periods) as FinDecimal
+      op finFutureValue (as FinDecimal: present_value, as float64: rate, as int64: periods) as FinDecimal
+      op finAnnuityPayment (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal
+      op finFutureValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal
+      op finPresentValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal
+      op finNetPresentValue (as float64: discount_rate, as list of data: cash_flows) as float64
+      op finInternalRateOfReturn (as list of data: cash_flows) as float64
+      op finPaybackPeriod (as FinDecimal: initial_investment, as list of data: cash_flows) as float64
+      op finDiscountedPayback (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64
+      op finProfitabilityIndex (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64
+}
+
+#L ==============================================================================
+#L 4. FinRateContract
+#L ==============================================================================
+contract (FinRateContract) {
+      op finEffectiveRate (as float64: nominal_rate, as int64: compounding_periods) as float64
+      op finNominalRate (as float64: effective_rate, as int64: compounding_periods) as float64
+      op finConvertRate (as float64: rate, as int64: from_periods, as int64: to_periods) as float64
+      op finRateEquivalent (as float64: rate, as float64: target_period, as float64: base_period) as float64
+      op finMonthlyToDailyRate (as float64: monthly_rate, as int64: days_in_month) as float64
+      op finMonthlyToAnnualRate (as float64: monthly_rate) as float64
+      op finAnnualToDailyRate (as float64: annual_rate, as int64: days_in_year) as float64
+      op finAnnualToMonthlyRate (as float64: annual_rate) as float64
+      op finDailyToMonthlyRate (as float64: daily_rate, as int64: days_in_month) as float64
+      op finDailyToAnnualRate (as float64: daily_rate, as int64: days_in_year) as float64
+      op finRealRate (as float64: nominal_rate, as float64: inflation_rate) as float64
+      op finContinuousCompounding (as FinDecimal: principal, as float64: rate, as float64: periods) as FinDecimal
+}
+
+#L ==============================================================================
+#L 5. FinAmortizationContract
+#L ==============================================================================
+contract (FinAmortizationContract) {
+      op finAmortizationPrice (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data
+      op finAmortizationSac (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data
+      op finAmortizationSaa (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data
+      op finAmortizationTotals (as list of data: installments) as map
+}
+
+#L ==============================================================================
+#L 6. FinDepreciationContract
+#L ==============================================================================
+contract (FinDepreciationContract) {
+      op finDepreciationLinear (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years) as FinDecimal
+      op finDepreciationSyd (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal
+      op finDepreciationDdb (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal
+}
+
+#L ==============================================================================
+#L 7. FinFormatContract
+#L ==============================================================================
+contract (FinFormatContract) {
+      op finFormatCurrency (as FinDecimal: value, as string: locale) as string
+      op finFormatPercent (as float64: rate, as int64: decimals) as string
+      op finParseCurrency (as string: text) as FinDecimal
+}
+
+#L ==============================================================================
+#L Agente Implementador: FinStdLib
+#L ==============================================================================
+agent (FinStdLib) impl FinDecimalContract, FinComparisonContract, FinTimeValueOfMoneyContract, FinRateContract, FinAmortizationContract, FinDepreciationContract, FinFormatContract {
+
+      #L --- Funcoes Auxiliares Privadas ---
+
+      op _absInt (as int64: val) as int64 ==> {
+            mut as int64: res = val
+            route {
+                  val < 0 ==> { res = -val }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _strLen (as string: text) as int64 ==> {
+            mut as int64: count = 0
+            infinite (c in text) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _pow10 (as int64: n) as int64 ==> {
+            mut as int64: res = 1
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  res = res * 10
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _digitValue (as char: ch) as int64 ==> {
+            route {
+                  ch == '0' ==> { emit(nice, 0, "ok") }
+                  ch == '1' ==> { emit(nice, 1, "ok") }
+                  ch == '2' ==> { emit(nice, 2, "ok") }
+                  ch == '3' ==> { emit(nice, 3, "ok") }
+                  ch == '4' ==> { emit(nice, 4, "ok") }
+                  ch == '5' ==> { emit(nice, 5, "ok") }
+                  ch == '6' ==> { emit(nice, 6, "ok") }
+                  ch == '7' ==> { emit(nice, 7, "ok") }
+                  ch == '8' ==> { emit(nice, 8, "ok") }
+                  ch == '9' ==> { emit(nice, 9, "ok") }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. FinDecimalContract
+      #L ==============================================================================
+
+      op finFromInt (as int64: value) as FinDecimal ==> {
+            mut as int64: scaled = value * 100000000
+            mut as FinDecimal: res = FinDecimal(.raw: scaled, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finFromFloat (as float64: value) as FinDecimal ==> {
+            mut as float64: scaled_f = value * 100000000.0
+            mut as int64: scaled = scaled_f as int64
+            mut as FinDecimal: res = FinDecimal(.raw: scaled, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDecimalToFloat (as FinDecimal: val) as float64 ==> {
+            mut as float64: rf = val.raw as float64
+            mut as float64: res = rf /f 100000000.0
+            emit(nice, res, "ok")
+      }
+
+      op finCreateDecimal (as string: value) as FinDecimal ==> {
+            mut as int64: len = 0
+            infinite (c in value) {
+                  len = len + 1
+            }
+            mut as int64: is_neg = 0
+            mut as int64: idx = 1
+
+            #L Checa sinal
+            route {
+                  len > 0 ==> {
+                        mut as char: first = value[1]
+                        route {
+                              first == '-' ==> {
+                                    is_neg = 1
+                                    idx = 2
+                              }
+                              first == '+' ==> {
+                                    idx = 2
+                              }
+                        }
+                  }
+            }
+
+            mut as int64: int_part = 0
+            mut as int64: has_dot = 0
+            mut as int64: frac_part = 0
+            mut as int64: frac_digits = 0
+
+            infinite (idx <= len) {
+                  mut as char: ch = value[idx]
+                  route {
+                        ch == '.' or ch == ',' ==> {
+                              has_dot = 1
+                        }
+                        has_dot == 0 ==> {
+                              mut as int64: dv = -1
+                              route {
+                                    ch == '0' ==> { dv = 0 }
+                                    ch == '1' ==> { dv = 1 }
+                                    ch == '2' ==> { dv = 2 }
+                                    ch == '3' ==> { dv = 3 }
+                                    ch == '4' ==> { dv = 4 }
+                                    ch == '5' ==> { dv = 5 }
+                                    ch == '6' ==> { dv = 6 }
+                                    ch == '7' ==> { dv = 7 }
+                                    ch == '8' ==> { dv = 8 }
+                                    ch == '9' ==> { dv = 9 }
+                              }
+                              route {
+                                    dv >= 0 ==> {
+                                          int_part = (int_part * 10) + dv
+                                    }
+                              }
+                        }
+                        has_dot == 1 ==> {
+                              route {
+                                    frac_digits < 8 ==> {
+                                          mut as int64: dv2 = -1
+                                          route {
+                                                ch == '0' ==> { dv2 = 0 }
+                                                ch == '1' ==> { dv2 = 1 }
+                                                ch == '2' ==> { dv2 = 2 }
+                                                ch == '3' ==> { dv2 = 3 }
+                                                ch == '4' ==> { dv2 = 4 }
+                                                ch == '5' ==> { dv2 = 5 }
+                                                ch == '6' ==> { dv2 = 6 }
+                                                ch == '7' ==> { dv2 = 7 }
+                                                ch == '8' ==> { dv2 = 8 }
+                                                ch == '9' ==> { dv2 = 9 }
+                                          }
+                                          route {
+                                                dv2 >= 0 ==> {
+                                                      frac_part = (frac_part * 10) + dv2
+                                                      frac_digits = frac_digits + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+
+            #L Completa casas decimais ate 8
+            route {
+                  frac_digits < 8 ==> {
+                        mut as int64: p = 1
+                        mut as int64: rem_digits = 8 - frac_digits
+                        infinite (rem_digits > 0) {
+                              p = p * 10
+                              rem_digits = rem_digits - 1
+                        }
+                        frac_part = frac_part * p
+                  }
+            }
+
+            mut as int64: total = (int_part * 100000000) + frac_part
+            route {
+                  is_neg == 1 ==> {
+                        total = -total
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: total, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDecimalToString (as FinDecimal: val) as string ==> {
+            mut as int64: r = val.raw
+            mut as string: sign = ""
+            route {
+                  r < 0 ==> {
+                        sign = "-"
+                        r = -r
+                  }
+            }
+            mut as int64: int_part = r /i 100000000
+            mut as int64: frac_part = r /r 100000000
+
+            #L Formata fracionario com zeros a esquerda
+            mut as string: frac_str = "" + frac_part
+            mut as int64: flen = 0
+            infinite (c in frac_str) {
+                  flen = flen + 1
+            }
+            mut as string: pad = ""
+            mut as int64: diff = 8 - flen
+            mut as int64: i = 1
+            infinite (i <= diff) {
+                  pad = pad + "0"
+                  i = i + 1
+            }
+            frac_str = pad + frac_str
+
+            mut as string: res = sign + int_part + "." + frac_str
+            emit(nice, res, "ok")
+      }
+
+      op finAdd (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            mut as int64: sum_raw = a.raw + b.raw
+            mut as FinDecimal: res = FinDecimal(.raw: sum_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finSubtract (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            mut as int64: sub_raw = a.raw - b.raw
+            mut as FinDecimal: res = FinDecimal(.raw: sub_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finMultiply (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            mut as int64: s = 100000000
+            mut as int64: a_sign = 1
+            mut as int64: a_raw = a.raw
+            route {
+                  a_raw < 0 ==> {
+                        a_sign = -1
+                        a_raw = -a_raw
+                  }
+            }
+            mut as int64: b_sign = 1
+            mut as int64: b_raw = b.raw
+            route {
+                  b_raw < 0 ==> {
+                        b_sign = -1
+                        b_raw = -b_raw
+                  }
+            }
+
+            mut as int64: a_int = a_raw /i s
+            mut as int64: a_frac = a_raw /r s
+            mut as int64: b_int = b_raw /i s
+            mut as int64: b_frac = b_raw /r s
+
+            #L Decomposicao para prevencao de overflow de 64 bits:
+            mut as int64: term1 = a_int * b_raw
+            mut as int64: term2 = a_frac * b_int
+            mut as int64: term3 = (a_frac * b_frac) /i s
+            mut as int64: total = term1 + term2 + term3
+
+            route {
+                  a_sign != b_sign ==> {
+                        total = -total
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: total, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDivide (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            route {
+                  b.raw == 0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(fail, zero_dec, "divisao por zero")
+                  }
+            }
+            mut as int64: s = 100000000
+            mut as int64: a_sign = 1
+            mut as int64: a_raw = a.raw
+            route {
+                  a_raw < 0 ==> {
+                        a_sign = -1
+                        a_raw = -a_raw
+                  }
+            }
+            mut as int64: b_sign = 1
+            mut as int64: b_raw = b.raw
+            route {
+                  b_raw < 0 ==> {
+                        b_sign = -1
+                        b_raw = -b_raw
+                  }
+            }
+
+            mut as int64: a_int = a_raw /i b_raw
+            mut as int64: a_rem = a_raw /r b_raw
+            mut as int64: total = (a_int * s) + ((a_rem * s) /i b_raw)
+
+            route {
+                  a_sign != b_sign ==> {
+                        total = -total
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: total, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finRound (as FinDecimal: val, as int64: decimals, as RoundingMode: mode) as FinDecimal ==> {
+            mut as int64: d = 8 - decimals
+            route {
+                  d <= 0 ==> {
+                        emit(nice, val, "ok")
+                  }
+                  d > 8 ==> {
+                        d = 8
+                  }
+            }
+            mut as int64: divisor = 1
+            mut as int64: pi = 1
+            infinite (pi <= d) {
+                  divisor = divisor * 10
+                  pi = pi + 1
+            }
+            mut as int64: half = divisor /i 2
+            mut as int64: is_neg = 0
+            mut as int64: r = val.raw
+            route {
+                  r < 0 ==> {
+                        is_neg = 1
+                        r = -r
+                  }
+            }
+
+            mut as int64: int_part = r /i divisor
+            mut as int64: rem = r /r divisor
+
+            match (mode) {
+                  RoundingMode::FinDown ==> {
+                        #L Apenas trunca
+                  }
+                  RoundingMode::FinUp ==> {
+                        route {
+                              rem > 0 ==> { int_part = int_part + 1 }
+                        }
+                  }
+                  RoundingMode::FinHalfUp ==> {
+                        route {
+                              rem >= half ==> { int_part = int_part + 1 }
+                        }
+                  }
+                  RoundingMode::FinHalfEven ==> {
+                        route {
+                              rem > half ==> {
+                                    int_part = int_part + 1
+                              }
+                              rem == half ==> {
+                                    route {
+                                          (int_part /r 2) != 0 ==> {
+                                                int_part = int_part + 1
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            mut as int64: final_raw = int_part * divisor
+            route {
+                  is_neg == 1 ==> {
+                        final_raw = -final_raw
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: final_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finAbs (as FinDecimal: val) as FinDecimal ==> {
+            mut as int64: r = val.raw
+            route {
+                  r < 0 ==> { r = -r }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: r, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finNegate (as FinDecimal: val) as FinDecimal ==> {
+            mut as FinDecimal: res = FinDecimal(.raw: -val.raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finMin (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            route {
+                  a.raw <= b.raw ==> { emit(nice, a, "ok") }
+            }
+            emit(nice, b, "ok")
+      }
+
+      op finMax (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            route {
+                  a.raw >= b.raw ==> { emit(nice, a, "ok") }
+            }
+            emit(nice, b, "ok")
+      }
+
+      op finClamp (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as FinDecimal ==> {
+            route {
+                  val.raw < min_val.raw ==> { emit(nice, min_val, "ok") }
+                  val.raw > max_val.raw ==> { emit(nice, max_val, "ok") }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op finSplit (as FinDecimal: amount, as int64: parts) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  parts <= 0 ==> {
+                        emit(fail, res, "partes devem ser positivas")
+                  }
+            }
+            mut as int64: is_neg = 0
+            mut as int64: total = amount.raw
+            route {
+                  total < 0 ==> {
+                        is_neg = 1
+                        total = -total
+                  }
+            }
+            mut as int64: base = total /i parts
+            mut as int64: rem = total /r parts
+            mut as int64: i = 1
+            infinite (i <= parts) {
+                  mut as int64: part_raw = base
+                  route {
+                        i <= rem ==> {
+                              part_raw = part_raw + 1
+                        }
+                  }
+                  route {
+                        is_neg == 1 ==> {
+                              part_raw = -part_raw
+                        }
+                  }
+                  res[i] = FinDecimal(.raw: part_raw, .scale: 8)
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op finAllocate (as FinDecimal: amount, as list of data: weights) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total_weight = 0
+            infinite (w in weights) {
+                  total_weight = total_weight + (w as int64)
+            }
+            route {
+                  total_weight <= 0 ==> {
+                        emit(fail, res, "pesos devem somar mais que zero")
+                  }
+            }
+            mut as int64: remainder = amount.raw
+            mut as int64: first_share = 0
+            mut as int64: n = 1
+            infinite (w in weights) {
+                  mut as int64: wi = w as int64
+                  mut as int64: share = (amount.raw * wi) /i total_weight
+                  route {
+                        n == 1 ==> {
+                              first_share = share
+                        }
+                  }
+                  remainder = remainder - share
+                  res[n] = FinDecimal(.raw: share, .scale: 8)
+                  n = n + 1
+            }
+            #L Distribui o resto de centavos no primeiro recebedor
+            route {
+                  remainder != 0 and n > 1 ==> {
+                        res[1] = FinDecimal(.raw: first_share + remainder, .scale: 8)
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. FinComparisonContract
+      #L ==============================================================================
+
+      op finEquals (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw == b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finCompare (as FinDecimal: a, as FinDecimal: b) as int64 ==> {
+            route {
+                  a.raw > b.raw ==> { emit(nice, 1, "ok") }
+                  a.raw < b.raw ==> { emit(nice, -1, "ok") }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op finGt (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw > b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finGte (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw >= b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finLt (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw < b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finLte (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw <= b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finIsZero (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw == 0)
+            emit(nice, res, "ok")
+      }
+
+      op finIsPositive (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw > 0)
+            emit(nice, res, "ok")
+      }
+
+      op finIsNegative (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw < 0)
+            emit(nice, res, "ok")
+      }
+
+      op finBetween (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as bool ==> {
+            mut as bool: res = (val.raw >= min_val.raw and val.raw <= max_val.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finIsValidBalance (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw >= 0)
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. FinTimeValueOfMoneyContract
+      #L ==============================================================================
+
+      op finSimpleInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: juros = p_float * rate * (periods as float64)
+            mut as FinDecimal: res = FinDecimal(.raw: (juros * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finCompoundInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: montante = p_float * factor
+            mut as FinDecimal: res = FinDecimal(.raw: (montante * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finPresentValue (as FinDecimal: future_value, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: fv_float = (future_value.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: pv_float = fv_float /f factor
+            mut as FinDecimal: res = FinDecimal(.raw: (pv_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finFutureValue (as FinDecimal: present_value, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: pv_float = (present_value.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: fv_float = pv_float * factor
+            mut as FinDecimal: res = FinDecimal(.raw: (fv_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finAnnuityPayment (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal ==> {
+            route {
+                  periods <= 0 or rate <= 0.0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: pmt_float = p_float * ((rate * factor) /f (factor - 1.0))
+            mut as FinDecimal: res = FinDecimal(.raw: (pmt_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finFutureValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal ==> {
+            route {
+                  periods <= 0 or rate <= 0.0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: pmt_float = (payment.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: fva_float = pmt_float * ((factor - 1.0) /f rate)
+            mut as FinDecimal: res = FinDecimal(.raw: (fva_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finPresentValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal ==> {
+            route {
+                  periods <= 0 or rate <= 0.0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: pmt_float = (payment.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: pva_float = pmt_float * ((factor - 1.0) /f (rate * factor))
+            mut as FinDecimal: res = FinDecimal(.raw: (pva_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finNetPresentValue (as float64: discount_rate, as list of data: cash_flows) as float64 ==> {
+            mut as float64: npv = 0.0
+            mut as int64: t = 1
+            infinite (cf in cash_flows) {
+                  mut as float64: cf_val = cf as float64
+                  mut as float64: factor = (1.0 + discount_rate) ^e (t as float64)
+                  npv = npv + (cf_val /f factor)
+                  t = t + 1
+            }
+            emit(nice, npv, "ok")
+      }
+
+      op finInternalRateOfReturn (as list of data: cash_flows) as float64 ==> {
+            mut as float64: r = 0.1
+            mut as int64: iter = 0
+            infinite (iter < 100) {
+                  mut as float64: npv = 0.0
+                  mut as float64: dnpv = 0.0
+                  mut as int64: t = 0
+                  infinite (cf in cash_flows) {
+                        mut as float64: c = cf as float64
+                        mut as float64: factor = (1.0 + r) ^e (t as float64)
+                        npv = npv + (c /f factor)
+                        route {
+                              t > 0 ==> {
+                                    mut as float64: d_factor = (1.0 + r) ^e ((t + 1) as float64)
+                                    dnpv = dnpv - ((c * (t as float64)) /f d_factor)
+                              }
+                        }
+                        t = t + 1
+                  }
+                  mut as float64: abs_npv = npv
+                  route {
+                        abs_npv < 0.0 ==> { abs_npv = -abs_npv }
+                  }
+                  route {
+                        abs_npv < 0.000001 or dnpv == 0.0 ==> {
+                              break
+                        }
+                  }
+                  r = r - (npv /f dnpv)
+                  iter = iter + 1
+            }
+            emit(nice, r, "ok")
+      }
+
+      op finPaybackPeriod (as FinDecimal: initial_investment, as list of data: cash_flows) as float64 ==> {
+            mut as float64: target = (initial_investment.raw as float64) /f 100000000.0
+            route {
+                  target < 0.0 ==> { target = -target }
+            }
+            mut as float64: accum = 0.0
+            mut as float64: periods = 0.0
+            infinite (cf in cash_flows) {
+                  mut as float64: val = cf as float64
+                  route {
+                        (accum + val) >= target ==> {
+                              mut as float64: needed = target - accum
+                              mut as float64: fraction = needed /f val
+                              emit(nice, periods + fraction, "ok")
+                        }
+                  }
+                  accum = accum + val
+                  periods = periods + 1.0
+            }
+            emit(nice, periods, "ok")
+      }
+
+      op finDiscountedPayback (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64 ==> {
+            mut as float64: target = (initial_investment.raw as float64) /f 100000000.0
+            route {
+                  target < 0.0 ==> { target = -target }
+            }
+            mut as float64: accum = 0.0
+            mut as float64: periods = 0.0
+            mut as int64: t = 1
+            infinite (cf in cash_flows) {
+                  mut as float64: val = cf as float64
+                  mut as float64: factor = (1.0 + discount_rate) ^e (t as float64)
+                  mut as float64: disc_val = val /f factor
+                  route {
+                        (accum + disc_val) >= target ==> {
+                              mut as float64: needed = target - accum
+                              mut as float64: fraction = needed /f disc_val
+                              emit(nice, periods + fraction, "ok")
+                        }
+                  }
+                  accum = accum + disc_val
+                  periods = periods + 1.0
+                  t = t + 1
+            }
+            emit(nice, periods, "ok")
+      }
+
+      op finProfitabilityIndex (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64 ==> {
+            mut as float64: pv_flows = 0.0
+            mut as int64: t = 1
+            infinite (cf in cash_flows) {
+                  mut as float64: val = cf as float64
+                  mut as float64: factor = (1.0 + discount_rate) ^e (t as float64)
+                  pv_flows = pv_flows + (val /f factor)
+                  t = t + 1
+            }
+            mut as float64: inv_f = (initial_investment.raw as float64) /f 100000000.0
+            route {
+                  inv_f < 0.0 ==> { inv_f = -inv_f }
+            }
+            route {
+                  inv_f == 0.0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: pi = pv_flows /f inv_f
+            emit(nice, pi, "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. FinRateContract
+      #L ==============================================================================
+
+      op finEffectiveRate (as float64: nominal_rate, as int64: compounding_periods) as float64 ==> {
+            route {
+                  compounding_periods <= 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: m = compounding_periods as float64
+            mut as float64: base = 1.0 + (nominal_rate /f m)
+            mut as float64: eff = (base ^e m) - 1.0
+            emit(nice, eff, "ok")
+      }
+
+      op finNominalRate (as float64: effective_rate, as int64: compounding_periods) as float64 ==> {
+            route {
+                  compounding_periods <= 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: m = compounding_periods as float64
+            mut as float64: exp = 1.0 /f m
+            mut as float64: base = (1.0 + effective_rate) ^e exp
+            mut as float64: nom = m * (base - 1.0)
+            emit(nice, nom, "ok")
+      }
+
+      op finConvertRate (as float64: rate, as int64: from_periods, as int64: to_periods) as float64 ==> {
+            route {
+                  from_periods <= 0 or to_periods <= 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: m1 = from_periods as float64
+            mut as float64: m2 = to_periods as float64
+            mut as float64: eff = ((1.0 + (rate /f m1)) ^e m1) - 1.0
+            mut as float64: exp = 1.0 /f m2
+            mut as float64: new_rate = m2 * (((1.0 + eff) ^e exp) - 1.0)
+            emit(nice, new_rate, "ok")
+      }
+
+      op finRateEquivalent (as float64: rate, as float64: target_period, as float64: base_period) as float64 ==> {
+            route {
+                  base_period <= 0.0 or (1.0 + rate) <= 0.0 ==> {
+                        emit(fail, 0.0, "Periodo base invalido ou taxa menor que -100%")
+                  }
+                  _ ==> {
+                        mut as float64: exp = target_period /f base_period
+                        mut as float64: eq_rate = ((1.0 + rate) ^e exp) - 1.0
+                        emit(nice, eq_rate, "ok")
+                  }
+            }
+      }
+
+      op finMonthlyToDailyRate (as float64: monthly_rate, as int64: days_in_month) as float64 ==> {
+            mut as float64: days = days_in_month as float64
+            route {
+                  days <= 0.0 ==> { days = 30.0 }
+            }
+            mut as float64: exp = 1.0 /f days
+            mut as float64: daily_rate = ((1.0 + monthly_rate) ^e exp) - 1.0
+            emit(nice, daily_rate, "ok")
+      }
+
+      op finMonthlyToAnnualRate (as float64: monthly_rate) as float64 ==> {
+            mut as float64: annual_rate = ((1.0 + monthly_rate) ^e 12.0) - 1.0
+            emit(nice, annual_rate, "ok")
+      }
+
+      op finAnnualToDailyRate (as float64: annual_rate, as int64: days_in_year) as float64 ==> {
+            mut as float64: days = days_in_year as float64
+            route {
+                  days <= 0.0 ==> { days = 360.0 }
+            }
+            mut as float64: exp = 1.0 /f days
+            mut as float64: daily_rate = ((1.0 + annual_rate) ^e exp) - 1.0
+            emit(nice, daily_rate, "ok")
+      }
+
+      op finAnnualToMonthlyRate (as float64: annual_rate) as float64 ==> {
+            mut as float64: exp = 1.0 /f 12.0
+            mut as float64: monthly_rate = ((1.0 + annual_rate) ^e exp) - 1.0
+            emit(nice, monthly_rate, "ok")
+      }
+
+      op finDailyToMonthlyRate (as float64: daily_rate, as int64: days_in_month) as float64 ==> {
+            mut as float64: days = days_in_month as float64
+            route {
+                  days <= 0.0 ==> { days = 30.0 }
+            }
+            mut as float64: monthly_rate = ((1.0 + daily_rate) ^e days) - 1.0
+            emit(nice, monthly_rate, "ok")
+      }
+
+      op finDailyToAnnualRate (as float64: daily_rate, as int64: days_in_year) as float64 ==> {
+            mut as float64: days = days_in_year as float64
+            route {
+                  days <= 0.0 ==> { days = 360.0 }
+            }
+            mut as float64: annual_rate = ((1.0 + daily_rate) ^e days) - 1.0
+            emit(nice, annual_rate, "ok")
+      }
+
+      op finRealRate (as float64: nominal_rate, as float64: inflation_rate) as float64 ==> {
+            mut as float64: real_rate = ((1.0 + nominal_rate) /f (1.0 + inflation_rate)) - 1.0
+            emit(nice, real_rate, "ok")
+      }
+
+      op finContinuousCompounding (as FinDecimal: principal, as float64: rate, as float64: periods) as FinDecimal ==> {
+            mut as float64: p_f = (principal.raw as float64) /f 100000000.0
+            mut as float64: e_const = 2.718281828459045
+            mut as float64: exp_val = rate * periods
+            mut as float64: factor = e_const ^e exp_val
+            mut as float64: fv_f = p_f * factor
+            mut as FinDecimal: res = FinDecimal(.raw: (fv_f * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. FinAmortizationContract
+      #L ==============================================================================
+
+      op finAmortizationPrice (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data ==> {
+            mut as list of data: schedule = []
+            route {
+                  months <= 0 ==> { emit(nice, schedule, "ok") }
+            }
+            mut as float64: i = annual_rate /f 12.0
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + i) ^e (months as float64)
+            mut as float64: pmt_float = p_float * ((i * factor) /f (factor - 1.0))
+            mut as FinDecimal: pmt = FinDecimal(.raw: (pmt_float * 100000000.0) as int64, .scale: 8)
+            mut as FinDecimal: saldo = principal
+            mut as int64: m = 1
+            infinite (m <= months) {
+                  mut as float64: juros_f = ((saldo.raw as float64) /f 100000000.0) * i
+                  mut as FinDecimal: juros = FinDecimal(.raw: (juros_f * 100000000.0) as int64, .scale: 8)
+                  mut as FinDecimal: amort = FinDecimal(.raw: pmt.raw - juros.raw, .scale: 8)
+                  route {
+                        m == months ==> {
+                              amort = saldo
+                              pmt = FinDecimal(.raw: amort.raw + juros.raw, .scale: 8)
+                              saldo = FinDecimal(.raw: 0, .scale: 8)
+                        }
+                        m < months ==> {
+                              saldo = FinDecimal(.raw: saldo.raw - amort.raw, .scale: 8)
+                        }
+                  }
+                  schedule[m] = AmortizationInstallment(
+                        .month: m
+                        .payment: pmt
+                        .amortization: amort
+                        .interest: juros
+                        .balance: saldo
+                  )
+                  m = m + 1
+            }
+            emit(nice, schedule, "ok")
+      }
+
+      op finAmortizationSac (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data ==> {
+            mut as list of data: schedule = []
+            route {
+                  months <= 0 ==> { emit(nice, schedule, "ok") }
+            }
+            mut as float64: i = annual_rate /f 12.0
+            mut as int64: const_amort_raw = principal.raw /i months
+            mut as FinDecimal: const_amort = FinDecimal(.raw: const_amort_raw, .scale: 8)
+            mut as FinDecimal: saldo = principal
+            mut as int64: m = 1
+            infinite (m <= months) {
+                  mut as float64: juros_f = ((saldo.raw as float64) /f 100000000.0) * i
+                  mut as FinDecimal: juros = FinDecimal(.raw: (juros_f * 100000000.0) as int64, .scale: 8)
+                  mut as FinDecimal: amort = const_amort
+                  route {
+                        m == months ==> {
+                              amort = saldo
+                              saldo = FinDecimal(.raw: 0, .scale: 8)
+                        }
+                        m < months ==> {
+                              saldo = FinDecimal(.raw: saldo.raw - amort.raw, .scale: 8)
+                        }
+                  }
+                  mut as FinDecimal: pmt = FinDecimal(.raw: amort.raw + juros.raw, .scale: 8)
+                  schedule[m] = AmortizationInstallment(
+                        .month: m
+                        .payment: pmt
+                        .amortization: amort
+                        .interest: juros
+                        .balance: saldo
+                  )
+                  m = m + 1
+            }
+            emit(nice, schedule, "ok")
+      }
+
+      op finAmortizationSaa (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data ==> {
+            mut as list of data: schedule = []
+            route {
+                  months <= 0 ==> { emit(nice, schedule, "ok") }
+            }
+            mut as float64: i = annual_rate /f 12.0
+            mut as float64: juros_f = ((principal.raw as float64) /f 100000000.0) * i
+            mut as FinDecimal: juros = FinDecimal(.raw: (juros_f * 100000000.0) as int64, .scale: 8)
+            mut as int64: m = 1
+            infinite (m <= months) {
+                  mut as FinDecimal: amort = FinDecimal(.raw: 0, .scale: 8)
+                  mut as FinDecimal: pmt = juros
+                  mut as FinDecimal: bal = principal
+                  route {
+                        m == months ==> {
+                              amort = principal
+                              pmt = FinDecimal(.raw: principal.raw + juros.raw, .scale: 8)
+                              bal = FinDecimal(.raw: 0, .scale: 8)
+                        }
+                  }
+                  schedule[m] = AmortizationInstallment(
+                        .month: m
+                        .payment: pmt
+                        .amortization: amort
+                        .interest: juros
+                        .balance: bal
+                  )
+                  m = m + 1
+            }
+            emit(nice, schedule, "ok")
+      }
+
+      op finAmortizationTotals (as list of data: installments) as map ==> {
+            mut as FinDecimal: total_paid = FinDecimal(.raw: 0, .scale: 8)
+            mut as FinDecimal: total_amort = FinDecimal(.raw: 0, .scale: 8)
+            mut as FinDecimal: total_interest = FinDecimal(.raw: 0, .scale: 8)
+            infinite (inst in installments) {
+                  mut as AmortizationInstallment: item = inst as AmortizationInstallment
+                  total_paid = FinDecimal(.raw: total_paid.raw + item.payment.raw, .scale: 8)
+                  total_amort = FinDecimal(.raw: total_amort.raw + item.amortization.raw, .scale: 8)
+                  total_interest = FinDecimal(.raw: total_interest.raw + item.interest.raw, .scale: 8)
+            }
+            mut as map: res = map{
+                  "total_paid": total_paid,
+                  "total_amortization": total_amort,
+                  "total_interest": total_interest
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 6. FinDepreciationContract
+      #L ==============================================================================
+
+      op finDepreciationLinear (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years) as FinDecimal ==> {
+            route {
+                  life_years <= 0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as int64: depreciable_raw = cost.raw - salvage.raw
+            mut as int64: annual_raw = depreciable_raw /i life_years
+            mut as FinDecimal: annual = FinDecimal(.raw: annual_raw, .scale: 8)
+            emit(nice, annual, "ok")
+      }
+
+      op finDepreciationSyd (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal ==> {
+            route {
+                  life_years <= 0 or period <= 0 or period > life_years ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as int64: syd = (life_years * (life_years + 1)) /i 2
+            mut as int64: factor = (life_years - period) + 1
+            mut as int64: base_raw = cost.raw - salvage.raw
+            mut as int64: num_raw = base_raw * factor
+            mut as int64: res_raw = num_raw /i syd
+            mut as FinDecimal: res = FinDecimal(.raw: res_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDepreciationDdb (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal ==> {
+            route {
+                  life_years <= 0 or period <= 0 or period > life_years ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: rate = 2.0 /f (life_years as float64)
+            mut as FinDecimal: current_val = cost
+            mut as FinDecimal: depr_val = FinDecimal(.raw: 0, .scale: 8)
+            mut as int64: p = 1
+            infinite (p <= period) {
+                  mut as float64: cur_f = (current_val.raw as float64) /f 100000000.0
+                  mut as float64: d_f = cur_f * rate
+                  depr_val = FinDecimal(.raw: (d_f * 100000000.0) as int64, .scale: 8)
+                  #L Nao deprecia abaixo do salvage
+                  mut as FinDecimal: next_val = FinDecimal(.raw: current_val.raw - depr_val.raw, .scale: 8)
+                  route {
+                        next_val.raw < salvage.raw ==> {
+                              depr_val = FinDecimal(.raw: current_val.raw - salvage.raw, .scale: 8)
+                              next_val = salvage
+                        }
+                  }
+                  current_val = next_val
+                  p = p + 1
+            }
+            emit(nice, depr_val, "ok")
+      }
+
+      #L ==============================================================================
+      #L 7. FinFormatContract
+      #L ==============================================================================
+
+      op finFormatCurrency (as FinDecimal: value, as string: locale) as string ==> {
+            mut as int64: half = 500000
+            mut as int64: is_neg = 0
+            mut as int64: r = value.raw
+            route {
+                  r < 0 ==> {
+                        is_neg = 1
+                        r = -r
+                  }
+            }
+            mut as int64: int_part = r /i 100000000
+            mut as int64: rem = r /r 100000000
+            mut as int64: cents = rem /i 1000000
+            mut as int64: subcents = rem /r 1000000
+            route {
+                  subcents >= half ==> {
+                        cents = cents + 1
+                  }
+            }
+            route {
+                  cents >= 100 ==> {
+                        int_part = int_part + 1
+                        cents = 0
+                  }
+            }
+            mut as string: cents_str = "" + cents
+            route {
+                  cents < 10 ==> {
+                        cents_str = "0" + cents_str
+                  }
+            }
+            mut as string: sign = ""
+            route {
+                  is_neg == 1 ==> {
+                        sign = "-"
+                  }
+            }
+            route {
+                  locale == "pt-BR" ==> {
+                        mut as string: res = "R$ " + sign + int_part + "," + cents_str
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as string: def_res = "$" + sign + int_part + "." + cents_str
+            emit(nice, def_res, "ok")
+      }
+
+      op finFormatPercent (as float64: rate, as int64: decimals) as string ==> {
+            mut as int64: dec = decimals
+            route {
+                  dec < 0 ==> { dec = 2 }
+                  dec > 6 ==> { dec = 6 }
+            }
+            mut as float64: pct = rate * 100.0
+            mut as string: sign = ""
+            route {
+                  pct < 0.0 ==> {
+                        sign = "-"
+                        pct = -pct
+                  }
+            }
+            mut as int64: mult = 1
+            mut as int64: i = 1
+            infinite (i <= dec) {
+                  mult = mult * 10
+                  i = i + 1
+            }
+            mut as int64: total_scaled = ((pct * (mult as float64)) + 0.5) as int64
+            mut as int64: ip = total_scaled /i mult
+            mut as int64: frac = total_scaled /r mult
+            mut as string: frac_str = "" + frac
+            mut as int64: frac_len = 0
+            infinite (c in frac_str) {
+                  frac_len = frac_len + 1
+            }
+            infinite (frac_len < dec) {
+                  frac_str = "0" + frac_str
+                  frac_len = frac_len + 1
+            }
+            route {
+                  dec == 0 ==> {
+                        mut as string: res0 = sign + ip + "%"
+                        emit(nice, res0, "ok")
+                  }
+            }
+            mut as string: res = sign + ip + "." + frac_str + "%"
+            emit(nice, res, "ok")
+      }
+
+      op finParseCurrency (as string: text) as FinDecimal ==> {
+            mut as int64: len = 0
+            infinite (c in text) {
+                  len = len + 1
+            }
+            mut as string: clean = ""
+            mut as int64: is_neg = 0
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as char: ch = text[i]
+                  route {
+                        ch == '-' ==> {
+                              is_neg = 1
+                        }
+                        ch == '0' or ch == '1' or ch == '2' or ch == '3' or ch == '4' or ch == '5' or ch == '6' or ch == '7' or ch == '8' or ch == '9' or ch == '.' or ch == ',' ==> {
+                              clean = clean + ch
+                        }
+                  }
+                  i = i + 1
+            }
+            mut as FinDecimal: parsed = FinDecimal(.raw: 0, .scale: 8)
+            mut as int64: clean_len = 0
+            infinite (c in clean) {
+                  clean_len = clean_len + 1
+            }
+            route {
+                  clean_len > 0 ==> {
+                        parsed = (finCreateDecimal(clean)).val
+                  }
+            }
+            route {
+                  is_neg == 1 and parsed.raw > 0 ==> {
+                        parsed = FinDecimal(.raw: -parsed.raw, .scale: 8)
+                  }
+            }
+            emit(nice, parsed, "ok")
+      }
+}

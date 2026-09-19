@@ -1,11 +1,11 @@
-use OOStdLib
+use OoStdLib
 
 struct (Dispositivo) {
       mut: .id: string
       mut: .ativo: bool
 }
 
-program (ExampleOfUseOOStdLib_OOValidationContract) {
+program (ExampleOfUseOoStdLib_OOValidationContract) {
       println("==================================================")
       println("  Exemplo: OOValidationContract (Validacoes OO)")
       println("==================================================")

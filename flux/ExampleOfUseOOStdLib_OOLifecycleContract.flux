@@ -1,11 +1,11 @@
-use OOStdLib
+use OoStdLib
 
 struct (ConexaoBanco) {
       mut: .url: string
       mut: .ativa: bool
 }
 
-program (ExampleOfUseOOStdLib_OOLifecycleContract) {
+program (ExampleOfUseOoStdLib_OOLifecycleContract) {
       println("==================================================")
       println("  Exemplo: OOLifecycleContract (Ciclo de Vida)")
       println("==================================================")

@@ -10,7 +10,7 @@ struct (Cachorro) {
       mut: .dono: string
 }
 
-program (ExampleOfUseOOStdlib_HerancaDadosComposicao) {
+program (ExampleOfUseOoStdlib_HerancaDadosComposicao) {
       println("==================================================")
       println("  1.A. Heranca de Dados: Composicao de Structs")
       println("==================================================")

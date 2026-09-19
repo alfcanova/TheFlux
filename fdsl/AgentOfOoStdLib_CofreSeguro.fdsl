@@ -10,7 +10,7 @@ contract (OperacoesCofre) {
       op retirarSeguro (as float64: valor_atual, as float64: saque, as int64: pin_digitado, as int64: pin_correto) as float64
 }
 
-agent (AgentOfOOStdLib_CofreSeguro) impl OperacoesCofre {
+agent (AgentOfOoStdLib_CofreSeguro) impl OperacoesCofre {
       op depositarSeguro (as float64: valor_atual, as float64: deposito) as float64 ==> {
             route {
                   deposito <= 0.0 ==> {

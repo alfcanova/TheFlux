@@ -1,6 +1,6 @@
-use AgentOfOOStdLib_CofreSeguro
+use AgentOfOoStdLib_CofreSeguro
 
-program (ExampleOfUseOOStdlib_EncapsulamentoModuloAgente) {
+program (ExampleOfUseOoStdlib_EncapsulamentoModuloAgente) {
       println("==================================================")
       println("  3.B. Encapsulamento por Modulo e Agente")
       println("==================================================")

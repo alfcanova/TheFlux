@@ -12,7 +12,7 @@ contract (Vacinavel) {
 }
 
 #L Agente que herda e implementa os 3 contratos
-agent (AgentOfOOStdLib_CachorroMultiContrato) impl Animal, Domesticavel, Vacinavel {
+agent (AgentOfOoStdLib_CachorroMultiContrato) impl Animal, Domesticavel, Vacinavel {
       op emitirSom (as string: nome) as string ==> {
             mut as string: latido = nome + " diz: Au Au! 🐶"
             emit(nice, latido, "Som emitido")

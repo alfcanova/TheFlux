@@ -111,6 +111,15 @@ def analyze(ast: ASTNode, file_path: str = "<unknown>") -> SemanticResult:
 
 def _build_symbol_table(ast: ASTNode, st: SymbolTable, diags: list[Diagnostic]) -> None:
     if isinstance(ast, FluxProgram):
+        seen_imports = set()
+        for imp in getattr(ast, "imports", {}).values():
+            if imp is None or id(imp) in seen_imports:
+                continue
+            seen_imports.add(id(imp))
+            for s in getattr(imp, "structs", []):
+                _declare_struct(s, st, diags)
+            for e in getattr(imp, "enums", []):
+                _declare_enum(e, st, diags)
         for sd in ast.storages:
             _declare_storage_items(sd, st, diags)
         for s in ast.structs:
@@ -129,6 +138,15 @@ def _build_symbol_table(ast: ASTNode, st: SymbolTable, diags: list[Diagnostic]) 
             _build_symbol_table(ast.body, st, diags)
         return
     if isinstance(ast, FdslFile):
+        seen_imports = set()
+        for imp in getattr(ast, "imports", {}).values():
+            if imp is None or id(imp) in seen_imports:
+                continue
+            seen_imports.add(id(imp))
+            for s in getattr(imp, "structs", []):
+                _declare_struct(s, st, diags)
+            for e in getattr(imp, "enums", []):
+                _declare_enum(e, st, diags)
         for sd in ast.storages:
             _declare_storage_items(sd, st, diags)
         for s in ast.structs:

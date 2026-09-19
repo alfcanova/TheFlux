@@ -4,7 +4,7 @@ contract (FormatadorAnimal) {
       op formatarGato (as string: nome, as string: pelagem) as string
 }
 
-agent (AgentOfOOStdLib_PolimorfismoEstatico) impl FormatadorAnimal {
+agent (AgentOfOoStdLib_PolimorfismoEstatico) impl FormatadorAnimal {
       op formatarCachorro (as string: nome, as string: raca) as string ==> {
             mut as string: msg = "[Cão] " + nome + " | Raca: " + raca
             emit(nice, msg, "Monomorfizacao de Cachorro")

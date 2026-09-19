@@ -67,6 +67,13 @@ def _declared_types(ast: ASTNode) -> tuple[dict[str, EnumDef], dict[str, StructD
             enums[node.name] = node
         elif isinstance(node, StructDef):
             structs[node.name] = node
+    for fdsl in getattr(ast, "imports", {}).values():
+        if fdsl is None:
+            continue
+        for s in getattr(fdsl, "structs", []):
+            structs[s.name] = s
+        for e in getattr(fdsl, "enums", []):
+            enums[e.name] = e
     return enums, structs
 
 

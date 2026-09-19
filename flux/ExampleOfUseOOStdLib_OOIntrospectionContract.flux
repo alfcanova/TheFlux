@@ -1,4 +1,4 @@
-use OOStdLib
+use OoStdLib
 
 struct (Transacao) {
       mut: .id: string
@@ -6,7 +6,7 @@ struct (Transacao) {
       mut: .timestamp_ms: int64
 }
 
-program (ExampleOfUseOOStdLib_OOIntrospectionContract) {
+program (ExampleOfUseOoStdLib_OOIntrospectionContract) {
       println("==================================================")
       println("  Exemplo: OOIntrospectionContract (Introspeccao)")
       println("==================================================")

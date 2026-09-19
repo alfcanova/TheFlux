@@ -1,0 +1,1272 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Modulo nativo para Constantes Fisicas, Cinematica, Dinamica, Energia,
+#L Gravitacao, Eletromagnetismo, Termodinamica, Relatividade e Simulacao 2D.
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas).
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas.
+#L ==============================================================================
+
+contract (PhysConstantsContract) {
+      op speedOfLight64 () as float64
+      op speedOfLight32 () as float32
+      op speedOfLight16 () as float16
+      op gravitationalConstant64 () as float64
+      op gravitationalConstant32 () as float32
+      op gravitationalConstant16 () as float16
+      op standardGravity64 () as float64
+      op standardGravity32 () as float32
+      op standardGravity16 () as float16
+      op planckConstant64 () as float64
+      op planckConstant32 () as float32
+      op planckConstant16 () as float16
+      op reducedPlanckConstant64 () as float64
+      op reducedPlanckConstant32 () as float32
+      op reducedPlanckConstant16 () as float16
+      op elementaryCharge64 () as float64
+      op elementaryCharge32 () as float32
+      op elementaryCharge16 () as float16
+      op boltzmannConstant64 () as float64
+      op boltzmannConstant32 () as float32
+      op boltzmannConstant16 () as float16
+      op avogadroNumber64 () as float64
+      op avogadroNumber32 () as float32
+      op avogadroNumber16 () as float16
+      op gasConstant64 () as float64
+      op gasConstant32 () as float32
+      op gasConstant16 () as float16
+      op vacuumPermittivity64 () as float64
+      op vacuumPermittivity32 () as float32
+      op vacuumPermittivity16 () as float16
+      op vacuumPermeability64 () as float64
+      op vacuumPermeability32 () as float32
+      op vacuumPermeability16 () as float16
+      op coulombConstant64 () as float64
+      op coulombConstant32 () as float32
+      op coulombConstant16 () as float16
+      op electronMass64 () as float64
+      op electronMass32 () as float32
+      op electronMass16 () as float16
+      op protonMass64 () as float64
+      op protonMass32 () as float32
+      op protonMass16 () as float16
+      op neutronMass64 () as float64
+      op neutronMass32 () as float32
+      op neutronMass16 () as float16
+      op stefanBoltzmannConstant64 () as float64
+      op stefanBoltzmannConstant32 () as float32
+      op stefanBoltzmannConstant16 () as float16
+      op wienDisplacementConstant64 () as float64
+      op wienDisplacementConstant32 () as float32
+      op wienDisplacementConstant16 () as float16
+      op astronomicalUnit64 () as float64
+      op astronomicalUnit32 () as float32
+      op astronomicalUnit16 () as float16
+      op lightYear64 () as float64
+      op lightYear32 () as float32
+      op lightYear16 () as float16
+      op standardAtmosphere64 () as float64
+      op standardAtmosphere32 () as float32
+      op standardAtmosphere16 () as float16
+      op absoluteZeroCelsius64 () as float64
+      op absoluteZeroCelsius32 () as float32
+      op absoluteZeroCelsius16 () as float16
+}
+
+contract (PhysVector2DContract) {
+      op physVec2New (as float64: x, as float64: y) as list of data
+      op physVec2X (as list of data: v) as float64
+      op physVec2Y (as list of data: v) as float64
+      op physVec2Add (as list of data: a, as list of data: b) as list of data
+      op physVec2Sub (as list of data: a, as list of data: b) as list of data
+      op physVec2Scale (as list of data: v, as float64: s) as list of data
+      op physVec2Dot (as list of data: a, as list of data: b) as float64
+      op physVec2LengthSq (as list of data: v) as float64
+      op physVec2Length (as list of data: v) as float64
+      op physVec2Distance (as list of data: a, as list of data: b) as float64
+      op physVec2Normalize (as list of data: v) as list of data
+}
+
+contract (PhysKinematicsContract) {
+      op physVelocity (as float64: v0, as float64: a, as float64: t) as float64
+      op physDisplacement (as float64: s0, as float64: v0, as float64: a, as float64: t) as float64
+      op physTorricelli (as float64: v0, as float64: a, as float64: delta_s) as float64
+      op physAverageSpeed (as float64: distance, as float64: time) as float64
+      op physCircularAngularVelocity (as float64: angle_rad, as float64: time) as float64
+      op physCircularLinearVelocity (as float64: omega, as float64: radius) as float64
+      op physCentripetalAcceleration (as float64: velocity, as float64: radius) as float64
+      op physSimpleHarmonicPeriod (as float64: mass, as float64: spring_k) as float64
+      op physPendulumPeriod (as float64: length, as float64: gravity) as float64
+}
+
+contract (PhysDynamicsContract) {
+      op physForce (as float64: mass, as float64: acceleration) as float64
+      op physAcceleration (as float64: force, as float64: mass) as float64
+      op physWeight (as float64: mass, as float64: gravity) as float64
+      op physFrictionForce (as float64: normal_force, as float64: friction_coeff) as float64
+      op physHookeForce (as float64: spring_k, as float64: displacement) as float64
+      op physCentripetalForce (as float64: mass, as float64: velocity, as float64: radius) as float64
+      op physMomentum (as float64: mass, as float64: velocity) as float64
+      op physImpulse (as float64: force, as float64: delta_time) as float64
+}
+
+contract (PhysEnergyContract) {
+      op physKineticEnergy (as float64: mass, as float64: velocity) as float64
+      op physPotentialEnergy (as float64: mass, as float64: height, as float64: gravity) as float64
+      op physElasticPotentialEnergy (as float64: spring_k, as float64: displacement) as float64
+      op physMechanicalEnergy (as float64: kinetic, as float64: potential) as float64
+      op physWork (as float64: force, as float64: displacement) as float64
+      op physPower (as float64: work, as float64: time) as float64
+      op physEfficiency (as float64: useful_power, as float64: total_power) as float64
+}
+
+contract (PhysAstrophysicsContract) {
+      op physGravitationalForce (as float64: m1, as float64: m2, as float64: distance) as float64
+      op physGravitationalPotentialEnergy (as float64: m1, as float64: m2, as float64: distance) as float64
+      op physEscapeVelocity (as float64: mass, as float64: radius) as float64
+      op physOrbitalVelocity (as float64: mass, as float64: radius) as float64
+      op physKeplerPeriod (as float64: semi_major_axis, as float64: central_mass) as float64
+}
+
+contract (PhysElectromagnetismContract) {
+      op physCoulombForce (as float64: q1, as float64: q2, as float64: distance) as float64
+      op physElectricField (as float64: charge, as float64: distance) as float64
+      op physElectricPotential (as float64: charge, as float64: distance) as float64
+      op physOhmCurrent (as float64: voltage, as float64: resistance) as float64
+      op physOhmVoltage (as float64: current, as float64: resistance) as float64
+      op physElectricPower (as float64: voltage, as float64: current) as float64
+      op physCapacitorEnergy (as float64: capacitance, as float64: voltage) as float64
+}
+
+contract (PhysThermodynamicsAndWavesContract) {
+      op physCelsiusToKelvin (as float64: celsius) as float64
+      op physKelvinToCelsius (as float64: kelvin) as float64
+      op physCelsiusToFahrenheit (as float64: celsius) as float64
+      op physFahrenheitToCelsius (as float64: fahrenheit) as float64
+      op physIdealGasPressure (as float64: moles, as float64: kelvin, as float64: volume) as float64
+      op physSensibleHeat (as float64: mass, as float64: specific_heat, as float64: delta_temp) as float64
+      op physLatentHeat (as float64: mass, as float64: latent_heat) as float64
+      op physWaveSpeed (as float64: frequency, as float64: wavelength) as float64
+      op physWaveFrequency (as float64: speed, as float64: wavelength) as float64
+      op physWavePeriod (as float64: frequency) as float64
+}
+
+contract (PhysQuantumRelativityContract) {
+      op physPhotonEnergy (as float64: frequency) as float64
+      op physDeBroglieWavelength (as float64: momentum) as float64
+      op physMassEnergyEquivalence (as float64: mass) as float64
+      op physLorentzGamma (as float64: velocity) as float64
+      op physTimeDilation (as float64: proper_time, as float64: velocity) as float64
+      op physLengthContraction (as float64: proper_length, as float64: velocity) as float64
+}
+
+contract (PhysRigidBody2DContract) {
+      op physCreateWorld (as list of data: gravity, as float64: damping) as map
+      op physCreateBodyCircle (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: radius) as map
+      op physCreateBodyBox (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: width, as float64: height) as map
+      op physApplyForce (as map: body, as list of data: force) as map
+      op physApplyImpulse (as map: body, as list of data: impulse) as map
+      op physSetMaterial (as map: body, as float64: restitution, as float64: friction) as map
+      op physCheckCollision (as map: body_a, as map: body_b) as bool
+      op physResolveCollision (as map: body_a, as map: body_b) as list of data
+      op physStepSimulation (as map: world, as list of data: bodies, as float64: delta_time) as list of data
+      op physRaycast (as list of data: bodies, as list of data: origin, as list of data: direction, as float64: max_dist) as map
+}
+
+agent (PhysStdLib) impl PhysConstantsContract, PhysVector2DContract, PhysKinematicsContract, PhysDynamicsContract, PhysEnergyContract, PhysAstrophysicsContract, PhysElectromagnetismContract, PhysThermodynamicsAndWavesContract, PhysQuantumRelativityContract, PhysRigidBody2DContract {
+
+      #L =====================================================================
+      #L Constantes Fisicas Fundamentais Multi-Bit (Derivadas da Ancora 64-bit)
+      #L =====================================================================
+      imut as float64: C_SPEED_OF_LIGHT = 299792458.0
+      imut as float32: C_SPEED_OF_LIGHT_32 = C_SPEED_OF_LIGHT as float32
+      imut as float16: C_SPEED_OF_LIGHT_16 = C_SPEED_OF_LIGHT as float16
+
+      imut as float64: C_GRAV_CONST = 0.0000000000667430
+      imut as float32: C_GRAV_CONST_32 = C_GRAV_CONST as float32
+      imut as float16: C_GRAV_CONST_16 = C_GRAV_CONST as float16
+
+      imut as float64: C_STD_GRAVITY = 9.80665
+      imut as float32: C_STD_GRAVITY_32 = C_STD_GRAVITY as float32
+      imut as float16: C_STD_GRAVITY_16 = C_STD_GRAVITY as float16
+
+      imut as float64: C_PLANCK = 6.62607015e-34
+      imut as float32: C_PLANCK_32 = C_PLANCK as float32
+      imut as float16: C_PLANCK_16 = C_PLANCK as float16
+
+      imut as float64: C_REDUCED_PLANCK = 1.054571817e-34
+      imut as float32: C_REDUCED_PLANCK_32 = C_REDUCED_PLANCK as float32
+      imut as float16: C_REDUCED_PLANCK_16 = C_REDUCED_PLANCK as float16
+
+      imut as float64: C_ELEM_CHARGE = 1.602176634e-19
+      imut as float32: C_ELEM_CHARGE_32 = C_ELEM_CHARGE as float32
+      imut as float16: C_ELEM_CHARGE_16 = C_ELEM_CHARGE as float16
+
+      imut as float64: C_BOLTZMANN = 1.380649e-23
+      imut as float32: C_BOLTZMANN_32 = C_BOLTZMANN as float32
+      imut as float16: C_BOLTZMANN_16 = C_BOLTZMANN as float16
+
+      imut as float64: C_AVOGADRO = 6.02214076e23
+      imut as float32: C_AVOGADRO_32 = C_AVOGADRO as float32
+      imut as float16: C_AVOGADRO_16 = C_AVOGADRO as float16
+
+      imut as float64: C_GAS_CONST = 8.314462618
+      imut as float32: C_GAS_CONST_32 = C_GAS_CONST as float32
+      imut as float16: C_GAS_CONST_16 = C_GAS_CONST as float16
+
+      imut as float64: C_VACUUM_PERMITTIVITY = 8.8541878128e-12
+      imut as float32: C_VACUUM_PERMITTIVITY_32 = C_VACUUM_PERMITTIVITY as float32
+      imut as float16: C_VACUUM_PERMITTIVITY_16 = C_VACUUM_PERMITTIVITY as float16
+
+      imut as float64: C_VACUUM_PERMEABILITY = 0.00000125663706212
+      imut as float32: C_VACUUM_PERMEABILITY_32 = C_VACUUM_PERMEABILITY as float32
+      imut as float16: C_VACUUM_PERMEABILITY_16 = C_VACUUM_PERMEABILITY as float16
+
+      imut as float64: C_COULOMB_CONST = 8987551792.3
+      imut as float32: C_COULOMB_CONST_32 = C_COULOMB_CONST as float32
+      imut as float16: C_COULOMB_CONST_16 = C_COULOMB_CONST as float16
+
+      imut as float64: C_ELECTRON_MASS = 9.1093837015e-31
+      imut as float32: C_ELECTRON_MASS_32 = C_ELECTRON_MASS as float32
+      imut as float16: C_ELECTRON_MASS_16 = C_ELECTRON_MASS as float16
+
+      imut as float64: C_PROTON_MASS = 1.67262192369e-27
+      imut as float32: C_PROTON_MASS_32 = C_PROTON_MASS as float32
+      imut as float16: C_PROTON_MASS_16 = C_PROTON_MASS as float16
+
+      imut as float64: C_NEUTRON_MASS = 1.67492749804e-27
+      imut as float32: C_NEUTRON_MASS_32 = C_NEUTRON_MASS as float32
+      imut as float16: C_NEUTRON_MASS_16 = C_NEUTRON_MASS as float16
+
+      imut as float64: C_STEFAN_BOLTZMANN = 0.00000005670374419
+      imut as float32: C_STEFAN_BOLTZMANN_32 = C_STEFAN_BOLTZMANN as float32
+      imut as float16: C_STEFAN_BOLTZMANN_16 = C_STEFAN_BOLTZMANN as float16
+
+      imut as float64: C_WIEN = 0.002897771955
+      imut as float32: C_WIEN_32 = C_WIEN as float32
+      imut as float16: C_WIEN_16 = C_WIEN as float16
+
+      imut as float64: C_ASTRONOMICAL_UNIT = 149597870700.0
+      imut as float32: C_ASTRONOMICAL_UNIT_32 = C_ASTRONOMICAL_UNIT as float32
+      imut as float16: C_ASTRONOMICAL_UNIT_16 = C_ASTRONOMICAL_UNIT as float16
+
+      imut as float64: C_LIGHT_YEAR = 9460730472580800.0
+      imut as float32: C_LIGHT_YEAR_32 = C_LIGHT_YEAR as float32
+      imut as float16: C_LIGHT_YEAR_16 = C_LIGHT_YEAR as float16
+
+      imut as float64: C_STD_ATMOSPHERE = 101325.0
+      imut as float32: C_STD_ATMOSPHERE_32 = C_STD_ATMOSPHERE as float32
+      imut as float16: C_STD_ATMOSPHERE_16 = C_STD_ATMOSPHERE as float16
+
+      imut as float64: C_ABS_ZERO_CELSIUS = -273.15
+      imut as float32: C_ABS_ZERO_CELSIUS_32 = C_ABS_ZERO_CELSIUS as float32
+      imut as float16: C_ABS_ZERO_CELSIUS_16 = C_ABS_ZERO_CELSIUS as float16
+
+      imut as float64: C_PI = 3.14159265358979323846
+
+      #L =====================================================================
+      #L Operacoes de PhysConstantsContract
+      #L =====================================================================
+      op speedOfLight64 () as float64 ==> { emit(nice, C_SPEED_OF_LIGHT, "ok") }
+      op speedOfLight32 () as float32 ==> { emit(nice, C_SPEED_OF_LIGHT_32, "ok") }
+      op speedOfLight16 () as float16 ==> { emit(nice, C_SPEED_OF_LIGHT_16, "ok") }
+
+      op gravitationalConstant64 () as float64 ==> { emit(nice, C_GRAV_CONST, "ok") }
+      op gravitationalConstant32 () as float32 ==> { emit(nice, C_GRAV_CONST_32, "ok") }
+      op gravitationalConstant16 () as float16 ==> { emit(nice, C_GRAV_CONST_16, "ok") }
+
+      op standardGravity64 () as float64 ==> { emit(nice, C_STD_GRAVITY, "ok") }
+      op standardGravity32 () as float32 ==> { emit(nice, C_STD_GRAVITY_32, "ok") }
+      op standardGravity16 () as float16 ==> { emit(nice, C_STD_GRAVITY_16, "ok") }
+
+      op planckConstant64 () as float64 ==> { emit(nice, C_PLANCK, "ok") }
+      op planckConstant32 () as float32 ==> { emit(nice, C_PLANCK_32, "ok") }
+      op planckConstant16 () as float16 ==> { emit(nice, C_PLANCK_16, "ok") }
+
+      op reducedPlanckConstant64 () as float64 ==> { emit(nice, C_REDUCED_PLANCK, "ok") }
+      op reducedPlanckConstant32 () as float32 ==> { emit(nice, C_REDUCED_PLANCK_32, "ok") }
+      op reducedPlanckConstant16 () as float16 ==> { emit(nice, C_REDUCED_PLANCK_16, "ok") }
+
+      op elementaryCharge64 () as float64 ==> { emit(nice, C_ELEM_CHARGE, "ok") }
+      op elementaryCharge32 () as float32 ==> { emit(nice, C_ELEM_CHARGE_32, "ok") }
+      op elementaryCharge16 () as float16 ==> { emit(nice, C_ELEM_CHARGE_16, "ok") }
+
+      op boltzmannConstant64 () as float64 ==> { emit(nice, C_BOLTZMANN, "ok") }
+      op boltzmannConstant32 () as float32 ==> { emit(nice, C_BOLTZMANN_32, "ok") }
+      op boltzmannConstant16 () as float16 ==> { emit(nice, C_BOLTZMANN_16, "ok") }
+
+      op avogadroNumber64 () as float64 ==> { emit(nice, C_AVOGADRO, "ok") }
+      op avogadroNumber32 () as float32 ==> { emit(nice, C_AVOGADRO_32, "ok") }
+      op avogadroNumber16 () as float16 ==> { emit(nice, C_AVOGADRO_16, "ok") }
+
+      op gasConstant64 () as float64 ==> { emit(nice, C_GAS_CONST, "ok") }
+      op gasConstant32 () as float32 ==> { emit(nice, C_GAS_CONST_32, "ok") }
+      op gasConstant16 () as float16 ==> { emit(nice, C_GAS_CONST_16, "ok") }
+
+      op vacuumPermittivity64 () as float64 ==> { emit(nice, C_VACUUM_PERMITTIVITY, "ok") }
+      op vacuumPermittivity32 () as float32 ==> { emit(nice, C_VACUUM_PERMITTIVITY_32, "ok") }
+      op vacuumPermittivity16 () as float16 ==> { emit(nice, C_VACUUM_PERMITTIVITY_16, "ok") }
+
+      op vacuumPermeability64 () as float64 ==> { emit(nice, C_VACUUM_PERMEABILITY, "ok") }
+      op vacuumPermeability32 () as float32 ==> { emit(nice, C_VACUUM_PERMEABILITY_32, "ok") }
+      op vacuumPermeability16 () as float16 ==> { emit(nice, C_VACUUM_PERMEABILITY_16, "ok") }
+
+      op coulombConstant64 () as float64 ==> { emit(nice, C_COULOMB_CONST, "ok") }
+      op coulombConstant32 () as float32 ==> { emit(nice, C_COULOMB_CONST_32, "ok") }
+      op coulombConstant16 () as float16 ==> { emit(nice, C_COULOMB_CONST_16, "ok") }
+
+      op electronMass64 () as float64 ==> { emit(nice, C_ELECTRON_MASS, "ok") }
+      op electronMass32 () as float32 ==> { emit(nice, C_ELECTRON_MASS_32, "ok") }
+      op electronMass16 () as float16 ==> { emit(nice, C_ELECTRON_MASS_16, "ok") }
+
+      op protonMass64 () as float64 ==> { emit(nice, C_PROTON_MASS, "ok") }
+      op protonMass32 () as float32 ==> { emit(nice, C_PROTON_MASS_32, "ok") }
+      op protonMass16 () as float16 ==> { emit(nice, C_PROTON_MASS_16, "ok") }
+
+      op neutronMass64 () as float64 ==> { emit(nice, C_NEUTRON_MASS, "ok") }
+      op neutronMass32 () as float32 ==> { emit(nice, C_NEUTRON_MASS_32, "ok") }
+      op neutronMass16 () as float16 ==> { emit(nice, C_NEUTRON_MASS_16, "ok") }
+
+      op stefanBoltzmannConstant64 () as float64 ==> { emit(nice, C_STEFAN_BOLTZMANN, "ok") }
+      op stefanBoltzmannConstant32 () as float32 ==> { emit(nice, C_STEFAN_BOLTZMANN_32, "ok") }
+      op stefanBoltzmannConstant16 () as float16 ==> { emit(nice, C_STEFAN_BOLTZMANN_16, "ok") }
+
+      op wienDisplacementConstant64 () as float64 ==> { emit(nice, C_WIEN, "ok") }
+      op wienDisplacementConstant32 () as float32 ==> { emit(nice, C_WIEN_32, "ok") }
+      op wienDisplacementConstant16 () as float16 ==> { emit(nice, C_WIEN_16, "ok") }
+
+      op astronomicalUnit64 () as float64 ==> { emit(nice, C_ASTRONOMICAL_UNIT, "ok") }
+      op astronomicalUnit32 () as float32 ==> { emit(nice, C_ASTRONOMICAL_UNIT_32, "ok") }
+      op astronomicalUnit16 () as float16 ==> { emit(nice, C_ASTRONOMICAL_UNIT_16, "ok") }
+
+      op lightYear64 () as float64 ==> { emit(nice, C_LIGHT_YEAR, "ok") }
+      op lightYear32 () as float32 ==> { emit(nice, C_LIGHT_YEAR_32, "ok") }
+      op lightYear16 () as float16 ==> { emit(nice, C_LIGHT_YEAR_16, "ok") }
+
+      op standardAtmosphere64 () as float64 ==> { emit(nice, C_STD_ATMOSPHERE, "ok") }
+      op standardAtmosphere32 () as float32 ==> { emit(nice, C_STD_ATMOSPHERE_32, "ok") }
+      op standardAtmosphere16 () as float16 ==> { emit(nice, C_STD_ATMOSPHERE_16, "ok") }
+
+      op absoluteZeroCelsius64 () as float64 ==> { emit(nice, C_ABS_ZERO_CELSIUS, "ok") }
+      op absoluteZeroCelsius32 () as float32 ==> { emit(nice, C_ABS_ZERO_CELSIUS_32, "ok") }
+      op absoluteZeroCelsius16 () as float16 ==> { emit(nice, C_ABS_ZERO_CELSIUS_16, "ok") }
+
+      #L =====================================================================
+      #L PhysVector2DContract (Helpers Vetoriais 2D)
+      #L =====================================================================
+      op physVec2New (as float64: x, as float64: y) as list of data ==> {
+            mut as list of data: v = [x, y]
+            emit(nice, v, "ok")
+      }
+      op physVec2X (as list of data: v) as float64 ==> {
+            mut as float64: x = v[1] as float64
+            emit(nice, x, "ok")
+      }
+      op physVec2Y (as list of data: v) as float64 ==> {
+            mut as float64: y = v[2] as float64
+            emit(nice, y, "ok")
+      }
+      op physVec2Add (as list of data: a, as list of data: b) as list of data ==> {
+            mut as float64: ax = a[1] as float64
+            mut as float64: ay = a[2] as float64
+            mut as float64: bx = b[1] as float64
+            mut as float64: by = b[2] as float64
+            mut as list of data: res = [ax + bx, ay + by]
+            emit(nice, res, "ok")
+      }
+      op physVec2Sub (as list of data: a, as list of data: b) as list of data ==> {
+            mut as float64: ax = a[1] as float64
+            mut as float64: ay = a[2] as float64
+            mut as float64: bx = b[1] as float64
+            mut as float64: by = b[2] as float64
+            mut as list of data: res = [ax - bx, ay - by]
+            emit(nice, res, "ok")
+      }
+      op physVec2Scale (as list of data: v, as float64: s) as list of data ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as list of data: res = [x * s, y * s]
+            emit(nice, res, "ok")
+      }
+      op physVec2Dot (as list of data: a, as list of data: b) as float64 ==> {
+            mut as float64: ax = a[1] as float64
+            mut as float64: ay = a[2] as float64
+            mut as float64: bx = b[1] as float64
+            mut as float64: by = b[2] as float64
+            mut as float64: res = (ax * bx) + (ay * by)
+            emit(nice, res, "ok")
+      }
+      op physVec2LengthSq (as list of data: v) as float64 ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as float64: res = (x * x) + (y * y)
+            emit(nice, res, "ok")
+      }
+      op physVec2Length (as list of data: v) as float64 ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as float64: lsq = (x * x) + (y * y)
+            route {
+                  lsq == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = lsq ^e 0.5
+            emit(nice, res, "ok")
+      }
+      op physVec2Distance (as list of data: a, as list of data: b) as float64 ==> {
+            mut as float64: dx = (a[1] as float64) - (b[1] as float64)
+            mut as float64: dy = (a[2] as float64) - (b[2] as float64)
+            mut as float64: dsq = (dx * dx) + (dy * dy)
+            route {
+                  dsq == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = dsq ^e 0.5
+            emit(nice, res, "ok")
+      }
+      op physVec2Normalize (as list of data: v) as list of data ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as float64: lsq = (x * x) + (y * y)
+            route {
+                  lsq == 0.0 ==> {
+                        mut as list of data: z = [0.0, 0.0]
+                        emit(nice, z, "ok")
+                  }
+            }
+            mut as float64: len = lsq ^e 0.5
+            mut as list of data: res = [x /f len, y /f len]
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysKinematicsContract (Cinematica)
+      #L =====================================================================
+      op physVelocity (as float64: v0, as float64: a, as float64: t) as float64 ==> {
+            mut as float64: v = v0 + (a * t)
+            emit(nice, v, "ok")
+      }
+      op physDisplacement (as float64: s0, as float64: v0, as float64: a, as float64: t) as float64 ==> {
+            mut as float64: s = s0 + (v0 * t) + (0.5 * a * (t * t))
+            emit(nice, s, "ok")
+      }
+      op physTorricelli (as float64: v0, as float64: a, as float64: delta_s) as float64 ==> {
+            mut as float64: v2 = (v0 * v0) + (2.0 * a * delta_s)
+            route {
+                  v2 < 0.0 ==> {
+                        emit(fail, 0.0, "velocidade imaginaria em Torricelli")
+                  }
+            }
+            mut as float64: v = v2 ^e 0.5
+            emit(nice, v, "ok")
+      }
+      op physAverageSpeed (as float64: distance, as float64: time) as float64 ==> {
+            route {
+                  time == 0.0 ==> {
+                        emit(fail, 0.0, "tempo zero em velocidade media")
+                  }
+            }
+            mut as float64: v = distance /f time
+            emit(nice, v, "ok")
+      }
+      op physCircularAngularVelocity (as float64: angle_rad, as float64: time) as float64 ==> {
+            route {
+                  time == 0.0 ==> {
+                        emit(fail, 0.0, "tempo zero em velocidade angular")
+                  }
+            }
+            mut as float64: w = angle_rad /f time
+            emit(nice, w, "ok")
+      }
+      op physCircularLinearVelocity (as float64: omega, as float64: radius) as float64 ==> {
+            mut as float64: v = omega * radius
+            emit(nice, v, "ok")
+      }
+      op physCentripetalAcceleration (as float64: velocity, as float64: radius) as float64 ==> {
+            route {
+                  radius == 0.0 ==> {
+                        emit(fail, 0.0, "raio zero em aceleracao centripeta")
+                  }
+            }
+            mut as float64: ac = (velocity * velocity) /f radius
+            emit(nice, ac, "ok")
+      }
+      op physSimpleHarmonicPeriod (as float64: mass, as float64: spring_k) as float64 ==> {
+            route {
+                  spring_k <= 0.0 or mass <= 0.0 ==> {
+                        emit(fail, 0.0, "massa ou constante elastica invalida no MHS")
+                  }
+            }
+            mut as float64: ratio = mass /f spring_k
+            mut as float64: t = (2.0 * C_PI) * (ratio ^e 0.5)
+            emit(nice, t, "ok")
+      }
+      op physPendulumPeriod (as float64: length, as float64: gravity) as float64 ==> {
+            route {
+                  gravity <= 0.0 or length <= 0.0 ==> {
+                        emit(fail, 0.0, "comprimento ou gravidade invalida no pendulo")
+                  }
+            }
+            mut as float64: ratio = length /f gravity
+            mut as float64: t = (2.0 * C_PI) * (ratio ^e 0.5)
+            emit(nice, t, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysDynamicsContract (Dinamica e Forcas)
+      #L =====================================================================
+      op physForce (as float64: mass, as float64: acceleration) as float64 ==> {
+            mut as float64: f = mass * acceleration
+            emit(nice, f, "ok")
+      }
+      op physAcceleration (as float64: force, as float64: mass) as float64 ==> {
+            route {
+                  mass == 0.0 ==> {
+                        emit(fail, 0.0, "massa zero em aceleracao")
+                  }
+            }
+            mut as float64: a = force /f mass
+            emit(nice, a, "ok")
+      }
+      op physWeight (as float64: mass, as float64: gravity) as float64 ==> {
+            mut as float64: p = mass * gravity
+            emit(nice, p, "ok")
+      }
+      op physFrictionForce (as float64: normal_force, as float64: friction_coeff) as float64 ==> {
+            mut as float64: f = normal_force * friction_coeff
+            emit(nice, f, "ok")
+      }
+      op physHookeForce (as float64: spring_k, as float64: displacement) as float64 ==> {
+            mut as float64: f = (0.0 - spring_k) * displacement
+            emit(nice, f, "ok")
+      }
+      op physCentripetalForce (as float64: mass, as float64: velocity, as float64: radius) as float64 ==> {
+            route {
+                  radius == 0.0 ==> {
+                        emit(fail, 0.0, "raio zero em forca centripeta")
+                  }
+            }
+            mut as float64: fc = (mass * (velocity * velocity)) /f radius
+            emit(nice, fc, "ok")
+      }
+      op physMomentum (as float64: mass, as float64: velocity) as float64 ==> {
+            mut as float64: p = mass * velocity
+            emit(nice, p, "ok")
+      }
+      op physImpulse (as float64: force, as float64: delta_time) as float64 ==> {
+            mut as float64: j = force * delta_time
+            emit(nice, j, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysEnergyContract (Energia, Trabalho e Potencia)
+      #L =====================================================================
+      op physKineticEnergy (as float64: mass, as float64: velocity) as float64 ==> {
+            mut as float64: ek = 0.5 * mass * (velocity * velocity)
+            emit(nice, ek, "ok")
+      }
+      op physPotentialEnergy (as float64: mass, as float64: height, as float64: gravity) as float64 ==> {
+            mut as float64: ep = mass * gravity * height
+            emit(nice, ep, "ok")
+      }
+      op physElasticPotentialEnergy (as float64: spring_k, as float64: displacement) as float64 ==> {
+            mut as float64: epe = 0.5 * spring_k * (displacement * displacement)
+            emit(nice, epe, "ok")
+      }
+      op physMechanicalEnergy (as float64: kinetic, as float64: potential) as float64 ==> {
+            mut as float64: em = kinetic + potential
+            emit(nice, em, "ok")
+      }
+      op physWork (as float64: force, as float64: displacement) as float64 ==> {
+            mut as float64: w = force * displacement
+            emit(nice, w, "ok")
+      }
+      op physPower (as float64: work, as float64: time) as float64 ==> {
+            route {
+                  time == 0.0 ==> {
+                        emit(fail, 0.0, "tempo zero em potencia")
+                  }
+            }
+            mut as float64: p = work /f time
+            emit(nice, p, "ok")
+      }
+      op physEfficiency (as float64: useful_power, as float64: total_power) as float64 ==> {
+            route {
+                  total_power == 0.0 ==> {
+                        emit(fail, 0.0, "potencia total zero em rendimento")
+                  }
+            }
+            mut as float64: eff = useful_power /f total_power
+            emit(nice, eff, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysAstrophysicsContract (Gravitacao e Orbitas)
+      #L =====================================================================
+      op physGravitationalForce (as float64: m1, as float64: m2, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em gravitacao")
+                  }
+            }
+            mut as float64: f = (C_GRAV_CONST * m1 * m2) /f (distance * distance)
+            emit(nice, f, "ok")
+      }
+      op physGravitationalPotentialEnergy (as float64: m1, as float64: m2, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em potencial gravitacional")
+                  }
+            }
+            mut as float64: u = (0.0 - (C_GRAV_CONST * m1 * m2)) /f distance
+            emit(nice, u, "ok")
+      }
+      op physEscapeVelocity (as float64: mass, as float64: radius) as float64 ==> {
+            route {
+                  radius <= 0.0 or mass <= 0.0 ==> {
+                        emit(fail, 0.0, "massa ou raio invalido em velocidade de escape")
+                  }
+            }
+            mut as float64: v2 = (2.0 * C_GRAV_CONST * mass) /f radius
+            mut as float64: v = v2 ^e 0.5
+            emit(nice, v, "ok")
+      }
+      op physOrbitalVelocity (as float64: mass, as float64: radius) as float64 ==> {
+            route {
+                  radius <= 0.0 or mass <= 0.0 ==> {
+                        emit(fail, 0.0, "massa ou raio invalido em velocidade orbital")
+                  }
+            }
+            mut as float64: v2 = (C_GRAV_CONST * mass) /f radius
+            mut as float64: v = v2 ^e 0.5
+            emit(nice, v, "ok")
+      }
+      op physKeplerPeriod (as float64: semi_major_axis, as float64: central_mass) as float64 ==> {
+            route {
+                  semi_major_axis <= 0.0 or central_mass <= 0.0 ==> {
+                        emit(fail, 0.0, "eixo ou massa invalida em Kepler")
+                  }
+            }
+            mut as float64: a3 = semi_major_axis * semi_major_axis * semi_major_axis
+            mut as float64: gm = C_GRAV_CONST * central_mass
+            mut as float64: ratio = a3 /f gm
+            mut as float64: t = (2.0 * C_PI) * (ratio ^e 0.5)
+            emit(nice, t, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysElectromagnetismContract (Eletromagnetismo)
+      #L =====================================================================
+      op physCoulombForce (as float64: q1, as float64: q2, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em Coulomb")
+                  }
+            }
+            mut as float64: f = (C_COULOMB_CONST * q1 * q2) /f (distance * distance)
+            emit(nice, f, "ok")
+      }
+      op physElectricField (as float64: charge, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em campo eletrico")
+                  }
+            }
+            mut as float64: e = (C_COULOMB_CONST * charge) /f (distance * distance)
+            emit(nice, e, "ok")
+      }
+      op physElectricPotential (as float64: charge, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em potencial eletrico")
+                  }
+            }
+            mut as float64: v = (C_COULOMB_CONST * charge) /f distance
+            emit(nice, v, "ok")
+      }
+      op physOhmCurrent (as float64: voltage, as float64: resistance) as float64 ==> {
+            route {
+                  resistance == 0.0 ==> {
+                        emit(fail, 0.0, "resistencia zero em Ohm")
+                  }
+            }
+            mut as float64: i = voltage /f resistance
+            emit(nice, i, "ok")
+      }
+      op physOhmVoltage (as float64: current, as float64: resistance) as float64 ==> {
+            mut as float64: v = current * resistance
+            emit(nice, v, "ok")
+      }
+      op physElectricPower (as float64: voltage, as float64: current) as float64 ==> {
+            mut as float64: p = voltage * current
+            emit(nice, p, "ok")
+      }
+      op physCapacitorEnergy (as float64: capacitance, as float64: voltage) as float64 ==> {
+            mut as float64: u = 0.5 * capacitance * (voltage * voltage)
+            emit(nice, u, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysThermodynamicsAndWavesContract (Termodinamica e Ondas)
+      #L =====================================================================
+      op physCelsiusToKelvin (as float64: celsius) as float64 ==> {
+            mut as float64: k = celsius + 273.15
+            emit(nice, k, "ok")
+      }
+      op physKelvinToCelsius (as float64: kelvin) as float64 ==> {
+            mut as float64: c = kelvin - 273.15
+            emit(nice, c, "ok")
+      }
+      op physCelsiusToFahrenheit (as float64: celsius) as float64 ==> {
+            mut as float64: f = (celsius * 1.8) + 32.0
+            emit(nice, f, "ok")
+      }
+      op physFahrenheitToCelsius (as float64: fahrenheit) as float64 ==> {
+            mut as float64: c = (fahrenheit - 32.0) /f 1.8
+            emit(nice, c, "ok")
+      }
+      op physIdealGasPressure (as float64: moles, as float64: kelvin, as float64: volume) as float64 ==> {
+            route {
+                  volume <= 0.0 ==> {
+                        emit(fail, 0.0, "volume invalido no gas ideal")
+                  }
+            }
+            mut as float64: p = (moles * C_GAS_CONST * kelvin) /f volume
+            emit(nice, p, "ok")
+      }
+      op physSensibleHeat (as float64: mass, as float64: specific_heat, as float64: delta_temp) as float64 ==> {
+            mut as float64: q = mass * specific_heat * delta_temp
+            emit(nice, q, "ok")
+      }
+      op physLatentHeat (as float64: mass, as float64: latent_heat) as float64 ==> {
+            mut as float64: q = mass * latent_heat
+            emit(nice, q, "ok")
+      }
+      op physWaveSpeed (as float64: frequency, as float64: wavelength) as float64 ==> {
+            mut as float64: v = frequency * wavelength
+            emit(nice, v, "ok")
+      }
+      op physWaveFrequency (as float64: speed, as float64: wavelength) as float64 ==> {
+            route {
+                  wavelength <= 0.0 ==> {
+                        emit(fail, 0.0, "comprimento de onda invalido")
+                  }
+            }
+            mut as float64: f = speed /f wavelength
+            emit(nice, f, "ok")
+      }
+      op physWavePeriod (as float64: frequency) as float64 ==> {
+            route {
+                  frequency <= 0.0 ==> {
+                        emit(fail, 0.0, "frequencia invalida para periodo")
+                  }
+            }
+            mut as float64: t = 1.0 /f frequency
+            emit(nice, t, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysQuantumRelativityContract (Quantica e Relatividade)
+      #L =====================================================================
+      op physPhotonEnergy (as float64: frequency) as float64 ==> {
+            mut as float64: e = C_PLANCK * frequency
+            emit(nice, e, "ok")
+      }
+      op physDeBroglieWavelength (as float64: momentum) as float64 ==> {
+            route {
+                  momentum <= 0.0 ==> {
+                        emit(fail, 0.0, "momento invalido em De Broglie")
+                  }
+            }
+            mut as float64: lambda = C_PLANCK /f momentum
+            emit(nice, lambda, "ok")
+      }
+      op physMassEnergyEquivalence (as float64: mass) as float64 ==> {
+            mut as float64: e = mass * (C_SPEED_OF_LIGHT * C_SPEED_OF_LIGHT)
+            emit(nice, e, "ok")
+      }
+      op physLorentzGamma (as float64: velocity) as float64 ==> {
+            mut as float64: beta = velocity /f C_SPEED_OF_LIGHT
+            mut as float64: beta2 = beta * beta
+            route {
+                  beta2 >= 1.0 ==> {
+                        emit(fail, 0.0, "velocidade igual ou superior a luz")
+                  }
+            }
+            mut as float64: denom = (1.0 - beta2) ^e 0.5
+            mut as float64: gamma = 1.0 /f denom
+            emit(nice, gamma, "ok")
+      }
+      op physTimeDilation (as float64: proper_time, as float64: velocity) as float64 ==> {
+            mut as float64: beta = velocity /f C_SPEED_OF_LIGHT
+            mut as float64: beta2 = beta * beta
+            route {
+                  beta2 >= 1.0 ==> {
+                        emit(fail, 0.0, "velocidade superior a luz em dilatacao temporal")
+                  }
+            }
+            mut as float64: denom = (1.0 - beta2) ^e 0.5
+            mut as float64: t = proper_time /f denom
+            emit(nice, t, "ok")
+      }
+      op physLengthContraction (as float64: proper_length, as float64: velocity) as float64 ==> {
+            mut as float64: beta = velocity /f C_SPEED_OF_LIGHT
+            mut as float64: beta2 = beta * beta
+            route {
+                  beta2 >= 1.0 ==> {
+                        emit(fail, 0.0, "velocidade superior a luz em contracao de Lorentz")
+                  }
+            }
+            mut as float64: factor = (1.0 - beta2) ^e 0.5
+            mut as float64: l = proper_length * factor
+            emit(nice, l, "ok")
+      }
+
+      #L =====================================================================
+      #L PhysRigidBody2DContract (Motor de Simulacao 2D Reativo)
+      #L =====================================================================
+      op physCreateWorld (as list of data: gravity, as float64: damping) as map ==> {
+            mut as float64: gx = gravity[1] as float64
+            mut as float64: gy = gravity[2] as float64
+            mut as map: w = map{}
+            w["gx"] = gx
+            w["gy"] = gy
+            w["damping"] = damping
+            emit(nice, w, "ok")
+      }
+
+      op physCreateBodyCircle (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: radius) as map ==> {
+            mut as float64: px = pos[1] as float64
+            mut as float64: py = pos[2] as float64
+            mut as float64: vx = vel[1] as float64
+            mut as float64: vy = vel[2] as float64
+            mut as map: b = map{}
+            b["id"] = id
+            b["type"] = "circle"
+            b["mass"] = mass
+            b["px"] = px
+            b["py"] = py
+            b["vx"] = vx
+            b["vy"] = vy
+            b["fx"] = 0.0
+            b["fy"] = 0.0
+            b["radius"] = radius
+            b["width"] = 0.0
+            b["height"] = 0.0
+            b["restitution"] = 1.0
+            b["friction"] = 0.0
+            emit(nice, b, "ok")
+      }
+
+      op physCreateBodyBox (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: width, as float64: height) as map ==> {
+            mut as float64: px = pos[1] as float64
+            mut as float64: py = pos[2] as float64
+            mut as float64: vx = vel[1] as float64
+            mut as float64: vy = vel[2] as float64
+            mut as map: b = map{}
+            b["id"] = id
+            b["type"] = "box"
+            b["mass"] = mass
+            b["px"] = px
+            b["py"] = py
+            b["vx"] = vx
+            b["vy"] = vy
+            b["fx"] = 0.0
+            b["fy"] = 0.0
+            b["radius"] = 0.0
+            b["width"] = width
+            b["height"] = height
+            b["restitution"] = 1.0
+            b["friction"] = 0.0
+            emit(nice, b, "ok")
+      }
+
+      op physApplyForce (as map: body, as list of data: force) as map ==> {
+            mut as float64: fx = force[1] as float64
+            mut as float64: fy = force[2] as float64
+            mut as float64: cur_fx = body["fx"] as float64
+            mut as float64: cur_fy = body["fy"] as float64
+            mut as map: updated = map{}
+            updated["id"] = body["id"] as float64
+            updated["type"] = body["type"] as string
+            updated["mass"] = body["mass"] as float64
+            updated["px"] = body["px"] as float64
+            updated["py"] = body["py"] as float64
+            updated["vx"] = body["vx"] as float64
+            updated["vy"] = body["vy"] as float64
+            updated["fx"] = cur_fx + fx
+            updated["fy"] = cur_fy + fy
+            updated["radius"] = body["radius"] as float64
+            updated["width"] = body["width"] as float64
+            updated["height"] = body["height"] as float64
+            updated["restitution"] = body["restitution"] as float64
+            updated["friction"] = body["friction"] as float64
+            emit(nice, updated, "ok")
+      }
+
+      op physApplyImpulse (as map: body, as list of data: impulse) as map ==> {
+            mut as float64: ix = impulse[1] as float64
+            mut as float64: iy = impulse[2] as float64
+            mut as float64: m = body["mass"] as float64
+            route {
+                  m <= 0.0 ==> {
+                        emit(nice, body, "ok")
+                  }
+            }
+            mut as float64: cur_vx = body["vx"] as float64
+            mut as float64: cur_vy = body["vy"] as float64
+            mut as map: updated = map{}
+            updated["id"] = body["id"] as float64
+            updated["type"] = body["type"] as string
+            updated["mass"] = m
+            updated["px"] = body["px"] as float64
+            updated["py"] = body["py"] as float64
+            updated["vx"] = cur_vx + (ix /f m)
+            updated["vy"] = cur_vy + (iy /f m)
+            updated["fx"] = body["fx"] as float64
+            updated["fy"] = body["fy"] as float64
+            updated["radius"] = body["radius"] as float64
+            updated["width"] = body["width"] as float64
+            updated["height"] = body["height"] as float64
+            updated["restitution"] = body["restitution"] as float64
+            updated["friction"] = body["friction"] as float64
+            emit(nice, updated, "ok")
+      }
+
+      op physSetMaterial (as map: body, as float64: restitution, as float64: friction) as map ==> {
+            mut as map: updated = map{}
+            updated["id"] = body["id"] as float64
+            updated["type"] = body["type"] as string
+            updated["mass"] = body["mass"] as float64
+            updated["px"] = body["px"] as float64
+            updated["py"] = body["py"] as float64
+            updated["vx"] = body["vx"] as float64
+            updated["vy"] = body["vy"] as float64
+            updated["fx"] = body["fx"] as float64
+            updated["fy"] = body["fy"] as float64
+            updated["radius"] = body["radius"] as float64
+            updated["width"] = body["width"] as float64
+            updated["height"] = body["height"] as float64
+            updated["restitution"] = restitution
+            updated["friction"] = friction
+            emit(nice, updated, "ok")
+      }
+
+      op physCheckCollision (as map: body_a, as map: body_b) as bool ==> {
+            mut as string: type_a = body_a["type"] as string
+            mut as string: type_b = body_b["type"] as string
+            mut as float64: ax = body_a["px"] as float64
+            mut as float64: ay = body_a["py"] as float64
+            mut as float64: bx = body_b["px"] as float64
+            mut as float64: by = body_b["py"] as float64
+
+            #L 1. Circulo com Circulo
+            route {
+                  type_a == "circle" and type_b == "circle" ==> {
+                        mut as float64: ra = body_a["radius"] as float64
+                        mut as float64: rb = body_b["radius"] as float64
+                        mut as float64: dx = bx - ax
+                        mut as float64: dy = by - ay
+                        mut as float64: dist_sq = (dx * dx) + (dy * dy)
+                        mut as float64: r_sum = ra + rb
+                        mut as bool: collided = dist_sq <= (r_sum * r_sum)
+                        emit(nice, collided, "ok")
+                  }
+            }
+
+            #L 2. Caixa com Caixa (AABB)
+            route {
+                  type_a == "box" and type_b == "box" ==> {
+                        mut as float64: wa2 = (body_a["width"] as float64) * 0.5
+                        mut as float64: ha2 = (body_a["height"] as float64) * 0.5
+                        mut as float64: wb2 = (body_b["width"] as float64) * 0.5
+                        mut as float64: hb2 = (body_b["height"] as float64) * 0.5
+
+                        mut as float64: diff_x = bx - ax
+                        route { diff_x < 0.0 ==> { diff_x = 0.0 - diff_x } }
+                        mut as float64: diff_y = by - ay
+                        route { diff_y < 0.0 ==> { diff_y = 0.0 - diff_y } }
+
+                        mut as bool: collided = (diff_x <= (wa2 + wb2)) and (diff_y <= (ha2 + hb2))
+                        emit(nice, collided, "ok")
+                  }
+            }
+
+            #L 3. Circulo com Caixa (ou Caixa com Circulo)
+            mut as float64: cx = ax
+            mut as float64: cy = ay
+            mut as float64: cr = 0.0
+            mut as float64: rect_x = bx
+            mut as float64: rect_y = by
+            mut as float64: rw2 = 0.0
+            mut as float64: rh2 = 0.0
+
+            route {
+                  type_a == "circle" and type_b == "box" ==> {
+                        cx = ax
+                        cy = ay
+                        cr = body_a["radius"] as float64
+                        rect_x = bx
+                        rect_y = by
+                        rw2 = (body_b["width"] as float64) * 0.5
+                        rh2 = (body_b["height"] as float64) * 0.5
+                  }
+                  type_a == "box" and type_b == "circle" ==> {
+                        cx = bx
+                        cy = by
+                        cr = body_b["radius"] as float64
+                        rect_x = ax
+                        rect_y = ay
+                        rw2 = (body_a["width"] as float64) * 0.5
+                        rh2 = (body_a["height"] as float64) * 0.5
+                  }
+            }
+
+            mut as float64: min_x = rect_x - rw2
+            mut as float64: max_x = rect_x + rw2
+            mut as float64: min_y = rect_y - rh2
+            mut as float64: max_y = rect_y + rh2
+
+            mut as float64: closest_x = cx
+            route {
+                  closest_x < min_x ==> { closest_x = min_x }
+                  closest_x > max_x ==> { closest_x = max_x }
+            }
+            mut as float64: closest_y = cy
+            route {
+                  closest_y < min_y ==> { closest_y = min_y }
+                  closest_y > max_y ==> { closest_y = max_y }
+            }
+
+            mut as float64: d_cx = cx - closest_x
+            mut as float64: d_cy = cy - closest_y
+            mut as float64: c_dist_sq = (d_cx * d_cx) + (d_cy * d_cy)
+            mut as bool: c_hit = c_dist_sq <= (cr * cr)
+            emit(nice, c_hit, "ok")
+      }
+
+      op physResolveCollision (as map: body_a, as map: body_b) as list of data ==> {
+            mut as float64: m1 = body_a["mass"] as float64
+            mut as float64: m2 = body_b["mass"] as float64
+            mut as float64: e1 = body_a["restitution"] as float64
+            mut as float64: e2 = body_b["restitution"] as float64
+            mut as float64: e = (e1 + e2) * 0.5
+
+            mut as float64: ax = body_a["px"] as float64
+            mut as float64: ay = body_a["py"] as float64
+            mut as float64: bx = body_b["px"] as float64
+            mut as float64: by = body_b["py"] as float64
+
+            mut as float64: nx = bx - ax
+            mut as float64: ny = by - ay
+            mut as float64: nlen_sq = (nx * nx) + (ny * ny)
+            route {
+                  nlen_sq == 0.0 ==> {
+                        nx = 1.0
+                        ny = 0.0
+                        nlen_sq = 1.0
+                  }
+            }
+            mut as float64: nlen = nlen_sq ^e 0.5
+            nx = nx /f nlen
+            ny = ny /f nlen
+
+            mut as float64: v1x = body_a["vx"] as float64
+            mut as float64: v1y = body_a["vy"] as float64
+            mut as float64: v2x = body_b["vx"] as float64
+            mut as float64: v2y = body_b["vy"] as float64
+
+            #L Velocidades ao longo da normal
+            mut as float64: u1 = (v1x * nx) + (v1y * ny)
+            mut as float64: u2 = (v2x * nx) + (v2y * ny)
+
+            #L Momento unidimensional com restituicao
+            mut as float64: total_m = m1 + m2
+            mut as float64: new_u1 = ((m1 * u1) + (m2 * u2) - (m2 * e * (u1 - u2))) /f total_m
+            mut as float64: new_u2 = ((m1 * u1) + (m2 * u2) + (m1 * e * (u1 - u2))) /f total_m
+
+            mut as float64: delta_u1 = new_u1 - u1
+            mut as float64: delta_u2 = new_u2 - u2
+
+            mut as map: res_a = map{}
+            res_a["id"] = body_a["id"] as float64
+            res_a["type"] = body_a["type"] as string
+            res_a["mass"] = m1
+            res_a["px"] = ax
+            res_a["py"] = ay
+            res_a["vx"] = v1x + (delta_u1 * nx)
+            res_a["vy"] = v1y + (delta_u1 * ny)
+            res_a["fx"] = body_a["fx"] as float64
+            res_a["fy"] = body_a["fy"] as float64
+            res_a["radius"] = body_a["radius"] as float64
+            res_a["width"] = body_a["width"] as float64
+            res_a["height"] = body_a["height"] as float64
+            res_a["restitution"] = e1
+            res_a["friction"] = body_a["friction"] as float64
+
+            mut as map: res_b = map{}
+            res_b["id"] = body_b["id"] as float64
+            res_b["type"] = body_b["type"] as string
+            res_b["mass"] = m2
+            res_b["px"] = bx
+            res_b["py"] = by
+            res_b["vx"] = v2x + (delta_u2 * nx)
+            res_b["vy"] = v2y + (delta_u2 * ny)
+            res_b["fx"] = body_b["fx"] as float64
+            res_b["fy"] = body_b["fy"] as float64
+            res_b["radius"] = body_b["radius"] as float64
+            res_b["width"] = body_b["width"] as float64
+            res_b["height"] = body_b["height"] as float64
+            res_b["restitution"] = e2
+            res_b["friction"] = body_b["friction"] as float64
+
+            mut as list of data: result = [res_a, res_b]
+            emit(nice, result, "ok")
+      }
+
+      op physStepSimulation (as map: world, as list of data: bodies, as float64: delta_time) as list of data ==> {
+            mut as float64: gx = world["gx"] as float64
+            mut as float64: gy = world["gy"] as float64
+            mut as float64: damping = world["damping"] as float64
+
+            mut as list of data: updated_bodies = []
+            mut as int64: body_count = 0
+            infinite (body in bodies) {
+                  mut as map: b = body as map
+                  mut as float64: m = b["mass"] as float64
+
+                  mut as float64: px = b["px"] as float64
+                  mut as float64: py = b["py"] as float64
+                  mut as float64: vx = b["vx"] as float64
+                  mut as float64: vy = b["vy"] as float64
+                  mut as float64: fx = b["fx"] as float64
+                  mut as float64: fy = b["fy"] as float64
+
+                  mut as float64: ax = gx
+                  mut as float64: ay = gy
+
+                  route {
+                        m > 0.0 ==> {
+                              ax = ax + (fx /f m)
+                              ay = ay + (fy /f m)
+                        }
+                  }
+
+                  #L Integracao de Euler semi-implicito
+                  mut as float64: new_vx = (vx + (ax * delta_time)) * (1.0 - (damping * delta_time))
+                  mut as float64: new_vy = (vy + (ay * delta_time)) * (1.0 - (damping * delta_time))
+                  mut as float64: new_px = px + (new_vx * delta_time)
+                  mut as float64: new_py = py + (new_vy * delta_time)
+
+                  mut as map: next_body = map{}
+                  next_body["id"] = b["id"] as float64
+                  next_body["type"] = b["type"] as string
+                  next_body["mass"] = m
+                  next_body["px"] = new_px
+                  next_body["py"] = new_py
+                  next_body["vx"] = new_vx
+                  next_body["vy"] = new_vy
+                  next_body["fx"] = 0.0
+                  next_body["fy"] = 0.0
+                  next_body["radius"] = b["radius"] as float64
+                  next_body["width"] = b["width"] as float64
+                  next_body["height"] = b["height"] as float64
+                  next_body["restitution"] = b["restitution"] as float64
+                  next_body["friction"] = b["friction"] as float64
+
+                  body_count = body_count + 1
+                  updated_bodies[body_count] = next_body
+            }
+
+            emit(nice, updated_bodies, "ok")
+      }
+
+      op physRaycast (as list of data: bodies, as list of data: origin, as list of data: direction, as float64: max_dist) as map ==> {
+            mut as float64: ox = origin[1] as float64
+            mut as float64: oy = origin[2] as float64
+            mut as float64: dx = direction[1] as float64
+            mut as float64: dy = direction[2] as float64
+
+            #L Normalizar direcao do raio
+            mut as float64: dlen_sq = (dx * dx) + (dy * dy)
+            route {
+                  dlen_sq == 0.0 ==> {
+                        mut as map: miss = map{}
+                        miss["hit"] = false
+                        miss["body_id"] = -1.0
+                        miss["distance"] = max_dist
+                        miss["hit_x"] = ox
+                        miss["hit_y"] = oy
+                        emit(nice, miss, "ok")
+                  }
+            }
+            mut as float64: dlen = dlen_sq ^e 0.5
+            dx = dx /f dlen
+            dy = dy /f dlen
+
+            mut as float64: closest_t = max_dist + 1.0
+            mut as float64: hit_id = -1.0
+            mut as float64: hit_x = ox
+            mut as float64: hit_y = oy
+            mut as bool: has_hit = false
+
+            infinite (body in bodies) {
+                  mut as map: b = body as map
+                  mut as string: btype = b["type"] as string
+                  mut as float64: cx = b["px"] as float64
+                  mut as float64: cy = b["py"] as float64
+
+                  #L Interseccao Raio com Circulo
+                  route {
+                        btype == "circle" ==> {
+                              mut as float64: cr = b["radius"] as float64
+                              mut as float64: ex = cx - ox
+                              mut as float64: ey = cy - oy
+                              mut as float64: tca = (ex * dx) + (ey * dy)
+                              route {
+                                    tca >= 0.0 ==> {
+                                          mut as float64: d2 = ((ex * ex) + (ey * ey)) - (tca * tca)
+                                          mut as float64: r2 = cr * cr
+                                          route {
+                                                d2 <= r2 ==> {
+                                                      mut as float64: thc = (r2 - d2) ^e 0.5
+                                                      mut as float64: t0 = tca - thc
+                                                      route {
+                                                            t0 >= 0.0 and t0 <= max_dist and t0 < closest_t ==> {
+                                                                  closest_t = t0
+                                                                  hit_id = b["id"] as float64
+                                                                  hit_x = ox + (dx * t0)
+                                                                  hit_y = oy + (dy * t0)
+                                                                  has_hit = true
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            route {
+                  has_hit ==> {
+                        mut as map: hit_res = map{}
+                        hit_res["hit"] = true
+                        hit_res["body_id"] = hit_id
+                        hit_res["distance"] = closest_t
+                        hit_res["hit_x"] = hit_x
+                        hit_res["hit_y"] = hit_y
+                        emit(nice, hit_res, "ok")
+                  }
+            }
+
+            mut as map: default_miss = map{}
+            default_miss["hit"] = false
+            default_miss["body_id"] = -1.0
+            default_miss["distance"] = max_dist
+            default_miss["hit_x"] = ox + (dx * max_dist)
+            default_miss["hit_y"] = oy + (dy * max_dist)
+            emit(nice, default_miss, "ok")
+      }
+}

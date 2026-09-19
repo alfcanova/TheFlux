@@ -34,6 +34,11 @@ def _declared_enums(ast: ASTNode) -> dict[str, EnumDef]:
     for node in _walk(ast):
         if isinstance(node, EnumDef):
             enums[node.name] = node
+    for fdsl in getattr(ast, "imports", {}).values():
+        if fdsl is None:
+            continue
+        for e in getattr(fdsl, "enums", []):
+            enums[e.name] = e
     return enums
 
 

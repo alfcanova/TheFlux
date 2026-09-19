@@ -1,11 +1,11 @@
-use OOStdLib
+use OoStdLib
 
 struct (MotorEletrico) {
       mut: .potencia_cv: int64
       mut: .rpm: int64
 }
 
-program (ExampleOfUseOOStdLib_OODispatchContract) {
+program (ExampleOfUseOoStdLib_OODispatchContract) {
       println("==================================================")
       println("  Exemplo: OODispatchContract (Despacho Dinamico)")
       println("==================================================")

@@ -2504,6 +2504,13 @@ class LLVMCodegen:
                     self._collect_called_ops(expr)
         self._structs = {s.name: s for s in program.structs}
         self._enums = {e.name: e for e in program.enums}
+        for fdsl in self._imports.values():
+            if fdsl is None:
+                continue
+            for s in getattr(fdsl, "structs", []):
+                self._structs[s.name] = s
+            for e in getattr(fdsl, "enums", []):
+                self._enums[e.name] = e
         self._function_names = {f.name for f in program.functions}
         self._function_sigs = {
             f.name: [_llvm_type(p.type_ref.name if p.type_ref else "int64") for p in f.params]
@@ -2516,7 +2523,10 @@ class LLVMCodegen:
         for op_name in self._used_op_names:
             op = self._op_defs[op_name]
             self._function_names.add(op_name)
-            self._function_sigs[op_name] = [_llvm_type(p.type_ref.name if p.type_ref else "int64") for p in op.params]
+            self._function_sigs[op_name] = [
+                ("i64" if (p.type_ref and p.type_ref.name in self._enums) else _llvm_type(p.type_ref.name if p.type_ref else "int64"))
+                for p in op.params
+            ]
             rtype = op.return_type.name if op.return_type else "data"
             if rtype in ("data", "") and op.body:
                 for expr in op.body.expressions:
@@ -3166,50 +3176,53 @@ class LLVMCodegen:
                 return parent["fields"].get(node.field)
         return None
 
+    def _emit_struct_from_buf(self, s: str, slots: dict) -> None:
+        sdef = self._structs[slots["sname"]]
+        for f in sdef.fields:
+            if f.name in slots["fields"]:
+                target = slots["fields"][f.name]
+                fname_gep = self._gep_of_string(f.name)
+                fstr = self._w.new_local(f"fstr_{f.name}")
+                self._w.emit(f"{fstr} = call i8* @flux_extract_struct_field(i8* {s}, i8* {fname_gep})")
+                if isinstance(target, dict):
+                    self._emit_struct_from_buf(fstr, target)
+                else:
+                    ptr, llvm_t, ft = target
+                    if ft == "string":
+                        self._w.emit(f"store i8* {fstr}, i8** {ptr}")
+                    elif ft in FLOATISH:
+                        fd = self._w.new_local(f"fd_{f.name}")
+                        self._w.emit(f"{fd} = call double @strtod(i8* {fstr}, i8** null)")
+                        if llvm_t == "float":
+                            ff = self._w.new_local(f"ff_{f.name}")
+                            self._w.emit(f"{ff} = fptrunc double {fd} to float")
+                            self._w.emit(f"store float {ff}, float* {ptr}")
+                        else:
+                            self._w.emit(f"store double {fd}, double* {ptr}")
+                    elif ft == "bool":
+                        t_gep = self._gep_of_string("true")
+                        cmp_r = self._w.new_local(f"fcmp_{f.name}")
+                        self._w.emit(f"{cmp_r} = call i32 @strcmp(i8* {fstr}, i8* {t_gep})")
+                        fb = self._w.new_local(f"fb_{f.name}")
+                        self._w.emit(f"{fb} = icmp eq i32 {cmp_r}, 0")
+                        self._w.emit(f"store i1 {fb}, i1* {ptr}")
+                    else:
+                        fi = self._w.new_local(f"fi_{f.name}")
+                        self._w.emit(f"{fi} = call i64 @atoll(i8* {fstr})")
+                        if llvm_t != "i64":
+                            fitr = self._w.new_local(f"fitr_{f.name}")
+                            self._w.emit(f"{fitr} = trunc i64 {fi} to {llvm_t}")
+                            self._w.emit(f"store {llvm_t} {fitr}, {llvm_t}* {ptr}")
+                        else:
+                            self._w.emit(f"store i64 {fi}, i64* {ptr}")
+
     def _emit_struct_into(self, init: ASTNode | None, slots: dict) -> None:
         if init is None:
             return
         if not isinstance(init, StructInit):
             val, t = self._emit_expr_text(init)
             s = self._coerce_to(val, t, "i8*")
-            sdef = self._structs[slots["sname"]]
-            for f in sdef.fields:
-                if f.name in slots["fields"]:
-                    target = slots["fields"][f.name]
-                    fname_gep = self._gep_of_string(f.name)
-                    fstr = self._w.new_local(f"fstr_{f.name}")
-                    self._w.emit(f"{fstr} = call i8* @flux_extract_struct_field(i8* {s}, i8* {fname_gep})")
-                    if isinstance(target, dict):
-                        pass
-                    else:
-                        ptr, llvm_t, ft = target
-                        if ft == "string":
-                            self._w.emit(f"store i8* {fstr}, i8** {ptr}")
-                        elif ft in FLOATISH:
-                            fd = self._w.new_local(f"fd_{f.name}")
-                            self._w.emit(f"{fd} = call double @strtod(i8* {fstr}, i8** null)")
-                            if llvm_t == "float":
-                                ff = self._w.new_local(f"ff_{f.name}")
-                                self._w.emit(f"{ff} = fptrunc double {fd} to float")
-                                self._w.emit(f"store float {ff}, float* {ptr}")
-                            else:
-                                self._w.emit(f"store double {fd}, double* {ptr}")
-                        elif ft == "bool":
-                            t_gep = self._gep_of_string("true")
-                            cmp_r = self._w.new_local(f"fcmp_{f.name}")
-                            self._w.emit(f"{cmp_r} = call i32 @strcmp(i8* {fstr}, i8* {t_gep})")
-                            fb = self._w.new_local(f"fb_{f.name}")
-                            self._w.emit(f"{fb} = icmp eq i32 {cmp_r}, 0")
-                            self._w.emit(f"store i1 {fb}, i1* {ptr}")
-                        else:
-                            fi = self._w.new_local(f"fi_{f.name}")
-                            self._w.emit(f"{fi} = call i64 @atoll(i8* {fstr})")
-                            if llvm_t != "i64":
-                                fitr = self._w.new_local(f"fitr_{f.name}")
-                                self._w.emit(f"{fitr} = trunc i64 {fi} to {llvm_t}")
-                                self._w.emit(f"store {llvm_t} {fitr}, {llvm_t}* {ptr}")
-                            else:
-                                self._w.emit(f"store i64 {fi}, i64* {ptr}")
+            self._emit_struct_from_buf(s, slots)
             return
         sdef = self._structs.get(init.name)
         if sdef is None:
@@ -3555,8 +3568,6 @@ class LLVMCodegen:
         if node.name in self._struct_slots:
             if node.op != "=":
                 raise CodegenError(f"operator '{node.op}' not supported on struct '{node.name}'")
-            if not isinstance(node.value, StructInit):
-                raise CodegenError(f"struct '{node.name}' requires a StructInit value")
             self._emit_struct_into(node.value, self._struct_slots[node.name])
             return
         if node.name in self._enum_slots:
@@ -3659,10 +3670,10 @@ class LLVMCodegen:
             self._w.emit(f"store i64 {v64}, i64* {a}")
             self._w.emit(f"store i8* {sv}, i8** {sval_a}")
             return
-        val_ll, val_t = self._gen_expr(node.value)
         if node.name in self._globals:
             g_t, gv, ft2 = self._globals[node.name]
             if node.op and node.op != "=":
+                val_ll, val_t = self._gen_expr(node.value)
                 comp = node.op[1:]
                 if comp == "~":
                     cur = self._w.new_local()
@@ -3685,17 +3696,21 @@ class LLVMCodegen:
                         self._result_ret_types[node.name] = self._function_ret.get(cname, "")
                         raw_val, _ = self._emit_raw_call(node.value)
                         self._w.emit(f"store {RESULT_TYPE} {raw_val}, {RESULT_TYPE}* {gv}")
-                    elif val_t == RESULT_TYPE:
-                        self._w.emit(f"store {RESULT_TYPE} {val_ll}, {RESULT_TYPE}* {gv}")
                     else:
-                        c_val = self._coerce_to(val_ll, val_t, RESULT_TYPE)
-                        self._w.emit(f"store {RESULT_TYPE} {c_val}, {RESULT_TYPE}* {gv}")
+                        val_ll, val_t = self._gen_expr(node.value)
+                        if val_t == RESULT_TYPE:
+                            self._w.emit(f"store {RESULT_TYPE} {val_ll}, {RESULT_TYPE}* {gv}")
+                        else:
+                            c_val = self._coerce_to(val_ll, val_t, RESULT_TYPE)
+                            self._w.emit(f"store {RESULT_TYPE} {c_val}, {RESULT_TYPE}* {gv}")
                 else:
+                    val_ll, val_t = self._gen_expr(node.value)
                     val_ll = self._coerce_to(val_ll, val_t, g_t)
                     if g_t == "double":
                         val_ll = self._round_double(val_ll, ft2)
                     self._w.emit(f"store {g_t} {val_ll}, {g_t}* {gv}")
         else:
+            val_ll, val_t = self._gen_expr(node.value)
             a = self._w.new_local(f"s_{node.name}")
             self._w.emit(f"{a} = alloca {val_t}")
             ft = "int64" if val_t == "i64" else ("float64" if val_t in ("double", "float") else "string")
@@ -4258,7 +4273,7 @@ class LLVMCodegen:
     def _gen_struct_slots_to_buf(self, info: dict) -> str:
         sdef = self._structs[info["sname"]]
         buf = self._w.new_local("sbuf")
-        self._w.emit(f"{buf} = alloca i8, i64 1024")
+        self._w.emit(f"{buf} = call i8* @malloc(i64 1024)")
         head = f"{sdef.name}("
         sname_h = self._w.get_string_global(head)
         slen_h = _str_byte_len(head)
@@ -4327,6 +4342,8 @@ class LLVMCodegen:
     def _flux_type_of(self, node: ASTNode) -> str:
         if isinstance(node, Literal):
             return node.value_type
+        if isinstance(node, StructInit):
+            return node.name
         if isinstance(node, SetLiteral):
             if node.items:
                 et = self._flux_type_of(node.items[0])
@@ -4677,7 +4694,9 @@ class LLVMCodegen:
                 return (self._gen_enum_to_buf(node.name), "i8*")
             return self._gen_identifier_text(node)
         if isinstance(node, StructInit):
-            raise CodegenError(f"struct init expression not supported in this context on LLVM target")
+            slots = self._alloc_struct_slots_local(f"tmp_{node.name}", node.name)
+            self._emit_struct_into(node, slots)
+            return (self._gen_struct_slots_to_buf(slots), "i8*")
         if isinstance(node, FieldAccess):
             return self._gen_field_access_text(node)
         if isinstance(node, BinaryOp):
@@ -4926,7 +4945,8 @@ class LLVMCodegen:
         target = self._resolve_struct_slot(node)
         if target is not None:
             if isinstance(target, dict):
-                raise CodegenError(f"field access '{node.field}' yielded a struct, not a value")
+                buf = self._gen_struct_slots_to_buf(target)
+                return (buf, "i8*")
             ptr, llvm_t, _ = target
             r = self._w.new_local(f"f{node.field}")
             self._w.emit(f"{r} = load {llvm_t}, {llvm_t}* {ptr}")
@@ -4935,7 +4955,11 @@ class LLVMCodegen:
             slots = self._struct_slots[node.obj.name]
             if node.field not in slots["fields"]:
                 raise CodegenError(f"unknown field '{node.field}' for struct '{node.obj.name}'")
-            ptr, llvm_t, _ = slots["fields"][node.field]
+            target = slots["fields"][node.field]
+            if isinstance(target, dict):
+                buf = self._gen_struct_slots_to_buf(target)
+                return (buf, "i8*")
+            ptr, llvm_t, _ = target
             r = self._w.new_local(f"f{node.field}")
             self._w.emit(f"{r} = load {llvm_t}, {llvm_t}* {ptr}")
             return (r, llvm_t)
@@ -4992,7 +5016,7 @@ class LLVMCodegen:
                         rc = self._w.new_local(f"f{node.field}c")
                         self._w.emit(f"{rc} = trunc i64 {r} to i32")
                         return (rc, "i32")
-                    if _is_string_type(ret_t) or _is_set_type(ret_t) or _is_list_type(ret_t) or _is_map_type(ret_t):
+                    if _is_string_type(ret_t) or _is_set_type(ret_t) or _is_list_type(ret_t) or _is_map_type(ret_t) or ret_t in self._structs:
                         r = self._w.new_local(f"f{node.field}")
                         self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {res_val}, 1")
                         rp = self._w.new_local(f"f{node.field}p")
@@ -5032,7 +5056,7 @@ class LLVMCodegen:
                         rc = self._w.new_local(f"f{node.field}c")
                         self._w.emit(f"{rc} = trunc i64 {rf} to i32")
                         return (rc, "i32")
-                    if _is_string_type(ret) or _is_set_type(ret) or _is_list_type(ret) or _is_map_type(ret):
+                    if _is_string_type(ret) or _is_set_type(ret) or _is_list_type(ret) or _is_map_type(ret) or ret in self._structs:
                         rf = self._w.new_local(f"f{node.field}")
                         self._w.emit(f"{rf} = extractvalue {RESULT_TYPE} {r}, 1")
                         rp = self._w.new_local(f"f{node.field}p")
@@ -5064,7 +5088,7 @@ class LLVMCodegen:
                     rb = self._w.new_local(f"f{node.field}b")
                     self._w.emit(f"{rb} = icmp ne i64 {r}, 0")
                     return (rb, "i1")
-                if _is_string_type(ret) or _is_set_type(ret) or _is_list_type(ret) or _is_map_type(ret):
+                if _is_string_type(ret) or _is_set_type(ret) or _is_list_type(ret) or _is_map_type(ret) or ret in self._structs:
                     r = self._w.new_local(f"f{node.field}")
                     self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {val}, 1")
                     rp = self._w.new_local(f"f{node.field}p")
@@ -6646,8 +6670,13 @@ class LLVMCodegen:
             self._w.emit(f"{iz} = icmp eq {elem_t} {val}, 0")
             return (iz, "i1")
         if node.op == "~":
+            if t == "i128":
+                r = self._w.new_local()
+                self._w.emit(f"{r} = xor i128 {val}, -1")
+                return (r, "i128")
+            v64 = self._coerce_to(val, t, "i64")
             r = self._w.new_local()
-            self._w.emit(f"{r} = xor i64 {val}, -1")
+            self._w.emit(f"{r} = xor i64 {v64}, -1")
             return (r, "i64")
         return (val, t)
 
@@ -6717,25 +6746,51 @@ class LLVMCodegen:
             return (val, t)
         if target_name in FLOAT_FORMATS:
             if isinstance(expr, IndexAccess):
-                iov, iott = self._emit_expr_text(expr.obj)
-                iovv = self._coerce_to(iov, iott, "i8*")
-                iiv, iit = self._emit_expr_text(expr.indices[0])
-                iivv = self._coerce_to(iiv, iit, "i64")
-                data = self._w.new_local("ldata")
-                self._w.emit(f"{data} = call i8* @flux_list_data(i8* {iovv})")
-                tag = self._w.new_local("rtag")
-                self._w.emit(f"{tag} = call i64 @flux_row_tag(i8* {data}, i64 {iivv})")
-                ival = self._w.new_local("ival")
-                self._w.emit(f"{ival} = call i64 @flux_row_val(i8* {data}, i64 {iivv})")
-                is_flt = self._w.new_local("is_flt")
-                self._w.emit(f"{is_flt} = icmp eq i64 {tag}, 3")
-                d_bc = self._w.new_local("d_bc")
-                self._w.emit(f"{d_bc} = bitcast i64 {ival} to double")
-                d_si = self._w.new_local("d_si")
-                self._w.emit(f"{d_si} = sitofp i64 {ival} to double")
-                d_val = self._w.new_local("d_val")
-                self._w.emit(f"{d_val} = select i1 {is_flt}, double {d_bc}, double {d_si}")
-                dv = d_val
+                iot = self._flux_type_of(expr.obj)
+                is_map = _is_map_type(iot)
+                if not is_map and iot in ("data", "result", ""):
+                    if expr.indices and not isinstance(expr.indices[0], SliceSpec):
+                        idx0 = expr.indices[0]
+                        it = self._flux_type_of(idx0)
+                        if _is_string_type(it) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)):
+                            is_map = True
+                if is_map:
+                    iov, iott = self._emit_expr_text(expr.obj)
+                    iovv = self._coerce_to(iov, iott, "i8*")
+                    ik = self._map_key_text(expr.indices[0])
+                    tag = self._w.new_local("mtag")
+                    self._w.emit(f"{tag} = call i64 @flux_map_get_tag(i8* {iovv}, i8* {ik})")
+                    ival = self._w.new_local("mval")
+                    self._w.emit(f"{ival} = call i64 @flux_map_get(i8* {iovv}, i8* {ik})")
+                    is_flt = self._w.new_local("is_flt")
+                    self._w.emit(f"{is_flt} = icmp eq i64 {tag}, 3")
+                    d_bc = self._w.new_local("d_bc")
+                    self._w.emit(f"{d_bc} = bitcast i64 {ival} to double")
+                    d_si = self._w.new_local("d_si")
+                    self._w.emit(f"{d_si} = sitofp i64 {ival} to double")
+                    d_val = self._w.new_local("d_val")
+                    self._w.emit(f"{d_val} = select i1 {is_flt}, double {d_bc}, double {d_si}")
+                    dv = d_val
+                else:
+                    iov, iott = self._emit_expr_text(expr.obj)
+                    iovv = self._coerce_to(iov, iott, "i8*")
+                    iiv, iit = self._emit_expr_text(expr.indices[0])
+                    iivv = self._coerce_to(iiv, iit, "i64")
+                    data = self._w.new_local("ldata")
+                    self._w.emit(f"{data} = call i8* @flux_list_data(i8* {iovv})")
+                    tag = self._w.new_local("rtag")
+                    self._w.emit(f"{tag} = call i64 @flux_row_tag(i8* {data}, i64 {iivv})")
+                    ival = self._w.new_local("ival")
+                    self._w.emit(f"{ival} = call i64 @flux_row_val(i8* {data}, i64 {iivv})")
+                    is_flt = self._w.new_local("is_flt")
+                    self._w.emit(f"{is_flt} = icmp eq i64 {tag}, 3")
+                    d_bc = self._w.new_local("d_bc")
+                    self._w.emit(f"{d_bc} = bitcast i64 {ival} to double")
+                    d_si = self._w.new_local("d_si")
+                    self._w.emit(f"{d_si} = sitofp i64 {ival} to double")
+                    d_val = self._w.new_local("d_val")
+                    self._w.emit(f"{d_val} = select i1 {is_flt}, double {d_bc}, double {d_si}")
+                    dv = d_val
             elif isinstance(expr, Identifier) and expr.name in self._var_tag_slots:
                 tag_ptr = self._var_tag_slots[expr.name]
                 tag = self._w.new_local("rtag")
@@ -6774,6 +6829,12 @@ class LLVMCodegen:
                 f"i64 {mant}, i64 {emin}, i64 {emax}, i64 {allow_inf})"
             )
             return (r, "double")
+        if target_name in self._structs:
+            if t == "i64":
+                r = self._w.new_local("s_ptr")
+                self._w.emit(f"{r} = inttoptr i64 {val} to i8*")
+                return (r, "i8*")
+            return (self._coerce_to(val, t, "i8*"), "i8*")
         tl = _TYPE_MAP.get(target_name)
         if tl is None:
             raise CodegenError(f"unsupported cast target '{target_name}'")
@@ -6799,27 +6860,55 @@ class LLVMCodegen:
             return (self._coerce_to(val, t, "double"), "double")
         if tl == "i8*":
             if isinstance(expr, IndexAccess):
-                iov, iott = self._emit_expr_text(expr.obj)
-                iovv = self._coerce_to(iov, iott, "i8*")
-                iiv, iit = self._emit_expr_text(expr.indices[0])
-                iivv = self._coerce_to(iiv, iit, "i64")
-                data = self._w.new_local("ldata")
-                self._w.emit(f"{data} = call i8* @flux_list_data(i8* {iovv})")
-                tag = self._w.new_local("rtag")
-                self._w.emit(f"{tag} = call i64 @flux_row_tag(i8* {data}, i64 {iivv})")
-                ival = self._w.new_local("ival")
-                self._w.emit(f"{ival} = call i64 @flux_row_val(i8* {data}, i64 {iivv})")
-                sval = self._w.new_local("sval")
-                self._w.emit(f"{sval} = call i8* @flux_row_sval(i8* {data}, i64 {iivv})")
-                is_str = self._w.new_local("is_str")
-                self._w.emit(f"{is_str} = icmp eq i64 {tag}, 4")
-                buf = self._w.new_local("sbuf")
-                self._w.emit(f"{buf} = call i8* @malloc(i64 64)")
-                dstr = self._w.new_local("dstr")
-                self._w.emit(f"{dstr} = call i8* @flux_data_to_str(i64 {ival}, i64 {tag}, i8* {buf})")
-                res_str = self._w.new_local("res_str")
-                self._w.emit(f"{res_str} = select i1 {is_str}, i8* {sval}, i8* {dstr}")
-                return (res_str, "i8*")
+                iot = self._flux_type_of(expr.obj)
+                is_map = _is_map_type(iot)
+                if not is_map and iot in ("data", "result", ""):
+                    if expr.indices and not isinstance(expr.indices[0], SliceSpec):
+                        idx0 = expr.indices[0]
+                        it = self._flux_type_of(idx0)
+                        if _is_string_type(it) or (isinstance(idx0, Literal) and _is_string_type(idx0.value_type)):
+                            is_map = True
+                if is_map:
+                    iov, iott = self._emit_expr_text(expr.obj)
+                    iovv = self._coerce_to(iov, iott, "i8*")
+                    ik = self._map_key_text(expr.indices[0])
+                    tag = self._w.new_local("mtag")
+                    self._w.emit(f"{tag} = call i64 @flux_map_get_tag(i8* {iovv}, i8* {ik})")
+                    ival = self._w.new_local("mval")
+                    self._w.emit(f"{ival} = call i64 @flux_map_get(i8* {iovv}, i8* {ik})")
+                    sval = self._w.new_local("msp")
+                    self._w.emit(f"{sval} = inttoptr i64 {ival} to i8*")
+                    is_str = self._w.new_local("is_str")
+                    self._w.emit(f"{is_str} = icmp eq i64 {tag}, 4")
+                    buf = self._w.new_local("sbuf")
+                    self._w.emit(f"{buf} = call i8* @malloc(i64 64)")
+                    dstr = self._w.new_local("dstr")
+                    self._w.emit(f"{dstr} = call i8* @flux_data_to_str(i64 {ival}, i64 {tag}, i8* {buf})")
+                    res_str = self._w.new_local("res_str")
+                    self._w.emit(f"{res_str} = select i1 {is_str}, i8* {sval}, i8* {dstr}")
+                    return (res_str, "i8*")
+                else:
+                    iov, iott = self._emit_expr_text(expr.obj)
+                    iovv = self._coerce_to(iov, iott, "i8*")
+                    iiv, iit = self._emit_expr_text(expr.indices[0])
+                    iivv = self._coerce_to(iiv, iit, "i64")
+                    data = self._w.new_local("ldata")
+                    self._w.emit(f"{data} = call i8* @flux_list_data(i8* {iovv})")
+                    tag = self._w.new_local("rtag")
+                    self._w.emit(f"{tag} = call i64 @flux_row_tag(i8* {data}, i64 {iivv})")
+                    ival = self._w.new_local("ival")
+                    self._w.emit(f"{ival} = call i64 @flux_row_val(i8* {data}, i64 {iivv})")
+                    sval = self._w.new_local("sval")
+                    self._w.emit(f"{sval} = call i8* @flux_row_sval(i8* {data}, i64 {iivv})")
+                    is_str = self._w.new_local("is_str")
+                    self._w.emit(f"{is_str} = icmp eq i64 {tag}, 4")
+                    buf = self._w.new_local("sbuf")
+                    self._w.emit(f"{buf} = call i8* @malloc(i64 64)")
+                    dstr = self._w.new_local("dstr")
+                    self._w.emit(f"{dstr} = call i8* @flux_data_to_str(i64 {ival}, i64 {tag}, i8* {buf})")
+                    res_str = self._w.new_local("res_str")
+                    self._w.emit(f"{res_str} = select i1 {is_str}, i8* {sval}, i8* {dstr}")
+                    return (res_str, "i8*")
             if isinstance(expr, Identifier) and expr.name in self._var_tag_slots:
                 tag_ptr = self._var_tag_slots[expr.name]
                 tag = self._w.new_local("rtag")
@@ -6965,7 +7054,19 @@ class LLVMCodegen:
             sig = self._function_sigs.get(name, [])
             op = self._op_defs.get(name)
             for i, a in enumerate(node.args):
-                v, t = self._emit_expr_text(a)
+                p_t = sig[i] if i < len(sig) else "i64"
+                if p_t == "i64" and isinstance(a, Identifier) and a.name in self._enum_slots:
+                    info = self._enum_slots[a.name]
+                    tptr, _ = info["slots"]["tag"]
+                    tagv = self._w.new_local("arg_etag")
+                    self._w.emit(f"{tagv} = load i64, i64* {tptr}")
+                    v, t = (tagv, "i64")
+                elif p_t == "i64" and isinstance(a, EnumVariant) and a.enum_name in self._enums:
+                    edef = self._enums[a.enum_name]
+                    tag = self._enum_tag(edef, a.variant)
+                    v, t = (str(tag), "i64")
+                else:
+                    v, t = self._emit_expr_text(a)
                 p_t = sig[i] if i < len(sig) else "i64"
                 ft_arg = self._flux_type_of(a)
                 is_data = op is not None and i < len(op.params) and op.params[i].type_ref and op.params[i].type_ref.name == "data"
@@ -8205,6 +8306,8 @@ class LLVMCodegen:
         saved_pt = self._param_tag_slots
         saved_tag_slots = self._var_tag_slots.copy()
         saved_sval_slots = self._var_sval_slots.copy()
+        saved_struct_slots = self._struct_slots.copy()
+        saved_enum_slots = self._enum_slots.copy()
         saved_ret_type = getattr(self, "_current_ret_type", "")
         self._loop_break = None
         self._loop_continue = None
@@ -8228,6 +8331,57 @@ class LLVMCodegen:
                 val = self._round_double(val, ptype)
             self._w.emit(f"store {p_t} {val}, {p_t}* {a}")
             self._globals[p.name] = (p_t, a, ptype)
+            if p.type_ref and p.type_ref.name in self._structs:
+                slots = self._alloc_struct_slots_local(f"p_{p.name}", p.type_ref.name)
+                self._struct_slots[p.name] = slots
+                sdef = self._structs[p.type_ref.name]
+                for f in sdef.fields:
+                    if f.name in slots["fields"]:
+                        target = slots["fields"][f.name]
+                        fname_gep = self._gep_of_string(f.name)
+                        fstr = self._w.new_local(f"fstr_{p.name}_{f.name}")
+                        self._w.emit(f"{fstr} = call i8* @flux_extract_struct_field(i8* {val}, i8* {fname_gep})")
+                        if not isinstance(target, dict):
+                            ptr, llvm_t, ft = target
+                            if ft == "string":
+                                self._w.emit(f"store i8* {fstr}, i8** {ptr}")
+                            elif ft in FLOATISH:
+                                fd = self._w.new_local(f"fd_{p.name}_{f.name}")
+                                self._w.emit(f"{fd} = call double @strtod(i8* {fstr}, i8** null)")
+                                if llvm_t == "float":
+                                    ff = self._w.new_local(f"ff_{p.name}_{f.name}")
+                                    self._w.emit(f"{ff} = fptrunc double {fd} to float")
+                                    self._w.emit(f"store float {ff}, float* {ptr}")
+                                else:
+                                    self._w.emit(f"store double {fd}, double* {ptr}")
+                            elif ft == "bool":
+                                fb = self._w.new_local(f"fb_{p.name}_{f.name}")
+                                str_true = self._gep_of_string("true")
+                                scmp = self._w.new_local(f"scmp_{p.name}_{f.name}")
+                                self._w.emit(f"{scmp} = call i32 @strcmp(i8* {fstr}, i8* {str_true})")
+                                self._w.emit(f"{fb} = icmp eq i32 {scmp}, 0")
+                                self._w.emit(f"store i1 {fb}, i1* {ptr}")
+                            else:
+                                fi = self._w.new_local(f"fi_{p.name}_{f.name}")
+                                self._w.emit(f"{fi} = call i64 @atoll(i8* {fstr})")
+                                if llvm_t == "i32":
+                                    fi32 = self._w.new_local(f"fi32_{p.name}_{f.name}")
+                                    self._w.emit(f"{fi32} = trunc i64 {fi} to i32")
+                                    self._w.emit(f"store i32 {fi32}, i32* {ptr}")
+                                else:
+                                    self._w.emit(f"store i64 {fi}, i64* {ptr}")
+            if p.type_ref and p.type_ref.name in self._enums:
+                edef = self._enums[p.type_ref.name]
+                layout = self._enum_layout(edef)
+                tag_ptr = self._w.new_local(f"e_{p.name}_tag")
+                self._w.emit(f"{tag_ptr} = alloca i64")
+                self._w.emit(f"store i64 {val}, i64* {tag_ptr}")
+                eslots: dict = {"tag": (tag_ptr, "i64"), "fields": {}}
+                for fname, (llvm_t, ft) in layout["fields"].items():
+                    a_field = self._w.new_local(f"e_{p.name}_{fname}")
+                    self._w.emit(f"{a_field} = alloca {llvm_t}")
+                    eslots["fields"][fname] = (a_field, llvm_t, ft)
+                self._enum_slots[p.name] = {"kind": "local", "slots": eslots, "enum": edef.name}
             if p.type_ref and p.type_ref.name == "data":
                 self._param_tag_slots[p.name] = f"%{len(sig) + k}"
                 k += 1
@@ -8239,6 +8393,8 @@ class LLVMCodegen:
                     self._gen_statement(expr)
         finally:
             self._in_op = False
+            self._struct_slots = saved_struct_slots
+            self._enum_slots = saved_enum_slots
         if not self._block_terminated:
             rv = self._w.new_local("retv")
             self._w.emit(f"{rv} = load {RESULT_TYPE}, {RESULT_TYPE}* {frame}")

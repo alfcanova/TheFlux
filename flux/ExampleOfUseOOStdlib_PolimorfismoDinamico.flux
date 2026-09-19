@@ -1,4 +1,4 @@
-use OOStdLib
+use OoStdLib
 
 struct (Cachorro) {
       mut: .nome: string
@@ -10,9 +10,9 @@ struct (Gato) {
       mut: .pelagem: string
 }
 
-program (ExampleOfUseOOStdlib_PolimorfismoDinamico) {
+program (ExampleOfUseOoStdlib_PolimorfismoDinamico) {
       println("==================================================")
-      println("  2.A. Polimorfismo Dinamico via OOStdLib")
+      println("  2.A. Polimorfismo Dinamico via OoStdLib")
       println("==================================================")
 
       mut as Cachorro: rex = Cachorro(.nome: "Rex", .raca: "Pastor Alemao")

@@ -1,5 +1,5 @@
 #L ==============================================================================
-#L TheFlux Standard Library: OOStdLib
+#L TheFlux Standard Library: OoStdLib
 #L Modulo nativo para Orientacao a Objetos, Polimorfismo, Contratos e Tipos Abstratos
 #L Implementacao 100% nativa em TheFlux (sem intrinsicos)
 #L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
@@ -47,7 +47,7 @@ contract (OOLifecycleContract) {
       op ooToString (as data: interface_object) as string
 }
 
-agent (OOStdLib) impl OOValidationContract, OOCastingContract, OODispatchContract, OOIntrospectionContract, OOLifecycleContract {
+agent (OoStdLib) impl OOValidationContract, OOCastingContract, OODispatchContract, OOIntrospectionContract, OOLifecycleContract {
 
       #L ==============================================================================
       #L Funcoes Auxiliares Internas

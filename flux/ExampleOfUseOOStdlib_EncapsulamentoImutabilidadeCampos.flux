@@ -5,7 +5,7 @@ struct (ContaBancaria) {
       mut: .bloqueada: bool
 }
 
-program (ExampleOfUseOOStdlib_EncapsulamentoImutabilidadeCampos) {
+program (ExampleOfUseOoStdlib_EncapsulamentoImutabilidadeCampos) {
       println("==================================================")
       println("  3.A. Encapsulamento: Imutabilidade (imut vs mut)")
       println("==================================================")

@@ -1,11 +1,11 @@
-use OOStdLib
+use OoStdLib
 
 struct (Sensor) {
       mut: .modelo: string
       mut: .leitura: float64
 }
 
-program (ExampleOfUseOOStdLib_OOCastingContract) {
+program (ExampleOfUseOoStdLib_OOCastingContract) {
       println("==================================================")
       println("  Exemplo: OOCastingContract (Upcast e Downcast)")
       println("==================================================")

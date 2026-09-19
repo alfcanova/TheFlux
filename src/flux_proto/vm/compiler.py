@@ -127,6 +127,13 @@ class Compiler:
             for fdsl_file in node.imports.values():
                 if fdsl_file is None:
                     continue
+                for e in getattr(fdsl_file, "enums", []):
+                    self._enums[e.name] = e
+                for s in getattr(fdsl_file, "structs", []):
+                    self._structs[s.name] = s
+            for fdsl_file in node.imports.values():
+                if fdsl_file is None:
+                    continue
                 for agent in fdsl_file.agents:
                     if agent.body:
                         for s in agent.body.storages:

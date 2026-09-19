@@ -849,6 +849,14 @@ class Interpreter:
             self._imports = node.imports
             self._op_aliases = collect_op_aliases(node)
             for fdsl_file in node.imports.values():
+                if fdsl_file is None:
+                    continue
+                for s in getattr(fdsl_file, "structs", []):
+                    self._env.register_struct(s)
+                for e in getattr(fdsl_file, "enums", []):
+                    self._env.register_enum(e)
+                for f in getattr(fdsl_file, "functions", []):
+                    self._env.register_function(f)
                 for agent in fdsl_file.agents:
                     if agent.body:
                         for sdecl in agent.body.storages:

@@ -50,7 +50,7 @@ def _check_storage_item(item: StorageItem, st: SymbolTable, diags: list[Diagnost
 
     base = _collection_base(name)
     if base is not None:
-        _check_collection_item(item, name, base, diags)
+        _check_collection_item(item, name, base, st, diags)
         return
 
     if name in _INT_RANGES:
@@ -90,19 +90,21 @@ def _collection_base(name: str) -> str | None:
     return None
 
 
-def _check_collection_item(item: StorageItem, name: str, base: str, diags: list[Diagnostic]) -> None:
+def _check_collection_item(item: StorageItem, name: str, base: str, st: SymbolTable, diags: list[Diagnostic]) -> None:
     if base in ("list", "set"):
         elem = name[len(base) + 4:]
         if elem not in _BUILTIN_TYPE_NAMES and _collection_base(elem) is None:
-            diags.append(
-                Diagnostic(
-                    code="SEM001",
-                    severity=Severity.ERROR,
-                    line=getattr(item, "line", 0),
-                    column=getattr(item, "column", 0),
-                    message=f"unknown element type '{elem}' in '{name}' declaration of '{item.name}'",
+            sym = st.resolve(elem)
+            if sym is None or sym.kind not in (SymbolKind.STRUCT, SymbolKind.ENUM):
+                diags.append(
+                    Diagnostic(
+                        code="SEM001",
+                        severity=Severity.ERROR,
+                        line=getattr(item, "line", 0),
+                        column=getattr(item, "column", 0),
+                        message=f"unknown element type '{elem}' in '{name}' declaration of '{item.name}'",
+                    )
                 )
-            )
 
 
 def _check_tensor_item(item: StorageItem, name: str, st: SymbolTable, diags: list[Diagnostic]) -> None:

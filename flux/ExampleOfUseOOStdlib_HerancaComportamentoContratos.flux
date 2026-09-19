@@ -1,6 +1,6 @@
-use AgentOfOOStdLib_CachorroMultiContrato
+use AgentOfOoStdLib_CachorroMultiContrato
 
-program (ExampleOfUseOOStdlib_HerancaComportamentoContratos) {
+program (ExampleOfUseOoStdlib_HerancaComportamentoContratos) {
       println("==================================================")
       println("  1.B. Heranca de Comportamento: Contratos Multiplos")
       println("==================================================")

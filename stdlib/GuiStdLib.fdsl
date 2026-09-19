@@ -1,0 +1,524 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Interface Grafica Declarativa Reativa & Immediate Mode GUI (IMGUI)
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas)
+#L Regra: 1-index para humanos e 0-index para maquinas
+#L ==============================================================================
+
+contract (GuiConstantsContract) {
+      #L Constantes Fisicas de Display e Densidade
+      op guiDpiStandard () as float64
+      op guiDpiMacClassic () as float64
+      op guiDpiRetina () as float64
+      op guiMmPerInch () as float64
+
+      #L Constantes Biofisicas de Percepcao Humana e IHC
+      op guiHumanVisualReactionTimeMs () as float64
+      op guiPersistenceOfVisionHz () as float64
+      op guiLatencyInstantFeedbackMs () as float64
+
+      #L Metricas Fisicas Ergonomicas de Design (ISO 9241-9)
+      op guiTouchTargetMinPx () as int64
+      op guiFontSizeDefault () as int64
+      op guiFontSizeHeading () as int64
+      op guiFontSizeTitle () as int64
+      op guiPaddingDefault () as int64
+      op guiItemSpacingDefault () as int64
+}
+
+contract (GuiStateContract) {
+      op guiInitContext (as int64: screen_w, as int64: screen_h) as map
+      op guiCloseContext (as map: ctx) as map
+      op guiContextResetFrame (as map: ctx) as map
+      op guiGetWidgetCount (as map: ctx) as int64
+      op guiGetFrameCount (as map: ctx) as int64
+      op guiGetScreenWidth (as map: ctx) as int64
+      op guiGetScreenHeight (as map: ctx) as int64
+}
+
+contract (GuiThemeContract) {
+      op guiThemeDefault () as map
+      op guiThemeDark () as map
+      op guiThemeLight () as map
+      op guiSetTheme (as map: ctx, as map: theme) as map
+      op guiGetThemeColor (as map: ctx, as string: key) as list of int64
+}
+
+contract (GuiLayoutContract) {
+      op guiLayoutBeginRow (as map: ctx) as map
+      op guiLayoutEndRow (as map: ctx) as map
+      op guiLayoutBeginColumn (as map: ctx) as map
+      op guiLayoutEndColumn (as map: ctx) as map
+      op guiSpacing (as map: ctx, as int64: pixels) as map
+      op guiSameLine (as map: ctx) as map
+      op guiGetCursorX (as map: ctx) as int64
+      op guiGetCursorY (as map: ctx) as int64
+      op guiSetCursor (as map: ctx, as int64: x, as int64: y) as map
+}
+
+contract (GuiWidgetBasicContract) {
+      op guiLabel (as map: ctx, as string: text) as map
+      op guiHeading (as map: ctx, as string: text) as map
+      op guiTitle (as map: ctx, as string: text) as map
+      op guiSeparator (as map: ctx) as map
+      op guiProgressBar (as map: ctx, as float64: fraction, as int64: w, as int64: h) as map
+}
+
+contract (GuiWidgetButtonContract) {
+      op guiButton (as map: ctx, as string: label) as list of data
+      op guiButtonEx (as map: ctx, as string: label, as int64: w, as int64: h) as list of data
+      op guiCheckbox (as map: ctx, as string: label, as bool: active) as list of data
+      op guiRadioButton (as map: ctx, as string: label, as bool: active) as list of data
+}
+
+contract (GuiWidgetInputContract) {
+      op guiInputText (as map: ctx, as string: label, as string: current_text, as int64: max_len) as list of data
+      op guiInputInt (as map: ctx, as string: label, as int64: current_val) as list of data
+      op guiInputFloat (as map: ctx, as string: label, as float64: current_val) as list of data
+}
+
+contract (GuiWidgetSliderContract) {
+      op guiSliderFloat (as map: ctx, as string: label, as float64: val, as float64: min_val, as float64: max_val) as list of data
+      op guiSliderInt (as map: ctx, as string: label, as int64: val, as int64: min_val, as int64: max_val) as list of data
+}
+
+contract (GuiScrollAreaContract) {
+      op guiBeginScrollArea (as map: ctx, as string: area_id, as int64: w, as int64: h) as map
+      op guiEndScrollArea (as map: ctx) as map
+      op guiSetScrollOffsetY (as map: ctx, as string: area_id, as int64: offset_y) as map
+      op guiGetScrollOffsetY (as map: ctx, as string: area_id) as int64
+}
+
+agent (GuiStdLib) impl GuiConstantsContract, GuiStateContract, GuiThemeContract, GuiLayoutContract, GuiWidgetBasicContract, GuiWidgetButtonContract, GuiWidgetInputContract, GuiWidgetSliderContract, GuiScrollAreaContract {
+
+      #L =====================================================================
+      #L Helpers Internos
+      #L =====================================================================
+
+      op _mapHasKey (as map: m, as string: target_key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in m) {
+                  route {
+                        k == target_key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      op _advanceWidget (as map: ctx, as int64: item_w, as int64: item_h) as map ==> {
+            mut as int64: wc = 0
+            route {
+                  _mapHasKey(ctx, "widget_count") ==> {
+                        wc = ctx["widget_count"] as int64
+                  }
+            }
+            ctx["widget_count"] = wc + 1
+
+            mut as bool: in_row = false
+            route {
+                  _mapHasKey(ctx, "in_row") ==> {
+                        in_row = ctx["in_row"] == true
+                  }
+            }
+
+            mut as int64: cx = ctx["cursor_x"] as int64
+            mut as int64: cy = ctx["cursor_y"] as int64
+            mut as int64: spacing = 6
+
+            route {
+                  in_row ==> {
+                        ctx["cursor_x"] = cx + item_w + spacing
+                        mut as int64: max_h = ctx["row_max_h"] as int64
+                        route {
+                              item_h > max_h ==> {
+                                    ctx["row_max_h"] = item_h
+                              }
+                        }
+                  }
+                  _ ==> {
+                        ctx["cursor_y"] = cy + item_h + spacing
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      op _clampFloat (as float64: val, as float64: min_val, as float64: max_val) as float64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      op _clampInt (as int64: val, as int64: min_val, as int64: max_val) as int64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      #L =====================================================================
+      #L 1. GuiConstantsContract
+      #L =====================================================================
+
+      op guiDpiStandard () as float64 ==> { emit(nice, 96.0, "ok") }
+      op guiDpiMacClassic () as float64 ==> { emit(nice, 72.0, "ok") }
+      op guiDpiRetina () as float64 ==> { emit(nice, 192.0, "ok") }
+      op guiMmPerInch () as float64 ==> { emit(nice, 25.4, "ok") }
+
+      op guiHumanVisualReactionTimeMs () as float64 ==> { emit(nice, 200.0, "ok") }
+      op guiPersistenceOfVisionHz () as float64 ==> { emit(nice, 60.0, "ok") }
+      op guiLatencyInstantFeedbackMs () as float64 ==> { emit(nice, 100.0, "ok") }
+
+      op guiTouchTargetMinPx () as int64 ==> { emit(nice, 44, "ok") }
+      op guiFontSizeDefault () as int64 ==> { emit(nice, 14, "ok") }
+      op guiFontSizeHeading () as int64 ==> { emit(nice, 20, "ok") }
+      op guiFontSizeTitle () as int64 ==> { emit(nice, 28, "ok") }
+      op guiPaddingDefault () as int64 ==> { emit(nice, 8, "ok") }
+      op guiItemSpacingDefault () as int64 ==> { emit(nice, 6, "ok") }
+
+      #L =====================================================================
+      #L 2. GuiStateContract
+      #L =====================================================================
+
+      op guiInitContext (as int64: screen_w, as int64: screen_h) as map ==> {
+            mut as map: ctx = map{}
+            ctx["screen_w"] = screen_w
+            ctx["screen_h"] = screen_h
+            ctx["cursor_x"] = 8
+            ctx["cursor_y"] = 8
+            ctx["widget_count"] = 0
+            ctx["frame_count"] = 1
+            ctx["closed"] = false
+            ctx["in_row"] = false
+            ctx["row_start_x"] = 8
+            ctx["row_start_y"] = 8
+            ctx["row_max_h"] = 0
+            ctx["theme"] = guiThemeDefault()
+            emit(nice, ctx, "ok")
+      }
+
+      op guiCloseContext (as map: ctx) as map ==> {
+            ctx["closed"] = true
+            emit(nice, ctx, "ok")
+      }
+
+      op guiContextResetFrame (as map: ctx) as map ==> {
+            ctx["cursor_x"] = 8
+            ctx["cursor_y"] = 8
+            ctx["widget_count"] = 0
+            ctx["in_row"] = false
+            ctx["row_start_x"] = 8
+            ctx["row_start_y"] = 8
+            ctx["row_max_h"] = 0
+            mut as int64: fc = ctx["frame_count"] as int64
+            ctx["frame_count"] = fc + 1
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetWidgetCount (as map: ctx) as int64 ==> {
+            mut as int64: wc = 0
+            route {
+                  _mapHasKey(ctx, "widget_count") ==> {
+                        wc = ctx["widget_count"] as int64
+                  }
+            }
+            emit(nice, wc, "ok")
+      }
+
+      op guiGetFrameCount (as map: ctx) as int64 ==> {
+            mut as int64: fc = 1
+            route {
+                  _mapHasKey(ctx, "frame_count") ==> {
+                        fc = ctx["frame_count"] as int64
+                  }
+            }
+            emit(nice, fc, "ok")
+      }
+
+      op guiGetScreenWidth (as map: ctx) as int64 ==> {
+            mut as int64: w = 0
+            route {
+                  _mapHasKey(ctx, "screen_w") ==> {
+                        w = ctx["screen_w"] as int64
+                  }
+            }
+            emit(nice, w, "ok")
+      }
+
+      op guiGetScreenHeight (as map: ctx) as int64 ==> {
+            mut as int64: h = 0
+            route {
+                  _mapHasKey(ctx, "screen_h") ==> {
+                        h = ctx["screen_h"] as int64
+                  }
+            }
+            emit(nice, h, "ok")
+      }
+
+      #L =====================================================================
+      #L 3. GuiThemeContract
+      #L =====================================================================
+
+      op guiThemeDefault () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [30, 30, 35, 255]
+            t["panel"] = [45, 45, 52, 255]
+            t["primary"] = [0, 120, 215, 255]
+            t["text"] = [240, 240, 240, 255]
+            t["border"] = [70, 70, 80, 255]
+            t["hover"] = [0, 140, 240, 255]
+            emit(nice, t, "ok")
+      }
+
+      op guiThemeDark () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [18, 18, 20, 255]
+            t["panel"] = [28, 28, 32, 255]
+            t["primary"] = [80, 100, 220, 255]
+            t["text"] = [230, 230, 230, 255]
+            t["border"] = [50, 50, 60, 255]
+            t["hover"] = [100, 120, 240, 255]
+            emit(nice, t, "ok")
+      }
+
+      op guiThemeLight () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [245, 245, 247, 255]
+            t["panel"] = [255, 255, 255, 255]
+            t["primary"] = [0, 100, 200, 255]
+            t["text"] = [20, 20, 25, 255]
+            t["border"] = [200, 200, 210, 255]
+            t["hover"] = [30, 130, 230, 255]
+            emit(nice, t, "ok")
+      }
+
+      op guiSetTheme (as map: ctx, as map: theme) as map ==> {
+            ctx["theme"] = theme
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetThemeColor (as map: ctx, as string: key) as list of int64 ==> {
+            mut as map: theme = ctx["theme"] as map
+            mut as list of int64: def_col = [255, 255, 255, 255]
+            route {
+                  _mapHasKey(theme, key) ==> {
+                        emit(nice, theme[key] as list of int64, "ok")
+                  }
+            }
+            emit(nice, def_col, "ok")
+      }
+
+      #L =====================================================================
+      #L 4. GuiLayoutContract
+      #L =====================================================================
+
+      op guiLayoutBeginRow (as map: ctx) as map ==> {
+            ctx["in_row"] = true
+            ctx["row_start_x"] = ctx["cursor_x"] as int64
+            ctx["row_start_y"] = ctx["cursor_y"] as int64
+            ctx["row_max_h"] = 0
+            emit(nice, ctx, "ok")
+      }
+
+      op guiLayoutEndRow (as map: ctx) as map ==> {
+            ctx["in_row"] = false
+            ctx["cursor_x"] = ctx["row_start_x"] as int64
+            mut as int64: sy = ctx["row_start_y"] as int64
+            mut as int64: mh = ctx["row_max_h"] as int64
+            ctx["cursor_y"] = sy + mh + 6
+            ctx["row_max_h"] = 0
+            emit(nice, ctx, "ok")
+      }
+
+      op guiLayoutBeginColumn (as map: ctx) as map ==> {
+            emit(nice, ctx, "ok")
+      }
+
+      op guiLayoutEndColumn (as map: ctx) as map ==> {
+            emit(nice, ctx, "ok")
+      }
+
+      op guiSpacing (as map: ctx, as int64: pixels) as map ==> {
+            mut as bool: in_row = ctx["in_row"] == true
+            route {
+                  in_row ==> {
+                        mut as int64: cx = ctx["cursor_x"] as int64
+                        ctx["cursor_x"] = cx + pixels
+                  }
+                  _ ==> {
+                        mut as int64: cy = ctx["cursor_y"] as int64
+                        ctx["cursor_y"] = cy + pixels
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      op guiSameLine (as map: ctx) as map ==> {
+            ctx["in_row"] = true
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetCursorX (as map: ctx) as int64 ==> {
+            mut as int64: cx = 8
+            route {
+                  _mapHasKey(ctx, "cursor_x") ==> {
+                        cx = ctx["cursor_x"] as int64
+                  }
+            }
+            emit(nice, cx, "ok")
+      }
+
+      op guiGetCursorY (as map: ctx) as int64 ==> {
+            mut as int64: cy = 8
+            route {
+                  _mapHasKey(ctx, "cursor_y") ==> {
+                        cy = ctx["cursor_y"] as int64
+                  }
+            }
+            emit(nice, cy, "ok")
+      }
+
+      op guiSetCursor (as map: ctx, as int64: x, as int64: y) as map ==> {
+            ctx["cursor_x"] = x
+            ctx["cursor_y"] = y
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+      #L 5. GuiWidgetBasicContract
+      #L =====================================================================
+
+      op guiLabel (as map: ctx, as string: text) as map ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            mut as int64: w = len * 8
+            emit(nice, _advanceWidget(ctx, w, 18), "ok")
+      }
+
+      op guiHeading (as map: ctx, as string: text) as map ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            mut as int64: w = len * 11
+            emit(nice, _advanceWidget(ctx, w, 24), "ok")
+      }
+
+      op guiTitle (as map: ctx, as string: text) as map ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            mut as int64: w = len * 15
+            emit(nice, _advanceWidget(ctx, w, 32), "ok")
+      }
+
+      op guiSeparator (as map: ctx) as map ==> {
+            mut as int64: sw = ctx["screen_w"] as int64
+            emit(nice, _advanceWidget(ctx, sw - 16, 2), "ok")
+      }
+
+      op guiProgressBar (as map: ctx, as float64: fraction, as int64: w, as int64: h) as map ==> {
+            emit(nice, _advanceWidget(ctx, w, h), "ok")
+      }
+
+      #L =====================================================================
+      #L 6. GuiWidgetButtonContract
+      #L =====================================================================
+
+      op guiButton (as map: ctx, as string: label) as list of data ==> {
+            mut as int64: len = 0
+            infinite (c in label) { len = len + 1 }
+            mut as int64: w = len * 8 + 24
+            mut as map: new_ctx = _advanceWidget(ctx, w, 28)
+            emit(nice, [new_ctx, true], "ok")
+      }
+
+      op guiButtonEx (as map: ctx, as string: label, as int64: w, as int64: h) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, w, h)
+            emit(nice, [new_ctx, true], "ok")
+      }
+
+      op guiCheckbox (as map: ctx, as string: label, as bool: active) as list of data ==> {
+            mut as int64: len = 0
+            infinite (c in label) { len = len + 1 }
+            mut as int64: w = len * 8 + 26
+            mut as map: new_ctx = _advanceWidget(ctx, w, 20)
+            emit(nice, [new_ctx, not active], "ok")
+      }
+
+      op guiRadioButton (as map: ctx, as string: label, as bool: active) as list of data ==> {
+            mut as int64: len = 0
+            infinite (c in label) { len = len + 1 }
+            mut as int64: w = len * 8 + 26
+            mut as map: new_ctx = _advanceWidget(ctx, w, 20)
+            emit(nice, [new_ctx, true], "ok")
+      }
+
+      #L =====================================================================
+      #L 7. GuiWidgetInputContract
+      #L =====================================================================
+
+      op guiInputText (as map: ctx, as string: label, as string: current_text, as int64: max_len) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, 200, 24)
+            emit(nice, [new_ctx, current_text], "ok")
+      }
+
+      op guiInputInt (as map: ctx, as string: label, as int64: current_val) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, 120, 24)
+            emit(nice, [new_ctx, current_val], "ok")
+      }
+
+      op guiInputFloat (as map: ctx, as string: label, as float64: current_val) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, 120, 24)
+            emit(nice, [new_ctx, current_val], "ok")
+      }
+
+      #L =====================================================================
+      #L 8. GuiWidgetSliderContract
+      #L =====================================================================
+
+      op guiSliderFloat (as map: ctx, as string: label, as float64: val, as float64: min_val, as float64: max_val) as list of data ==> {
+            mut as float64: clamped = _clampFloat(val, min_val, max_val)
+            mut as map: new_ctx = _advanceWidget(ctx, 200, 20)
+            emit(nice, [new_ctx, clamped], "ok")
+      }
+
+      op guiSliderInt (as map: ctx, as string: label, as int64: val, as int64: min_val, as int64: max_val) as list of data ==> {
+            mut as int64: clamped = _clampInt(val, min_val, max_val)
+            mut as map: new_ctx = _advanceWidget(ctx, 200, 20)
+            emit(nice, [new_ctx, clamped], "ok")
+      }
+
+      #L =====================================================================
+      #L 9. GuiScrollAreaContract
+      #L =====================================================================
+
+      op guiBeginScrollArea (as map: ctx, as string: area_id, as int64: w, as int64: h) as map ==> {
+            ctx["scroll_area_active"] = area_id
+            emit(nice, _advanceWidget(ctx, w, h), "ok")
+      }
+
+      op guiEndScrollArea (as map: ctx) as map ==> {
+            ctx["scroll_area_active"] = ""
+            emit(nice, ctx, "ok")
+      }
+
+      op guiSetScrollOffsetY (as map: ctx, as string: area_id, as int64: offset_y) as map ==> {
+            mut as string: k = "scroll_y_" + area_id
+            ctx[k] = offset_y
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetScrollOffsetY (as map: ctx, as string: area_id) as int64 ==> {
+            mut as string: k = "scroll_y_" + area_id
+            mut as int64: sy = 0
+            route {
+                  _mapHasKey(ctx, k) ==> {
+                        sy = ctx[k] as int64
+                  }
+            }
+            emit(nice, sy, "ok")
+      }
+}

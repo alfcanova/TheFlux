@@ -2272,7 +2272,21 @@ char *flux_extract_struct_field(const char *s, const char *field) {
     }
     p += strlen(pattern);
     const char *end = p;
-    while (*end && *end != ')' && !(end[0] == ',' && end[1] == ' ' && end[2] == '.')) {
+    int depth = 0;
+    int in_str = 0;
+    while (*end) {
+        if (*end == '"' && (end == p || *(end - 1) != '\\')) {
+            in_str = !in_str;
+        } else if (!in_str) {
+            if (*end == '(') {
+                depth++;
+            } else if (*end == ')') {
+                if (depth == 0) break;
+                depth--;
+            } else if (*end == ',' && depth == 0 && end[1] == ' ' && end[2] == '.') {
+                break;
+            }
+        }
         end++;
     }
     size_t len = (size_t)(end - p);

@@ -1,4 +1,4 @@
-use AgentOfOOStdLib_PolimorfismoEstatico
+use AgentOfOoStdLib_PolimorfismoEstatico
 
 struct (Cachorro) {
       mut: .nome: string
@@ -10,7 +10,7 @@ struct (Gato) {
       mut: .pelagem: string
 }
 
-program (ExampleOfUseOOStdlib_PolimorfismoEstaticoCompilacao) {
+program (ExampleOfUseOoStdlib_PolimorfismoEstaticoCompilacao) {
       println("==================================================")
       println("  2.B. Polimorfismo Estatico (Zero-Cost / Compilacao)")
       println("==================================================")

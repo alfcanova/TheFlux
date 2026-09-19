@@ -1,0 +1,754 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Motor Grafico Nativo, Renderizacao em Modo Imediato & Optica Visual
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas)
+#L Regra: 1-index para humanos e 0-index para maquinas
+#L ==============================================================================
+
+contract (GfxConstantsContract) {
+      #L Resolucoes Padrao
+      op res720pW () as int64
+      op res720pH () as int64
+      op res1080pW () as int64
+      op res1080pH () as int64
+      op res4kW () as int64
+      op res4kH () as int64
+
+      #L Proporcoes de Tela (Aspect Ratios)
+      op aspect16x9 () as float64
+      op aspect4x3 () as float64
+      op aspect21x9 () as float64
+
+      #L Cores Padrao Canônicas (RGBA)
+      op colorWhite () as list of int64
+      op colorBlack () as list of int64
+      op colorRed () as list of int64
+      op colorGreen () as list of int64
+      op colorBlue () as list of int64
+      op colorYellow () as list of int64
+      op colorMagenta () as list of int64
+      op colorCyan () as list of int64
+      op colorTransparent () as list of int64
+
+      #L Constantes Fisicas: Indice de Refracao (IOR)
+      op gfxIorAir () as float64
+      op gfxIorWater () as float64
+      op gfxIorGlass () as float64
+      op gfxIorDiamond () as float64
+      op gfxIorPolycarbonate () as float64
+
+      #L Constantes Fisicas: Fotometria e Iluminancia (Lux)
+      op gfxLuxDirectSun () as float64
+      op gfxLuxOvercastDay () as float64
+      op gfxLuxOffice () as float64
+      op gfxLuxFullMoon () as float64
+
+      #L Constantes Fisicas: Temperatura de Cor da Luz (Kelvin)
+      op gfxKelvinDaylightD65 () as float64
+      op gfxKelvinTungsten () as float64
+      op gfxKelvinCandle () as float64
+}
+
+contract (GfxStateContract) {
+      op gfxInitContext (as int64: width, as int64: height, as string: title) as map
+      op gfxCloseContext (as map: ctx) as map
+      op gfxContextShouldClose (as map: ctx) as bool
+      op gfxContextWidth (as map: ctx) as int64
+      op gfxContextHeight (as map: ctx) as int64
+      op gfxContextTitle (as map: ctx) as string
+      op gfxContextSetFps (as map: ctx, as int64: fps) as map
+      op gfxContextGetFps (as map: ctx) as int64
+      op gfxContextDrawCalls (as map: ctx) as int64
+      op gfxContextResetDrawCalls (as map: ctx) as map
+      op gfxCheckInBounds (as float64: x, as float64: y, as float64: w, as float64: h, as int64: screen_w, as int64: screen_h) as bool
+}
+
+contract (GfxColorContract) {
+      op gfxColorRgba (as int64: r, as int64: g, as int64: b, as int64: a) as list of int64
+      op gfxColorGetR (as list of int64: c) as int64
+      op gfxColorGetG (as list of int64: c) as int64
+      op gfxColorGetB (as list of int64: c) as int64
+      op gfxColorGetA (as list of int64: c) as int64
+      op gfxColorFromHex (as string: hex_str) as list of int64
+      op gfxColorToHex (as list of int64: color) as string
+      op gfxColorLerp (as list of int64: c1, as list of int64: c2, as float64: t) as list of int64
+      op gfxColorAlpha (as list of int64: color, as float64: alpha) as list of int64
+}
+
+contract (GfxPrimitivesContract) {
+      op gfxClearBackground (as map: ctx, as list of int64: color) as map
+      op gfxDrawRect (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map
+      op gfxDrawRectLines (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map
+      op gfxDrawCircle (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map
+      op gfxDrawCircleLines (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map
+      op gfxDrawLine (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as list of int64: color) as map
+      op gfxDrawTriangle (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as float64: x3, as float64: y3, as list of int64: color) as map
+      op gfxDrawText (as map: ctx, as string: text, as float64: x, as float64: y, as int64: font_size, as list of int64: color) as map
+}
+
+contract (GfxCollisionContract) {
+      op gfxCheckCollisionRecs (as float64: x1, as float64: y1, as float64: w1, as float64: h1, as float64: x2, as float64: y2, as float64: w2, as float64: h2) as bool
+      op gfxCheckCollisionCircles (as float64: c1x, as float64: c1y, as float64: r1, as float64: c2x, as float64: c2y, as float64: r2) as bool
+      op gfxCheckCollisionPointRec (as float64: px, as float64: py, as float64: rx, as float64: ry, as float64: rw, as float64: rh) as bool
+      op gfxCheckCollisionPointCircle (as float64: px, as float64: py, as float64: cx, as float64: cy, as float64: radius) as bool
+}
+
+contract (GfxTextureContract) {
+      op gfxTextureNew (as int64: width, as int64: height) as map
+      op gfxTextureGetWidth (as map: texture) as int64
+      op gfxTextureGetHeight (as map: texture) as int64
+      op gfxTextureIsLoaded (as map: texture) as bool
+      op gfxDrawTexture (as map: ctx, as map: texture, as float64: x, as float64: y) as map
+      op gfxDrawTexturePro (as map: ctx, as map: texture, as float64: sx, as float64: sy, as float64: sw, as float64: sh, as float64: dx, as float64: dy, as float64: dw, as float64: dh, as float64: rotation_deg) as map
+}
+
+contract (GfxCameraContract) {
+      op gfxCamera2DNew (as float64: target_x, as float64: target_y, as float64: offset_x, as float64: offset_y, as float64: rotation_deg, as float64: zoom) as map
+      op gfxWorldToScreen2D (as float64: wx, as float64: wy, as map: camera) as list of float64
+      op gfxScreenToWorld2D (as float64: sx, as float64: sy, as map: camera) as list of float64
+}
+
+contract (GfxOpticsPhysicsContract) {
+      op gfxFresnelSchlick (as float64: cos_theta, as float64: f0) as float64
+      op gfxLightAttenuation (as float64: distance, as float64: constant_term, as float64: linear_term, as float64: quadratic_term) as float64
+      op gfxKelvinToRgb (as float64: kelvin) as list of int64
+      op gfxLuminance (as list of int64: color) as float64
+}
+
+contract (GfxInputContract) {
+      op gfxInputNew () as map
+      op gfxSetInputState (as map: input_state, as string: key_name, as bool: is_down) as map
+      op gfxPollInput (as map: input_state, as string: key_name) as bool
+      op gfxSetMousePosition (as map: input_state, as int64: x, as int64: y) as map
+      op gfxGetMouseX (as map: input_state) as int64
+      op gfxGetMouseY (as map: input_state) as int64
+}
+
+agent (GfxStdLib) impl GfxConstantsContract, GfxStateContract, GfxColorContract, GfxPrimitivesContract, GfxCollisionContract, GfxTextureContract, GfxCameraContract, GfxOpticsPhysicsContract, GfxInputContract {
+
+      #L =====================================================================
+      #L Helpers Internos
+      #L =====================================================================
+
+      op _clampInt (as int64: val, as int64: min_val, as int64: max_val) as int64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      op _clampFloat (as float64: val, as float64: min_val, as float64: max_val) as float64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      op _hexDigit (as int64: v) as string ==> {
+            route {
+                  v == 0 ==> { emit(nice, "0", "ok") }
+                  v == 1 ==> { emit(nice, "1", "ok") }
+                  v == 2 ==> { emit(nice, "2", "ok") }
+                  v == 3 ==> { emit(nice, "3", "ok") }
+                  v == 4 ==> { emit(nice, "4", "ok") }
+                  v == 5 ==> { emit(nice, "5", "ok") }
+                  v == 6 ==> { emit(nice, "6", "ok") }
+                  v == 7 ==> { emit(nice, "7", "ok") }
+                  v == 8 ==> { emit(nice, "8", "ok") }
+                  v == 9 ==> { emit(nice, "9", "ok") }
+                  v == 10 ==> { emit(nice, "A", "ok") }
+                  v == 11 ==> { emit(nice, "B", "ok") }
+                  v == 12 ==> { emit(nice, "C", "ok") }
+                  v == 13 ==> { emit(nice, "D", "ok") }
+                  v == 14 ==> { emit(nice, "E", "ok") }
+                  v == 15 ==> { emit(nice, "F", "ok") }
+                  _ ==> { emit(nice, "0", "ok") }
+            }
+      }
+
+      op _byteToHex (as int64: b) as string ==> {
+            mut as int64: val = b & 255
+            mut as int64: hi = (val >>> 4) & 15
+            mut as int64: lo = val & 15
+            mut as string: res = _hexDigit(hi) + _hexDigit(lo)
+            emit(nice, res, "ok")
+      }
+
+      op _hexCharVal (as string: ch) as int64 ==> {
+            route {
+                  ch == "0" ==> { emit(nice, 0, "ok") }
+                  ch == "1" ==> { emit(nice, 1, "ok") }
+                  ch == "2" ==> { emit(nice, 2, "ok") }
+                  ch == "3" ==> { emit(nice, 3, "ok") }
+                  ch == "4" ==> { emit(nice, 4, "ok") }
+                  ch == "5" ==> { emit(nice, 5, "ok") }
+                  ch == "6" ==> { emit(nice, 6, "ok") }
+                  ch == "7" ==> { emit(nice, 7, "ok") }
+                  ch == "8" ==> { emit(nice, 8, "ok") }
+                  ch == "9" ==> { emit(nice, 9, "ok") }
+                  ch == "A" or ch == "a" ==> { emit(nice, 10, "ok") }
+                  ch == "B" or ch == "b" ==> { emit(nice, 11, "ok") }
+                  ch == "C" or ch == "c" ==> { emit(nice, 12, "ok") }
+                  ch == "D" or ch == "d" ==> { emit(nice, 13, "ok") }
+                  ch == "E" or ch == "e" ==> { emit(nice, 14, "ok") }
+                  ch == "F" or ch == "f" ==> { emit(nice, 15, "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op _mapHasKey (as map: m, as string: target_key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in m) {
+                  route {
+                        k == target_key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      op _incDrawCalls (as map: ctx) as map ==> {
+            mut as int64: dc = 0
+            route {
+                  _mapHasKey(ctx, "draw_calls") ==> {
+                        dc = ctx["draw_calls"] as int64
+                  }
+            }
+            ctx["draw_calls"] = dc + 1
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+      #L 1. GfxConstantsContract
+      #L =====================================================================
+
+      op res720pW () as int64 ==> { emit(nice, 1280, "ok") }
+      op res720pH () as int64 ==> { emit(nice, 720, "ok") }
+      op res1080pW () as int64 ==> { emit(nice, 1920, "ok") }
+      op res1080pH () as int64 ==> { emit(nice, 1080, "ok") }
+      op res4kW () as int64 ==> { emit(nice, 3840, "ok") }
+      op res4kH () as int64 ==> { emit(nice, 2160, "ok") }
+
+      op aspect16x9 () as float64 ==> { emit(nice, 1.7777777777777777, "ok") }
+      op aspect4x3 () as float64 ==> { emit(nice, 1.3333333333333333, "ok") }
+      op aspect21x9 () as float64 ==> { emit(nice, 2.3333333333333335, "ok") }
+
+      op colorWhite () as list of int64 ==> { emit(nice, [255, 255, 255, 255], "ok") }
+      op colorBlack () as list of int64 ==> { emit(nice, [0, 0, 0, 255], "ok") }
+      op colorRed () as list of int64 ==> { emit(nice, [255, 0, 0, 255], "ok") }
+      op colorGreen () as list of int64 ==> { emit(nice, [0, 255, 0, 255], "ok") }
+      op colorBlue () as list of int64 ==> { emit(nice, [0, 0, 255, 255], "ok") }
+      op colorYellow () as list of int64 ==> { emit(nice, [255, 255, 0, 255], "ok") }
+      op colorMagenta () as list of int64 ==> { emit(nice, [255, 0, 255, 255], "ok") }
+      op colorCyan () as list of int64 ==> { emit(nice, [0, 255, 255, 255], "ok") }
+      op colorTransparent () as list of int64 ==> { emit(nice, [0, 0, 0, 0], "ok") }
+
+      op gfxIorAir () as float64 ==> { emit(nice, 1.000293, "ok") }
+      op gfxIorWater () as float64 ==> { emit(nice, 1.333, "ok") }
+      op gfxIorGlass () as float64 ==> { emit(nice, 1.52, "ok") }
+      op gfxIorDiamond () as float64 ==> { emit(nice, 2.417, "ok") }
+      op gfxIorPolycarbonate () as float64 ==> { emit(nice, 1.586, "ok") }
+
+      op gfxLuxDirectSun () as float64 ==> { emit(nice, 100000.0, "ok") }
+      op gfxLuxOvercastDay () as float64 ==> { emit(nice, 1000.0, "ok") }
+      op gfxLuxOffice () as float64 ==> { emit(nice, 500.0, "ok") }
+      op gfxLuxFullMoon () as float64 ==> { emit(nice, 0.25, "ok") }
+
+      op gfxKelvinDaylightD65 () as float64 ==> { emit(nice, 6504.0, "ok") }
+      op gfxKelvinTungsten () as float64 ==> { emit(nice, 2800.0, "ok") }
+      op gfxKelvinCandle () as float64 ==> { emit(nice, 1850.0, "ok") }
+
+      #L =====================================================================
+      #L 2. GfxStateContract
+      #L =====================================================================
+
+      op gfxInitContext (as int64: width, as int64: height, as string: title) as map ==> {
+            mut as map: ctx = map{}
+            ctx["width"] = width
+            ctx["height"] = height
+            ctx["title"] = title
+            ctx["fps"] = 60
+            ctx["closed"] = false
+            ctx["draw_calls"] = 0
+            emit(nice, ctx, "ok")
+      }
+
+      op gfxCloseContext (as map: ctx) as map ==> {
+            ctx["closed"] = true
+            emit(nice, ctx, "ok")
+      }
+
+      op gfxContextShouldClose (as map: ctx) as bool ==> {
+            mut as bool: is_closed = false
+            route {
+                  _mapHasKey(ctx, "closed") ==> {
+                        is_closed = ctx["closed"] == true
+                  }
+            }
+            emit(nice, is_closed, "ok")
+      }
+
+      op gfxContextWidth (as map: ctx) as int64 ==> {
+            mut as int64: w = 0
+            route {
+                  _mapHasKey(ctx, "width") ==> {
+                        w = ctx["width"] as int64
+                  }
+            }
+            emit(nice, w, "ok")
+      }
+
+      op gfxContextHeight (as map: ctx) as int64 ==> {
+            mut as int64: h = 0
+            route {
+                  _mapHasKey(ctx, "height") ==> {
+                        h = ctx["height"] as int64
+                  }
+            }
+            emit(nice, h, "ok")
+      }
+
+      op gfxContextTitle (as map: ctx) as string ==> {
+            mut as string: t = ""
+            route {
+                  _mapHasKey(ctx, "title") ==> {
+                        t = ctx["title"] as string
+                  }
+            }
+            emit(nice, t, "ok")
+      }
+
+      op gfxContextSetFps (as map: ctx, as int64: fps) as map ==> {
+            ctx["fps"] = fps
+            emit(nice, ctx, "ok")
+      }
+
+      op gfxContextGetFps (as map: ctx) as int64 ==> {
+            mut as int64: f = 60
+            route {
+                  _mapHasKey(ctx, "fps") ==> {
+                        f = ctx["fps"] as int64
+                  }
+            }
+            emit(nice, f, "ok")
+      }
+
+      op gfxContextDrawCalls (as map: ctx) as int64 ==> {
+            mut as int64: dc = 0
+            route {
+                  _mapHasKey(ctx, "draw_calls") ==> {
+                        dc = ctx["draw_calls"] as int64
+                  }
+            }
+            emit(nice, dc, "ok")
+      }
+
+      op gfxContextResetDrawCalls (as map: ctx) as map ==> {
+            ctx["draw_calls"] = 0
+            emit(nice, ctx, "ok")
+      }
+
+      op gfxCheckInBounds (as float64: x, as float64: y, as float64: w, as float64: h, as int64: screen_w, as int64: screen_h) as bool ==> {
+            mut as float64: sw = screen_w as float64
+            mut as float64: sh = screen_h as float64
+            route {
+                  x < 0.0 or y < 0.0 or (x + w) > sw or (y + h) > sh ==> {
+                        emit(nice, false, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, true, "ok")
+                  }
+            }
+      }
+
+      #L =====================================================================
+      #L 3. GfxColorContract
+      #L =====================================================================
+
+      op gfxColorRgba (as int64: r, as int64: g, as int64: b, as int64: a) as list of int64 ==> {
+            mut as int64: cr = _clampInt(r, 0, 255)
+            mut as int64: cg = _clampInt(g, 0, 255)
+            mut as int64: cb = _clampInt(b, 0, 255)
+            mut as int64: ca = _clampInt(a, 0, 255)
+            emit(nice, [cr, cg, cb, ca], "ok")
+      }
+
+      op gfxColorGetR (as list of int64: c) as int64 ==> {
+            emit(nice, c[1], "ok")
+      }
+
+      op gfxColorGetG (as list of int64: c) as int64 ==> {
+            emit(nice, c[2], "ok")
+      }
+
+      op gfxColorGetB (as list of int64: c) as int64 ==> {
+            emit(nice, c[3], "ok")
+      }
+
+      op gfxColorGetA (as list of int64: c) as int64 ==> {
+            emit(nice, c[4], "ok")
+      }
+
+      op gfxColorFromHex (as string: hex_str) as list of int64 ==> {
+            mut as string: clean = ""
+            mut as int64: idx = 1
+            route {
+                  hex_str[1] == "#" ==> { idx = 2 }
+            }
+            mut as int64: total_chars = 0
+            infinite (ch in hex_str) {
+                  total_chars = total_chars + 1
+            }
+            mut as int64: r = 0
+            mut as int64: g = 0
+            mut as int64: b = 0
+            mut as int64: a = 255
+            route {
+                  (total_chars - idx + 1) >= 6 ==> {
+                        mut as int64: r_hi = _hexCharVal(hex_str[idx])
+                        mut as int64: r_lo = _hexCharVal(hex_str[idx + 1])
+                        mut as int64: g_hi = _hexCharVal(hex_str[idx + 2])
+                        mut as int64: g_lo = _hexCharVal(hex_str[idx + 3])
+                        mut as int64: b_hi = _hexCharVal(hex_str[idx + 4])
+                        mut as int64: b_lo = _hexCharVal(hex_str[idx + 5])
+                        r = (r_hi << 4) | r_lo
+                        g = (g_hi << 4) | g_lo
+                        b = (b_hi << 4) | b_lo
+                  }
+            }
+            route {
+                  (total_chars - idx + 1) >= 8 ==> {
+                        mut as int64: a_hi = _hexCharVal(hex_str[idx + 6])
+                        mut as int64: a_lo = _hexCharVal(hex_str[idx + 7])
+                        a = (a_hi << 4) | a_lo
+                  }
+            }
+            emit(nice, [r, g, b, a], "ok")
+      }
+
+      op gfxColorToHex (as list of int64: color) as string ==> {
+            mut as string: hr = _byteToHex(color[1])
+            mut as string: hg = _byteToHex(color[2])
+            mut as string: hb = _byteToHex(color[3])
+            mut as string: ha = _byteToHex(color[4])
+            mut as string: res = "#" + hr + hg + hb + ha
+            emit(nice, res, "ok")
+      }
+
+      op gfxColorLerp (as list of int64: c1, as list of int64: c2, as float64: t) as list of int64 ==> {
+            mut as float64: factor = _clampFloat(t, 0.0, 1.0)
+            mut as float64: inv_f = 1.0 - factor
+            mut as float64: r = (c1[1] as float64) * inv_f + (c2[1] as float64) * factor
+            mut as float64: g = (c1[2] as float64) * inv_f + (c2[2] as float64) * factor
+            mut as float64: b = (c1[3] as float64) * inv_f + (c2[3] as float64) * factor
+            mut as float64: a = (c1[4] as float64) * inv_f + (c2[4] as float64) * factor
+            emit(nice, [r as int64, g as int64, b as int64, a as int64], "ok")
+      }
+
+      op gfxColorAlpha (as list of int64: color, as float64: alpha) as list of int64 ==> {
+            mut as float64: a_clamped = _clampFloat(alpha, 0.0, 1.0)
+            mut as int64: a_int = (a_clamped * 255.0) as int64
+            emit(nice, [color[1], color[2], color[3], a_int], "ok")
+      }
+
+      #L =====================================================================
+      #L 4. GfxPrimitivesContract
+      #L =====================================================================
+
+      op gfxClearBackground (as map: ctx, as list of int64: color) as map ==> {
+            ctx["bg_color"] = color
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawRect (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawRectLines (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawCircle (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawCircleLines (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawLine (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawTriangle (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as float64: x3, as float64: y3, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawText (as map: ctx, as string: text, as float64: x, as float64: y, as int64: font_size, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      #L =====================================================================
+      #L 5. GfxCollisionContract
+      #L =====================================================================
+
+      op gfxCheckCollisionRecs (as float64: x1, as float64: y1, as float64: w1, as float64: h1, as float64: x2, as float64: y2, as float64: w2, as float64: h2) as bool ==> {
+            route {
+                  x1 < (x2 + w2) and (x1 + w1) > x2 and y1 < (y2 + h2) and (y1 + h1) > y2 ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op gfxCheckCollisionCircles (as float64: c1x, as float64: c1y, as float64: r1, as float64: c2x, as float64: c2y, as float64: r2) as bool ==> {
+            mut as float64: dx = c1x - c2x
+            mut as float64: dy = c1y - c2y
+            mut as float64: dist_sq = dx * dx + dy * dy
+            mut as float64: rad_sum = r1 + r2
+            mut as float64: rad_sq = rad_sum * rad_sum
+            emit(nice, dist_sq <= rad_sq, "ok")
+      }
+
+      op gfxCheckCollisionPointRec (as float64: px, as float64: py, as float64: rx, as float64: ry, as float64: rw, as float64: rh) as bool ==> {
+            route {
+                  px >= rx and px <= (rx + rw) and py >= ry and py <= (ry + rh) ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op gfxCheckCollisionPointCircle (as float64: px, as float64: py, as float64: cx, as float64: cy, as float64: radius) as bool ==> {
+            mut as float64: dx = px - cx
+            mut as float64: dy = py - cy
+            mut as float64: dist_sq = dx * dx + dy * dy
+            mut as float64: r_sq = radius * radius
+            emit(nice, dist_sq <= r_sq, "ok")
+      }
+
+      #L =====================================================================
+      #L 6. GfxTextureContract
+      #L =====================================================================
+
+      op gfxTextureNew (as int64: width, as int64: height) as map ==> {
+            mut as map: tex = map{}
+            tex["width"] = width
+            tex["height"] = height
+            tex["loaded"] = true
+            emit(nice, tex, "ok")
+      }
+
+      op gfxTextureGetWidth (as map: texture) as int64 ==> {
+            mut as int64: w = 0
+            route {
+                  _mapHasKey(texture, "width") ==> {
+                        w = texture["width"] as int64
+                  }
+            }
+            emit(nice, w, "ok")
+      }
+
+      op gfxTextureGetHeight (as map: texture) as int64 ==> {
+            mut as int64: h = 0
+            route {
+                  _mapHasKey(texture, "height") ==> {
+                        h = texture["height"] as int64
+                  }
+            }
+            emit(nice, h, "ok")
+      }
+
+      op gfxTextureIsLoaded (as map: texture) as bool ==> {
+            mut as bool: l = false
+            route {
+                  _mapHasKey(texture, "loaded") ==> {
+                        l = texture["loaded"] == true
+                  }
+            }
+            emit(nice, l, "ok")
+      }
+
+      op gfxDrawTexture (as map: ctx, as map: texture, as float64: x, as float64: y) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawTexturePro (as map: ctx, as map: texture, as float64: sx, as float64: sy, as float64: sw, as float64: sh, as float64: dx, as float64: dy, as float64: dw, as float64: dh, as float64: rotation_deg) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      #L =====================================================================
+      #L 7. GfxCameraContract
+      #L =====================================================================
+
+      op gfxCamera2DNew (as float64: target_x, as float64: target_y, as float64: offset_x, as float64: offset_y, as float64: rotation_deg, as float64: zoom) as map ==> {
+            mut as map: cam = map{}
+            cam["target_x"] = target_x
+            cam["target_y"] = target_y
+            cam["offset_x"] = offset_x
+            cam["offset_y"] = offset_y
+            cam["rotation"] = rotation_deg
+            mut as float64: z = zoom
+            route {
+                  z <= 0.0 ==> { z = 1.0 }
+            }
+            cam["zoom"] = z
+            emit(nice, cam, "ok")
+      }
+
+      op gfxWorldToScreen2D (as float64: wx, as float64: wy, as map: camera) as list of float64 ==> {
+            mut as float64: tx = camera["target_x"] as float64
+            mut as float64: ty = camera["target_y"] as float64
+            mut as float64: ox = camera["offset_x"] as float64
+            mut as float64: oy = camera["offset_y"] as float64
+            mut as float64: z = camera["zoom"] as float64
+            mut as float64: sx = (wx - tx) * z + ox
+            mut as float64: sy = (wy - ty) * z + oy
+            emit(nice, [sx, sy], "ok")
+      }
+
+      op gfxScreenToWorld2D (as float64: sx, as float64: sy, as map: camera) as list of float64 ==> {
+            mut as float64: tx = camera["target_x"] as float64
+            mut as float64: ty = camera["target_y"] as float64
+            mut as float64: ox = camera["offset_x"] as float64
+            mut as float64: oy = camera["offset_y"] as float64
+            mut as float64: z = camera["zoom"] as float64
+            route {
+                  z <= 0.0 ==> { z = 1.0 }
+            }
+            mut as float64: wx = (sx - ox) /f z + tx
+            mut as float64: wy = (sy - oy) /f z + ty
+            emit(nice, [wx, wy], "ok")
+      }
+
+      #L =====================================================================
+      #L 8. GfxOpticsPhysicsContract
+      #L =====================================================================
+
+      op gfxFresnelSchlick (as float64: cos_theta, as float64: f0) as float64 ==> {
+            mut as float64: c = _clampFloat(cos_theta, 0.0, 1.0)
+            mut as float64: one_minus_c = 1.0 - c
+            mut as float64: p2 = one_minus_c * one_minus_c
+            mut as float64: p4 = p2 * p2
+            mut as float64: p5 = p4 * one_minus_c
+            mut as float64: res = f0 + (1.0 - f0) * p5
+            emit(nice, res, "ok")
+      }
+
+      op gfxLightAttenuation (as float64: distance, as float64: constant_term, as float64: linear_term, as float64: quadratic_term) as float64 ==> {
+            mut as float64: d = distance
+            route {
+                  d < 0.0 ==> { d = 0.0 - d }
+            }
+            mut as float64: denom = constant_term + linear_term * d + quadratic_term * d * d
+            route {
+                  denom <= 0.0 ==> { emit(nice, 1.0, "ok") }
+            }
+            emit(nice, 1.0 /f denom, "ok")
+      }
+
+      op gfxKelvinToRgb (as float64: kelvin) as list of int64 ==> {
+            #L Lookup com interpolacao linear para espectro de corpo negro
+            mut as float64: k = kelvin
+            route {
+                  k <= 1850.0 ==> {
+                        #L Vela ~1850K
+                        emit(nice, [255, 125, 18, 255], "ok")
+                  }
+                  k <= 2800.0 ==> {
+                        #L Tungstenio ~2800K
+                        emit(nice, [255, 166, 87, 255], "ok")
+                  }
+                  k <= 4000.0 ==> {
+                        #L Fluorescente quente
+                        emit(nice, [255, 209, 163, 255], "ok")
+                  }
+                  k <= 5500.0 ==> {
+                        #L Sol pleno meio da manha
+                        emit(nice, [255, 237, 222, 255], "ok")
+                  }
+                  k <= 6504.0 ==> {
+                        #L Padrao D65 Meio-dia
+                        emit(nice, [255, 255, 255, 255], "ok")
+                  }
+                  k <= 8000.0 ==> {
+                        #L Céu azul claro
+                        emit(nice, [205, 222, 255, 255], "ok")
+                  }
+                  _ ==> {
+                        #L Céu azul profundo (>= 10000K)
+                        emit(nice, [181, 205, 255, 255], "ok")
+                  }
+            }
+      }
+
+      op gfxLuminance (as list of int64: color) as float64 ==> {
+            mut as float64: r = (color[1] as float64) /f 255.0
+            mut as float64: g = (color[2] as float64) /f 255.0
+            mut as float64: b = (color[3] as float64) /f 255.0
+            mut as float64: lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            emit(nice, lum, "ok")
+      }
+
+      #L =====================================================================
+      #L 9. GfxInputContract
+      #L =====================================================================
+
+      op gfxInputNew () as map ==> {
+            mut as map: inp = map{}
+            inp["mouse_x"] = 0
+            inp["mouse_y"] = 0
+            emit(nice, inp, "ok")
+      }
+
+      op gfxSetInputState (as map: input_state, as string: key_name, as bool: is_down) as map ==> {
+            mut as string: k = "k_" + key_name
+            input_state[k] = is_down
+            emit(nice, input_state, "ok")
+      }
+
+      op gfxPollInput (as map: input_state, as string: key_name) as bool ==> {
+            mut as string: k = "k_" + key_name
+            mut as bool: down = false
+            route {
+                  _mapHasKey(input_state, k) ==> {
+                        down = input_state[k] == true
+                  }
+            }
+            emit(nice, down, "ok")
+      }
+
+      op gfxSetMousePosition (as map: input_state, as int64: x, as int64: y) as map ==> {
+            input_state["mouse_x"] = x
+            input_state["mouse_y"] = y
+            emit(nice, input_state, "ok")
+      }
+
+      op gfxGetMouseX (as map: input_state) as int64 ==> {
+            mut as int64: mx = 0
+            route {
+                  _mapHasKey(input_state, "mouse_x") ==> {
+                        mx = input_state["mouse_x"] as int64
+                  }
+            }
+            emit(nice, mx, "ok")
+      }
+
+      op gfxGetMouseY (as map: input_state) as int64 ==> {
+            mut as int64: my = 0
+            route {
+                  _mapHasKey(input_state, "mouse_y") ==> {
+                        my = input_state["mouse_y"] as int64
+                  }
+            }
+            emit(nice, my, "ok")
+      }
+}
