@@ -97,6 +97,7 @@ io_stdlib_test_dir/
 .github/
 .mcp/
 .mcp
+.mcp.json
 .opencode/
 .specify/
 graft/
