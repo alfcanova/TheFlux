@@ -95,7 +95,14 @@ io_stdlib_test_dir/
 .agent/
 .gemini/
 .github/
+.mcp/
+.mcp
 .opencode/
 .specify/
+graft/
+openspec/
+opencode.jsonc
+specs/
+
 
 
