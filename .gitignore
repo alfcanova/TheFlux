@@ -89,3 +89,13 @@ io_stdlib_test_dir/
 # Preservar fixture estática indispensável para a suite de testes:
 !io_stdlib_fixture.txt
 
+# ------------------------------------------------------------------------------
+# 7. Agentes de IA, Ferramentas e Configurações Locais
+# ------------------------------------------------------------------------------
+.agent/
+.gemini/
+.github/
+.opencode/
+.specify/
+
+
