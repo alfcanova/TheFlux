@@ -181,8 +181,9 @@ Acesse http://localhost:8000 para editar, compilar e executar TheFlux no browser
 
 ---
 
-## 📄 Licença
 
+
+## 📄 Licença
 Este projeto é desenvolvido para fins de pesquisa e desenvolvimento de linguagens de programação. Consulte a documentação em docs/ para obter detalhes completos da especificação e licença.
 
                GNU GENERAL PUBLIC LICENSE
