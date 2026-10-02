@@ -457,14 +457,25 @@
 | ExampleOfUseStructStdLib_StructCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStructStdLib_StructIntrospectionContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStructStdLib_StructMemoryContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicCoreContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicFormatContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicPolyContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicSolverContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicSubstitutionContract.flux        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
--   IN : ✅  305 of  305 — ✅
--   VM : ✅  305 of  305 — ✅
--  VMR : ✅  305 of  305 — ✅
-- LLVM : ✅  305 of  305 — ✅
--  WAT : ✅  305 of  305 — ✅
-- WASM : ✅  305 of  305 — ✅
--  ALL : ✅ 1830 of 1830 — ✅
+### Tabela de conformidade — página 32
+
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseSymbolicStdLib_SymbolicValidationContract.flux          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+
+-   IN : ✅  311 of  311 — ✅
+-   VM : ✅  311 of  311 — ✅
+-  VMR : ✅  311 of  311 — ✅
+- LLVM : ✅  311 of  311 — ✅
+-  WAT : ✅  311 of  311 — ✅
+- WASM : ✅  311 of  311 — ✅
+-  ALL : ✅ 1866 of 1866 — ✅
 
 ### Regressão:
 

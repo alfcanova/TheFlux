@@ -6,10 +6,10 @@
 ✅							✅ListStdLib					✅								✅NetStdLib
 ✅FileSignatureStdLib		✅MapStdLib						✅StatStdLib					✅OsStdLib
 ✅FormatStdLib				✅RandomStdLib					✅								✅
-✅OoStdLib					✅SetStdLib						⏳								✅
+✅OoStdLib					✅SetStdLib						✅SymbolicStdLib				✅
 ✅RegexStdLib				✅StructStdLib					⏳								⏳
 ✅StringStdLib				⏳								⏳								⏳
 
 DslStdLib					CompressStdLib(Zlib/Gzip)		SimdStdLib(Vetores)				NativeGfxStdLib
-							DbStdLib(Banco Dados)			SymbolicStdLib(Álgebra)			RuntimeStdLib(Metadados)
+							DbStdLib(Banco Dados)											RuntimeStdLib(Metadados)
 																							ThreadStdLib(Threads/Sync)

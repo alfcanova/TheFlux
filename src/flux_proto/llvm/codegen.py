@@ -3203,8 +3203,15 @@ class LLVMCodegen:
                         t_gep = self._gep_of_string("true")
                         cmp_r = self._w.new_local(f"fcmp_{f.name}")
                         self._w.emit(f"{cmp_r} = call i32 @strcmp(i8* {fstr}, i8* {t_gep})")
+                        one_gep = self._gep_of_string("1")
+                        cmp_one = self._w.new_local(f"fcmp_one_{f.name}")
+                        self._w.emit(f"{cmp_one} = call i32 @strcmp(i8* {fstr}, i8* {one_gep})")
+                        fb1 = self._w.new_local(f"fb1_{f.name}")
+                        self._w.emit(f"{fb1} = icmp eq i32 {cmp_r}, 0")
+                        fb2 = self._w.new_local(f"fb2_{f.name}")
+                        self._w.emit(f"{fb2} = icmp eq i32 {cmp_one}, 0")
                         fb = self._w.new_local(f"fb_{f.name}")
-                        self._w.emit(f"{fb} = icmp eq i32 {cmp_r}, 0")
+                        self._w.emit(f"{fb} = or i1 {fb1}, {fb2}")
                         self._w.emit(f"store i1 {fb}, i1* {ptr}")
                     else:
                         fi = self._w.new_local(f"fi_{f.name}")
@@ -4320,6 +4327,21 @@ class LLVMCodegen:
                     fn = self._w.get_string_global(fmt_s)
                     fl = _str_byte_len(fmt_s)
                     self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {fs})")
+                elif ft == "bool":
+                    fmt_s = prefix + "%s"
+                    fn = self._w.get_string_global(fmt_s)
+                    fl = _str_byte_len(fmt_s)
+                    bstr = self._w.new_local(f"bstr_{f.name}")
+                    tn = self._w.get_string_global("true")
+                    tl = _str_byte_len("true")
+                    fn_str = self._w.get_string_global("false")
+                    fl_str = _str_byte_len("false")
+                    self._w.emit(
+                        f"{bstr} = select i1 {fval}, "
+                        f"i8* getelementptr inbounds ([{tl} x i8], [{tl} x i8]* @{tn}, i32 0, i32 0), "
+                        f"i8* getelementptr inbounds ([{fl_str} x i8], [{fl_str} x i8]* @{fn_str}, i32 0, i32 0)"
+                    )
+                    self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {bstr})")
                 else:
                     fmt_s = prefix + "%lld"
                     fn = self._w.get_string_global(fmt_s)

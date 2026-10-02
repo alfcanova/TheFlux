@@ -1231,7 +1231,7 @@ class Interpreter:
             if i < 1 or i > len(items):
                 raise InterpreterError(f"index {i} out of range (1..{len(items)})")
             return _wrap_raw(items[i - 1])
-        if tname == "map" or tname.startswith("map") or (tname == "data" and isinstance(obj.data, dict)):
+        if tname == "map" or tname.startswith("map") or (tname == "data" and isinstance(obj.data, dict)) or isinstance(obj.data, dict):
             key = self._eval(node.indices[0]).data
             if key in obj.data:
                 return obj.data[key]
@@ -2519,8 +2519,20 @@ class Interpreter:
                 if isinstance(item, Value):
                     itype = item.type_name
                     item = item.data
-                else:
+                elif isinstance(item, dict):
+                    itype = "map"
+                elif isinstance(item, list):
                     itype = "list"
+                elif isinstance(item, str):
+                    itype = "string"
+                elif isinstance(item, bool):
+                    itype = "bool"
+                elif isinstance(item, int):
+                    itype = "int64"
+                elif isinstance(item, float):
+                    itype = "float64"
+                else:
+                    itype = "data"
             self._env.enter_scope()
             self._env.declare(stmt.iterator.variable, Value(type_name=itype, data=item))
             if stmt.body and isinstance(stmt.body, BlockStmt):
@@ -2641,9 +2653,12 @@ class Interpreter:
                 return Value(type_name=obj.value_type or obj.type_name, data=obj.data)
             if node.field == "msg":
                 return Value(type_name="string", data=obj.message)
-            raise InterpreterError(
-                f"field '{node.field}' not found on function result (expected sta, val or msg)"
-            )
+            if isinstance(obj.data, dict) and node.field in obj.data:
+                obj = Value(type_name=obj.value_type or "struct", data=obj.data)
+            else:
+                raise InterpreterError(
+                    f"field '{node.field}' not found on function result (expected sta, val or msg)"
+                )
         if isinstance(obj.data, dict):
             fval = obj.data.get(node.field)
             if fval is None:

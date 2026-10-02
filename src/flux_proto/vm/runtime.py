@@ -709,7 +709,10 @@ class VM:
                 elif field in ("msg", "message"):
                     self._push(obj.get("msg", ""))
                     return
-            val = obj.get(field)
+            if "sta" in obj and isinstance(obj.get("val"), dict):
+                val = obj["val"].get(field)
+            else:
+                val = obj.get(field)
             if val is not None:
                 self._push(val)
                 return

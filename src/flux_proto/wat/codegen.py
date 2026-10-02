@@ -5092,7 +5092,8 @@ class _WatCodegen:
                         body.append(f"{I}({op} {sid} (call $str_to_f64 (local.get {fstr})))")
                     elif ft in ("bool", "boolean"):
                         t_fat = f"(i64.const {self._fat_const('true')})"
-                        body.append(f"{I}({op} {sid} (call $str_eq (local.get {fstr}) {t_fat}))")
+                        one_fat = f"(i64.const {self._fat_const('1')})"
+                        body.append(f"{I}({op} {sid} (i64.extend_i32_u (i32.or (call $str_eq (local.get {fstr}) {t_fat}) (call $str_eq (local.get {fstr}) {one_fat}))))")
                     else:
                         body.append(f"{I}({op} {sid} (call $str_to_i64 (local.get {fstr})))")
 
@@ -5164,6 +5165,10 @@ class _WatCodegen:
                     self._append_f64(f"({sget} {slot_id})", fb, body, I, buf, tt, cnt, fat)
                 elif self._struct_field_is_str(sdef.name, f.name):
                     body.append(f"{I}(call $strappend (local.get {buf}) ({sget} {slot_id}))")
+                elif ft in ("bool", "boolean"):
+                    t_off = self._alloc_str("true")
+                    f_off = self._alloc_str("false")
+                    body.append(f"{I}(if (i64.ne ({sget} {slot_id}) (i64.const 0)) (then (call $strappend (local.get {buf}) (i64.const {(t_off << 32) | 4}))) (else (call $strappend (local.get {buf}) (i64.const {(f_off << 32) | 5}))))")
                 else:
                     body.append(f"{I}(local.set {tt} (call $flux_alloc (i32.const 64)))")
                     body.append(f"{I}(local.set {cnt} (call $i64_to_str ({sget} {slot_id}) (local.get {tt})))")

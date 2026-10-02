@@ -6475,10 +6475,10 @@ class _WasmCodegen:
                 return ftype
             return "int64"
         if isinstance(node, Identifier):
-            if node.name in self._str_vars:
-                return "string"
             if node.name in self._decl_types:
                 return self._decl_types[node.name]
+            if node.name in self._str_vars:
+                return "string"
             if node.name in self._sc_vars:
                 return "int64"
             if node.name in self._result_vars:
@@ -6613,6 +6613,8 @@ class _WasmCodegen:
                 self._decl_types[it.name] = ft
                 if _is_str_type(ft):
                     self._str_vars.add(it.name)
+                else:
+                    self._str_vars.discard(it.name)
                 if isinstance(it.initializer, InputExpr):
                     self._gen_input_storage_bin(it, ft, fb)
                     continue
@@ -6632,6 +6634,8 @@ class _WasmCodegen:
                 self._decl_types[it.name] = ft
                 if _is_str_type(ft):
                     self._str_vars.add(it.name)
+                else:
+                    self._str_vars.discard(it.name)
                 if ft in self._enums:
                     if self._in_function:
                         if it.name not in self._enum_slots:
@@ -7337,6 +7341,25 @@ class _WasmCodegen:
                 fb.local_set(cnt)
                 self._emit_runtime_fat(fb, buf, cnt)
                 fb.local_set(tmp)
+                fb.local_get(sbuf)
+                fb.local_get(tmp)
+                fb.byte(0x10)
+                fb.uleb(self._helper_funcs["$strappend"])
+            elif ft in ("bool", "boolean"):
+                if kind == "global":
+                    fb.global_get(fslot)
+                else:
+                    fb.local_get(fslot)
+                fb.i64_const(0)
+                fb.byte(OP_I64_NE)
+                fb.byte(OP_IF)
+                fb.put(b"\x40")
+                self._emit_fat_const("true", fb)
+                fb.local_set(tmp)
+                fb.byte(OP_ELSE)
+                self._emit_fat_const("false", fb)
+                fb.local_set(tmp)
+                fb.byte(OP_END)
                 fb.local_get(sbuf)
                 fb.local_get(tmp)
                 fb.byte(0x10)
@@ -9007,10 +9030,17 @@ class _WasmCodegen:
                         elif ft in ("bool", "boolean"):
                             t_fat_off = self._alloc_str("true")
                             t_fat = (t_fat_off << 32) | 4
+                            one_fat_off = self._alloc_str("1")
+                            one_fat = (one_fat_off << 32) | 1
                             fb.local_get(fstr)
                             fb.i64_const(t_fat)
                             fb.byte(0x10)
                             fb.uleb(self._helper_funcs["$streq"])
+                            fb.local_get(fstr)
+                            fb.i64_const(one_fat)
+                            fb.byte(0x10)
+                            fb.uleb(self._helper_funcs["$streq"])
+                            fb.byte(OP_I32_OR)
                             fb.byte(OP_I64_EXTEND_I32_U)
                         else:
                             fb.local_get(fstr)
@@ -12592,6 +12622,8 @@ class _WasmCodegen:
             self._decl_types[p.name] = p.type_ref.name if p.type_ref else "int64"
             if _is_str_type(p.type_ref.name if p.type_ref else "int64"):
                 self._str_vars.add(p.name)
+            else:
+                self._str_vars.discard(p.name)
         if func.body:
             self._gen_block(func.body, fb)
         fb.local_get(self._fr_sta)
@@ -12642,6 +12674,8 @@ class _WasmCodegen:
             self._decl_types[p.name] = pft
             if _is_str_type(pft):
                 self._str_vars.add(p.name)
+            else:
+                self._str_vars.discard(p.name)
             if pft in self._structs:
                 slots = self._alloc_struct_slots_local(f"p_{p.name}", pft, fb)
                 self._struct_slots[p.name] = ("local", slots)
