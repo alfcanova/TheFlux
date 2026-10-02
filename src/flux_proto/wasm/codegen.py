@@ -6460,7 +6460,7 @@ class _WasmCodegen:
                 return "string"
             if node.field in ("val", "value"):
                 if isinstance(node.obj, CallExpr):
-                    cname = node.obj.callee.name if isinstance(node.obj.callee, Identifier) else ""
+                    cname = _callee_name(node.obj.callee)
                     cname = self._op_aliases.get(cname, cname)
                     if cname in self._user_funcs:
                         return self._user_funcs[cname]["return_type"]
@@ -6517,7 +6517,8 @@ class _WasmCodegen:
         if isinstance(node, RecordLiteral):
             return "data"
         if isinstance(node, CallExpr):
-            cname = node.callee.name if isinstance(node.callee, Identifier) else ""
+            cname = _callee_name(node.callee)
+            cname = self._op_aliases.get(cname, cname)
             if cname in self._user_funcs:
                 return self._user_funcs[cname]["return_type"]
             if cname in self._op_defs:
@@ -6603,7 +6604,7 @@ class _WasmCodegen:
         elif isinstance(node, PrintStmt):
             self._gen_print_args(node.args, True, fb)
         elif isinstance(node, CallExpr):
-            name = node.callee.name if isinstance(node.callee, Identifier) else ""
+            name = _callee_name(node.callee)
             self._gen_call(node, fb)
             if name not in ("print", "println"):
                 fb.byte(OP_DROP)
@@ -7995,7 +7996,7 @@ class _WasmCodegen:
                         fb.byte(0x10)
                         fb.uleb(print_str_idx)
                 elif isinstance(p, CallExpr):
-                    cname = p.callee.name if isinstance(p.callee, Identifier) else ""
+                    cname = _callee_name(p.callee)
                     if cname == "getValueOrDefault":
                         lp = fb.new_i32()
                         kf = fb.new_i64()
@@ -8280,7 +8281,7 @@ class _WasmCodegen:
                         fb.byte(OP_DROP)
                 if f == "val":
                     if isinstance(node.obj, CallExpr):
-                        cname = node.obj.callee.name if isinstance(node.obj.callee, Identifier) else ""
+                        cname = _callee_name(node.obj.callee)
                         if cname in self._user_funcs and _is_str_type(self._user_funcs[cname]["return_type"]):
                             fb.local_get(self._fr_val)
                             return I64
@@ -12769,7 +12770,7 @@ class _WasmCodegen:
         if isinstance(node, BinaryOp):
             return node.op in ("==", "!=", "<", "<=", ">", ">=", "and", "or", "in")
         if isinstance(node, CallExpr):
-            cname = node.callee.name if isinstance(node.callee, Identifier) else ""
+            cname = _callee_name(node.callee)
             cname = self._op_aliases.get(cname, cname)
             if (cname in _BOOL_OPS and cname != "listLength") or (cname in _MAP_BOOL_OPS and cname not in ("mapLength", "collectionLength")) or cname == "isEmpty":
                 return True

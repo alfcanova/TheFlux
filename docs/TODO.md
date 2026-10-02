@@ -1,15 +1,16 @@
 🔤1. Núcleo, Texto & OO		📊2. Estruturas & Estados		🧮3. Matemática & Gráficos		🌐4. Sistema, I/O & Rede
 ✅CharStdLib				✅								✅FinStdLib						✅GfxStdLib
-✅CharStdLib				✅DateTimeStdLib				✅LinAlgStdLib					✅GuiStdLib
-✅ConvertStdLib				✅								✅MathStdLib					✅IoStdLib
-✅DebugStdLib				✅FsmStdLib						✅PhysStdLib					✅LowLevelStdLib
-✅							✅ListStdLib					✅								✅NetStdLib
-✅FileSignatureStdLib		✅MapStdLib						✅StatStdLib					✅OsStdLib
-✅FormatStdLib				✅RandomStdLib					✅								✅
-✅OoStdLib					✅SetStdLib						✅SymbolicStdLib				✅
-✅RegexStdLib				✅StructStdLib					⏳								⏳
-✅StringStdLib				⏳								⏳								⏳
+✅ConvertStdLib				✅DateTimeStdLib				✅								✅GuiStdLib
+✅DebugStdLib				✅								✅HashStdLib					✅IoStdLib
+✅							✅FsmStdLib						✅LinAlgStdLib					✅LowLevelStdLib
+✅FileSignatureStdLib		✅ListStdLib					✅MathStdLib					✅
+✅FormatStdLib				✅MapStdLib						✅PhysStdLib					✅NetStdLib
+✅OoStdLib					✅RandomStdLib					✅								✅OsStdLib
+✅RegexStdLib				✅SetStdLib						✅StatStdLib					✅
+✅StringStdLib				✅StructStdLib					✅SymbolicStdLib				✅
 
-DslStdLib					CompressStdLib(Zlib/Gzip)		SimdStdLib(Vetores)				NativeGfxStdLib
-							DbStdLib(Banco Dados)											RuntimeStdLib(Metadados)
+
+
+DslStdLib					CompressStdLib(Zlib/Gzip)		GraphPlotStdLib					NativeGfxStdLib
+							DbStdLib(Banco Dados)			SimdStdLib(Vetores)				RuntimeStdLib(Metadados)
 																							ThreadStdLib(Threads/Sync)

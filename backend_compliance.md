@@ -457,25 +457,28 @@
 | ExampleOfUseStructStdLib_StructCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStructStdLib_StructIntrospectionContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStructStdLib_StructMemoryContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicCalculusContract.flux            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicCoreContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicFormatContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicMatrixContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicPolyContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseSymbolicStdLib_SymbolicSolverContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseSymbolicStdLib_SymbolicSubstitutionContract.flux        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 32
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfUseSymbolicStdLib_SymbolicSolverContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicSubstitutionContract.flux        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicValidationContract.flux          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
--   IN : ✅  311 of  311 — ✅
--   VM : ✅  311 of  311 — ✅
--  VMR : ✅  311 of  311 — ✅
-- LLVM : ✅  311 of  311 — ✅
--  WAT : ✅  311 of  311 — ✅
-- WASM : ✅  311 of  311 — ✅
--  ALL : ✅ 1866 of 1866 — ✅
+-   IN : ✅  314 of  314 — ✅
+-   VM : ✅  314 of  314 — ✅
+-  VMR : ✅  314 of  314 — ✅
+- LLVM : ✅  314 of  314 — ✅
+-  WAT : ✅  314 of  314 — ✅
+- WASM : ✅  314 of  314 — ✅
+-  ALL : ✅ 1884 of 1884 — ✅
 
 ### Regressão:
 
