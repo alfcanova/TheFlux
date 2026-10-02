@@ -163,7 +163,7 @@ TheFlux/
 │       ├── ast/                 # Árvores sintáticas AST
 │       ├── ddg/                 # Árvores sintáticas DDG
 │       ├── interpreter/         # Interpretador AST interativo
-│       ├── lexer/ - parser/     # Análise léxica
+│       ├── lexer/               # Análise léxica
 │       ├── llvm/                # Emissão LLVM IR nativo + runtime C (flux_input.c)
 │       ├── macro/               # Expansor de macros
 │       ├── parser/              # Análise sintática
