@@ -1,0 +1,466 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Modulo nativo multi-engine e multi-paradigma para armazenamento e persistencia.
+#L Suporta:
+#L   1. SQL Relacional: SQLite 3.53.4
+#L   2. Chave-Valor (KV): LevelDB 1.23 e UnQLite 1.1.4
+#L   3. Documentos NoSQL: UnQLite 1.1.4
+#L   4. Colunas / OLAP: DuckDB 1.5.6
+#L   5. Grafos / Cypher: KuzuDB 0.11.3
+#L   6. Vetorial / Similarity Search: ObjectBox 5.3.2
+#L   7. Validacao e Sanitizacao por Esquemas
+#L Regra de Caminho:
+#L   Se omitido ou vazio, o arquivo .db e criado no diretorio de execucao.
+#L Regra de DLLs:
+#L   Referencia direta e imutavel em stdlib/db/windows.
+#L Regra de Indexacao:
+#L   1-index para humanos/TheFlux e 0-index para maquinas, com ajuste automatico e transparente.
+#L Regra de Indentacao: estritamente 6 espacos.
+#L ==============================================================================
+
+contract (DbSqlContract) {
+      op dbSqlOpen (as string: connection_string) as data
+      op dbSqlExecute (as data: connection, as string: sql, as list of data: params) as bool
+      op dbSqlQuery (as data: connection, as string: sql, as list of data: params) as list of data
+      op dbSqlBegin (as data: connection) as bool
+      op dbSqlCommit (as data: connection) as bool
+      op dbSqlRollback (as data: connection) as bool
+      op dbSqlLastInsertId (as data: connection) as int64
+      op dbSqlChanges (as data: connection) as int64
+      op dbSqlTableExists (as data: connection, as string: table_name) as bool
+      op dbSqlClose (as data: connection) as bool
+}
+
+contract (DbKvContract) {
+      op dbKvOpen (as string: engine, as string: path) as data
+      op dbKvPut (as data: connection, as string: key, as string: value) as bool
+      op dbKvGet (as data: connection, as string: key) as string
+      op dbKvDelete (as data: connection, as string: key) as bool
+      op dbKvExists (as data: connection, as string: key) as bool
+      op dbKvClose (as data: connection) as bool
+}
+
+contract (DbDocContract) {
+      op dbDocOpen (as string: path) as data
+      op dbDocStore (as data: connection, as string: collection, as map: doc) as string
+      op dbDocFetch (as data: connection, as string: collection, as string: doc_id) as map
+      op dbDocDelete (as data: connection, as string: collection, as string: doc_id) as bool
+      op dbDocQuery (as data: connection, as string: collection, as string: key, as string: val) as list of data
+      op dbDocCount (as data: connection, as string: collection) as int64
+      op dbDocClose (as data: connection) as bool
+}
+
+contract (DbColumnContract) {
+      op dbColumnOpen (as string: path) as data
+      op dbColumnExecute (as data: connection, as string: sql) as bool
+      op dbColumnQuery (as data: connection, as string: sql) as list of data
+      op dbColumnRowCount (as data: connection, as string: table_name) as int64
+      op dbColumnScalar (as data: connection, as string: sql) as data
+      op dbColumnClose (as data: connection) as bool
+}
+
+contract (DbGraphContract) {
+      op dbGraphOpen (as string: path) as data
+      op dbGraphExecute (as data: connection, as string: cypher) as bool
+      op dbGraphQuery (as data: connection, as string: cypher) as list of data
+      op dbGraphNodeCount (as data: connection, as string: node_table) as int64
+      op dbGraphRelCount (as data: connection, as string: rel_table) as int64
+      op dbGraphClose (as data: connection) as bool
+}
+
+contract (DbVectorContract) {
+      op dbVectorOpen (as string: path, as int64: dimensions, as string: metric) as data
+      op dbVectorInsert (as data: connection, as int64: id, as list of data: embedding, as string: metadata) as bool
+      op dbVectorSearch (as data: connection, as list of data: query_vector, as int64: top_k) as list of data
+      op dbVectorDelete (as data: connection, as int64: id) as bool
+      op dbVectorCount (as data: connection) as int64
+      op dbVectorClose (as data: connection) as bool
+}
+
+contract (DbValidationContract) {
+      op dbIsValidRecord (as map: record, as map: schema) as bool
+      op dbSanitizeIdentifier (as string: name) as string
+      op dbEscapeString (as string: val) as string
+}
+
+agent (DbStdLib) impl DbSqlContract, DbKvContract, DbDocContract, DbColumnContract, DbGraphContract, DbVectorContract, DbValidationContract {
+
+      #L -- DbSqlContract ---------------------------------------------
+      op dbSqlOpen (as string: connection_string) as data ==> {
+            emit(nice, stdDbSqlOpen(connection_string), "ok")
+      }
+
+      op dbSqlExecute (as data: connection, as string: sql, as list of data: params) as bool ==> {
+            emit(nice, stdDbSqlExecute(connection, sql, params), "ok")
+      }
+
+      op dbSqlQuery (as data: connection, as string: sql, as list of data: params) as list of data ==> {
+            emit(nice, stdDbSqlQuery(connection, sql, params), "ok")
+      }
+
+      op dbSqlBegin (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlBegin(connection), "ok")
+      }
+
+      op dbSqlCommit (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlCommit(connection), "ok")
+      }
+
+      op dbSqlRollback (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlRollback(connection), "ok")
+      }
+
+      op dbSqlLastInsertId (as data: connection) as int64 ==> {
+            emit(nice, stdDbSqlLastInsertId(connection), "ok")
+      }
+
+      op dbSqlChanges (as data: connection) as int64 ==> {
+            emit(nice, stdDbSqlChanges(connection), "ok")
+      }
+
+      op dbSqlTableExists (as data: connection, as string: table_name) as bool ==> {
+            emit(nice, stdDbSqlTableExists(connection, table_name), "ok")
+      }
+
+      op dbSqlClose (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlClose(connection), "ok")
+      }
+
+      #L -- DbKvContract ----------------------------------------------
+      op dbKvOpen (as string: engine, as string: path) as data ==> {
+            emit(nice, stdDbKvOpen(engine, path), "ok")
+      }
+
+      op dbKvPut (as data: connection, as string: key, as string: value) as bool ==> {
+            emit(nice, stdDbKvPut(connection, key, value), "ok")
+      }
+
+      op dbKvGet (as data: connection, as string: key) as string ==> {
+            emit(nice, stdDbKvGet(connection, key), "ok")
+      }
+
+      op dbKvDelete (as data: connection, as string: key) as bool ==> {
+            emit(nice, stdDbKvDelete(connection, key), "ok")
+      }
+
+      op dbKvExists (as data: connection, as string: key) as bool ==> {
+            emit(nice, stdDbKvExists(connection, key), "ok")
+      }
+
+      op dbKvClose (as data: connection) as bool ==> {
+            emit(nice, stdDbKvClose(connection), "ok")
+      }
+
+      #L -- DbDocContract ---------------------------------------------
+      op dbDocOpen (as string: path) as data ==> {
+            emit(nice, stdDbDocOpen(path), "ok")
+      }
+
+      op dbDocStore (as data: connection, as string: collection, as map: doc) as string ==> {
+            emit(nice, stdDbDocStore(connection, collection, doc), "ok")
+      }
+
+      op dbDocFetch (as data: connection, as string: collection, as string: doc_id) as map ==> {
+            emit(nice, stdDbDocFetch(connection, collection, doc_id), "ok")
+      }
+
+      op dbDocDelete (as data: connection, as string: collection, as string: doc_id) as bool ==> {
+            emit(nice, stdDbDocDelete(connection, collection, doc_id), "ok")
+      }
+
+      op dbDocQuery (as data: connection, as string: collection, as string: key, as string: val) as list of data ==> {
+            emit(nice, stdDbDocQuery(connection, collection, key, val), "ok")
+      }
+
+      op dbDocCount (as data: connection, as string: collection) as int64 ==> {
+            emit(nice, stdDbDocCount(connection, collection), "ok")
+      }
+
+      op dbDocClose (as data: connection) as bool ==> {
+            emit(nice, stdDbDocClose(connection), "ok")
+      }
+
+      #L -- DbColumnContract ------------------------------------------
+      op dbColumnOpen (as string: path) as data ==> {
+            emit(nice, stdDbColumnOpen(path), "ok")
+      }
+
+      op dbColumnExecute (as data: connection, as string: sql) as bool ==> {
+            emit(nice, stdDbColumnExecute(connection, sql), "ok")
+      }
+
+      op dbColumnQuery (as data: connection, as string: sql) as list of data ==> {
+            emit(nice, stdDbColumnQuery(connection, sql), "ok")
+      }
+
+      op dbColumnRowCount (as data: connection, as string: table_name) as int64 ==> {
+            emit(nice, stdDbColumnRowCount(connection, table_name), "ok")
+      }
+
+      op dbColumnScalar (as data: connection, as string: sql) as data ==> {
+            emit(nice, stdDbColumnScalar(connection, sql), "ok")
+      }
+
+      op dbColumnClose (as data: connection) as bool ==> {
+            emit(nice, stdDbColumnClose(connection), "ok")
+      }
+
+      #L -- DbGraphContract -------------------------------------------
+      op dbGraphOpen (as string: path) as data ==> {
+            emit(nice, stdDbGraphOpen(path), "ok")
+      }
+
+      op dbGraphExecute (as data: connection, as string: cypher) as bool ==> {
+            emit(nice, stdDbGraphExecute(connection, cypher), "ok")
+      }
+
+      op dbGraphQuery (as data: connection, as string: cypher) as list of data ==> {
+            emit(nice, stdDbGraphQuery(connection, cypher), "ok")
+      }
+
+      op dbGraphNodeCount (as data: connection, as string: node_table) as int64 ==> {
+            emit(nice, stdDbGraphNodeCount(connection, node_table), "ok")
+      }
+
+      op dbGraphRelCount (as data: connection, as string: rel_table) as int64 ==> {
+            emit(nice, stdDbGraphRelCount(connection, rel_table), "ok")
+      }
+
+      op dbGraphClose (as data: connection) as bool ==> {
+            emit(nice, stdDbGraphClose(connection), "ok")
+      }
+
+      #L -- DbVectorContract ------------------------------------------
+      op dbVectorOpen (as string: path, as int64: dimensions, as string: metric) as data ==> {
+            emit(nice, stdDbVectorOpen(path, dimensions, metric), "ok")
+      }
+
+      op dbVectorInsert (as data: connection, as int64: id, as list of data: embedding, as string: metadata) as bool ==> {
+            emit(nice, stdDbVectorInsert(connection, id, embedding, metadata), "ok")
+      }
+
+      op dbVectorSearch (as data: connection, as list of data: query_vector, as int64: top_k) as list of data ==> {
+            emit(nice, stdDbVectorSearch(connection, query_vector, top_k), "ok")
+      }
+
+      op dbVectorDelete (as data: connection, as int64: id) as bool ==> {
+            emit(nice, stdDbVectorDelete(connection, id), "ok")
+      }
+
+      op dbVectorCount (as data: connection) as int64 ==> {
+            emit(nice, stdDbVectorCount(connection), "ok")
+      }
+
+      op dbVectorClose (as data: connection) as bool ==> {
+            emit(nice, stdDbVectorClose(connection), "ok")
+      }
+
+      #L -- DbValidationContract --------------------------------------
+      op dbIsValidRecord (as map: record, as map: schema) as bool ==> {
+            emit(nice, stdDbIsValidRecord(record, schema), "ok")
+      }
+
+      op dbSanitizeIdentifier (as string: name) as string ==> {
+            mut as string: res = ""
+            infinite (c in name) {
+                  route {
+                        (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or (c >= "0" and c <= "9") or c == "_" ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op dbEscapeString (as string: val) as string ==> {
+            mut as string: res = ""
+            infinite (c in val) {
+                  route {
+                        c == "'" ==> {
+                              res = res + "''"
+                        }
+                        _ ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L -- Aliases Ergonomicos ---------------------------------------
+      op sqlOpen (as string: connection_string) as data ==> {
+            emit(nice, stdDbSqlOpen(connection_string), "ok")
+      }
+
+      op sqlExecute (as data: connection, as string: sql, as list of data: params) as bool ==> {
+            emit(nice, stdDbSqlExecute(connection, sql, params), "ok")
+      }
+
+      op sqlQuery (as data: connection, as string: sql, as list of data: params) as list of data ==> {
+            emit(nice, stdDbSqlQuery(connection, sql, params), "ok")
+      }
+
+      op sqlBegin (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlBegin(connection), "ok")
+      }
+
+      op sqlCommit (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlCommit(connection), "ok")
+      }
+
+      op sqlRollback (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlRollback(connection), "ok")
+      }
+
+      op sqlLastInsertId (as data: connection) as int64 ==> {
+            emit(nice, stdDbSqlLastInsertId(connection), "ok")
+      }
+
+      op sqlChanges (as data: connection) as int64 ==> {
+            emit(nice, stdDbSqlChanges(connection), "ok")
+      }
+
+      op sqlTableExists (as data: connection, as string: table_name) as bool ==> {
+            emit(nice, stdDbSqlTableExists(connection, table_name), "ok")
+      }
+
+      op sqlClose (as data: connection) as bool ==> {
+            emit(nice, stdDbSqlClose(connection), "ok")
+      }
+
+      op kvOpen (as string: engine, as string: path) as data ==> {
+            emit(nice, stdDbKvOpen(engine, path), "ok")
+      }
+
+      op kvPut (as data: connection, as string: key, as string: value) as bool ==> {
+            emit(nice, stdDbKvPut(connection, key, value), "ok")
+      }
+
+      op kvGet (as data: connection, as string: key) as string ==> {
+            emit(nice, stdDbKvGet(connection, key), "ok")
+      }
+
+      op kvDelete (as data: connection, as string: key) as bool ==> {
+            emit(nice, stdDbKvDelete(connection, key), "ok")
+      }
+
+      op kvExists (as data: connection, as string: key) as bool ==> {
+            emit(nice, stdDbKvExists(connection, key), "ok")
+      }
+
+      op kvClose (as data: connection) as bool ==> {
+            emit(nice, stdDbKvClose(connection), "ok")
+      }
+
+      op docOpen (as string: path) as data ==> {
+            emit(nice, stdDbDocOpen(path), "ok")
+      }
+
+      op docStore (as data: connection, as string: collection, as map: doc) as string ==> {
+            emit(nice, stdDbDocStore(connection, collection, doc), "ok")
+      }
+
+      op docFetch (as data: connection, as string: collection, as string: doc_id) as map ==> {
+            emit(nice, stdDbDocFetch(connection, collection, doc_id), "ok")
+      }
+
+      op docDelete (as data: connection, as string: collection, as string: doc_id) as bool ==> {
+            emit(nice, stdDbDocDelete(connection, collection, doc_id), "ok")
+      }
+
+      op docQuery (as data: connection, as string: collection, as string: key, as string: val) as list of data ==> {
+            emit(nice, stdDbDocQuery(connection, collection, key, val), "ok")
+      }
+
+      op docCount (as data: connection, as string: collection) as int64 ==> {
+            emit(nice, stdDbDocCount(connection, collection), "ok")
+      }
+
+      op docClose (as data: connection) as bool ==> {
+            emit(nice, stdDbDocClose(connection), "ok")
+      }
+
+      op columnOpen (as string: path) as data ==> {
+            emit(nice, stdDbColumnOpen(path), "ok")
+      }
+
+      op columnExecute (as data: connection, as string: sql) as bool ==> {
+            emit(nice, stdDbColumnExecute(connection, sql), "ok")
+      }
+
+      op columnQuery (as data: connection, as string: sql) as list of data ==> {
+            emit(nice, stdDbColumnQuery(connection, sql), "ok")
+      }
+
+      op columnRowCount (as data: connection, as string: table_name) as int64 ==> {
+            emit(nice, stdDbColumnRowCount(connection, table_name), "ok")
+      }
+
+      op columnScalar (as data: connection, as string: sql) as data ==> {
+            emit(nice, stdDbColumnScalar(connection, sql), "ok")
+      }
+
+      op columnClose (as data: connection) as bool ==> {
+            emit(nice, stdDbColumnClose(connection), "ok")
+      }
+
+      op graphOpen (as string: path) as data ==> {
+            emit(nice, stdDbGraphOpen(path), "ok")
+      }
+
+      op graphExecute (as data: connection, as string: cypher) as bool ==> {
+            emit(nice, stdDbGraphExecute(connection, cypher), "ok")
+      }
+
+      op graphQuery (as data: connection, as string: cypher) as list of data ==> {
+            emit(nice, stdDbGraphQuery(connection, cypher), "ok")
+      }
+
+      op graphNodeCount (as data: connection, as string: node_table) as int64 ==> {
+            emit(nice, stdDbGraphNodeCount(connection, node_table), "ok")
+      }
+
+      op graphRelCount (as data: connection, as string: rel_table) as int64 ==> {
+            emit(nice, stdDbGraphRelCount(connection, rel_table), "ok")
+      }
+
+      op graphClose (as data: connection) as bool ==> {
+            emit(nice, stdDbGraphClose(connection), "ok")
+      }
+
+      op vectorOpen (as string: path, as int64: dimensions, as string: metric) as data ==> {
+            emit(nice, stdDbVectorOpen(path, dimensions, metric), "ok")
+      }
+
+      op vectorInsert (as data: connection, as int64: id, as list of data: embedding, as string: metadata) as bool ==> {
+            emit(nice, stdDbVectorInsert(connection, id, embedding, metadata), "ok")
+      }
+
+      op vectorSearch (as data: connection, as list of data: query_vector, as int64: top_k) as list of data ==> {
+            emit(nice, stdDbVectorSearch(connection, query_vector, top_k), "ok")
+      }
+
+      op vectorDelete (as data: connection, as int64: id) as bool ==> {
+            emit(nice, stdDbVectorDelete(connection, id), "ok")
+      }
+
+      op vectorCount (as data: connection) as int64 ==> {
+            emit(nice, stdDbVectorCount(connection), "ok")
+      }
+
+      op vectorClose (as data: connection) as bool ==> {
+            emit(nice, stdDbVectorClose(connection), "ok")
+      }
+
+      op isValidRecord (as map: record, as map: schema) as bool ==> {
+            emit(nice, stdDbIsValidRecord(record, schema), "ok")
+      }
+
+      op sanitizeIdentifier (as string: name) as string ==> {
+            emit(nice, dbSanitizeIdentifier(name), "ok")
+      }
+
+      op escapeString (as string: val) as string ==> {
+            emit(nice, dbEscapeString(val), "ok")
+      }
+}

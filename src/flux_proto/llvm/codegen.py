@@ -2715,6 +2715,97 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_net_local_ip", "i8*", [])
             self._w.declare_function("flux_std_net_port_is_available", "i64", ["i64"])
             self._w.declare_function("flux_std_net_ping", "i64", ["i8*"])
+            # SimdStdLib
+            self._w.declare_function("flux_std_simd_vector_binop", "i8*", ["i8*", "i8*", "i64", "i64"])
+            self._w.declare_function("flux_std_simd_dot_product", "double", ["i8*", "i8*", "i64"])
+            self._w.declare_function("flux_std_simd_vector_sum", "double", ["i8*", "i64"])
+            self._w.declare_function("flux_std_simd_vector_clamp", "i8*", ["i8*", "double", "double", "i64"])
+            self._w.declare_function("flux_std_simd_select", "i8*", ["i8*", "i8*", "i8*", "i64"])
+            self._w.declare_function("flux_std_simd_matrix_mul_2d", "i8*", ["i8*", "i8*", "i64"])
+            # RuntimeStdLib
+            self._w.declare_function("flux_std_runtime_backend", "i8*", [])
+            self._w.declare_function("flux_std_runtime_compiler_version", "i8*", [])
+            self._w.declare_function("flux_std_runtime_get_args", "i8*", ["i8* (i64, i64)*", "i8* (i8*, i64, i64, i8*)*"])
+            self._w.declare_function("flux_std_runtime_executable_path", "i8*", [])
+            self._w.declare_function("flux_std_runtime_allocated_memory", "i64", [])
+            self._w.declare_function("flux_std_runtime_heap_size", "i64", [])
+            self._w.declare_function("flux_std_runtime_pointer_of", "i64", ["i8*"])
+            self._w.declare_function("flux_std_runtime_panic", "i64", ["i8*"])
+            self._w.declare_function("flux_std_runtime_trap", "i64", [])
+            self._w.declare_function("flux_std_runtime_stack_trace", "i8*", ["i8* (i64, i64)*", "i8* (i8*, i64, i64, i8*)*"])
+            # DbStdLib
+            self._w.declare_function("flux_std_db_sql_open", "i64", ["i8*"])
+            self._w.declare_function("flux_std_db_sql_execute", "i64", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_sql_query", "i8*", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_sql_begin", "i64", ["i64"])
+            self._w.declare_function("flux_std_db_sql_commit", "i64", ["i64"])
+            self._w.declare_function("flux_std_db_sql_rollback", "i64", ["i64"])
+            self._w.declare_function("flux_std_db_sql_last_insert_id", "i64", ["i64"])
+            self._w.declare_function("flux_std_db_sql_changes", "i64", ["i64"])
+            self._w.declare_function("flux_std_db_sql_table_exists", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_sql_close", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_db_kv_open", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_db_kv_put", "i64", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_kv_get", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_kv_delete", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_kv_exists", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_kv_close", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_db_doc_open", "i64", ["i8*"])
+            self._w.declare_function("flux_std_db_doc_store", "i8*", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_doc_fetch", "i8*", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_doc_delete", "i64", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_doc_query", "i8*", ["i64", "i8*", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_doc_count", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_doc_close", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_db_column_open", "i64", ["i8*"])
+            self._w.declare_function("flux_std_db_column_execute", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_column_query", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_column_row_count", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_column_scalar", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_column_close", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_db_graph_open", "i64", ["i8*"])
+            self._w.declare_function("flux_std_db_graph_execute", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_graph_query", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_graph_node_count", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_graph_rel_count", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_db_graph_close", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_db_vector_open", "i64", ["i8*", "i64", "i8*"])
+            self._w.declare_function("flux_std_db_vector_insert", "i64", ["i64", "i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_db_vector_search", "i8*", ["i64", "i8*", "i64"])
+            self._w.declare_function("flux_std_db_vector_delete", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_db_vector_count", "i64", ["i64"])
+            self._w.declare_function("flux_std_db_vector_close", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_db_is_valid_record", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_db_sanitize_identifier", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_db_escape_string", "i8*", ["i8*"])
+            # DslStdLib
+            self._w.declare_function("flux_std_dsl_create_lexer", "i64", ["i8*"])
+            self._w.declare_function("flux_std_dsl_tokenize", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_get_lexer_tokens", "i8*", ["i64"])
+            self._w.declare_function("flux_std_dsl_create_parser", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_is_valid_syntax", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_get_errors", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_format_errors", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_dsl_generate_ast", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_dump_ast", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_dsl_find_ast_nodes", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_dsl_transform_ast", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_dsl_compile", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_dsl_execute_inline", "i8*", ["i64", "i8*", "i8*"])
+            self._w.declare_function("flux_std_dsl_get_asm_engine", "i64", ["i8*"])
+            self._w.declare_function("flux_std_dsl_asm_assemble", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_asm_disassemble", "i8*", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_asm_validate_registers", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_dsl_asm_get_register_map", "i8*", ["i64"])
+            self._w.declare_function("flux_std_dsl_set_timeout", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_dsl_set_instruction_limit", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_dsl_set_memory_limit", "i64", ["i64", "i64"])
             self._w.begin_function("main", "i32")
             self._new_block("entry")
             frame = self._w.new_local("frame")
@@ -7420,6 +7511,14 @@ class LLVMCodegen:
             return self._gen_std_os_intrinsic(name, node.args)
         if name.startswith("stdNet"):
             return self._gen_std_net_intrinsic(name, node.args)
+        if name.startswith("stdSimd"):
+            return self._gen_std_simd_intrinsic(name, node.args)
+        if name.startswith("stdRuntime"):
+            return self._gen_std_runtime_intrinsic(name, node.args)
+        if name.startswith("stdDb"):
+            return self._gen_std_db_intrinsic(name, node.args)
+        if name.startswith("stdDsl"):
+            return self._gen_std_dsl_intrinsic(name, node.args)
         if name.startswith(("stdSet", "stdList", "stdMap", "stdCollection")):
             return self._gen_std_collection_intrinsic(name, node.args)
         raise CodegenError(f"unsupported call to '{name}'")
@@ -7906,6 +8005,556 @@ class LLVMCodegen:
             self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
             return (res, "i1")
         raise CodegenError(f"unsupported net intrinsic '{name}'")
+
+    def _gen_std_simd_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        def dbl(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to_double(v, t)
+
+        is_f32 = "1" if name.endswith("F32") else "0"
+
+        # Arithmetic
+        if name in ("stdSimdVectorAddF32", "stdSimdVectorAddF64"):
+            res = self._w.new_local("simd_add")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_vector_binop(i8* {sptr(0)}, i8* {sptr(1)}, i64 0, i64 {is_f32})")
+            return (res, "i8*")
+        if name in ("stdSimdVectorSubF32", "stdSimdVectorSubF64"):
+            res = self._w.new_local("simd_sub")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_vector_binop(i8* {sptr(0)}, i8* {sptr(1)}, i64 1, i64 {is_f32})")
+            return (res, "i8*")
+        if name in ("stdSimdVectorMulF32", "stdSimdVectorMulF64"):
+            res = self._w.new_local("simd_mul")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_vector_binop(i8* {sptr(0)}, i8* {sptr(1)}, i64 2, i64 {is_f32})")
+            return (res, "i8*")
+        if name in ("stdSimdVectorDivF32", "stdSimdVectorDivF64"):
+            res = self._w.new_local("simd_div")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_vector_binop(i8* {sptr(0)}, i8* {sptr(1)}, i64 3, i64 {is_f32})")
+            return (res, "i8*")
+
+        # Reduction
+        if name in ("stdSimdDotProductF32", "stdSimdDotProductF64"):
+            res = self._w.new_local("simd_dot")
+            self._w.emit(f"{res} = call double @flux_std_simd_dot_product(i8* {sptr(0)}, i8* {sptr(1)}, i64 {is_f32})")
+            return (res, "double")
+        if name in ("stdSimdVectorSumF32", "stdSimdVectorSumF64"):
+            res = self._w.new_local("simd_sum")
+            self._w.emit(f"{res} = call double @flux_std_simd_vector_sum(i8* {sptr(0)}, i64 {is_f32})")
+            return (res, "double")
+        if name in ("stdSimdVectorClampF32", "stdSimdVectorClampF64"):
+            res = self._w.new_local("simd_clamp")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_vector_clamp(i8* {sptr(0)}, double {dbl(1)}, double {dbl(2)}, i64 {is_f32})")
+            return (res, "i8*")
+
+        # Matrix 2D
+        if name in ("stdSimdMatrixMul2DF32", "stdSimdMatrixMul2DF64"):
+            res = self._w.new_local("simd_matmul")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_matrix_mul_2d(i8* {sptr(0)}, i8* {sptr(1)}, i64 {is_f32})")
+            return (res, "i8*")
+
+        # Masking
+        if name in ("stdSimdSelectF32", "stdSimdSelectF64"):
+            res = self._w.new_local("simd_sel")
+            self._w.emit(f"{res} = call i8* @flux_std_simd_select(i8* {sptr(0)}, i8* {sptr(1)}, i8* {sptr(2)}, i64 {is_f32})")
+            return (res, "i8*")
+
+        raise CodegenError(f"unsupported simd intrinsic '{name}'")
+
+    def _gen_std_runtime_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        if name == "stdRuntimeBackend":
+            res = self._w.new_local("rt_backend")
+            self._w.emit(f"{res} = call i8* @flux_std_runtime_backend()")
+            return (res, "i8*")
+
+        if name == "stdRuntimeCompilerVersion":
+            res = self._w.new_local("rt_ver")
+            self._w.emit(f"{res} = call i8* @flux_std_runtime_compiler_version()")
+            return (res, "i8*")
+
+        if name == "stdRuntimeGetArgs":
+            res = self._w.new_local("rt_args")
+            self._w.emit(f"{res} = call i8* @flux_std_runtime_get_args(i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)")
+            return (res, "i8*")
+
+        if name == "stdRuntimeExecutablePath":
+            res = self._w.new_local("rt_exe")
+            self._w.emit(f"{res} = call i8* @flux_std_runtime_executable_path()")
+            return (res, "i8*")
+
+        if name == "stdRuntimeGetTypeName":
+            if args and isinstance(args[0], Identifier) and args[0].name in self._param_tag_slots:
+                tag_v = self._param_tag_slots[args[0].name]
+                is_b = self._w.new_local("is_b")
+                self._w.emit(f"{is_b} = icmp eq i64 {tag_v}, 2")
+                s_b = self._gep_of_string("bool")
+                s_i = self._gep_of_string("int64")
+                sel1 = self._w.new_local("sel1")
+                self._w.emit(f"{sel1} = select i1 {is_b}, i8* {s_b}, i8* {s_i}")
+
+                is_f = self._w.new_local("is_f")
+                self._w.emit(f"{is_f} = icmp eq i64 {tag_v}, 3")
+                s_f = self._gep_of_string("float64")
+                sel2 = self._w.new_local("sel2")
+                self._w.emit(f"{sel2} = select i1 {is_f}, i8* {s_f}, i8* {sel1}")
+
+                is_s = self._w.new_local("is_s")
+                self._w.emit(f"{is_s} = icmp eq i64 {tag_v}, 4")
+                s_s = self._gep_of_string("string")
+                sel3 = self._w.new_local("sel3")
+                self._w.emit(f"{sel3} = select i1 {is_s}, i8* {s_s}, i8* {sel2}")
+
+                is_l = self._w.new_local("is_l")
+                self._w.emit(f"{is_l} = icmp eq i64 {tag_v}, 5")
+                s_l = self._gep_of_string("list")
+                res = self._w.new_local("rt_tn")
+                self._w.emit(f"{res} = select i1 {is_l}, i8* {s_l}, i8* {sel3}")
+                return (res, "i8*")
+
+            ft = self._flux_type_of(args[0]) if args else "data"
+            if ft in ("INT", "int", "int64", "i64"):
+                ret_str = "int64"
+            elif ft in ("FLOAT", "float", "float64", "f64"):
+                ret_str = "float64"
+            elif ft in ("float32", "f32"):
+                ret_str = "float32"
+            elif ft in ("BOOL", "bool"):
+                ret_str = "bool"
+            elif ft in ("CHAR", "char"):
+                ret_str = "char"
+            elif _is_string_type(ft) or ft in ("STRING", "str"):
+                ret_str = "string"
+            elif _is_list_type(ft) or ft in ("list", "LIST"):
+                ret_str = "list"
+            elif _is_set_type(ft) or ft in ("set", "SET"):
+                ret_str = "set"
+            elif _is_map_type(ft) or ft in ("map", "MAP"):
+                ret_str = "map"
+            else:
+                ret_str = ft if ft else "data"
+
+            res = self._w.new_local("rt_typename")
+            gep = self._gep_of_string(ret_str)
+            self._w.emit(f"{res} = bitcast i8* {gep} to i8*")
+            return (res, "i8*")
+
+        if name == "stdRuntimeAllocatedMemory":
+            res = self._w.new_local("rt_alloc_mem")
+            self._w.emit(f"{res} = call i64 @flux_std_runtime_allocated_memory()")
+            return (res, "i64")
+
+        if name == "stdRuntimeHeapSize":
+            res = self._w.new_local("rt_heap_sz")
+            self._w.emit(f"{res} = call i64 @flux_std_runtime_heap_size()")
+            return (res, "i64")
+
+        if name == "stdRuntimePointerOf":
+            v, t = av(0)
+            res = self._w.new_local("rt_ptr")
+            if t == "i8*":
+                self._w.emit(f"{res} = ptrtoint i8* {v} to i64")
+            elif t == "i64":
+                self._w.emit(f"{res} = add i64 {v}, 0")
+            else:
+                self._w.emit(f"{res} = bitcast {t} {v} to i64")
+            return (res, "i64")
+
+        if name == "stdRuntimePanic":
+            res64 = self._w.new_local("rt_panic")
+            self._w.emit(f"{res64} = call i64 @flux_std_runtime_panic(i8* {sptr(0)})")
+            res = self._w.new_local("rt_panic_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        if name == "stdRuntimeTrap":
+            res64 = self._w.new_local("rt_trap")
+            self._w.emit(f"{res64} = call i64 @flux_std_runtime_trap()")
+            res = self._w.new_local("rt_trap_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        if name == "stdRuntimeStackTrace":
+            res = self._w.new_local("rt_trace")
+            self._w.emit(f"{res} = call i8* @flux_std_runtime_stack_trace(i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)")
+            return (res, "i8*")
+
+        raise CodegenError(f"unsupported runtime intrinsic '{name}'")
+
+    def _gen_std_db_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        # SQL
+        if name == "stdDbSqlOpen":
+            res = self._w.new_local("sql_open")
+            self._w.emit(f"{res} = call i64 @flux_std_db_sql_open(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdDbSqlExecute":
+            res64 = self._w.new_local("sql_exec")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_sql_execute(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            res = self._w.new_local("sql_exec_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbSqlQuery":
+            res = self._w.new_local("sql_query")
+            self._w.emit(f"{res} = call i8* @flux_std_db_sql_query(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i8*")
+        if name == "stdDbSqlBegin":
+            res64 = self._w.new_local("sql_begin")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_sql_begin(i64 {i64v(0)})")
+            res = self._w.new_local("sql_begin_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbSqlCommit":
+            res64 = self._w.new_local("sql_commit")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_sql_commit(i64 {i64v(0)})")
+            res = self._w.new_local("sql_commit_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbSqlRollback":
+            res64 = self._w.new_local("sql_rollback")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_sql_rollback(i64 {i64v(0)})")
+            res = self._w.new_local("sql_rollback_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbSqlLastInsertId":
+            res = self._w.new_local("sql_last_id")
+            self._w.emit(f"{res} = call i64 @flux_std_db_sql_last_insert_id(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdDbSqlChanges":
+            res = self._w.new_local("sql_changes")
+            self._w.emit(f"{res} = call i64 @flux_std_db_sql_changes(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdDbSqlTableExists":
+            res64 = self._w.new_local("sql_tbl_ex")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_sql_table_exists(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("sql_tbl_ex_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbSqlClose":
+            res64 = self._w.new_local("sql_close")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_sql_close(i64 {i64v(0)})")
+            res = self._w.new_local("sql_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # KV
+        if name == "stdDbKvOpen":
+            res = self._w.new_local("kv_open")
+            self._w.emit(f"{res} = call i64 @flux_std_db_kv_open(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDbKvPut":
+            res64 = self._w.new_local("kv_put")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_kv_put(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            res = self._w.new_local("kv_put_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbKvGet":
+            res = self._w.new_local("kv_get")
+            self._w.emit(f"{res} = call i8* @flux_std_db_kv_get(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDbKvDelete":
+            res64 = self._w.new_local("kv_del")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_kv_delete(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("kv_del_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbKvExists":
+            res64 = self._w.new_local("kv_ex")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_kv_exists(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("kv_ex_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbKvClose":
+            res64 = self._w.new_local("kv_close")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_kv_close(i64 {i64v(0)})")
+            res = self._w.new_local("kv_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Document
+        if name == "stdDbDocOpen":
+            res = self._w.new_local("doc_open")
+            self._w.emit(f"{res} = call i64 @flux_std_db_doc_open(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdDbDocStore":
+            res = self._w.new_local("doc_store")
+            self._w.emit(f"{res} = call i8* @flux_std_db_doc_store(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i8*")
+        if name == "stdDbDocFetch":
+            res = self._w.new_local("doc_fetch")
+            self._w.emit(f"{res} = call i8* @flux_std_db_doc_fetch(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i8*")
+        if name == "stdDbDocDelete":
+            res64 = self._w.new_local("doc_del")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_doc_delete(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            res = self._w.new_local("doc_del_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbDocQuery":
+            res = self._w.new_local("doc_query")
+            self._w.emit(f"{res} = call i8* @flux_std_db_doc_query(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)}, i8* {sptr(3)})")
+            return (res, "i8*")
+        if name == "stdDbDocCount":
+            res = self._w.new_local("doc_count")
+            self._w.emit(f"{res} = call i64 @flux_std_db_doc_count(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDbDocClose":
+            res64 = self._w.new_local("doc_close")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_doc_close(i64 {i64v(0)})")
+            res = self._w.new_local("doc_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Columnar
+        if name == "stdDbColumnOpen":
+            res = self._w.new_local("col_open")
+            self._w.emit(f"{res} = call i64 @flux_std_db_column_open(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdDbColumnExecute":
+            res64 = self._w.new_local("col_exec")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_column_execute(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("col_exec_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbColumnQuery":
+            res = self._w.new_local("col_query")
+            self._w.emit(f"{res} = call i8* @flux_std_db_column_query(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDbColumnRowCount":
+            res = self._w.new_local("col_row_cnt")
+            self._w.emit(f"{res} = call i64 @flux_std_db_column_row_count(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDbColumnScalar":
+            res = self._w.new_local("col_scalar")
+            self._w.emit(f"{res} = call i64 @flux_std_db_column_scalar(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDbColumnClose":
+            res64 = self._w.new_local("col_close")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_column_close(i64 {i64v(0)})")
+            res = self._w.new_local("col_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Graph
+        if name == "stdDbGraphOpen":
+            res = self._w.new_local("gr_open")
+            self._w.emit(f"{res} = call i64 @flux_std_db_graph_open(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdDbGraphExecute":
+            res64 = self._w.new_local("gr_exec")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_graph_execute(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("gr_exec_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbGraphQuery":
+            res = self._w.new_local("gr_query")
+            self._w.emit(f"{res} = call i8* @flux_std_db_graph_query(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDbGraphNodeCount":
+            res = self._w.new_local("gr_node_cnt")
+            self._w.emit(f"{res} = call i64 @flux_std_db_graph_node_count(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDbGraphRelCount":
+            res = self._w.new_local("gr_rel_cnt")
+            self._w.emit(f"{res} = call i64 @flux_std_db_graph_rel_count(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDbGraphClose":
+            res64 = self._w.new_local("gr_close")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_graph_close(i64 {i64v(0)})")
+            res = self._w.new_local("gr_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Vector
+        if name == "stdDbVectorOpen":
+            res = self._w.new_local("vec_open")
+            self._w.emit(f"{res} = call i64 @flux_std_db_vector_open(i8* {sptr(0)}, i64 {i64v(1)}, i8* {sptr(2)})")
+            return (res, "i64")
+        if name == "stdDbVectorInsert":
+            res64 = self._w.new_local("vec_ins")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_vector_insert(i64 {i64v(0)}, i64 {i64v(1)}, i8* {sptr(2)}, i8* {sptr(3)})")
+            res = self._w.new_local("vec_ins_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbVectorSearch":
+            res = self._w.new_local("vec_srch")
+            self._w.emit(f"{res} = call i8* @flux_std_db_vector_search(i64 {i64v(0)}, i8* {sptr(1)}, i64 {i64v(2)})")
+            return (res, "i8*")
+        if name == "stdDbVectorDelete":
+            res64 = self._w.new_local("vec_del")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_vector_delete(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("vec_del_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbVectorCount":
+            res = self._w.new_local("vec_count")
+            self._w.emit(f"{res} = call i64 @flux_std_db_vector_count(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdDbVectorClose":
+            res64 = self._w.new_local("vec_close")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_vector_close(i64 {i64v(0)})")
+            res = self._w.new_local("vec_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Validation
+        if name == "stdDbIsValidRecord":
+            res64 = self._w.new_local("val_rec")
+            self._w.emit(f"{res64} = call i64 @flux_std_db_is_valid_record(i8* {sptr(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("val_rec_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDbSanitizeIdentifier":
+            res = self._w.new_local("san_id")
+            self._w.emit(f"{res} = call i8* @flux_std_db_sanitize_identifier(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdDbEscapeString":
+            res = self._w.new_local("esc_str")
+            self._w.emit(f"{res} = call i8* @flux_std_db_escape_string(i8* {sptr(0)})")
+            return (res, "i8*")
+
+        raise CodegenError(f"unsupported db intrinsic '{name}'")
+
+    def _gen_std_dsl_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        # Lexer
+        if name == "stdDslCreateLexer":
+            res = self._w.new_local("dsl_lex")
+            self._w.emit(f"{res} = call i64 @flux_std_dsl_create_lexer(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdDslTokenize":
+            res = self._w.new_local("dsl_toks")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_tokenize(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDslGetLexerTokens":
+            res = self._w.new_local("dsl_tok_names")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_get_lexer_tokens(i64 {i64v(0)})")
+            return (res, "i8*")
+
+        # Parser
+        if name == "stdDslCreateParser":
+            res = self._w.new_local("dsl_parser")
+            self._w.emit(f"{res} = call i64 @flux_std_dsl_create_parser(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDslIsValidSyntax":
+            res64 = self._w.new_local("dsl_valid")
+            self._w.emit(f"{res64} = call i64 @flux_std_dsl_is_valid_syntax(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("dsl_valid_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDslGetErrors":
+            res = self._w.new_local("dsl_errs")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_get_errors(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDslFormatErrors":
+            res = self._w.new_local("dsl_fmt_errs")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_format_errors(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+
+        # AST
+        if name == "stdDslGenerateAst":
+            res = self._w.new_local("dsl_ast")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_generate_ast(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDslDumpAst":
+            res = self._w.new_local("dsl_dump")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_dump_ast(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdDslFindAstNodes":
+            res = self._w.new_local("dsl_nodes")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_find_ast_nodes(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDslTransformAst":
+            res = self._w.new_local("dsl_trans")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_transform_ast(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+
+        # Execution
+        if name == "stdDslCompile":
+            res = self._w.new_local("dsl_comp")
+            self._w.emit(f"{res} = call i64 @flux_std_dsl_compile(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i64")
+        if name == "stdDslExecuteInline":
+            res = self._w.new_local("dsl_exec")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_execute_inline(i64 {i64v(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i8*")
+
+        # Assembly
+        if name == "stdDslGetAsmEngine":
+            res = self._w.new_local("asm_eng")
+            self._w.emit(f"{res} = call i64 @flux_std_dsl_get_asm_engine(i8* {sptr(0)})")
+            return (res, "i64")
+        if name == "stdDslAsmAssemble":
+            res = self._w.new_local("asm_bytes")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_asm_assemble(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDslAsmDisassemble":
+            res = self._w.new_local("asm_dis")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_asm_disassemble(i64 {i64v(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdDslAsmValidateRegisters":
+            res64 = self._w.new_local("asm_val_reg")
+            self._w.emit(f"{res64} = call i64 @flux_std_dsl_asm_validate_registers(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("asm_val_reg_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDslAsmGetRegisterMap":
+            res = self._w.new_local("asm_reg_map")
+            self._w.emit(f"{res} = call i8* @flux_std_dsl_asm_get_register_map(i64 {i64v(0)})")
+            return (res, "i8*")
+
+        # Sandbox
+        if name == "stdDslSetTimeout":
+            res64 = self._w.new_local("dsl_to")
+            self._w.emit(f"{res64} = call i64 @flux_std_dsl_set_timeout(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("dsl_to_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDslSetInstructionLimit":
+            res64 = self._w.new_local("dsl_il")
+            self._w.emit(f"{res64} = call i64 @flux_std_dsl_set_instruction_limit(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("dsl_il_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdDslSetMemoryLimit":
+            res64 = self._w.new_local("dsl_ml")
+            self._w.emit(f"{res64} = call i64 @flux_std_dsl_set_memory_limit(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("dsl_ml_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        raise CodegenError(f"unsupported dsl intrinsic '{name}'")
 
     def _gen_std_collection_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
         def av(i: int) -> tuple[str, str]:

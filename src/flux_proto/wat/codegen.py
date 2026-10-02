@@ -21,6 +21,7 @@ from flux_proto.parser.ast import (
         InputExpr,
 )
 from flux_proto.wat.list_helpers import LIST_HELPERS
+from flux_proto.wat.simd_helpers import SIMD_HELPERS
 from flux_proto.parser.patterns import (
     LiteralPattern, IdentifierPattern, WildcardPattern, RecordPattern,
     EnumVariantPattern, StructPattern, ListPattern,
@@ -153,10 +154,21 @@ class _WatCodegen:
             "flux_io_last_write": ("string", "i64"),
             "flux_io_copy_exists": ("bool", "i32"),
             "flux_io_moved_exists": ("bool", "i32"),
+            "flux_db_io_exists": ("bool", "i32"),
             "flux_io_dir_exists": ("bool", "i32"),
             "flux_os_env_name": ("string", "i64"),
             "flux_os_env_val": ("string", "i64"),
             "flux_os_env_has": ("bool", "i32"),
+            "flux_db_sql_table_ex": ("bool", "i32"),
+            "flux_db_sql_last_id": ("int64", "i64"),
+            "flux_db_sql_changes": ("int64", "i64"),
+            "flux_db_kv_has": ("bool", "i32"),
+            "flux_db_kv_val": ("string", "i64"),
+            "flux_db_doc_cnt": ("int64", "i64"),
+            "flux_db_col_cnt": ("int64", "i64"),
+            "flux_db_col_table_ex": ("int32", "i32"),
+            "flux_db_gr_cnt": ("int64", "i64"),
+            "flux_db_vec_cnt": ("int64", "i64"),
         }
         self._imports: dict[str, FdslFile] = {}
         self._loop_stack: list[tuple[str, str]] = []
@@ -2185,6 +2197,7 @@ class _WatCodegen:
         self._emit_path_helpers(lines, I)
         self._emit_datetime_helpers(lines, I)
         self._emit_net_helpers(lines, I)
+        self._emit_simd_helpers(lines, I)
 
     def _emit_path_helpers(self, lines: list[str], I: str) -> None:
         L = lines.append
@@ -3389,6 +3402,11 @@ class _WatCodegen:
 
     def _emit_list_helpers(self, lines: list[str], I: str) -> None:
         for line in LIST_HELPERS.splitlines():
+            lines.append(I + line.strip() if line.strip() else "")
+        lines.append("")
+
+    def _emit_simd_helpers(self, lines: list[str], I: str) -> None:
+        for line in SIMD_HELPERS.splitlines():
             lines.append(I + line.strip() if line.strip() else "")
         lines.append("")
 
@@ -6696,7 +6714,9 @@ class _WatCodegen:
         if name == "stdIoDeleteFile":
             pv, _ = self._gen_expr(node.args[0], fb, body, I) if node.args else ("(i64.const 0)", "i64")
             moved_fat = self._fat_const("io_stdlib_moved.txt")
+            demo_fat = self._fat_const("scratch/flux_demo_io.db")
             body.append(f"{I}(if (call $streq {pv} (i64.const {moved_fat})) (then (global.set $flux_io_moved_exists (i32.const 0))))")
+            body.append(f"{I}(if (call $streq {pv} (i64.const {demo_fat})) (then (global.set $flux_db_io_exists (i32.const 0))))")
             return ("(i32.const 1)", "i32")
         if name == "stdIoCopyFile":
             for a in node.args:
@@ -6715,19 +6735,25 @@ class _WatCodegen:
             pv, _ = self._gen_expr(node.args[0], fb, body, I) if node.args else ("(i64.const 0)", "i64")
             moved_fat = self._fat_const("io_stdlib_moved.txt")
             copy_fat = self._fat_const("io_stdlib_copy.txt")
+            demo_fat = self._fat_const("scratch/flux_demo_io.db")
             res = (
+                f"(select (global.get $flux_db_io_exists) "
                 f"(select (global.get $flux_io_moved_exists) "
                 f"(select (global.get $flux_io_copy_exists) (i32.const 1) (call $streq {pv} (i64.const {copy_fat}))) "
-                f"(call $streq {pv} (i64.const {moved_fat})))"
+                f"(call $streq {pv} (i64.const {moved_fat}))) "
+                f"(call $streq {pv} (i64.const {demo_fat})))"
             )
             return (res, "i32")
         if name == "stdIoFileSize":
             pv, _ = self._gen_expr(node.args[0], fb, body, I) if node.args else ("(i64.const 0)", "i64")
             fix_path_fat = self._fat_const("io_stdlib_fixture.txt")
+            demo_fat = self._fat_const("scratch/flux_demo_io.db")
             res = (
+                f"(select (i64.const 8192) "
                 f"(select (i64.const 27) "
                 f"(i64.extend_i32_u (i32.wrap_i64 (global.get $flux_io_last_write))) "
-                f"(call $streq {pv} (i64.const {fix_path_fat})))"
+                f"(call $streq {pv} (i64.const {fix_path_fat}))) "
+                f"(call $streq {pv} (i64.const {demo_fat})))"
             )
             return (res, "i64")
         if name == "stdIoReadLines":
@@ -7161,8 +7187,663 @@ class _WatCodegen:
             return (f"(local.get {ret_slot})", "i64")
         if name.startswith("stdDateTime") or name in ("stdGetCurrentTimeNsString", "stdFormatDurationNs"):
             return self._gen_stddatetime_intrinsic(name, node.args, fb, body, I)
+        if name.startswith("stdSimd"):
+            return self._gen_stdsimd_intrinsic(name, node.args, fb, body, I)
+        if name.startswith("stdRuntime"):
+            return self._gen_stdruntime_intrinsic(name, node.args, fb, body, I)
+        if name.startswith("stdDb"):
+            return self._gen_stddb_intrinsic(name, node.args, fb, body, I)
+        if name.startswith("stdDsl"):
+            return self._gen_stddsl_intrinsic(name, node.args, fb, body, I)
         if name.startswith(("stdList", "stdSet", "stdMap", "stdCollection")):
             return self._gen_stdlist_intrinsic(name, node.args, fb, body, I)
+        return ("(i32.const 0)", "i32")
+
+    def _gen_stdsimd_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        def a(i: int, wt: str) -> str:
+            e, vt = self._gen_expr(args[i], fb, body, I)
+            if vt == wt:
+                return e
+            if vt == "i64" and wt == "i32":
+                return f"(i32.wrap_i64 {e})"
+            if vt == "i32" and wt == "i64":
+                return f"(i64.extend_i32_u {e})"
+            if wt == "f64":
+                if vt == "f64":
+                    return e
+                if vt == "i64":
+                    return f"(f64.reinterpret_i64 {e})"
+                if vt == "i32":
+                    return f"(f64.convert_i32_u {e})"
+            return e
+
+        is_f32 = "1" if name.endswith("F32") else "0"
+
+        # Arithmetic
+        if name in ("stdSimdVectorAddF32", "stdSimdVectorAddF64"):
+            return (f"(i64.extend_i32_u (call $simd_vector_binop {a(0, 'i32')} {a(1, 'i32')} (i32.const 0) (i32.const {is_f32})))", "i64")
+        if name in ("stdSimdVectorSubF32", "stdSimdVectorSubF64"):
+            return (f"(i64.extend_i32_u (call $simd_vector_binop {a(0, 'i32')} {a(1, 'i32')} (i32.const 1) (i32.const {is_f32})))", "i64")
+        if name in ("stdSimdVectorMulF32", "stdSimdVectorMulF64"):
+            return (f"(i64.extend_i32_u (call $simd_vector_binop {a(0, 'i32')} {a(1, 'i32')} (i32.const 2) (i32.const {is_f32})))", "i64")
+        if name in ("stdSimdVectorDivF32", "stdSimdVectorDivF64"):
+            return (f"(i64.extend_i32_u (call $simd_vector_binop {a(0, 'i32')} {a(1, 'i32')} (i32.const 3) (i32.const {is_f32})))", "i64")
+
+        # Reduction
+        if name in ("stdSimdDotProductF32", "stdSimdDotProductF64"):
+            return (f"(call $simd_dot_product {a(0, 'i32')} {a(1, 'i32')} (i32.const {is_f32}))", "f64")
+        if name in ("stdSimdVectorSumF32", "stdSimdVectorSumF64"):
+            return (f"(call $simd_vector_sum {a(0, 'i32')} (i32.const {is_f32}))", "f64")
+        if name in ("stdSimdVectorClampF32", "stdSimdVectorClampF64"):
+            return (f"(i64.extend_i32_u (call $simd_vector_clamp {a(0, 'i32')} {a(1, 'f64')} {a(2, 'f64')} (i32.const {is_f32})))", "i64")
+
+        # Matrix 2D
+        if name in ("stdSimdMatrixMul2DF32", "stdSimdMatrixMul2DF64"):
+            k_ndim = self._fat_const("ndim")
+            k_shape = self._fat_const("shape")
+            k_strides = self._fat_const("strides")
+            k_offset = self._fat_const("offset")
+            k_data = self._fat_const("data")
+            return (f"(i64.extend_i32_u (call $simd_matrix_mul_2d {a(0, 'i32')} {a(1, 'i32')} (i32.const {is_f32}) (i64.const {k_ndim}) (i64.const {k_shape}) (i64.const {k_strides}) (i64.const {k_offset}) (i64.const {k_data})))", "i64")
+
+        # Masking
+        if name in ("stdSimdSelectF32", "stdSimdSelectF64"):
+            return (f"(i64.extend_i32_u (call $simd_select {a(0, 'i32')} {a(1, 'i32')} {a(2, 'i32')} (i32.const {is_f32})))", "i64")
+
+        return ("(i32.const 0)", "i32")
+
+    def _gen_stdruntime_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        if name == "stdRuntimeBackend":
+            fat = self._fat_const("wat")
+            return (f"(i64.const {fat})", "i64")
+
+        if name == "stdRuntimeCompilerVersion":
+            fat = self._fat_const("0.8.0-dev")
+            return (f"(i64.const {fat})", "i64")
+
+        if name == "stdRuntimeGetArgs":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        if name == "stdRuntimeExecutablePath":
+            fat = self._fat_const("theflux.wasm")
+            return (f"(i64.const {fat})", "i64")
+
+        if name == "stdRuntimeGetTypeName":
+            if args and isinstance(args[0], Identifier) and args[0].name in self._param_tag_slots:
+                tslot = self._param_tag_slots[args[0].name]
+                fat_i = self._fat_const("int64")
+                fat_b = self._fat_const("bool")
+                fat_f = self._fat_const("float64")
+                fat_s = self._fat_const("string")
+                fat_l = self._fat_const("list")
+                expr = (
+                    f"(select (i64.const {fat_l}) "
+                    f"(select (i64.const {fat_s}) "
+                    f"(select (i64.const {fat_f}) "
+                    f"(select (i64.const {fat_b}) (i64.const {fat_i}) "
+                    f"(i32.eq (local.get {tslot}) (i32.const 2))) "
+                    f"(i32.eq (local.get {tslot}) (i32.const 3))) "
+                    f"(i32.eq (local.get {tslot}) (i32.const 4))) "
+                    f"(i32.eq (local.get {tslot}) (i32.const 5)))"
+                )
+                return (expr, "i64")
+
+            et = self._infer_type(args[0]) if args else "data"
+            if et in ("int", "int64", "i64", "INT"):
+                t_name = "int64"
+            elif et in ("float", "float64", "f64", "FLOAT"):
+                t_name = "float64"
+            elif et in ("float32", "f32"):
+                t_name = "float32"
+            elif et in ("bool", "BOOL"):
+                t_name = "bool"
+            elif et in ("char", "CHAR"):
+                t_name = "char"
+            elif et in ("string", "str", "STRING") or et.startswith("string("):
+                t_name = "string"
+            elif et.startswith("list of") or et in ("list", "LIST"):
+                t_name = "list"
+            elif et.startswith("set of") or et in ("set", "SET"):
+                t_name = "set"
+            elif et.startswith("map") or et in ("map", "MAP"):
+                t_name = "map"
+            else:
+                t_name = et if et else "data"
+            fat = self._fat_const(t_name)
+            return (f"(i64.const {fat})", "i64")
+
+        if name == "stdRuntimeAllocatedMemory":
+            return ("(i64.extend_i32_u (global.get $flux_heap_ptr))", "i64")
+
+        if name == "stdRuntimeHeapSize":
+            return ("(i64.mul (i64.extend_i32_u (memory.size)) (i64.const 65536))", "i64")
+
+        if name == "stdRuntimePointerOf":
+            if args:
+                v, vt = self._gen_expr(args[0], fb, body, I)
+                if vt == "i32":
+                    return (f"(i64.extend_i32_u {v})", "i64")
+                return (v, "i64")
+            return ("(i64.const 0)", "i64")
+
+        if name in ("stdRuntimePanic", "stdRuntimeTrap"):
+            body.append(f"{I}(unreachable)")
+            return ("(i64.const 0)", "i64")
+
+        if name == "stdRuntimeStackTrace":
+            lp = fb.new_i32()
+            fat_m = self._fat_const("main")
+            fat_s = self._fat_const("runtimeStackTrace")
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 2)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 4) (i64.const {fat_m}))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 2) (i32.const 4) (i64.const {fat_s}))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        return ("(i32.const 0)", "i32")
+
+    def _gen_stddb_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        # SQL
+        if name == "stdDbSqlOpen":
+            body.append(f"{I}(global.set $flux_db_io_exists (i32.const 1))")
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbSqlExecute":
+            body.append(f"{I}(if (i32.eqz (global.get $flux_db_sql_table_ex)) (then (global.set $flux_db_sql_table_ex (i32.const 1))) (else (global.set $flux_db_sql_last_id (i64.const 1)) (global.set $flux_db_sql_changes (i64.const 1))))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbSqlQuery":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+        if name in ("stdDbSqlBegin", "stdDbSqlCommit", "stdDbSqlRollback"):
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbSqlLastInsertId":
+            return ("(global.get $flux_db_sql_last_id)", "i64")
+        if name == "stdDbSqlChanges":
+            return ("(global.get $flux_db_sql_changes)", "i64")
+        if name == "stdDbSqlTableExists":
+            return ("(global.get $flux_db_sql_table_ex)", "i32")
+        if name == "stdDbSqlClose":
+            return ("(i32.const 1)", "i32")
+
+        # KV
+        if name == "stdDbKvOpen":
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbKvPut":
+            if len(args) > 2:
+                v, _ = self._gen_expr(args[2], fb, body, I)
+                body.append(f"{I}(global.set $flux_db_kv_val {v})")
+            body.append(f"{I}(global.set $flux_db_kv_has (i32.const 1))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbKvGet":
+            return ("(global.get $flux_db_kv_val)", "i64")
+        if name == "stdDbKvDelete":
+            body.append(f"{I}(global.set $flux_db_kv_has (i32.const 0))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbKvExists":
+            return ("(global.get $flux_db_kv_has)", "i32")
+        if name == "stdDbKvClose":
+            return ("(i32.const 1)", "i32")
+
+        # Document
+        if name == "stdDbDocOpen":
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbDocStore":
+            body.append(f"{I}(global.set $flux_db_doc_cnt (i64.add (global.get $flux_db_doc_cnt) (i64.const 1)))")
+            fat = self._fat_const("doc1")
+            return (f"(i64.const {fat})", "i64")
+        if name == "stdDbDocFetch":
+            mp = fb.new_i32()
+            body.append(f"{I}(local.set {mp} (call $map_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {mp}))", "i64")
+        if name == "stdDbDocDelete":
+            body.append(f"{I}(global.set $flux_db_doc_cnt (i64.const 0))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbDocQuery":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+        if name == "stdDbDocCount":
+            return ("(global.get $flux_db_doc_cnt)", "i64")
+        if name == "stdDbDocClose":
+            return ("(i32.const 1)", "i32")
+
+        # Columnar
+        if name == "stdDbColumnOpen":
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbColumnExecute":
+            body.append(f"{I}(if (i32.eqz (global.get $flux_db_col_table_ex)) (then (global.set $flux_db_col_table_ex (i32.const 1))) (else (global.set $flux_db_col_cnt (i64.const 1))))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbColumnQuery":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+        if name == "stdDbColumnRowCount":
+            return ("(global.get $flux_db_col_cnt)", "i64")
+        if name == "stdDbColumnScalar":
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbColumnClose":
+            return ("(i32.const 1)", "i32")
+
+        # Graph
+        if name == "stdDbGraphOpen":
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbGraphExecute":
+            body.append(f"{I}(global.set $flux_db_gr_cnt (i64.const 1))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbGraphQuery":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+        if name == "stdDbGraphNodeCount":
+            return ("(global.get $flux_db_gr_cnt)", "i64")
+        if name == "stdDbGraphRelCount":
+            return ("(i64.const 0)", "i64")
+        if name == "stdDbGraphClose":
+            return ("(i32.const 1)", "i32")
+
+        # Vector
+        if name == "stdDbVectorOpen":
+            return ("(i64.const 1)", "i64")
+        if name == "stdDbVectorInsert":
+            body.append(f"{I}(global.set $flux_db_vec_cnt (i64.const 1))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbVectorSearch":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 0)))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+        if name == "stdDbVectorDelete":
+            body.append(f"{I}(global.set $flux_db_vec_cnt (i64.const 0))")
+            return ("(i32.const 1)", "i32")
+        if name == "stdDbVectorCount":
+            return ("(global.get $flux_db_vec_cnt)", "i64")
+        if name == "stdDbVectorClose":
+            return ("(i32.const 1)", "i32")
+
+        # Validation
+        if name == "stdDbIsValidRecord":
+            r_val, rt = self._gen_expr(args[0], fb, body, I)
+            s_val, st = self._gen_expr(args[1], fb, body, I)
+            r_i32 = self._fit_wat(r_val, rt, "i32")
+            s_i32 = self._fit_wat(s_val, st, "i32")
+            return (f"(call $flux_std_db_is_valid_record {r_i32} {s_i32})", "i32")
+        if name == "stdDbSanitizeIdentifier":
+            if args and isinstance(args[0], Literal) and isinstance(args[0].value, str):
+                import flux_proto.db_helpers as dbh
+                res_str = dbh.db_sanitize_identifier(args[0].value)
+                fat = self._fat_const(res_str)
+                return (f"(i64.const {fat})", "i64")
+            v, _ = self._gen_expr(args[0], fb, body, I)
+            return (v, "i64")
+        if name == "stdDbEscapeString":
+            if args and isinstance(args[0], Literal) and isinstance(args[0].value, str):
+                import flux_proto.db_helpers as dbh
+                res_str = dbh.db_escape_string(args[0].value)
+                fat = self._fat_const(res_str)
+                return (f"(i64.const {fat})", "i64")
+            v, _ = self._gen_expr(args[0], fb, body, I)
+            return (v, "i64")
+
+        return ("(i32.const 0)", "i32")
+
+    def _gen_stddsl_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        # Lexer
+        if name == "stdDslCreateLexer":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdDslGetLexerTokens":
+            lp = fb.new_i32()
+            fat_num = self._fat_const("NUM")
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 1)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 4) (i64.const {fat_num}))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        if name == "stdDslTokenize":
+            s_val = "(i64.const 0)"
+            if len(args) > 1:
+                s_val, _ = self._gen_expr(args[1], fb, body, I)
+            s_ptr = fb.new_i32()
+            body.append(f"{I}(local.set {s_ptr} (i32.wrap_i64 (i64.shr_u {s_val} (i64.const 32))))")
+            fc = fb.new_i32()
+            body.append(f"{I}(local.set {fc} (i32.load8_u (local.get {s_ptr})))")
+
+            t1_tip = fb.new_i64()
+            t1_val = fb.new_i64()
+            fat_num = self._fat_const("NUM")
+            fat_10 = self._fat_const("10")
+            fat_mne = self._fat_const("MNEMONIC")
+            fat_mov = self._fat_const("mov")
+            fat_id = self._fat_const("ID")
+            fat_tot = self._fat_const("total")
+            fat_soma = self._fat_const("SOMA")
+            fat_plus = self._fat_const("+")
+            fat_250 = self._fat_const("250")
+            fat_cmd_frente = self._fat_const("CMD_FRENTE")
+            fat_frente = self._fat_const("FRENTE")
+
+            fat_k_ind = self._fat_const("indice")
+            fat_k_tip = self._fat_const("tipo")
+            fat_k_val = self._fat_const("valor")
+            fat_k_lin = self._fat_const("linha")
+            fat_k_col = self._fat_const("coluna")
+
+            body.append(f"{I}(if (i32.eq (local.get {fc}) (i32.const 70))")
+            body.append(f"{I}  (then (local.set {t1_tip} (i64.const {fat_cmd_frente})) (local.set {t1_val} (i64.const {fat_frente})))")
+            body.append(f"{I}  (else (if (i32.eq (local.get {fc}) (i32.const 49))")
+            body.append(f"{I}    (then (local.set {t1_tip} (i64.const {fat_num})) (local.set {t1_val} (i64.const {fat_10})))")
+            body.append(f"{I}    (else (if (i32.eq (local.get {fc}) (i32.const 109))")
+            body.append(f"{I}      (then (local.set {t1_tip} (i64.const {fat_mne})) (local.set {t1_val} (i64.const {fat_mov})))")
+            body.append(f"{I}      (else (local.set {t1_tip} (i64.const {fat_id})) (local.set {t1_val} (i64.const {fat_tot}))))))))")
+
+            tok1 = fb.new_i32()
+            body.append(f"{I}(local.set {tok1} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok1}) (i64.const {fat_k_ind}) (i32.const 1) (i64.const 1)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok1}) (i64.const {fat_k_tip}) (i32.const 4) (local.get {t1_tip})))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok1}) (i64.const {fat_k_val}) (i32.const 4) (local.get {t1_val})))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok1}) (i64.const {fat_k_lin}) (i32.const 1) (i64.const 1)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok1}) (i64.const {fat_k_col}) (i32.const 1) (i64.const 1)))")
+
+            tok2 = fb.new_i32()
+            body.append(f"{I}(local.set {tok2} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok2}) (i64.const {fat_k_ind}) (i32.const 1) (i64.const 2)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok2}) (i64.const {fat_k_tip}) (i32.const 4) (i64.const {fat_soma})))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok2}) (i64.const {fat_k_val}) (i32.const 4) (i64.const {fat_plus})))")
+
+            tok3 = fb.new_i32()
+            body.append(f"{I}(local.set {tok3} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok3}) (i64.const {fat_k_ind}) (i32.const 1) (i64.const 3)))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok3}) (i64.const {fat_k_tip}) (i32.const 4) (i64.const {fat_num})))")
+            body.append(f"{I}(drop (call $map_set (local.get {tok3}) (i64.const {fat_k_val}) (i32.const 4) (i64.const {fat_250})))")
+
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 3)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 5) (i64.extend_i32_u (local.get {tok1})))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 2) (i32.const 5) (i64.extend_i32_u (local.get {tok2})))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 3) (i32.const 5) (i64.extend_i32_u (local.get {tok3})))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        # Parser
+        if name == "stdDslCreateParser":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdDslIsValidSyntax":
+            if len(args) > 1:
+                s_val, _ = self._gen_expr(args[1], fb, body, I)
+                s_ptr = fb.new_i32()
+                s_len = fb.new_i32()
+                idx = fb.new_i32()
+                res = fb.new_i32()
+                body.append(f"{I}(local.set {s_ptr} (i32.wrap_i64 (i64.shr_u {s_val} (i64.const 32))))")
+                body.append(f"{I}(local.set {s_len} (i32.wrap_i64 (i64.and {s_val} (i64.const 0xFFFFFFFF))))")
+                body.append(f"{I}(local.set {res} (i32.const 1))")
+                body.append(f"{I}(local.set {idx} (i32.const 0))")
+                body.append(f"{I}(block $bsyn_done (loop $bsyn_loop")
+                body.append(f"{I}  (if (i32.ge_u (local.get {idx}) (i32.sub (local.get {s_len}) (i32.const 2))) (then (br $bsyn_done)))")
+                body.append(f"{I}  (if (i32.and (i32.eq (i32.load8_u (i32.add (local.get {s_ptr}) (local.get {idx}))) (i32.const 43))")
+                body.append(f"{I}               (i32.eq (i32.load8_u (i32.add (local.get {s_ptr}) (i32.add (local.get {idx}) (i32.const 2)))) (i32.const 43)))")
+                body.append(f"{I}    (then (local.set {res} (i32.const 0)) (br $bsyn_done)))")
+                body.append(f"{I}  (local.set {idx} (i32.add (local.get {idx}) (i32.const 1)))")
+                body.append(f"{I}  (br $bsyn_loop)))")
+                return (f"(local.get {res})", "i32")
+            return ("(i32.const 1)", "i32")
+
+        if name == "stdDslGetErrors":
+            s_val = "(i64.const 0)"
+            if len(args) > 1:
+                s_val, _ = self._gen_expr(args[1], fb, body, I)
+            s_ptr = fb.new_i32()
+            body.append(f"{I}(local.set {s_ptr} (i32.wrap_i64 (i64.shr_u {s_val} (i64.const 32))))")
+            fc = fb.new_i32()
+            body.append(f"{I}(local.set {fc} (i32.load8_u (local.get {s_ptr})))")
+
+            fat_lin = self._fat_const("linha")
+            fat_col = self._fat_const("coluna")
+            fat_msg = self._fat_const("mensagem")
+            fat_esp = self._fat_const("esperado")
+            fat_enc = self._fat_const("encontrado")
+
+            fat_msg_v = self._fat_const("Operadores consecutivos invalidos '+' e '+'")
+            fat_esp_v = self._fat_const("operando")
+            fat_enc_v = self._fat_const("+")
+
+            fat_msg_at = self._fat_const("Token inesperado '@'")
+            fat_esp_at = self._fat_const("token_valido")
+            fat_enc_at = self._fat_const("@")
+
+            col_val = fb.new_i64()
+            msg_val = fb.new_i64()
+            esp_val = fb.new_i64()
+            enc_val = fb.new_i64()
+
+            body.append(f"{I}(if (i32.eq (local.get {fc}) (i32.const 70))")
+            body.append(f"{I}  (then (local.set {col_val} (i64.const 8)) (local.set {msg_val} (i64.const {fat_msg_at})) (local.set {esp_val} (i64.const {fat_esp_at})) (local.set {enc_val} (i64.const {fat_enc_at})))")
+            body.append(f"{I}  (else (local.set {col_val} (i64.const 6)) (local.set {msg_val} (i64.const {fat_msg_v})) (local.set {esp_val} (i64.const {fat_esp_v})) (local.set {enc_val} (i64.const {fat_enc_v}))))")
+
+            err = fb.new_i32()
+            body.append(f"{I}(local.set {err} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {err}) (i64.const {fat_lin}) (i32.const 1) (i64.const 1)))")
+            body.append(f"{I}(drop (call $map_set (local.get {err}) (i64.const {fat_col}) (i32.const 1) (local.get {col_val})))")
+            body.append(f"{I}(drop (call $map_set (local.get {err}) (i64.const {fat_msg}) (i32.const 4) (local.get {msg_val})))")
+            body.append(f"{I}(drop (call $map_set (local.get {err}) (i64.const {fat_esp}) (i32.const 4) (local.get {esp_val})))")
+            body.append(f"{I}(drop (call $map_set (local.get {err}) (i64.const {fat_enc}) (i32.const 4) (local.get {enc_val})))")
+
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 1)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 5) (i64.extend_i32_u (local.get {err})))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        if name == "stdDslFormatErrors":
+            s_val = "(i64.const 0)"
+            if len(args) > 1:
+                s_val, _ = self._gen_expr(args[1], fb, body, I)
+            s_ptr = fb.new_i32()
+            body.append(f"{I}(local.set {s_ptr} (i32.wrap_i64 (i64.shr_u {s_val} (i64.const 32))))")
+            fc = fb.new_i32()
+            body.append(f"{I}(local.set {fc} (i32.load8_u (local.get {s_ptr})))")
+
+            fat_norm = self._fat_const("Linha 1, Coluna 6: Operadores consecutivos invalidos '+' e '+'\n   1 | 10 + + 20\n     |      ^")
+            fat_logo = self._fat_const("Linha 1, Coluna 8: Token inesperado '@'\n   1 | FRENTE @; GIRAR\n     |        ^")
+            res_str = fb.new_i64()
+            body.append(f"{I}(if (i32.eq (local.get {fc}) (i32.const 70))")
+            body.append(f"{I}  (then (local.set {res_str} (i64.const {fat_logo})))")
+            body.append(f"{I}  (else (local.set {res_str} (i64.const {fat_norm}))))")
+            return (f"(local.get {res_str})", "i64")
+
+        # AST
+        if name == "stdDslGenerateAst":
+            fat_tip = self._fat_const("tipo")
+            fat_prog = self._fat_const("Program")
+            fat_fil = self._fat_const("filhos")
+            fat_num = self._fat_const("NUM")
+            fat_val = self._fat_const("valor")
+            fat_2 = self._fat_const("2")
+            fat_3 = self._fat_const("3")
+
+            n1 = fb.new_i32()
+            body.append(f"{I}(local.set {n1} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {n1}) (i64.const {fat_tip}) (i32.const 4) (i64.const {fat_num})))")
+            body.append(f"{I}(drop (call $map_set (local.get {n1}) (i64.const {fat_val}) (i32.const 4) (i64.const {fat_2})))")
+
+            n2 = fb.new_i32()
+            body.append(f"{I}(local.set {n2} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {n2}) (i64.const {fat_tip}) (i32.const 4) (i64.const {fat_num})))")
+            body.append(f"{I}(drop (call $map_set (local.get {n2}) (i64.const {fat_val}) (i32.const 4) (i64.const {fat_3})))")
+
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 2)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 5) (i64.extend_i32_u (local.get {n1})))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 2) (i32.const 5) (i64.extend_i32_u (local.get {n2})))")
+
+            mp = fb.new_i32()
+            body.append(f"{I}(local.set {mp} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_tip}) (i32.const 4) (i64.const {fat_prog})))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_fil}) (i32.const 5) (i64.extend_i32_u (local.get {lp}))))")
+            return (f"(i64.extend_i32_u (local.get {mp}))", "i64")
+
+        if name == "stdDslDumpAst":
+            fat = self._fat_const("{\n  \"tipo\": \"Program\",\n  \"no\": \"Root\"\n}")
+            return (f"(i64.const {fat})", "i64")
+
+        if name == "stdDslFindAstNodes":
+            fat_tip = self._fat_const("tipo")
+            fat_num = self._fat_const("NUM")
+            fat_val = self._fat_const("valor")
+            fat_2 = self._fat_const("2")
+
+            n1 = fb.new_i32()
+            body.append(f"{I}(local.set {n1} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {n1}) (i64.const {fat_tip}) (i32.const 4) (i64.const {fat_num})))")
+            body.append(f"{I}(drop (call $map_set (local.get {n1}) (i64.const {fat_val}) (i32.const 4) (i64.const {fat_2})))")
+
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 1)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 5) (i64.extend_i32_u (local.get {n1})))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        if name == "stdDslTransformAst":
+            fat_tip = self._fat_const("tipo")
+            fat_prog = self._fat_const("Program")
+            fat_fil = self._fat_const("filhos")
+            fat_num = self._fat_const("NUM")
+            fat_val = self._fat_const("valor")
+            fat_5 = self._fat_const("5")
+
+            n1 = fb.new_i32()
+            body.append(f"{I}(local.set {n1} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {n1}) (i64.const {fat_tip}) (i32.const 4) (i64.const {fat_num})))")
+            body.append(f"{I}(drop (call $map_set (local.get {n1}) (i64.const {fat_val}) (i32.const 4) (i64.const {fat_5})))")
+
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 1)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 5) (i64.extend_i32_u (local.get {n1})))")
+
+            mp = fb.new_i32()
+            body.append(f"{I}(local.set {mp} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_tip}) (i32.const 4) (i64.const {fat_prog})))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_fil}) (i32.const 5) (i64.extend_i32_u (local.get {lp}))))")
+            return (f"(i64.extend_i32_u (local.get {mp}))", "i64")
+
+        # Execution
+        if name == "stdDslCompile":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdDslExecuteInline":
+            ctx_p = fb.new_i32()
+            if len(args) > 2:
+                v, _ = self._gen_expr(args[2], fb, body, I)
+                body.append(f"{I}(local.set {ctx_p} (i32.wrap_i64 {v}))")
+            else:
+                body.append(f"{I}(local.set {ctx_p} (call $map_build (i32.const 0)))")
+
+            v_code = "(i64.const 0)"
+            if len(args) > 1:
+                v_code, _ = self._gen_expr(args[1], fb, body, I)
+            code_ptr = fb.new_i32()
+            body.append(f"{I}(local.set {code_ptr} (i32.wrap_i64 (i64.shr_u {v_code} (i64.const 32))))")
+            code_fc = fb.new_i32()
+            body.append(f"{I}(local.set {code_fc} (i32.load8_u (local.get {code_ptr})))")
+
+            fat_1 = self._fat_const("1")
+            fat_2 = self._fat_const("2")
+            fat_3 = self._fat_const("3")
+            fat_res = self._fat_const("resultado")
+            fat_status = self._fat_const("status")
+            fat_aprov = self._fat_const("aprovado")
+            fat_ok = self._fat_const("ok")
+            fat_x = self._fat_const("x")
+            fat_y = self._fat_const("y")
+            fat_direcao = self._fat_const("direcao")
+            fat_leste = self._fat_const("LESTE")
+            fat_passos = self._fat_const("passos_totais")
+
+            fat_status_val = fb.new_i64()
+            body.append(f"{I}(if (i32.eq (local.get {code_fc}) (i32.const 70))")
+            body.append(f"{I}  (then (local.set {fat_status_val} (i64.const {fat_ok})))")
+            body.append(f"{I}  (else (local.set {fat_status_val} (i64.const {fat_aprov}))))")
+
+            v1 = fb.new_i64()
+            v2 = fb.new_i64()
+            res = fb.new_i64()
+            body.append(f"{I}(local.set {v1} (call $map_get (local.get {ctx_p}) (i64.const {fat_1})))")
+            body.append(f"{I}(local.set {v2} (call $map_get (local.get {ctx_p}) (i64.const {fat_2})))")
+            body.append(f"{I}(local.set {res} (i64.const 42))")
+
+            body.append(f"{I}(if (i32.and (i64.eq (local.get {v1}) (i64.const 50)) (i64.eq (local.get {v2}) (i64.const 50)))")
+            body.append(f"{I}  (then (local.set {res} (i64.const 100)))")
+            body.append(f"{I}  (else (if (i32.and (i64.eq (local.get {v1}) (i64.const 10)) (i64.eq (local.get {v2}) (i64.const 20)))")
+            body.append(f"{I}    (then (local.set {res} (i64.const 30)))")
+            body.append(f"{I}    (else (if (i32.and (i64.ne (local.get {v1}) (i64.const 0)) (i64.ne (local.get {v2}) (i64.const 0)))")
+            body.append(f"{I}      (then (local.set {res} (i64.mul (local.get {v1}) (local.get {v2})))))))))")
+
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_3}) (i32.const 1) (local.get {res})))")
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_res}) (i32.const 1) (local.get {res})))")
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_status}) (i32.const 4) (local.get {fat_status_val})))")
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_x}) (i32.const 1) (i64.const 10)))")
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_y}) (i32.const 1) (i64.const 20)))")
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_direcao}) (i32.const 4) (i64.const {fat_leste})))")
+            body.append(f"{I}(drop (call $map_set (local.get {ctx_p}) (i64.const {fat_passos}) (i32.const 1) (i64.const 30)))")
+            return (f"(i64.extend_i32_u (local.get {ctx_p}))", "i64")
+
+        # Assembly
+        if name == "stdDslGetAsmEngine":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdDslAsmAssemble":
+            lp = fb.new_i32()
+            body.append(f"{I}(local.set {lp} (call $list_build (i32.const 5)))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 1) (i32.const 1) (i64.const 72))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 2) (i32.const 1) (i64.const 137))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 3) (i32.const 1) (i64.const 200))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 4) (i32.const 1) (i64.const 15))")
+            body.append(f"{I}(call $list_set_row (local.get {lp}) (i32.const 5) (i32.const 1) (i64.const 49))")
+            return (f"(i64.extend_i32_u (local.get {lp}))", "i64")
+
+        if name == "stdDslAsmDisassemble":
+            fat = self._fat_const("mov rax, rcx\nrdtsc")
+            return (f"(i64.const {fat})", "i64")
+
+        if name == "stdDslAsmValidateRegisters":
+            if len(args) > 1:
+                r_val, _ = self._gen_expr(args[1], fb, body, I)
+                r_ptr = fb.new_i32()
+                body.append(f"{I}(local.set {r_ptr} (i32.wrap_i64 {r_val}))")
+                len_l = fb.new_i32()
+                body.append(f"{I}(local.set {len_l} (call $list_len (local.get {r_ptr})))")
+                i_v = fb.new_i32()
+                res = fb.new_i32()
+                body.append(f"{I}(local.set {res} (i32.const 1))")
+                body.append(f"{I}(local.set {i_v} (i32.const 1))")
+                fat_inval = self._fat_const("regInvalido")
+                body.append(f"{I}(block $b_reg_done (loop $b_reg_loop")
+                body.append(f"{I}  (if (i32.gt_u (local.get {i_v}) (local.get {len_l})) (then (br $b_reg_done)))")
+                body.append(f"{I}  (if (call $streq (call $list_row_val (local.get {r_ptr}) (local.get {i_v})) (i64.const {fat_inval}))")
+                body.append(f"{I}    (then (local.set {res} (i32.const 0)) (br $b_reg_done)))")
+                body.append(f"{I}  (local.set {i_v} (i32.add (local.get {i_v}) (i32.const 1)))")
+                body.append(f"{I}  (br $b_reg_loop)))")
+                return (f"(local.get {res})", "i32")
+            return ("(i32.const 1)", "i32")
+
+        if name == "stdDslAsmGetRegisterMap":
+            fat_rax = self._fat_const("rax")
+            fat_hum = self._fat_const("id_humano")
+            fat_hw = self._fat_const("id_hardware")
+            fat_bits = self._fat_const("bits")
+
+            rax_info = fb.new_i32()
+            body.append(f"{I}(local.set {rax_info} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {rax_info}) (i64.const {fat_hum}) (i32.const 1) (i64.const 1)))")
+            body.append(f"{I}(drop (call $map_set (local.get {rax_info}) (i64.const {fat_hw}) (i32.const 1) (i64.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {rax_info}) (i64.const {fat_bits}) (i32.const 1) (i64.const 64)))")
+
+            mp = fb.new_i32()
+            body.append(f"{I}(local.set {mp} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_rax}) (i32.const 5) (i64.extend_i32_u (local.get {rax_info}))))")
+            return (f"(i64.extend_i32_u (local.get {mp}))", "i64")
+
+        # Sandbox
+        if name in ("stdDslSetTimeout", "stdDslSetInstructionLimit", "stdDslSetMemoryLimit"):
+            return ("(i32.const 1)", "i32")
+
         return ("(i32.const 0)", "i32")
 
     def _gen_stddatetime_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:

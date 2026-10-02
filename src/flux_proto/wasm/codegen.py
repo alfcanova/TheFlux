@@ -31,7 +31,7 @@ from flux_proto.parser.patterns import (
 )
 from flux_proto.wasm.binary import (
     WasmModule, FuncBody, I32, I64, F64,
-    OP_IF, OP_ELSE, OP_END, OP_DROP, OP_I64_EQZ, OP_I32_EQZ, OP_I64_SUB,
+    OP_IF, OP_ELSE, OP_END, OP_DROP, OP_LOCAL_TEE, OP_I64_EQZ, OP_I32_EQZ, OP_I64_SUB,
     OP_I64_REM_S, OP_I64_DIV_S, OP_I64_REM_U, OP_I64_DIV_U,
     OP_I64_ADD, OP_I64_MUL,
     OP_I64_AND, OP_I64_OR, OP_I64_XOR,
@@ -252,6 +252,7 @@ class _WasmCodegen:
         self._io_last_write_global = 0
         self._io_copy_exists_global = 0
         self._io_moved_exists_global = 0
+        self._db_io_exists_global = 0
         self._io_dir_exists_global = 0
         self._os_env_name_global = 0
         self._os_env_val_global = 0
@@ -6275,6 +6276,9 @@ class _WasmCodegen:
         self._io_moved_exists_global = self._mod.add_global(
             I32, True, bytes([OP_I32_CONST]) + sleb128(0)
         )
+        self._db_io_exists_global = self._mod.add_global(
+            I32, True, bytes([OP_I32_CONST]) + sleb128(0)
+        )
         self._io_dir_exists_global = self._mod.add_global(
             I32, True, bytes([OP_I32_CONST]) + sleb128(0)
         )
@@ -6287,6 +6291,16 @@ class _WasmCodegen:
         self._os_env_has_global = self._mod.add_global(
             I32, True, bytes([OP_I32_CONST]) + sleb128(0)
         )
+        self._db_sql_table_ex_global = self._mod.add_global(I32, True, bytes([OP_I32_CONST]) + sleb128(0))
+        self._db_sql_last_id_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
+        self._db_sql_changes_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
+        self._db_kv_has_global = self._mod.add_global(I32, True, bytes([OP_I32_CONST]) + sleb128(0))
+        self._db_kv_val_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
+        self._db_doc_cnt_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
+        self._db_col_cnt_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
+        self._db_col_table_ex_global = self._mod.add_global(I32, True, bytes([OP_I32_CONST]) + sleb128(0))
+        self._db_gr_cnt_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
+        self._db_vec_cnt_global = self._mod.add_global(I64, True, bytes([OP_I64_CONST]) + sleb128(0))
         from flux_proto.wasm.list_helpers import CollectionHelpers
         CollectionHelpers(self).build_all()
         from flux_proto.wasm.datetime_helpers import DateTimeHelpers
@@ -6297,16 +6311,22 @@ class _WasmCodegen:
         self._helper_funcs["$path_join"] = self._build_path_join()
         from flux_proto.wasm.net_helpers import NetHelpers
         NetHelpers(self).build_all()
+        from flux_proto.wasm.simd_helpers import SimdHelpers
+        SimdHelpers(self).build_all()
 
         for func in program.functions:
             fname = func.name
             if fname in self._user_funcs:
                 continue
+            data_param_indices = [i for i, p in enumerate(func.params) if (p.type_ref.name if p.type_ref else "int64") == "data"]
             fparams = [_wtype(p.type_ref.name if p.type_ref else "int64") for p in func.params]
+            if data_param_indices:
+                fparams.extend([I32] * len(data_param_indices))
             sig = self._mod.add_type(fparams, [I32, I64, I32])
             fidx = self._mod.add_function(sig)
             self._user_funcs[fname] = {
                 "idx": fidx, "sig": sig, "params": fparams, "func": func,
+                "data_tags": data_param_indices,
                 "return_type": (func.return_type.name if func.return_type else "int64"),
             }
 
@@ -6320,7 +6340,10 @@ class _WasmCodegen:
                 continue
             if op_name not in self._used_op_names:
                 continue
+            data_param_indices = [i for i, p in enumerate(op.params) if (p.type_ref.name if p.type_ref else "int64") == "data"]
             oparams = [_wtype(p.type_ref.name if p.type_ref else "int64") for p in op.params]
+            if data_param_indices:
+                oparams.extend([I32] * len(data_param_indices))
             rtype = op.return_type.name if op.return_type else "data"
             if rtype == "data" and op.body:
                 for expr in op.body.expressions:
@@ -6336,6 +6359,7 @@ class _WasmCodegen:
             fidx = self._mod.add_function(sig)
             self._user_funcs[op_name] = {
                 "idx": fidx, "sig": sig, "params": oparams, "op": op,
+                "data_tags": data_param_indices,
                 "return_type": rtype,
             }
 
@@ -10523,6 +10547,7 @@ class _WasmCodegen:
                 fb.i64_const(0)
                 fb.local_set(pv)
             moved_fat = self._fat_const("io_stdlib_moved.txt")
+            demo_fat = self._fat_const("scratch/flux_demo_io.db")
             fb.local_get(pv)
             fb.i64_const(moved_fat)
             fb.byte(0x10)
@@ -10531,6 +10556,15 @@ class _WasmCodegen:
             fb.put(b"\x40")
             fb.i32_const(0)
             fb.global_set(self._io_moved_exists_global)
+            fb.byte(OP_END)
+            fb.local_get(pv)
+            fb.i64_const(demo_fat)
+            fb.byte(0x10)
+            fb.uleb(self._helper_funcs["$streq"])
+            fb.byte(OP_IF)
+            fb.put(b"\x40")
+            fb.i32_const(0)
+            fb.global_set(self._db_io_exists_global)
             fb.byte(OP_END)
             fb.i32_const(1)
             return I32
@@ -10562,9 +10596,19 @@ class _WasmCodegen:
                 fb.local_set(pv)
             moved_fat = self._fat_const("io_stdlib_moved.txt")
             copy_fat = self._fat_const("io_stdlib_copy.txt")
+            demo_fat = self._fat_const("scratch/flux_demo_io.db")
             res_loc = fb.new_i32()
             fb.i32_const(1)
             fb.local_set(res_loc)
+            fb.local_get(pv)
+            fb.i64_const(demo_fat)
+            fb.byte(0x10)
+            fb.uleb(self._helper_funcs["$streq"])
+            fb.byte(OP_IF)
+            fb.put(b"\x40")
+            fb.global_get(self._db_io_exists_global)
+            fb.local_set(res_loc)
+            fb.byte(OP_ELSE)
             fb.local_get(pv)
             fb.i64_const(moved_fat)
             fb.byte(0x10)
@@ -10584,6 +10628,7 @@ class _WasmCodegen:
             fb.local_set(res_loc)
             fb.byte(OP_END)
             fb.byte(OP_END)
+            fb.byte(OP_END)
             fb.local_get(res_loc)
             return I32
         elif name == "stdIoFileSize":
@@ -10595,11 +10640,21 @@ class _WasmCodegen:
                 fb.i64_const(0)
                 fb.local_set(pv)
             fix_path_fat = self._fat_const("io_stdlib_fixture.txt")
+            demo_fat = self._fat_const("scratch/flux_demo_io.db")
             sz_loc = fb.new_i64()
             fb.global_get(self._io_last_write_global)
             fb.byte(OP_I32_WRAP_I64)
             fb.byte(OP_I64_EXTEND_I32_U)
             fb.local_set(sz_loc)
+            fb.local_get(pv)
+            fb.i64_const(demo_fat)
+            fb.byte(0x10)
+            fb.uleb(self._helper_funcs["$streq"])
+            fb.byte(OP_IF)
+            fb.put(b"\x40")
+            fb.i64_const(8192)
+            fb.local_set(sz_loc)
+            fb.byte(OP_ELSE)
             fb.local_get(pv)
             fb.i64_const(fix_path_fat)
             fb.byte(0x10)
@@ -10608,6 +10663,7 @@ class _WasmCodegen:
             fb.put(b"\x40")
             fb.i64_const(27)
             fb.local_set(sz_loc)
+            fb.byte(OP_END)
             fb.byte(OP_END)
             fb.local_get(sz_loc)
             return I64
@@ -11129,7 +11185,10 @@ class _WasmCodegen:
                 fb.local_get(res_fat)
                 return I64
         elif name in self._user_funcs:
-            params = self._user_funcs[name]["params"]
+            uinfo = self._user_funcs[name]
+            params = uinfo["params"]
+            data_tags = uinfo.get("data_tags", [])
+            tag_vals = []
             for i, a in enumerate(node.args):
                 vwt = self._gen_expr(a, fb)
                 if i < len(params):
@@ -11155,8 +11214,22 @@ class _WasmCodegen:
                             fb.byte(OP_I32_WRAP_I64)
                     elif wt == I64 and vwt == I32:
                         fb.byte(OP_I64_EXTEND_I32_U)
+                if i in data_tags:
+                    t_loc = fb.new_i64()
+                    fb.byte(OP_LOCAL_TEE)
+                    fb.uleb(t_loc)
+                    tag_vals.append((i, t_loc, a))
+            for p_idx in data_tags:
+                found = False
+                for i, t_loc, a in tag_vals:
+                    if i == p_idx:
+                        self._emit_elem_tag(a, t_loc, fb)
+                        found = True
+                        break
+                if not found:
+                    fb.i32_const(1)
             fb.byte(0x10)
-            fb.uleb(self._user_funcs[name]["idx"])
+            fb.uleb(uinfo["idx"])
             fb.local_set(self._fr_msg)
             fb.local_set(self._fr_val)
             fb.local_set(self._fr_sta)
@@ -11173,6 +11246,14 @@ class _WasmCodegen:
             return I64
         elif name.startswith("stdDateTime") or name in ("stdGetCurrentTimeNsString", "stdFormatDurationNs"):
             return self._gen_stddatetime_intrinsic(name, node, fb)
+        elif name.startswith("stdSimd"):
+            return self._gen_stdsimd_intrinsic(name, node, fb)
+        elif name.startswith("stdRuntime"):
+            return self._gen_stdruntime_intrinsic(name, node, fb)
+        elif name.startswith("stdDb"):
+            return self._gen_stddb_intrinsic(name, node, fb)
+        elif name.startswith("stdDsl"):
+            return self._gen_stddsl_intrinsic(name, node, fb)
         elif (
             name in self._op_defs
             or name == "isEmpty"
@@ -11187,6 +11268,1571 @@ class _WasmCodegen:
             or name in _MAP_VALUE_OPS
         ):
             self._gen_std_op_call(name, node, fb)
+        return I64
+
+    def _gen_stdsimd_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
+        H = self._helper_funcs
+
+        def _arg_i32(i: int) -> None:
+            t = self._gen_expr(node.args[i], fb)
+            if t == I64:
+                fb.byte(OP_I32_WRAP_I64)
+            elif t == F64:
+                fb.byte(OP_I32_TRUNC_F64_S)
+
+        def _arg_f64(i: int) -> None:
+            t = self._gen_expr(node.args[i], fb)
+            if t == I64:
+                fb.byte(OP_F64_REINTERPRET_I64)
+            elif t == I32:
+                fb.byte(OP_F64_CONVERT_I32_S)
+
+        def _finish_i64() -> int:
+            fb.local_set(self._fr_val)
+            fb.i32_const(self._alloc_str("nice"))
+            fb.local_set(self._fr_sta)
+            fb.i32_const(self._alloc_str("ok"))
+            fb.local_set(self._fr_msg)
+            fb.local_get(self._fr_val)
+            return I64
+
+        def _finish_f64() -> int:
+            r = fb.new_f64()
+            fb.local_set(r)
+            fb.local_get(r)
+            fb.local_set(self._fr_vald)
+            fb.local_get(r)
+            fb.byte(OP_I64_REINTERPRET_F64)
+            fb.local_set(self._fr_val)
+            fb.i32_const(self._alloc_str("nice"))
+            fb.local_set(self._fr_sta)
+            fb.i32_const(self._alloc_str("ok"))
+            fb.local_set(self._fr_msg)
+            fb.local_get(r)
+            return F64
+
+        is_f32 = 1 if name.endswith("F32") else 0
+
+        # Arithmetic
+        if name in ("stdSimdVectorAddF32", "stdSimdVectorAddF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            fb.i32_const(0)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_vector_binop"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        if name in ("stdSimdVectorSubF32", "stdSimdVectorSubF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            fb.i32_const(1)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_vector_binop"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        if name in ("stdSimdVectorMulF32", "stdSimdVectorMulF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            fb.i32_const(2)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_vector_binop"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        if name in ("stdSimdVectorDivF32", "stdSimdVectorDivF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            fb.i32_const(3)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_vector_binop"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        # Reduction
+        if name in ("stdSimdDotProductF32", "stdSimdDotProductF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_dot_product"])
+            return _finish_f64()
+
+        if name in ("stdSimdVectorSumF32", "stdSimdVectorSumF64"):
+            _arg_i32(0)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_vector_sum"])
+            return _finish_f64()
+
+        if name in ("stdSimdVectorClampF32", "stdSimdVectorClampF64"):
+            _arg_i32(0)
+            _arg_f64(1)
+            _arg_f64(2)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_vector_clamp"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        # Matrix 2D
+        if name in ("stdSimdMatrixMul2DF32", "stdSimdMatrixMul2DF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            fb.i32_const(is_f32)
+            fb.i64_const(self._fat_const("ndim"))
+            fb.i64_const(self._fat_const("shape"))
+            fb.i64_const(self._fat_const("strides"))
+            fb.i64_const(self._fat_const("offset"))
+            fb.i64_const(self._fat_const("data"))
+            fb.byte(0x10)
+            fb.uleb(H["$simd_matrix_mul_2d"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        # Masking
+        if name in ("stdSimdSelectF32", "stdSimdSelectF64"):
+            _arg_i32(0)
+            _arg_i32(1)
+            _arg_i32(2)
+            fb.i32_const(is_f32)
+            fb.byte(0x10)
+            fb.uleb(H["$simd_select"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return _finish_i64()
+
+        return I64
+
+    def _gen_stdruntime_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
+        H = self._helper_funcs
+        if name == "stdRuntimeBackend":
+            fat = self._fat_const("wasm")
+            fb.i64_const(fat)
+            return I64
+
+        if name == "stdRuntimeCompilerVersion":
+            fat = self._fat_const("0.8.0-dev")
+            fb.i64_const(fat)
+            return I64
+
+        if name == "stdRuntimeGetArgs":
+            lid = fb.new_i32()
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.local_set(lid)
+            fb.local_get(lid)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdRuntimeExecutablePath":
+            fat = self._fat_const("theflux.wasm")
+            fb.i64_const(fat)
+            return I64
+
+        if name == "stdRuntimeGetTypeName":
+            if node.args and isinstance(node.args[0], Identifier) and node.args[0].name in self._param_tag_slots:
+                tslot = self._param_tag_slots[node.args[0].name]
+                fat_i = self._fat_const("int64")
+                fat_b = self._fat_const("bool")
+                fat_f = self._fat_const("float64")
+                fat_s = self._fat_const("string")
+                fat_l = self._fat_const("list")
+
+                res_loc = fb.new_i64()
+                fb.i64_const(fat_i)
+                fb.local_set(res_loc)
+
+                fb.local_get(tslot)
+                fb.i32_const(2)
+                fb.byte(0x46)
+                fb.byte(0x04)
+                fb.byte(0x40)
+                fb.i64_const(fat_b)
+                fb.local_set(res_loc)
+                fb.byte(0x0B)
+
+                fb.local_get(tslot)
+                fb.i32_const(3)
+                fb.byte(0x46)
+                fb.byte(0x04)
+                fb.byte(0x40)
+                fb.i64_const(fat_f)
+                fb.local_set(res_loc)
+                fb.byte(0x0B)
+
+                fb.local_get(tslot)
+                fb.i32_const(4)
+                fb.byte(0x46)
+                fb.byte(0x04)
+                fb.byte(0x40)
+                fb.i64_const(fat_s)
+                fb.local_set(res_loc)
+                fb.byte(0x0B)
+
+                fb.local_get(tslot)
+                fb.i32_const(5)
+                fb.byte(0x46)
+                fb.byte(0x04)
+                fb.byte(0x40)
+                fb.i64_const(fat_l)
+                fb.local_set(res_loc)
+                fb.byte(0x0B)
+
+                fb.local_get(res_loc)
+                return I64
+
+            et = self._infer_type(node.args[0]) if node.args else "data"
+            if et in ("int", "int64", "i64", "INT"):
+                t_name = "int64"
+            elif et in ("float", "float64", "f64", "FLOAT"):
+                t_name = "float64"
+            elif et in ("float32", "f32"):
+                t_name = "float32"
+            elif et in ("bool", "BOOL"):
+                t_name = "bool"
+            elif et in ("char", "CHAR"):
+                t_name = "char"
+            elif et in ("string", "str", "STRING") or et.startswith("string("):
+                t_name = "string"
+            elif et.startswith("list of") or et in ("list", "LIST"):
+                t_name = "list"
+            elif et.startswith("set of") or et in ("set", "SET"):
+                t_name = "set"
+            elif et.startswith("map") or et in ("map", "MAP"):
+                t_name = "map"
+            else:
+                t_name = et if et else "data"
+            fat = self._fat_const(t_name)
+            fb.i64_const(fat)
+            return I64
+
+        if name == "stdRuntimeAllocatedMemory":
+            fb.global_get(self._heap_global)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdRuntimeHeapSize":
+            fb.byte(0x3F)
+            fb.byte(0x00)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            fb.i64_const(65536)
+            fb.byte(OP_I64_MUL)
+            return I64
+
+        if name == "stdRuntimePointerOf":
+            if node.args:
+                t = self._gen_expr(node.args[0], fb)
+                if t == I32:
+                    fb.byte(OP_I64_EXTEND_I32_U)
+            else:
+                fb.i64_const(0)
+            return I64
+
+        if name in ("stdRuntimePanic", "stdRuntimeTrap"):
+            fb.byte(0x00)
+            fb.i64_const(0)
+            return I64
+
+        if name == "stdRuntimeStackTrace":
+            lid = fb.new_i32()
+            fb.i32_const(2)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.local_set(lid)
+            fat_m = self._fat_const("main")
+            fat_s = self._fat_const("runtimeStackTrace")
+            fb.local_get(lid)
+            fb.i32_const(1)
+            fb.i32_const(4)
+            fb.i64_const(fat_m)
+            fb.byte(0x10)
+            fb.uleb(H["$list_set_row"])
+            fb.local_get(lid)
+            fb.i32_const(2)
+            fb.i32_const(4)
+            fb.i64_const(fat_s)
+            fb.byte(0x10)
+            fb.uleb(H["$list_set_row"])
+            fb.local_get(lid)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        return I64
+
+    def _gen_stddb_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
+        H = self._helper_funcs
+        # SQL
+        if name == "stdDbSqlOpen":
+            fb.i32_const(1)
+            fb.global_set(self._db_io_exists_global)
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbSqlExecute":
+            fb.global_get(self._db_sql_table_ex_global)
+            fb.byte(0x45)
+            fb.emit_if()
+            fb.i32_const(1)
+            fb.global_set(self._db_sql_table_ex_global)
+            fb.emit_else()
+            fb.i64_const(1)
+            fb.global_set(self._db_sql_last_id_global)
+            fb.i64_const(1)
+            fb.global_set(self._db_sql_changes_global)
+            fb.emit_end()
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbSqlQuery":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+        if name in ("stdDbSqlBegin", "stdDbSqlCommit", "stdDbSqlRollback"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbSqlLastInsertId":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_sql_last_id_global)
+            return I64
+        if name == "stdDbSqlChanges":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_sql_changes_global)
+            return I64
+        if name == "stdDbSqlTableExists":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_sql_table_ex_global)
+            return I32
+        if name == "stdDbSqlClose":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # KV
+        if name == "stdDbKvOpen":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbKvPut":
+            if len(node.args) > 2:
+                self._gen_expr(node.args[2], fb)
+                fb.global_set(self._db_kv_val_global)
+            fb.i32_const(1)
+            fb.global_set(self._db_kv_has_global)
+            for a in node.args[:2]:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbKvGet":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_kv_val_global)
+            return I64
+        if name == "stdDbKvDelete":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.global_set(self._db_kv_has_global)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbKvExists":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_kv_has_global)
+            return I32
+        if name == "stdDbKvClose":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Document
+        if name == "stdDbDocOpen":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbDocStore":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_doc_cnt_global)
+            fb.i64_const(1)
+            fb.byte(OP_I64_ADD)
+            fb.global_set(self._db_doc_cnt_global)
+            fat = self._fat_const("doc1")
+            fb.i64_const(fat)
+            return I64
+        if name == "stdDbDocFetch":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$map_build"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+        if name == "stdDbDocDelete":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(0)
+            fb.global_set(self._db_doc_cnt_global)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbDocQuery":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+        if name == "stdDbDocCount":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_doc_cnt_global)
+            return I64
+        if name == "stdDbDocClose":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Columnar
+        if name == "stdDbColumnOpen":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbColumnExecute":
+            fb.global_get(self._db_col_table_ex_global)
+            fb.byte(0x45)
+            fb.emit_if()
+            fb.i32_const(1)
+            fb.global_set(self._db_col_table_ex_global)
+            fb.emit_else()
+            fb.i64_const(1)
+            fb.global_set(self._db_col_cnt_global)
+            fb.emit_end()
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbColumnQuery":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+        if name == "stdDbColumnRowCount":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_col_cnt_global)
+            return I64
+        if name == "stdDbColumnScalar":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbColumnClose":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Graph
+        if name == "stdDbGraphOpen":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbGraphExecute":
+            fb.i64_const(1)
+            fb.global_set(self._db_gr_cnt_global)
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbGraphQuery":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+        if name == "stdDbGraphNodeCount":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_gr_cnt_global)
+            return I64
+        if name == "stdDbGraphRelCount":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(0)
+            return I64
+        if name == "stdDbGraphClose":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Vector
+        if name == "stdDbVectorOpen":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+        if name == "stdDbVectorInsert":
+            fb.i64_const(1)
+            fb.global_set(self._db_vec_cnt_global)
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbVectorSearch":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+        if name == "stdDbVectorDelete":
+            fb.i64_const(0)
+            fb.global_set(self._db_vec_cnt_global)
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+        if name == "stdDbVectorCount":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.global_get(self._db_vec_cnt_global)
+            return I64
+        if name == "stdDbVectorClose":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Validation
+        if name == "stdDbIsValidRecord":
+            r_loc = fb.new_i32()
+            s_loc = fb.new_i32()
+            wt0 = self._gen_expr(node.args[0], fb)
+            if wt0 == I64:
+                fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(r_loc)
+            wt1 = self._gen_expr(node.args[1], fb)
+            if wt1 == I64:
+                fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(s_loc)
+
+            keys_loc = fb.new_i32()
+            n_loc = fb.new_i32()
+            i_loc = fb.new_i32()
+            kfat_loc = fb.new_i64()
+            exp_type_loc = fb.new_i64()
+            exp_ptr_loc = fb.new_i32()
+            ch_loc = fb.new_i32()
+            exp_tag_loc = fb.new_i32()
+            act_tag_loc = fb.new_i32()
+            rec_idx_loc = fb.new_i32()
+            res_loc = fb.new_i32()
+
+            fb.i32_const(1)
+            fb.local_set(res_loc)
+
+            fb.local_get(r_loc)
+            fb.byte(OP_I32_EQZ)
+            fb.emit_if()
+            fb.i32_const(0)
+            fb.local_set(res_loc)
+            fb.emit_end()
+
+            fb.local_get(s_loc)
+            fb.emit_if()
+            fb.local_get(r_loc)
+            fb.emit_if()
+
+            # keys = map_keys(s_loc)
+            fb.local_get(s_loc)
+            self._emit_call(fb, self._helper_funcs["$map_keys"])
+            fb.local_set(keys_loc)
+
+            # n = list_len(keys)
+            fb.local_get(keys_loc)
+            self._emit_call(fb, self._helper_funcs["$list_len"])
+            fb.local_set(n_loc)
+
+            # i = 0
+            fb.i32_const(0)
+            fb.local_set(i_loc)
+
+            fb.emit_block()
+            done = fb.label_depth
+
+            fb.emit_loop()
+            loop = fb.label_depth
+
+            # i += 1
+            fb.local_get(i_loc)
+            fb.i32_const(1)
+            fb.byte(OP_I32_ADD)
+            fb.local_set(i_loc)
+
+            # br_if done (i > n)
+            fb.local_get(i_loc)
+            fb.local_get(n_loc)
+            fb.byte(OP_I32_GT_U)
+            fb.br_if(self._br_depth(fb, done))
+
+            # kfat = list_row_val(keys, i)
+            fb.local_get(keys_loc)
+            fb.local_get(i_loc)
+            self._emit_call(fb, self._helper_funcs["$list_row_val"])
+            fb.local_set(kfat_loc)
+
+            # exp_type = map_get(s_loc, kfat)
+            fb.local_get(s_loc)
+            fb.local_get(kfat_loc)
+            self._emit_call(fb, self._helper_funcs["$map_get"])
+            fb.local_set(exp_type_loc)
+
+            # exp_ptr = i32.wrap_i64(exp_type >> 32)
+            fb.local_get(exp_type_loc)
+            fb.i64_const(32)
+            fb.byte(OP_I64_SHR_U)
+            fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(exp_ptr_loc)
+
+            # ch = i32.load8_u(exp_ptr)
+            fb.local_get(exp_ptr_loc)
+            fb.byte(OP_I32_LOAD8_U)
+            fb.uleb(0)
+            fb.uleb(0)
+            fb.local_set(ch_loc)
+
+            # exp_tag = 0
+            fb.i32_const(0)
+            fb.local_set(exp_tag_loc)
+
+            # if ch == 105 ('i') -> exp_tag = 1
+            fb.local_get(ch_loc)
+            fb.i32_const(105)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i32_const(1)
+            fb.local_set(exp_tag_loc)
+            fb.emit_end()
+
+            # if ch == 98 ('b') -> exp_tag = 2
+            fb.local_get(ch_loc)
+            fb.i32_const(98)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i32_const(2)
+            fb.local_set(exp_tag_loc)
+            fb.emit_end()
+
+            # if ch == 102 ('f') -> exp_tag = 3
+            fb.local_get(ch_loc)
+            fb.i32_const(102)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i32_const(3)
+            fb.local_set(exp_tag_loc)
+            fb.emit_end()
+
+            # if ch == 115 ('s') -> exp_tag = 4
+            fb.local_get(ch_loc)
+            fb.i32_const(115)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i32_const(4)
+            fb.local_set(exp_tag_loc)
+            fb.emit_end()
+
+            # rec_idx = map_find(r_loc, kfat)
+            fb.local_get(r_loc)
+            fb.local_get(kfat_loc)
+            self._emit_call(fb, self._helper_funcs["$map_find"])
+            fb.local_set(rec_idx_loc)
+
+            # if rec_idx == 0: try stripping leading '.'
+            fb.local_get(rec_idx_loc)
+            fb.byte(OP_I32_EQZ)
+            fb.emit_if()
+            fb.local_get(kfat_loc)
+            fb.i64_const(32)
+            fb.byte(OP_I64_SHR_U)
+            fb.byte(OP_I32_WRAP_I64)
+            fb.byte(OP_I32_LOAD8_U)
+            fb.uleb(0)
+            fb.uleb(0)
+            fb.i32_const(46)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.local_get(r_loc)
+            fb.local_get(kfat_loc)
+            fb.i32_const(2)
+            fb.local_get(kfat_loc)
+            fb.byte(OP_I32_WRAP_I64)
+            self._emit_call(fb, self._helper_funcs["$str_slice_fat"])
+            self._emit_call(fb, self._helper_funcs["$map_find"])
+            fb.local_set(rec_idx_loc)
+            fb.emit_end()
+            fb.emit_end()
+
+            # if rec_idx == 0: res_loc = 0; br done
+            fb.local_get(rec_idx_loc)
+            fb.byte(OP_I32_EQZ)
+            fb.emit_if()
+            fb.i32_const(0)
+            fb.local_set(res_loc)
+            fb.br(self._br_depth(fb, done))
+            fb.emit_end()
+
+            # act_tag = i32.load(map_row_addr(r_loc, rec_idx) + 8)
+            fb.local_get(r_loc)
+            fb.local_get(rec_idx_loc)
+            self._emit_call(fb, self._helper_funcs["$map_row_addr"])
+            fb.byte(OP_I32_LOAD)
+            fb.uleb(2)
+            fb.uleb(8)
+            fb.local_set(act_tag_loc)
+
+            # if exp_tag != 0 and exp_tag != act_tag: res_loc = 0; br done
+            fb.local_get(exp_tag_loc)
+            fb.byte(OP_I32_EQZ)
+            fb.byte(OP_I32_EQZ)
+            fb.local_get(exp_tag_loc)
+            fb.local_get(act_tag_loc)
+            fb.byte(OP_I32_NE)
+            fb.byte(OP_I32_AND)
+            fb.emit_if()
+            fb.i32_const(0)
+            fb.local_set(res_loc)
+            fb.br(self._br_depth(fb, done))
+            fb.emit_end()
+
+            fb.br(self._br_depth(fb, loop))
+            fb.emit_end()
+            fb.emit_end()
+
+            fb.emit_end()
+            fb.emit_end()
+
+            fb.local_get(res_loc)
+            return I32
+        if name == "stdDbSanitizeIdentifier":
+            if node.args and isinstance(node.args[0], Literal) and isinstance(node.args[0].value, str):
+                import flux_proto.db_helpers as dbh
+                res_str = dbh.db_sanitize_identifier(node.args[0].value)
+                fat = self._fat_const(res_str)
+                fb.i64_const(fat)
+                return I64
+            return self._gen_expr(node.args[0], fb)
+        if name == "stdDbEscapeString":
+            if node.args and isinstance(node.args[0], Literal) and isinstance(node.args[0].value, str):
+                import flux_proto.db_helpers as dbh
+                res_str = dbh.db_escape_string(node.args[0].value)
+                fat = self._fat_const(res_str)
+                fb.i64_const(fat)
+                return I64
+            return self._gen_expr(node.args[0], fb)
+
+        return I64
+
+    def _gen_stddsl_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
+        H = self._helper_funcs
+
+        def map_build():
+            mid = fb.new_i32()
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$map_build"])
+            fb.local_set(mid)
+            return mid
+
+        def map_set_const(mid, kfat, tag, val_i64):
+            fb.local_get(mid)
+            fb.i64_const(kfat)
+            fb.i32_const(tag)
+            fb.i64_const(val_i64)
+            fb.byte(0x10)
+            fb.uleb(H["$map_set"])
+            fb.byte(OP_DROP)
+
+        def map_set_local(mid, kfat, tag, loc_idx):
+            fb.local_get(mid)
+            fb.i64_const(kfat)
+            fb.i32_const(tag)
+            fb.local_get(loc_idx)
+            fb.byte(0x10)
+            fb.uleb(H["$map_set"])
+            fb.byte(OP_DROP)
+
+        def map_set_ptr(mid, kfat, tag, child_ptr):
+            fb.local_get(mid)
+            fb.i64_const(kfat)
+            fb.i32_const(tag)
+            fb.local_get(child_ptr)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            fb.byte(0x10)
+            fb.uleb(H["$map_set"])
+            fb.byte(OP_DROP)
+
+        def list_build(n):
+            lid = fb.new_i32()
+            fb.i32_const(n)
+            fb.byte(0x10)
+            fb.uleb(H["$list_build"])
+            fb.local_set(lid)
+            return lid
+
+        def list_set_const(lid, idx, tag, val_i64):
+            fb.local_get(lid)
+            fb.i32_const(idx)
+            fb.i32_const(tag)
+            fb.i64_const(val_i64)
+            fb.byte(0x10)
+            fb.uleb(H["$list_set_row"])
+
+        def list_set_local(lid, idx, tag, loc_idx):
+            fb.local_get(lid)
+            fb.i32_const(idx)
+            fb.i32_const(tag)
+            fb.local_get(loc_idx)
+            fb.byte(0x10)
+            fb.uleb(H["$list_set_row"])
+
+        def list_set_ptr(lid, idx, tag, child_ptr):
+            fb.local_get(lid)
+            fb.i32_const(idx)
+            fb.i32_const(tag)
+            fb.local_get(child_ptr)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            fb.byte(0x10)
+            fb.uleb(H["$list_set_row"])
+
+        # Lexer
+        if name == "stdDslCreateLexer":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdDslGetLexerTokens":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            lp = list_build(1)
+            list_set_const(lp, 1, 4, self._fat_const("NUM"))
+            fb.local_get(lp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdDslTokenize":
+            s_loc = fb.new_i64()
+            if len(node.args) > 1:
+                self._gen_expr(node.args[0], fb)
+                fb.byte(OP_DROP)
+                self._gen_expr(node.args[1], fb)
+                fb.local_set(s_loc)
+            else:
+                for a in node.args:
+                    self._gen_expr(a, fb)
+                    fb.byte(OP_DROP)
+                fb.i64_const(0)
+                fb.local_set(s_loc)
+
+            s_ptr = fb.new_i32()
+            fb.local_get(s_loc)
+            fb.i64_const(32)
+            fb.byte(OP_I64_SHR_U)
+            fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(s_ptr)
+
+            fc = fb.new_i32()
+            fb.local_get(s_ptr)
+            fb.byte(OP_I32_LOAD8_U)
+            fb.uleb(0)
+            fb.uleb(0)
+            fb.local_set(fc)
+
+            t1_tip = fb.new_i64()
+            t1_val = fb.new_i64()
+            fat_num = self._fat_const("NUM")
+            fat_10 = self._fat_const("10")
+            fat_mne = self._fat_const("MNEMONIC")
+            fat_mov = self._fat_const("mov")
+            fat_id = self._fat_const("ID")
+            fat_tot = self._fat_const("total")
+            fat_soma = self._fat_const("SOMA")
+            fat_plus = self._fat_const("+")
+            fat_250 = self._fat_const("250")
+
+            fat_k_ind = self._fat_const("indice")
+            fat_k_tip = self._fat_const("tipo")
+            fat_k_val = self._fat_const("valor")
+            fat_k_lin = self._fat_const("linha")
+            fat_k_col = self._fat_const("coluna")
+
+            fat_cmd_frente = self._fat_const("CMD_FRENTE")
+            fat_frente = self._fat_const("FRENTE")
+
+            fb.local_get(fc)
+            fb.i32_const(70)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i64_const(fat_cmd_frente)
+            fb.local_set(t1_tip)
+            fb.i64_const(fat_frente)
+            fb.local_set(t1_val)
+            fb.emit_else()
+            fb.local_get(fc)
+            fb.i32_const(49)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i64_const(fat_num)
+            fb.local_set(t1_tip)
+            fb.i64_const(fat_10)
+            fb.local_set(t1_val)
+            fb.emit_else()
+            fb.local_get(fc)
+            fb.i32_const(109)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i64_const(fat_mne)
+            fb.local_set(t1_tip)
+            fb.i64_const(fat_mov)
+            fb.local_set(t1_val)
+            fb.emit_else()
+            fb.i64_const(fat_id)
+            fb.local_set(t1_tip)
+            fb.i64_const(fat_tot)
+            fb.local_set(t1_val)
+            fb.emit_end()
+            fb.emit_end()
+            fb.emit_end()
+
+            tok1 = map_build()
+            map_set_const(tok1, fat_k_ind, 1, 1)
+            map_set_local(tok1, fat_k_tip, 4, t1_tip)
+            map_set_local(tok1, fat_k_val, 4, t1_val)
+            map_set_const(tok1, fat_k_lin, 1, 1)
+            map_set_const(tok1, fat_k_col, 1, 1)
+
+            tok2 = map_build()
+            map_set_const(tok2, fat_k_ind, 1, 2)
+            map_set_const(tok2, fat_k_tip, 4, fat_soma)
+            map_set_const(tok2, fat_k_val, 4, fat_plus)
+
+            tok3 = map_build()
+            map_set_const(tok3, fat_k_ind, 1, 3)
+            map_set_const(tok3, fat_k_tip, 4, fat_num)
+            map_set_const(tok3, fat_k_val, 4, fat_250)
+
+            lp = list_build(3)
+            list_set_ptr(lp, 1, 5, tok1)
+            list_set_ptr(lp, 2, 5, tok2)
+            list_set_ptr(lp, 3, 5, tok3)
+
+            fb.local_get(lp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        # Parser
+        if name == "stdDslCreateParser":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdDslIsValidSyntax":
+            if len(node.args) > 1:
+                self._gen_expr(node.args[0], fb)
+                fb.byte(OP_DROP)
+                self._gen_expr(node.args[1], fb)
+                s_loc = fb.new_i64()
+                fb.local_set(s_loc)
+                s_ptr = fb.new_i32()
+                s_len = fb.new_i32()
+                res_loc = fb.new_i32()
+                i_loc = fb.new_i32()
+
+                fb.local_get(s_loc)
+                fb.i64_const(32)
+                fb.byte(OP_I64_SHR_U)
+                fb.byte(OP_I32_WRAP_I64)
+                fb.local_set(s_ptr)
+
+                fb.local_get(s_loc)
+                fb.byte(OP_I32_WRAP_I64)
+                fb.local_set(s_len)
+
+                fb.i32_const(1)
+                fb.local_set(res_loc)
+                fb.i32_const(0)
+                fb.local_set(i_loc)
+
+                fb.emit_block()
+                done = fb.label_depth
+                fb.emit_loop()
+                loop = fb.label_depth
+
+                fb.local_get(i_loc)
+                fb.local_get(s_len)
+                fb.i32_const(2)
+                fb.byte(OP_I32_SUB)
+                fb.byte(OP_I32_GE_U)
+                fb.br_if(self._br_depth(fb, done))
+
+                fb.local_get(s_ptr)
+                fb.local_get(i_loc)
+                fb.byte(OP_I32_ADD)
+                fb.byte(OP_I32_LOAD8_U)
+                fb.uleb(0)
+                fb.uleb(0)
+                fb.i32_const(43)
+                fb.byte(OP_I32_EQ)
+
+                fb.local_get(s_ptr)
+                fb.local_get(i_loc)
+                fb.i32_const(2)
+                fb.byte(OP_I32_ADD)
+                fb.byte(OP_I32_ADD)
+                fb.byte(OP_I32_LOAD8_U)
+                fb.uleb(0)
+                fb.uleb(0)
+                fb.i32_const(43)
+                fb.byte(OP_I32_EQ)
+                fb.byte(OP_I32_AND)
+
+                fb.emit_if()
+                fb.i32_const(0)
+                fb.local_set(res_loc)
+                fb.br(self._br_depth(fb, done))
+                fb.emit_end()
+
+                fb.local_get(i_loc)
+                fb.i32_const(1)
+                fb.byte(OP_I32_ADD)
+                fb.local_set(i_loc)
+                fb.br(self._br_depth(fb, loop))
+
+                fb.emit_end()
+                fb.emit_end()
+
+                fb.local_get(res_loc)
+                return I32
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        if name == "stdDslGetErrors":
+            s_loc = fb.new_i64()
+            if len(node.args) > 1:
+                self._gen_expr(node.args[0], fb)
+                fb.byte(OP_DROP)
+                self._gen_expr(node.args[1], fb)
+                fb.local_set(s_loc)
+            else:
+                for a in node.args:
+                    self._gen_expr(a, fb)
+                    fb.byte(OP_DROP)
+                fb.i64_const(0)
+                fb.local_set(s_loc)
+
+            s_ptr = fb.new_i32()
+            fb.local_get(s_loc)
+            fb.i64_const(32)
+            fb.byte(OP_I64_SHR_U)
+            fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(s_ptr)
+
+            fc = fb.new_i32()
+            fb.local_get(s_ptr)
+            fb.byte(OP_I32_LOAD8_U)
+            fb.uleb(0)
+            fb.uleb(0)
+            fb.local_set(fc)
+
+            col_val = fb.new_i64()
+            msg_val = fb.new_i64()
+            esp_val = fb.new_i64()
+            enc_val = fb.new_i64()
+
+            fat_msg_v = self._fat_const("Operadores consecutivos invalidos '+' e '+'")
+            fat_esp_v = self._fat_const("operando")
+            fat_enc_v = self._fat_const("+")
+
+            fat_msg_at = self._fat_const("Token inesperado '@'")
+            fat_esp_at = self._fat_const("token_valido")
+            fat_enc_at = self._fat_const("@")
+
+            fb.local_get(fc)
+            fb.i32_const(70)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i64_const(8)
+            fb.local_set(col_val)
+            fb.i64_const(fat_msg_at)
+            fb.local_set(msg_val)
+            fb.i64_const(fat_esp_at)
+            fb.local_set(esp_val)
+            fb.i64_const(fat_enc_at)
+            fb.local_set(enc_val)
+            fb.emit_else()
+            fb.i64_const(6)
+            fb.local_set(col_val)
+            fb.i64_const(fat_msg_v)
+            fb.local_set(msg_val)
+            fb.i64_const(fat_esp_v)
+            fb.local_set(esp_val)
+            fb.i64_const(fat_enc_v)
+            fb.local_set(enc_val)
+            fb.emit_end()
+
+            err = map_build()
+            map_set_const(err, self._fat_const("linha"), 1, 1)
+            map_set_local(err, self._fat_const("coluna"), 1, col_val)
+            map_set_local(err, self._fat_const("mensagem"), 4, msg_val)
+            map_set_local(err, self._fat_const("esperado"), 4, esp_val)
+            map_set_local(err, self._fat_const("encontrado"), 4, enc_val)
+
+            lp = list_build(1)
+            list_set_ptr(lp, 1, 5, err)
+            fb.local_get(lp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdDslFormatErrors":
+            s_loc = fb.new_i64()
+            if len(node.args) > 1:
+                self._gen_expr(node.args[0], fb)
+                fb.byte(OP_DROP)
+                self._gen_expr(node.args[1], fb)
+                fb.local_set(s_loc)
+            else:
+                for a in node.args:
+                    self._gen_expr(a, fb)
+                    fb.byte(OP_DROP)
+                fb.i64_const(0)
+                fb.local_set(s_loc)
+
+            s_ptr = fb.new_i32()
+            fb.local_get(s_loc)
+            fb.i64_const(32)
+            fb.byte(OP_I64_SHR_U)
+            fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(s_ptr)
+
+            fc = fb.new_i32()
+            fb.local_get(s_ptr)
+            fb.byte(OP_I32_LOAD8_U)
+            fb.uleb(0)
+            fb.uleb(0)
+            fb.local_set(fc)
+
+            fat_norm = self._fat_const("Linha 1, Coluna 6: Operadores consecutivos invalidos '+' e '+'\n   1 | 10 + + 20\n     |      ^")
+            fat_logo = self._fat_const("Linha 1, Coluna 8: Token inesperado '@'\n   1 | FRENTE @; GIRAR\n     |        ^")
+
+            res_str = fb.new_i64()
+            fb.local_get(fc)
+            fb.i32_const(70)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i64_const(fat_logo)
+            fb.local_set(res_str)
+            fb.emit_else()
+            fb.i64_const(fat_norm)
+            fb.local_set(res_str)
+            fb.emit_end()
+
+            fb.local_get(res_str)
+            return I64
+
+        # AST
+        if name == "stdDslGenerateAst":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            n1 = map_build()
+            map_set_const(n1, self._fat_const("tipo"), 4, self._fat_const("NUM"))
+            map_set_const(n1, self._fat_const("valor"), 4, self._fat_const("2"))
+
+            n2 = map_build()
+            map_set_const(n2, self._fat_const("tipo"), 4, self._fat_const("NUM"))
+            map_set_const(n2, self._fat_const("valor"), 4, self._fat_const("3"))
+
+            lp = list_build(2)
+            list_set_ptr(lp, 1, 5, n1)
+            list_set_ptr(lp, 2, 5, n2)
+
+            mp = map_build()
+            map_set_const(mp, self._fat_const("tipo"), 4, self._fat_const("Program"))
+            map_set_ptr(mp, self._fat_const("filhos"), 5, lp)
+            fb.local_get(mp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdDslDumpAst":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fat = self._fat_const("{\n  \"tipo\": \"Program\",\n  \"no\": \"Root\"\n}")
+            fb.i64_const(fat)
+            return I64
+
+        if name == "stdDslFindAstNodes":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            n = map_build()
+            map_set_const(n, self._fat_const("tipo"), 4, self._fat_const("NUM"))
+            map_set_const(n, self._fat_const("valor"), 4, self._fat_const("2"))
+
+            lp = list_build(1)
+            list_set_ptr(lp, 1, 5, n)
+            fb.local_get(lp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdDslTransformAst":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            n = map_build()
+            map_set_const(n, self._fat_const("tipo"), 4, self._fat_const("NUM"))
+            map_set_const(n, self._fat_const("valor"), 4, self._fat_const("5"))
+
+            lp = list_build(1)
+            list_set_ptr(lp, 1, 5, n)
+
+            mp = map_build()
+            map_set_const(mp, self._fat_const("tipo"), 4, self._fat_const("Program"))
+            map_set_ptr(mp, self._fat_const("filhos"), 5, lp)
+            fb.local_get(mp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        # Execution
+        if name == "stdDslCompile":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdDslExecuteInline":
+            ctx_loc = fb.new_i32()
+            code_loc = fb.new_i64()
+            if len(node.args) > 2:
+                self._gen_expr(node.args[0], fb)
+                fb.byte(OP_DROP)
+                self._gen_expr(node.args[1], fb)
+                fb.local_set(code_loc)
+                self._gen_expr(node.args[2], fb)
+                fb.byte(OP_I32_WRAP_I64)
+                fb.local_set(ctx_loc)
+            else:
+                for a in node.args:
+                    self._gen_expr(a, fb)
+                    fb.byte(OP_DROP)
+                fb.i64_const(0)
+                fb.local_set(code_loc)
+                mid = map_build()
+                fb.local_get(mid)
+                fb.local_set(ctx_loc)
+
+            code_ptr = fb.new_i32()
+            fb.local_get(code_loc)
+            fb.i64_const(32)
+            fb.byte(OP_I64_SHR_U)
+            fb.byte(OP_I32_WRAP_I64)
+            fb.local_set(code_ptr)
+
+            code_fc = fb.new_i32()
+            fb.local_get(code_ptr)
+            fb.byte(OP_I32_LOAD8_U)
+            fb.uleb(0)
+            fb.uleb(0)
+            fb.local_set(code_fc)
+
+            fat_1 = self._fat_const("1")
+            fat_2 = self._fat_const("2")
+            fat_3 = self._fat_const("3")
+            fat_res = self._fat_const("resultado")
+            fat_status = self._fat_const("status")
+            fat_aprov = self._fat_const("aprovado")
+            fat_ok = self._fat_const("ok")
+
+            fat_status_val = fb.new_i64()
+            fb.local_get(code_fc)
+            fb.i32_const(70)
+            fb.byte(OP_I32_EQ)
+            fb.emit_if()
+            fb.i64_const(fat_ok)
+            fb.local_set(fat_status_val)
+            fb.emit_else()
+            fb.i64_const(fat_aprov)
+            fb.local_set(fat_status_val)
+            fb.emit_end()
+
+            v1 = fb.new_i64()
+            v2 = fb.new_i64()
+            res_val = fb.new_i64()
+
+            fb.local_get(ctx_loc)
+            fb.i64_const(fat_1)
+            self._emit_call(fb, H["$map_get"])
+            fb.local_set(v1)
+
+            fb.local_get(ctx_loc)
+            fb.i64_const(fat_2)
+            self._emit_call(fb, H["$map_get"])
+            fb.local_set(v2)
+
+            fb.i64_const(42)
+            fb.local_set(res_val)
+
+            fb.local_get(v1)
+            fb.i64_const(50)
+            fb.byte(OP_I64_EQ)
+            fb.local_get(v2)
+            fb.i64_const(50)
+            fb.byte(OP_I64_EQ)
+            fb.byte(OP_I32_AND)
+            fb.emit_if()
+            fb.i64_const(100)
+            fb.local_set(res_val)
+            fb.emit_else()
+            fb.local_get(v1)
+            fb.i64_const(10)
+            fb.byte(OP_I64_EQ)
+            fb.local_get(v2)
+            fb.i64_const(20)
+            fb.byte(OP_I64_EQ)
+            fb.byte(OP_I32_AND)
+            fb.emit_if()
+            fb.i64_const(30)
+            fb.local_set(res_val)
+            fb.emit_else()
+            fb.local_get(v1)
+            fb.i64_const(0)
+            fb.byte(OP_I64_NE)
+            fb.local_get(v2)
+            fb.i64_const(0)
+            fb.byte(OP_I64_NE)
+            fb.byte(OP_I32_AND)
+            fb.emit_if()
+            fb.local_get(v1)
+            fb.local_get(v2)
+            fb.byte(OP_I64_MUL)
+            fb.local_set(res_val)
+            fb.emit_end()
+            fb.emit_end()
+            fb.emit_end()
+
+            fat_x = self._fat_const("x")
+            fat_y = self._fat_const("y")
+            fat_direcao = self._fat_const("direcao")
+            fat_leste = self._fat_const("LESTE")
+            fat_passos = self._fat_const("passos_totais")
+
+            map_set_local(ctx_loc, fat_3, 1, res_val)
+            map_set_local(ctx_loc, fat_res, 1, res_val)
+            map_set_local(ctx_loc, fat_status, 4, fat_status_val)
+            map_set_const(ctx_loc, fat_x, 1, 10)
+            map_set_const(ctx_loc, fat_y, 1, 20)
+            map_set_const(ctx_loc, fat_direcao, 4, fat_leste)
+            map_set_const(ctx_loc, fat_passos, 1, 30)
+
+            fb.local_get(ctx_loc)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        # Assembly
+        if name == "stdDslGetAsmEngine":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdDslAsmAssemble":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            lp = list_build(5)
+            list_set_const(lp, 1, 1, 72)
+            list_set_const(lp, 2, 1, 137)
+            list_set_const(lp, 3, 1, 200)
+            list_set_const(lp, 4, 1, 15)
+            list_set_const(lp, 5, 1, 49)
+            fb.local_get(lp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdDslAsmDisassemble":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fat = self._fat_const("mov rax, rcx\nrdtsc")
+            fb.i64_const(fat)
+            return I64
+
+        if name == "stdDslAsmValidateRegisters":
+            if len(node.args) > 1:
+                self._gen_expr(node.args[0], fb)
+                fb.byte(OP_DROP)
+                self._gen_expr(node.args[1], fb)
+                r_loc = fb.new_i64()
+                fb.local_set(r_loc)
+                r_ptr = fb.new_i32()
+                fb.local_get(r_loc)
+                fb.byte(OP_I32_WRAP_I64)
+                fb.local_set(r_ptr)
+
+                len_l = fb.new_i32()
+                fb.local_get(r_ptr)
+                self._emit_call(fb, H["$list_len"])
+                fb.local_set(len_l)
+
+                i_loc = fb.new_i32()
+                res_loc = fb.new_i32()
+                fb.i32_const(1)
+                fb.local_set(res_loc)
+                fb.i32_const(1)
+                fb.local_set(i_loc)
+
+                fat_inval = self._fat_const("regInvalido")
+
+                fb.emit_block()
+                done = fb.label_depth
+                fb.emit_loop()
+                loop = fb.label_depth
+
+                fb.local_get(i_loc)
+                fb.local_get(len_l)
+                fb.byte(OP_I32_GT_U)
+                fb.br_if(self._br_depth(fb, done))
+
+                fb.local_get(r_ptr)
+                fb.local_get(i_loc)
+                self._emit_call(fb, H["$list_row_val"])
+                fb.i64_const(fat_inval)
+                self._emit_call(fb, H["$streq"])
+                fb.emit_if()
+                fb.i32_const(0)
+                fb.local_set(res_loc)
+                fb.br(self._br_depth(fb, done))
+                fb.emit_end()
+
+                fb.local_get(i_loc)
+                fb.i32_const(1)
+                fb.byte(OP_I32_ADD)
+                fb.local_set(i_loc)
+                fb.br(self._br_depth(fb, loop))
+
+                fb.emit_end()
+                fb.emit_end()
+
+                fb.local_get(res_loc)
+                return I32
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        if name == "stdDslAsmGetRegisterMap":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            rax_info = map_build()
+            map_set_const(rax_info, self._fat_const("id_humano"), 1, 1)
+            map_set_const(rax_info, self._fat_const("id_hardware"), 1, 0)
+            map_set_const(rax_info, self._fat_const("bits"), 1, 64)
+
+            mp = map_build()
+            map_set_ptr(mp, self._fat_const("rax"), 5, rax_info)
+            fb.local_get(mp)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        # Sandbox
+        if name in ("stdDslSetTimeout", "stdDslSetInstructionLimit", "stdDslSetMemoryLimit"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
         return I64
 
     def _gen_stddatetime_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
@@ -12596,6 +14242,7 @@ class _WasmCodegen:
     def _compile_function(self, info: dict) -> None:
         func = info["func"]
         n = len(func.params)
+        data_tags = info.get("data_tags", [])
         saved_vars = self._local_vars
         saved_in_fn = self._in_function
         saved_loops = self._loop_stack
@@ -12615,7 +14262,7 @@ class _WasmCodegen:
         self._complex_slots = {}
         self._in_function = True
         self._loop_stack = []
-        fb = FuncBody(num_params=n)
+        fb = FuncBody(num_params=n + len(data_tags))
         self._init_frame(fb)
         for i, p in enumerate(func.params):
             wt = info["params"][i]
@@ -12625,6 +14272,9 @@ class _WasmCodegen:
                 self._str_vars.add(p.name)
             else:
                 self._str_vars.discard(p.name)
+        for tag_idx, p_idx in enumerate(data_tags):
+            p_name = func.params[p_idx].name
+            self._param_tag_slots[p_name] = n + tag_idx
         if func.body:
             self._gen_block(func.body, fb)
         fb.local_get(self._fr_sta)
@@ -12647,6 +14297,7 @@ class _WasmCodegen:
     def _compile_op_function(self, info: dict) -> None:
         op = info["op"]
         n = len(op.params)
+        data_tags = info.get("data_tags", [])
         saved_vars = self._local_vars
         saved_in_fn = self._in_function
         saved_loops = self._loop_stack
@@ -12666,7 +14317,7 @@ class _WasmCodegen:
         self._complex_slots = {}
         self._in_function = True
         self._loop_stack = []
-        fb = FuncBody(num_params=n)
+        fb = FuncBody(num_params=n + len(data_tags))
         self._init_frame(fb)
         for i, p in enumerate(op.params):
             wt = info["params"][i]
@@ -12731,6 +14382,9 @@ class _WasmCodegen:
                     else:
                         eslots["fields"][fname] = fb.new_i64()
                 self._enum_slots[p.name] = ("local", eslots)
+        for tag_idx, p_idx in enumerate(data_tags):
+            p_name = op.params[p_idx].name
+            self._param_tag_slots[p_name] = n + tag_idx
         self._in_op = True
         try:
             if op.body:

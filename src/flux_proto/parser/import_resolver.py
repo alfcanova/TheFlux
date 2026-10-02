@@ -142,6 +142,15 @@ def _search_fdsl(name: str, source_dir: str, project_root: str) -> str | None:
     for path in search_paths:
         if os.path.exists(path):
             return path
+
+    # Busca recursiva em subpastas de fdsl/ (para DSLs organizadas em subpastas proprias)
+    target_basename = os.path.basename(filename)
+    for base in [os.path.join(project_root, "fdsl"), os.path.join(source_dir, "fdsl")]:
+        if os.path.isdir(base):
+            for root, _, files in os.walk(base):
+                if target_basename in files:
+                    return os.path.join(root, target_basename)
+
     return None
 
 

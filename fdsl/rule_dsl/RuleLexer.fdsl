@@ -1,0 +1,17 @@
+agent (RuleLexer) {
+      op initRuleLexer as data ==> {
+            mut as map: patterns = map{
+                  "SE": "se\\b",
+                  "ENTAO": "entao\\b",
+                  "SENAO": "senao\\b",
+                  "OP_COMP": ">|<|==",
+                  "NUM": "[0-9]+",
+                  "IDENT": "[a-zA-Z_][a-zA-Z0-9_]*"
+            }
+            emit(nice, stdDslCreateLexer(patterns), "ok")
+      }
+
+      op tokenizeRule (as data: lexer, as string: rule_code) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, rule_code), "ok")
+      }
+}

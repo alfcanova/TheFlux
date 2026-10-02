@@ -94,6 +94,7 @@ OP_F64_MUL = 0xA2
 OP_F64_DIV = 0xA3
 OP_F64_POW = 0xA6
 OP_I32_WRAP_I64 = 0xA7
+OP_I32_TRUNC_F64_S = 0xAA
 OP_I64_EXTEND_I32_S = 0xAC
 OP_I64_EXTEND_I32_U = 0xAD
 OP_I64_TRUNC_F64_S = 0xB0
@@ -102,6 +103,19 @@ OP_F64_CONVERT_I32_S = 0xB7
 OP_F64_CONVERT_I32_U = 0xB8
 OP_F64_CONVERT_I64_S = 0xB9
 OP_F64_CONVERT_I64_U = 0xBA
+OP_F32_CONST = 0x43
+OP_F32_EQ = 0x5B
+OP_F32_NE = 0x5C
+OP_F32_LT = 0x5D
+OP_F32_GT = 0x5E
+OP_F32_LE = 0x5F
+OP_F32_GE = 0x60
+OP_F32_ADD = 0x92
+OP_F32_SUB = 0x93
+OP_F32_MUL = 0x94
+OP_F32_DIV = 0x95
+OP_F32_DEMOTE_F64 = 0xB6
+OP_F64_PROMOTE_F32 = 0xBB
 OP_I64_REINTERPRET_F64 = 0xBD
 OP_F64_REINTERPRET_I64 = 0xBF
 
@@ -199,6 +213,10 @@ class FuncBody:
         self._local_types.append(I64)
         return self._num_params + len(self._local_types) - 1
 
+    def new_f32(self) -> int:
+        self._local_types.append(F32)
+        return self._num_params + len(self._local_types) - 1
+
     def new_f64(self) -> int:
         self._local_types.append(F64)
         return self._num_params + len(self._local_types) - 1
@@ -270,6 +288,10 @@ class FuncBody:
     def f64_const(self, value: float) -> None:
         self.byte(OP_F64_CONST)
         self.put(struct.pack("<d", value))
+
+    def f32_const(self, value: float) -> None:
+        self.byte(OP_F32_CONST)
+        self.put(struct.pack("<f", float(value)))
 
     def get_bytes(self) -> bytes:
         return bytes(self._bytes)

@@ -1,0 +1,17 @@
+agent (AsmAst) {
+      op getEngine (as string: arch) as data ==> {
+            emit(nice, stdDslGetAsmEngine(arch), "ok")
+      }
+
+      op assemble (as data: asm_engine, as string: asm_code) as list of int64 ==> {
+            emit(nice, stdDslAsmAssemble(asm_engine, asm_code), "ok")
+      }
+
+      op disassemble (as data: asm_engine, as list of int64: machine_code) as string ==> {
+            emit(nice, stdDslAsmDisassemble(asm_engine, machine_code), "ok")
+      }
+
+      op getRegisterMap (as data: asm_engine) as map ==> {
+            emit(nice, stdDslAsmGetRegisterMap(asm_engine), "ok")
+      }
+}

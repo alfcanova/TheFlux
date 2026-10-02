@@ -1,0 +1,13 @@
+agent (LogoSemantic) {
+      op validateLogoScript (as data: parser, as string: script) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(parser, script), "ok")
+      }
+
+      op getLogoErrors (as data: parser, as string: script) as list of data ==> {
+            emit(nice, stdDslGetErrors(parser, script), "ok")
+      }
+
+      op formatLogoErrors (as list of data: errors, as string: script) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, script), "ok")
+      }
+}

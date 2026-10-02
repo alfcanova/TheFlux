@@ -1,0 +1,17 @@
+agent (AsmSemantic) {
+      op validateAsmSyntax (as data: asm_engine, as string: asm_code) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(asm_engine, asm_code), "ok")
+      }
+
+      op validateAsmRegisters (as data: asm_engine, as list of string: registers) as bool ==> {
+            emit(nice, stdDslAsmValidateRegisters(asm_engine, registers), "ok")
+      }
+
+      op getAsmErrors (as data: asm_engine, as string: asm_code) as list of data ==> {
+            emit(nice, stdDslGetErrors(asm_engine, asm_code), "ok")
+      }
+
+      op formatAsmErrors (as list of data: errors, as string: asm_code) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, asm_code), "ok")
+      }
+}

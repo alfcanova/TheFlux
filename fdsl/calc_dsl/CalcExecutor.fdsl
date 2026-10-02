@@ -1,0 +1,17 @@
+agent (CalcExecutor) {
+      op compileCalcAst (as map: ast, as string: target_name) as data ==> {
+            emit(nice, stdDslCompile(ast, target_name), "ok")
+      }
+
+      op executeCalcInline (as data: parser, as string: expr, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(parser, expr, context), "ok")
+      }
+
+      op setCalcTimeout (mut as data: parser, as int64: ms) as bool ==> {
+            emit(nice, stdDslSetTimeout(parser, ms), "ok")
+      }
+
+      op setCalcInstructionLimit (mut as data: parser, as int64: max_ops) as bool ==> {
+            emit(nice, stdDslSetInstructionLimit(parser, max_ops), "ok")
+      }
+}

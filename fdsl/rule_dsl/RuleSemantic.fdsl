@@ -1,0 +1,13 @@
+agent (RuleSemantic) {
+      op validateRule (as data: parser, as string: rule_code) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(parser, rule_code), "ok")
+      }
+
+      op getRuleErrors (as data: parser, as string: rule_code) as list of data ==> {
+            emit(nice, stdDslGetErrors(parser, rule_code), "ok")
+      }
+
+      op formatRuleErrors (as list of data: errors, as string: rule_code) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, rule_code), "ok")
+      }
+}

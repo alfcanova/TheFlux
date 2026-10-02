@@ -1,0 +1,172 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SimdStdLib
+#L Modulo nativo para aceleracao vetorial de hardware (SIMD)
+#L Operacoes paralelas de alta velocidade para vetores e matrizes (F32 e F64)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (SimdVectorArithmeticContract) {
+      op simdVectorAddF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorSubF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorMulF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorDivF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorAddF64 (as list of data: a, as list of data: b) as list of data
+      op simdVectorSubF64 (as list of data: a, as list of data: b) as list of data
+      op simdVectorMulF64 (as list of data: a, as list of data: b) as list of data
+      op simdVectorDivF64 (as list of data: a, as list of data: b) as list of data
+
+      #L Aliases universais
+      op simdVectorAdd (as list of data: a, as list of data: b) as list of data
+      op simdVectorSub (as list of data: a, as list of data: b) as list of data
+      op simdVectorMul (as list of data: a, as list of data: b) as list of data
+      op simdVectorDiv (as list of data: a, as list of data: b) as list of data
+}
+
+contract (SimdVectorReductionContract) {
+      op simdDotProductF32 (as list of data: a, as list of data: b) as float32
+      op simdDotProductF64 (as list of data: a, as list of data: b) as float64
+      op simdVectorSumF32 (as list of data: a) as float32
+      op simdVectorSumF64 (as list of data: a) as float64
+
+      #L Aliases universais
+      op simdDotProduct (as list of data: a, as list of data: b) as float64
+      op simdVectorSum (as list of data: a) as float64
+}
+
+contract (SimdMatrixContract) {
+      op simdMatrixMul2DF32 (as map: lhs, as map: rhs) as map
+      op simdMatrixMul2DF64 (as map: lhs, as map: rhs) as map
+
+      #L Aliases universais
+      op simdMatrixMul2D (as map: lhs, as map: rhs) as map
+}
+
+contract (SimdMaskContract) {
+      op simdVectorClampF32 (as list of data: a, as float32: min_v, as float32: max_v) as list of data
+      op simdVectorClampF64 (as list of data: a, as float64: min_v, as float64: max_v) as list of data
+      op simdSelectF32 (as list of data: mask, as list of data: a, as list of data: b) as list of data
+      op simdSelectF64 (as list of data: mask, as list of data: a, as list of data: b) as list of data
+
+      #L Aliases universais
+      op simdVectorClamp (as list of data: a, as float64: min_v, as float64: max_v) as list of data
+      op simdSelect (as list of data: mask, as list of data: a, as list of data: b) as list of data
+}
+
+agent (SimdStdLib) impl SimdVectorArithmeticContract, SimdVectorReductionContract, SimdMatrixContract, SimdMaskContract {
+
+      #L -- SimdVectorArithmeticContract -------------------------------
+      op simdVectorAddF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorAddF32(a, b), "ok")
+      }
+
+      op simdVectorSubF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorSubF32(a, b), "ok")
+      }
+
+      op simdVectorMulF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorMulF32(a, b), "ok")
+      }
+
+      op simdVectorDivF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorDivF32(a, b), "ok")
+      }
+
+      op simdVectorAddF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorAddF64(a, b), "ok")
+      }
+
+      op simdVectorSubF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorSubF64(a, b), "ok")
+      }
+
+      op simdVectorMulF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorMulF64(a, b), "ok")
+      }
+
+      op simdVectorDivF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorDivF64(a, b), "ok")
+      }
+
+      #L Aliases
+      op simdVectorAdd (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorAddF64(a, b), "ok")
+      }
+
+      op simdVectorSub (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorSubF64(a, b), "ok")
+      }
+
+      op simdVectorMul (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorMulF64(a, b), "ok")
+      }
+
+      op simdVectorDiv (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorDivF64(a, b), "ok")
+      }
+
+      #L -- SimdVectorReductionContract --------------------------------
+      op simdDotProductF32 (as list of data: a, as list of data: b) as float32 ==> {
+            emit(nice, stdSimdDotProductF32(a, b), "ok")
+      }
+
+      op simdDotProductF64 (as list of data: a, as list of data: b) as float64 ==> {
+            emit(nice, stdSimdDotProductF64(a, b), "ok")
+      }
+
+      op simdVectorSumF32 (as list of data: a) as float32 ==> {
+            emit(nice, stdSimdVectorSumF32(a), "ok")
+      }
+
+      op simdVectorSumF64 (as list of data: a) as float64 ==> {
+            emit(nice, stdSimdVectorSumF64(a), "ok")
+      }
+
+      #L Aliases
+      op simdDotProduct (as list of data: a, as list of data: b) as float64 ==> {
+            emit(nice, stdSimdDotProductF64(a, b), "ok")
+      }
+
+      op simdVectorSum (as list of data: a) as float64 ==> {
+            emit(nice, stdSimdVectorSumF64(a), "ok")
+      }
+
+      #L -- SimdMatrixContract -----------------------------------------
+      op simdMatrixMul2DF32 (as map: lhs, as map: rhs) as map ==> {
+            emit(nice, stdSimdMatrixMul2DF32(lhs, rhs), "ok")
+      }
+
+      op simdMatrixMul2DF64 (as map: lhs, as map: rhs) as map ==> {
+            emit(nice, stdSimdMatrixMul2DF64(lhs, rhs), "ok")
+      }
+
+      #L Aliases
+      op simdMatrixMul2D (as map: lhs, as map: rhs) as map ==> {
+            emit(nice, stdSimdMatrixMul2DF64(lhs, rhs), "ok")
+      }
+
+      #L -- SimdMaskContract -------------------------------------------
+      op simdVectorClampF32 (as list of data: a, as float32: min_v, as float32: max_v) as list of data ==> {
+            emit(nice, stdSimdVectorClampF32(a, min_v, max_v), "ok")
+      }
+
+      op simdVectorClampF64 (as list of data: a, as float64: min_v, as float64: max_v) as list of data ==> {
+            emit(nice, stdSimdVectorClampF64(a, min_v, max_v), "ok")
+      }
+
+      op simdSelectF32 (as list of data: mask, as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdSelectF32(mask, a, b), "ok")
+      }
+
+      op simdSelectF64 (as list of data: mask, as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdSelectF64(mask, a, b), "ok")
+      }
+
+      #L Aliases
+      op simdVectorClamp (as list of data: a, as float64: min_v, as float64: max_v) as list of data ==> {
+            emit(nice, stdSimdVectorClampF64(a, min_v, max_v), "ok")
+      }
+
+      op simdSelect (as list of data: mask, as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdSelectF64(mask, a, b), "ok")
+      }
+}

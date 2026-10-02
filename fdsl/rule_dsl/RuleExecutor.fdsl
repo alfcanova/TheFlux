@@ -1,0 +1,10 @@
+agent (RuleExecutor) {
+      op executeRuleInline (as data: parser, as string: rule_code, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(parser, rule_code, context), "ok")
+      }
+
+      op configureRuleSandbox (mut as data: parser, as int64: timeout_ms, as int64: max_ops) as bool ==> {
+            stdDslSetTimeout(parser, timeout_ms)
+            emit(nice, stdDslSetInstructionLimit(parser, max_ops), "ok")
+      }
+}

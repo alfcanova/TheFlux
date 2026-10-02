@@ -1,0 +1,29 @@
+agent (CalcAst) {
+      op createCalcParser (as data: lexer) as data ==> {
+            mut as map: rules = map{
+                  "expr": "term ((PLUS | MINUS) term)*",
+                  "term": "factor ((STAR | SLASH) factor)*",
+                  "factor": "NUM | LPAREN expr RPAREN"
+            }
+            emit(nice, stdDslCreateParser(lexer, rules), "ok")
+      }
+
+      op generateCalcAst (as data: parser, as string: expr) as map ==> {
+            emit(nice, stdDslGenerateAst(parser, expr), "ok")
+      }
+
+      op dumpCalcAst (as map: ast) as string ==> {
+            emit(nice, stdDslDumpAst(ast), "ok")
+      }
+
+      op findCalcNodes (as map: ast, as string: node_type) as list of data ==> {
+            emit(nice, stdDslFindAstNodes(ast, node_type), "ok")
+      }
+
+      op optimizeCalcAst (as map: ast) as map ==> {
+            mut as map: opt_rules = map{
+                  "constant_folding": "true"
+            }
+            emit(nice, stdDslTransformAst(ast, opt_rules), "ok")
+      }
+}

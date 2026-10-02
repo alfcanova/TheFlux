@@ -1,0 +1,17 @@
+agent (AsmExecutor) {
+      op executeAsmInline (as data: asm_engine, as string: asm_code, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(asm_engine, asm_code, context), "ok")
+      }
+
+      op setAsmTimeout (mut as data: asm_engine, as int64: ms) as bool ==> {
+            emit(nice, stdDslSetTimeout(asm_engine, ms), "ok")
+      }
+
+      op setAsmInstructionLimit (mut as data: asm_engine, as int64: max_ops) as bool ==> {
+            emit(nice, stdDslSetInstructionLimit(asm_engine, max_ops), "ok")
+      }
+
+      op setAsmMemoryLimit (mut as data: asm_engine, as int64: bytes) as bool ==> {
+            emit(nice, stdDslSetMemoryLimit(asm_engine, bytes), "ok")
+      }
+}

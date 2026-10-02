@@ -1,0 +1,16 @@
+agent (RuleAst) {
+      op createRuleParser (as data: lexer) as data ==> {
+            mut as map: grammar = map{
+                  "regra": "SE condicao ENTAO acao"
+            }
+            emit(nice, stdDslCreateParser(lexer, grammar), "ok")
+      }
+
+      op generateRuleAst (as data: parser, as string: rule_code) as map ==> {
+            emit(nice, stdDslGenerateAst(parser, rule_code), "ok")
+      }
+
+      op dumpRuleAst (as map: ast) as string ==> {
+            emit(nice, stdDslDumpAst(ast), "ok")
+      }
+}

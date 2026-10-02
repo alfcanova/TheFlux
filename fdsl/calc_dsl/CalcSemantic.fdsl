@@ -1,0 +1,13 @@
+agent (CalcSemantic) {
+      op validateCalcExpr (as data: parser, as string: expr) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(parser, expr), "ok")
+      }
+
+      op getCalcExprErrors (as data: parser, as string: expr) as list of data ==> {
+            emit(nice, stdDslGetErrors(parser, expr), "ok")
+      }
+
+      op formatCalcExprErrors (as list of data: errors, as string: expr) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, expr), "ok")
+      }
+}

@@ -1,0 +1,13 @@
+agent (LogoExecutor) {
+      op executeLogoInline (as data: parser, as string: script, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(parser, script, context), "ok")
+      }
+
+      op setLogoTimeout (mut as data: parser, as int64: ms) as bool ==> {
+            emit(nice, stdDslSetTimeout(parser, ms), "ok")
+      }
+
+      op setLogoInstructionLimit (mut as data: parser, as int64: max_ops) as bool ==> {
+            emit(nice, stdDslSetInstructionLimit(parser, max_ops), "ok")
+      }
+}

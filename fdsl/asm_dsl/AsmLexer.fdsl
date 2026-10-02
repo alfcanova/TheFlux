@@ -1,0 +1,16 @@
+agent (AsmLexer) {
+      op initAsmLexer as data ==> {
+            mut as map: patterns = map{
+                  "MNEMONIC": "mov|imul|add|sub|rdtsc|shl|or|ret|nop",
+                  "REG": "rax|rcx|rdx|rbx|rsp|rbp|rsi|rdi|r[8-9]|r1[0-5]",
+                  "OPERANDO_POS": "\\{[0-9]+\\}",
+                  "NUM": "[0-9]+",
+                  "VIRGULA": ","
+            }
+            emit(nice, stdDslCreateLexer(patterns), "ok")
+      }
+
+      op tokenizeAsm (as data: lexer, as string: asm_code) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, asm_code), "ok")
+      }
+}

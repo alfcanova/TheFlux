@@ -1,0 +1,21 @@
+agent (LogoLexer) {
+      op initLogoLexer as data ==> {
+            mut as map: patterns = map{
+                  "CMD_FRENTE": "FRENTE|AVANCAR|PF",
+                  "CMD_TRAS": "TRAS|RECUAR|PT",
+                  "CMD_GIRAR": "GIRAR|GD|GE",
+                  "DIR": "DIREITA|ESQUERDA",
+                  "NUM": "[0-9]+",
+                  "SEP": ";"
+            }
+            emit(nice, stdDslCreateLexer(patterns), "ok")
+      }
+
+      op tokenizeLogo (as data: lexer, as string: script) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, script), "ok")
+      }
+
+      op getLogoTokenNames (as data: lexer) as list of string ==> {
+            emit(nice, stdDslGetLexerTokens(lexer), "ok")
+      }
+}

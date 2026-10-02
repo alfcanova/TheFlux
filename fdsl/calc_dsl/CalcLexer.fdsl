@@ -1,0 +1,22 @@
+agent (CalcLexer) {
+      op initCalcLexer as data ==> {
+            mut as map: patterns = map{
+                  "NUM": "[0-9]+",
+                  "PLUS": "\\+",
+                  "MINUS": "-",
+                  "STAR": "\\*",
+                  "SLASH": "/",
+                  "LPAREN": "\\(",
+                  "RPAREN": "\\)"
+            }
+            emit(nice, stdDslCreateLexer(patterns), "ok")
+      }
+
+      op tokenizeCalc (as data: lexer, as string: expr) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, expr), "ok")
+      }
+
+      op getCalcTokenNames (as data: lexer) as list of string ==> {
+            emit(nice, stdDslGetLexerTokens(lexer), "ok")
+      }
+}

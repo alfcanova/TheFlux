@@ -1,0 +1,223 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Modulo nativo de compilacao para DSLs e Assembly Inline de hardware.
+#L Regra Petrea: 1-index para humanos e 0-index para maquinas.
+#L Indentacao: estritamente 6 espacos.
+#L ==============================================================================
+
+contract (DslLexerContract) {
+      op dslCreateLexer (as map: tokens_regex) as data
+      op dslTokenize (as data: lexer, as string: dsl_code) as list of data
+      op dslGetLexerTokens (as data: lexer) as list of string
+}
+
+contract (DslParserContract) {
+      op dslCreateParser (as data: lexer, as map: grammar_rules) as data
+      op dslIsValidSyntax (as data: parser, as string: dsl_code) as bool
+      op dslGetErrors (as data: parser, as string: dsl_code) as list of data
+      op dslFormatErrors (as list of data: errors, as string: dsl_code) as string
+}
+
+contract (DslAstContract) {
+      op dslGenerateAst (as data: parser, as string: dsl_code) as map
+      op dslDumpAst (as map: ast) as string
+      op dslFindAstNodes (as map: ast, as string: node_type) as list of data
+      op dslTransformAst (as map: ast, as map: transform_rules) as map
+}
+
+contract (DslExecutionContract) {
+      op dslCompile (as map: ast, as string: target_end) as data
+      op dslExecuteInline (as data: parser, as string: dsl_code, mut as data: context) as data
+}
+
+contract (DslAsmContract) {
+      op dslGetAsmEngine (as string: architecture) as data
+      op dslAsmAssemble (as data: asm_engine, as string: asm_code) as list of int64
+      op dslAsmDisassemble (as data: asm_engine, as list of int64: machine_code) as string
+      op dslAsmValidateRegisters (as data: asm_engine, as list of string: registers) as bool
+      op dslAsmGetRegisterMap (as data: asm_engine) as map
+}
+
+contract (DslSandboxContract) {
+      op dslSetTimeout (mut as data: engine, as int64: timeout_ms) as bool
+      op dslSetInstructionLimit (mut as data: engine, as int64: max_instructions) as bool
+      op dslSetMemoryLimit (mut as data: engine, as int64: max_bytes) as bool
+}
+
+agent (DslStdLib) impl DslLexerContract, DslParserContract, DslAstContract, DslExecutionContract, DslAsmContract, DslSandboxContract {
+
+      #L -- DslLexerContract -------------------------------------------
+      op dslCreateLexer (as map: tokens_regex) as data ==> {
+            emit(nice, stdDslCreateLexer(tokens_regex), "ok")
+      }
+
+      op dslTokenize (as data: lexer, as string: dsl_code) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, dsl_code), "ok")
+      }
+
+      op dslGetLexerTokens (as data: lexer) as list of string ==> {
+            emit(nice, stdDslGetLexerTokens(lexer), "ok")
+      }
+
+      #L -- DslParserContract ------------------------------------------
+      op dslCreateParser (as data: lexer, as map: grammar_rules) as data ==> {
+            emit(nice, stdDslCreateParser(lexer, grammar_rules), "ok")
+      }
+
+      op dslIsValidSyntax (as data: parser, as string: dsl_code) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(parser, dsl_code), "ok")
+      }
+
+      op dslGetErrors (as data: parser, as string: dsl_code) as list of data ==> {
+            emit(nice, stdDslGetErrors(parser, dsl_code), "ok")
+      }
+
+      op dslFormatErrors (as list of data: errors, as string: dsl_code) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, dsl_code), "ok")
+      }
+
+      #L -- DslAstContract ---------------------------------------------
+      op dslGenerateAst (as data: parser, as string: dsl_code) as map ==> {
+            emit(nice, stdDslGenerateAst(parser, dsl_code), "ok")
+      }
+
+      op dslDumpAst (as map: ast) as string ==> {
+            emit(nice, stdDslDumpAst(ast), "ok")
+      }
+
+      op dslFindAstNodes (as map: ast, as string: node_type) as list of data ==> {
+            emit(nice, stdDslFindAstNodes(ast, node_type), "ok")
+      }
+
+      op dslTransformAst (as map: ast, as map: transform_rules) as map ==> {
+            emit(nice, stdDslTransformAst(ast, transform_rules), "ok")
+      }
+
+      #L -- DslExecutionContract ---------------------------------------
+      op dslCompile (as map: ast, as string: target_end) as data ==> {
+            emit(nice, stdDslCompile(ast, target_end), "ok")
+      }
+
+      op dslExecuteInline (as data: parser, as string: dsl_code, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(parser, dsl_code, context), "ok")
+      }
+
+      #L -- DslAsmContract ---------------------------------------------
+      op dslGetAsmEngine (as string: architecture) as data ==> {
+            emit(nice, stdDslGetAsmEngine(architecture), "ok")
+      }
+
+      op dslAsmAssemble (as data: asm_engine, as string: asm_code) as list of int64 ==> {
+            emit(nice, stdDslAsmAssemble(asm_engine, asm_code), "ok")
+      }
+
+      op dslAsmDisassemble (as data: asm_engine, as list of int64: machine_code) as string ==> {
+            emit(nice, stdDslAsmDisassemble(asm_engine, machine_code), "ok")
+      }
+
+      op dslAsmValidateRegisters (as data: asm_engine, as list of string: registers) as bool ==> {
+            emit(nice, stdDslAsmValidateRegisters(asm_engine, registers), "ok")
+      }
+
+      op dslAsmGetRegisterMap (as data: asm_engine) as map ==> {
+            emit(nice, stdDslAsmGetRegisterMap(asm_engine), "ok")
+      }
+
+      #L -- DslSandboxContract -----------------------------------------
+      op dslSetTimeout (mut as data: engine, as int64: timeout_ms) as bool ==> {
+            emit(nice, stdDslSetTimeout(engine, timeout_ms), "ok")
+      }
+
+      op dslSetInstructionLimit (mut as data: engine, as int64: max_instructions) as bool ==> {
+            emit(nice, stdDslSetInstructionLimit(engine, max_instructions), "ok")
+      }
+
+      op dslSetMemoryLimit (mut as data: engine, as int64: max_bytes) as bool ==> {
+            emit(nice, stdDslSetMemoryLimit(engine, max_bytes), "ok")
+      }
+
+      #L -- Aliases amigaveis ------------------------------------------
+      op createLexer (as map: tokens_regex) as data ==> {
+            emit(nice, stdDslCreateLexer(tokens_regex), "ok")
+      }
+
+      op tokenize (as data: lexer, as string: dsl_code) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, dsl_code), "ok")
+      }
+
+      op getLexerTokens (as data: lexer) as list of string ==> {
+            emit(nice, stdDslGetLexerTokens(lexer), "ok")
+      }
+
+      op createParser (as data: lexer, as map: grammar_rules) as data ==> {
+            emit(nice, stdDslCreateParser(lexer, grammar_rules), "ok")
+      }
+
+      op isValidSyntax (as data: parser, as string: dsl_code) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(parser, dsl_code), "ok")
+      }
+
+      op getErrors (as data: parser, as string: dsl_code) as list of data ==> {
+            emit(nice, stdDslGetErrors(parser, dsl_code), "ok")
+      }
+
+      op formatErrors (as list of data: errors, as string: dsl_code) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, dsl_code), "ok")
+      }
+
+      op generateAst (as data: parser, as string: dsl_code) as map ==> {
+            emit(nice, stdDslGenerateAst(parser, dsl_code), "ok")
+      }
+
+      op dumpAst (as map: ast) as string ==> {
+            emit(nice, stdDslDumpAst(ast), "ok")
+      }
+
+      op findAstNodes (as map: ast, as string: node_type) as list of data ==> {
+            emit(nice, stdDslFindAstNodes(ast, node_type), "ok")
+      }
+
+      op transformAst (as map: ast, as map: transform_rules) as map ==> {
+            emit(nice, stdDslTransformAst(ast, transform_rules), "ok")
+      }
+
+      op compile (as map: ast, as string: target_end) as data ==> {
+            emit(nice, stdDslCompile(ast, target_end), "ok")
+      }
+
+      op executeInline (as data: parser, as string: dsl_code, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(parser, dsl_code, context), "ok")
+      }
+
+      op getAsmEngine (as string: architecture) as data ==> {
+            emit(nice, stdDslGetAsmEngine(architecture), "ok")
+      }
+
+      op asmAssemble (as data: asm_engine, as string: asm_code) as list of int64 ==> {
+            emit(nice, stdDslAsmAssemble(asm_engine, asm_code), "ok")
+      }
+
+      op asmDisassemble (as data: asm_engine, as list of int64: machine_code) as string ==> {
+            emit(nice, stdDslAsmDisassemble(asm_engine, machine_code), "ok")
+      }
+
+      op asmValidateRegisters (as data: asm_engine, as list of string: registers) as bool ==> {
+            emit(nice, stdDslAsmValidateRegisters(asm_engine, registers), "ok")
+      }
+
+      op asmGetRegisterMap (as data: asm_engine) as map ==> {
+            emit(nice, stdDslAsmGetRegisterMap(asm_engine), "ok")
+      }
+
+      op setTimeout (mut as data: engine, as int64: timeout_ms) as bool ==> {
+            emit(nice, stdDslSetTimeout(engine, timeout_ms), "ok")
+      }
+
+      op setInstructionLimit (mut as data: engine, as int64: max_instructions) as bool ==> {
+            emit(nice, stdDslSetInstructionLimit(engine, max_instructions), "ok")
+      }
+
+      op setMemoryLimit (mut as data: engine, as int64: max_bytes) as bool ==> {
+            emit(nice, stdDslSetMemoryLimit(engine, max_bytes), "ok")
+      }
+}

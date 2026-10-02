@@ -1740,6 +1740,14 @@ class Interpreter:
                 return self._eval_os_intrinsic(name, node.args)
             if name.startswith("stdNet"):
                 return self._eval_net_intrinsic(name, node.args)
+            if name.startswith("stdSimd"):
+                return self._eval_simd_intrinsic(name, node.args)
+            if name.startswith("stdRuntime"):
+                return self._eval_runtime_intrinsic(name, node.args)
+            if name.startswith("stdDb"):
+                return self._eval_db_intrinsic(name, node.args)
+            if name.startswith("stdDsl"):
+                return self._eval_dsl_intrinsic(name, node.args)
             op_ctx = self._resolve_agent_op(name, agent_qual)
             if op_ctx is not None:
                 return self._exec_agent_op(op_ctx, node.args)
@@ -2038,6 +2046,463 @@ class Interpreter:
         if name == "stdNetPing":
             return Value("bool", neth.net_ping(str(args[0].data if args else "")))
         raise InterpreterError(f"unknown net intrinsic '{name}'")
+
+    def _eval_simd_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.simd_helpers as simdh
+        args = [self._eval(a) for a in raw_args]
+
+        if name == "stdSimdVectorAddF32":
+            res = simdh.simd_vector_add_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float32", x) for x in res])
+        if name == "stdSimdVectorSubF32":
+            res = simdh.simd_vector_sub_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float32", x) for x in res])
+        if name == "stdSimdVectorMulF32":
+            res = simdh.simd_vector_mul_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float32", x) for x in res])
+        if name == "stdSimdVectorDivF32":
+            res = simdh.simd_vector_div_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float32", x) for x in res])
+
+        if name == "stdSimdVectorAddF64":
+            res = simdh.simd_vector_add_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float64", x) for x in res])
+        if name == "stdSimdVectorSubF64":
+            res = simdh.simd_vector_sub_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float64", x) for x in res])
+        if name == "stdSimdVectorMulF64":
+            res = simdh.simd_vector_mul_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float64", x) for x in res])
+        if name == "stdSimdVectorDivF64":
+            res = simdh.simd_vector_div_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [])
+            return Value("list", [Value("float64", x) for x in res])
+
+        if name == "stdSimdDotProductF32":
+            return Value("float32", simdh.simd_dot_product_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else []))
+        if name == "stdSimdDotProductF64":
+            return Value("float64", simdh.simd_dot_product_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else []))
+        if name == "stdSimdVectorSumF32":
+            return Value("float32", simdh.simd_vector_sum_f32(args[0].data if len(args) > 0 else []))
+        if name == "stdSimdVectorSumF64":
+            return Value("float64", simdh.simd_vector_sum_f64(args[0].data if len(args) > 0 else []))
+
+        if name in ("stdSimdMatrixMul2DF32", "stdSimdMatrixMul2DF64"):
+            is_f32 = name == "stdSimdMatrixMul2DF32"
+            fn = simdh.simd_matrix_mul_2d_f32 if is_f32 else simdh.simd_matrix_mul_2d_f64
+            m = fn(args[0].data if len(args) > 0 else {}, args[1].data if len(args) > 1 else {})
+            val_type = "float32" if is_f32 else "float64"
+            m_res = {
+                "ndim": Value("int64", m["ndim"]),
+                "shape": Value("list", [Value("int64", x) for x in m["shape"]]),
+                "strides": Value("list", [Value("int64", x) for x in m["strides"]]),
+                "offset": Value("int64", m["offset"]),
+                "data": Value("list", [Value(val_type, x) for x in m["data"]]),
+            }
+            return Value("map", m_res)
+
+        if name == "stdSimdVectorClampF32":
+            res = simdh.simd_vector_clamp_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else 0.0, args[2].data if len(args) > 2 else 0.0)
+            return Value("list", [Value("float32", x) for x in res])
+        if name == "stdSimdVectorClampF64":
+            res = simdh.simd_vector_clamp_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else 0.0, args[2].data if len(args) > 2 else 0.0)
+            return Value("list", [Value("float64", x) for x in res])
+        if name == "stdSimdSelectF32":
+            res = simdh.simd_select_f32(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [], args[2].data if len(args) > 2 else [])
+            return Value("list", [Value("float32", x) for x in res])
+        if name == "stdSimdSelectF64":
+            res = simdh.simd_select_f64(args[0].data if len(args) > 0 else [], args[1].data if len(args) > 1 else [], args[2].data if len(args) > 2 else [])
+            return Value("list", [Value("float64", x) for x in res])
+
+        raise InterpreterError(f"unknown simd intrinsic '{name}'")
+
+    def _eval_runtime_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.runtime_helpers as rth
+        args = [self._eval(a) for a in raw_args]
+        if name == "stdRuntimeBackend":
+            return Value("string", "in")
+        if name == "stdRuntimeCompilerVersion":
+            return Value("string", rth.runtime_compiler_version())
+        if name == "stdRuntimeGetArgs":
+            items = [Value("string", a) for a in rth.runtime_get_args()]
+            return Value("list", items)
+        if name == "stdRuntimeExecutablePath":
+            return Value("string", rth.runtime_executable_path())
+        if name == "stdRuntimeGetTypeName":
+            val = args[0] if args else Value("data", None)
+            return Value("string", rth.runtime_get_type_name(val))
+        if name == "stdRuntimeAllocatedMemory":
+            return Value("int64", rth.runtime_allocated_memory())
+        if name == "stdRuntimeHeapSize":
+            return Value("int64", rth.runtime_heap_size())
+        if name == "stdRuntimePointerOf":
+            val = args[0] if args else Value("data", None)
+            return Value("int64", rth.runtime_pointer_of(val))
+        if name == "stdRuntimePanic":
+            msg = str(args[0].data if args else "")
+            rth.runtime_panic(msg)
+            return Value("bool", False)
+        if name == "stdRuntimeTrap":
+            rth.runtime_trap()
+            return Value("bool", False)
+        if name == "stdRuntimeStackTrace":
+            frames = [Value("string", s) for s in rth.runtime_stack_trace()]
+            return Value("list", frames)
+        raise InterpreterError(f"unknown runtime intrinsic '{name}'")
+
+    def _eval_db_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.db_helpers as dbh
+        args = [self._eval(a) for a in raw_args]
+
+        def _val_to_py(v: Value | Any) -> Any:
+            if not isinstance(v, Value):
+                return v
+            if isinstance(v.data, dict):
+                return {str(k).lstrip("."): _val_to_py(val) for k, val in v.data.items()}
+            if isinstance(v.data, list):
+                return [_val_to_py(x) for x in v.data]
+            return v.data
+
+        def _py_to_val(x: Any) -> Value:
+            if isinstance(x, Value):
+                return x
+            if isinstance(x, bool):
+                return Value("bool", x)
+            if isinstance(x, int):
+                return Value("int64", x)
+            if isinstance(x, float):
+                return Value("float64", x)
+            if isinstance(x, str):
+                return Value("string", x)
+            if isinstance(x, dict):
+                return Value("map", {k: _py_to_val(v) for k, v in x.items()})
+            if isinstance(x, (list, tuple)):
+                return Value("list", [_py_to_val(item) for item in x])
+            if x is None:
+                return Value("data", None)
+            return Value("string", str(x))
+
+        # SQL
+        if name == "stdDbSqlOpen":
+            p = str(args[0].data if args else "")
+            return Value("data", dbh.db_sql_open(p))
+        if name == "stdDbSqlExecute":
+            h = int(args[0].data if args else 0)
+            sql = str(args[1].data if len(args) > 1 else "")
+            params = _val_to_py(args[2]) if len(args) > 2 else []
+            if not isinstance(params, list):
+                params = [params]
+            return Value("bool", dbh.db_sql_execute(h, sql, params))
+        if name == "stdDbSqlQuery":
+            h = int(args[0].data if args else 0)
+            sql = str(args[1].data if len(args) > 1 else "")
+            params = _val_to_py(args[2]) if len(args) > 2 else []
+            if not isinstance(params, list):
+                params = [params]
+            res = dbh.db_sql_query(h, sql, params)
+            return _py_to_val(res)
+        if name == "stdDbSqlBegin":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_sql_begin(h))
+        if name == "stdDbSqlCommit":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_sql_commit(h))
+        if name == "stdDbSqlRollback":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_sql_rollback(h))
+        if name == "stdDbSqlLastInsertId":
+            h = int(args[0].data if args else 0)
+            return Value("int64", dbh.db_sql_last_insert_id(h))
+        if name == "stdDbSqlChanges":
+            h = int(args[0].data if args else 0)
+            return Value("int64", dbh.db_sql_changes(h))
+        if name == "stdDbSqlTableExists":
+            h = int(args[0].data if args else 0)
+            t = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", dbh.db_sql_table_exists(h, t))
+        if name == "stdDbSqlClose":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_sql_close(h))
+
+        # KV
+        if name == "stdDbKvOpen":
+            e = str(args[0].data if args else "unqlite")
+            p = str(args[1].data if len(args) > 1 else "")
+            return Value("data", dbh.db_kv_open(e, p))
+        if name == "stdDbKvPut":
+            h = int(args[0].data if args else 0)
+            k = str(args[1].data if len(args) > 1 else "")
+            v = str(args[2].data if len(args) > 2 else "")
+            return Value("bool", dbh.db_kv_put(h, k, v))
+        if name == "stdDbKvGet":
+            h = int(args[0].data if args else 0)
+            k = str(args[1].data if len(args) > 1 else "")
+            return Value("string", dbh.db_kv_get(h, k))
+        if name == "stdDbKvDelete":
+            h = int(args[0].data if args else 0)
+            k = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", dbh.db_kv_delete(h, k))
+        if name == "stdDbKvExists":
+            h = int(args[0].data if args else 0)
+            k = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", dbh.db_kv_exists(h, k))
+        if name == "stdDbKvClose":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_kv_close(h))
+
+        # Document
+        if name == "stdDbDocOpen":
+            p = str(args[0].data if args else "")
+            return Value("data", dbh.db_doc_open(p))
+        if name == "stdDbDocStore":
+            h = int(args[0].data if args else 0)
+            c = str(args[1].data if len(args) > 1 else "")
+            d = _val_to_py(args[2]) if len(args) > 2 else {}
+            return Value("string", dbh.db_doc_store(h, c, d))
+        if name == "stdDbDocFetch":
+            h = int(args[0].data if args else 0)
+            c = str(args[1].data if len(args) > 1 else "")
+            doc_id = str(args[2].data if len(args) > 2 else "")
+            res = dbh.db_doc_fetch(h, c, doc_id)
+            return _py_to_val(res)
+        if name == "stdDbDocDelete":
+            h = int(args[0].data if args else 0)
+            c = str(args[1].data if len(args) > 1 else "")
+            doc_id = str(args[2].data if len(args) > 2 else "")
+            return Value("bool", dbh.db_doc_delete(h, c, doc_id))
+        if name == "stdDbDocQuery":
+            h = int(args[0].data if args else 0)
+            c = str(args[1].data if len(args) > 1 else "")
+            k = str(args[2].data if len(args) > 2 else "")
+            v = str(args[3].data if len(args) > 3 else "")
+            res = dbh.db_doc_query(h, c, k, v)
+            return _py_to_val(res)
+        if name == "stdDbDocCount":
+            h = int(args[0].data if args else 0)
+            c = str(args[1].data if len(args) > 1 else "")
+            return Value("int64", dbh.db_doc_count(h, c))
+        if name == "stdDbDocClose":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_doc_close(h))
+
+        # Columnar
+        if name == "stdDbColumnOpen":
+            p = str(args[0].data if args else "")
+            return Value("data", dbh.db_column_open(p))
+        if name == "stdDbColumnExecute":
+            h = int(args[0].data if args else 0)
+            sql = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", dbh.db_column_execute(h, sql))
+        if name == "stdDbColumnQuery":
+            h = int(args[0].data if args else 0)
+            sql = str(args[1].data if len(args) > 1 else "")
+            res = dbh.db_column_query(h, sql)
+            return _py_to_val(res)
+        if name == "stdDbColumnRowCount":
+            h = int(args[0].data if args else 0)
+            t = str(args[1].data if len(args) > 1 else "")
+            return Value("int64", dbh.db_column_row_count(h, t))
+        if name == "stdDbColumnScalar":
+            h = int(args[0].data if args else 0)
+            sql = str(args[1].data if len(args) > 1 else "")
+            res = dbh.db_column_scalar(h, sql)
+            return _py_to_val(res)
+        if name == "stdDbColumnClose":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_column_close(h))
+
+        # Graph
+        if name == "stdDbGraphOpen":
+            p = str(args[0].data if args else "")
+            return Value("data", dbh.db_graph_open(p))
+        if name == "stdDbGraphExecute":
+            h = int(args[0].data if args else 0)
+            cypher = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", dbh.db_graph_execute(h, cypher))
+        if name == "stdDbGraphQuery":
+            h = int(args[0].data if args else 0)
+            cypher = str(args[1].data if len(args) > 1 else "")
+            res = dbh.db_graph_query(h, cypher)
+            return _py_to_val(res)
+        if name == "stdDbGraphNodeCount":
+            h = int(args[0].data if args else 0)
+            nt = str(args[1].data if len(args) > 1 else "")
+            return Value("int64", dbh.db_graph_node_count(h, nt))
+        if name == "stdDbGraphRelCount":
+            h = int(args[0].data if args else 0)
+            rt = str(args[1].data if len(args) > 1 else "")
+            return Value("int64", dbh.db_graph_rel_count(h, rt))
+        if name == "stdDbGraphClose":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_graph_close(h))
+
+        # Vector
+        if name == "stdDbVectorOpen":
+            p = str(args[0].data if args else "")
+            d = int(args[1].data if len(args) > 1 else 128)
+            m = str(args[2].data if len(args) > 2 else "euclidean")
+            return Value("data", dbh.db_vector_open(p, d, m))
+        if name == "stdDbVectorInsert":
+            h = int(args[0].data if args else 0)
+            vid = int(args[1].data if len(args) > 1 else 0)
+            emb = _val_to_py(args[2]) if len(args) > 2 else []
+            meta = str(args[3].data if len(args) > 3 else "")
+            return Value("bool", dbh.db_vector_insert(h, vid, emb, meta))
+        if name == "stdDbVectorSearch":
+            h = int(args[0].data if args else 0)
+            q = _val_to_py(args[1]) if len(args) > 1 else []
+            top_k = int(args[2].data if len(args) > 2 else 5)
+            res = dbh.db_vector_search(h, q, top_k)
+            return _py_to_val(res)
+        if name == "stdDbVectorDelete":
+            h = int(args[0].data if args else 0)
+            vid = int(args[1].data if len(args) > 1 else 0)
+            return Value("bool", dbh.db_vector_delete(h, vid))
+        if name == "stdDbVectorCount":
+            h = int(args[0].data if args else 0)
+            return Value("int64", dbh.db_vector_count(h))
+        if name == "stdDbVectorClose":
+            h = int(args[0].data if args else 0)
+            return Value("bool", dbh.db_vector_close(h))
+
+        # Validation
+        if name == "stdDbIsValidRecord":
+            rec = _val_to_py(args[0]) if args else {}
+            sch = _val_to_py(args[1]) if len(args) > 1 else {}
+            return Value("bool", dbh.db_is_valid_record(rec, sch))
+        if name == "stdDbSanitizeIdentifier":
+            s = str(args[0].data if args else "")
+            return Value("string", dbh.db_sanitize_identifier(s))
+        if name == "stdDbEscapeString":
+            s = str(args[0].data if args else "")
+            return Value("string", dbh.db_escape_string(s))
+
+        raise InterpreterError(f"unknown db intrinsic '{name}'")
+
+    def _eval_dsl_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.dsl_helpers as dslh
+        args = [self._eval(a) for a in raw_args]
+
+        def _val_to_py(v: Value | Any) -> Any:
+            if not isinstance(v, Value):
+                return v
+            if isinstance(v.data, dict):
+                return {str(k).lstrip("."): _val_to_py(val) for k, val in v.data.items()}
+            if isinstance(v.data, list):
+                return [_val_to_py(x) for x in v.data]
+            return v.data
+
+        def _py_to_val(x: Any) -> Value:
+            if isinstance(x, Value):
+                return x
+            if isinstance(x, bool):
+                return Value("bool", x)
+            if isinstance(x, int):
+                return Value("int64", x)
+            if isinstance(x, float):
+                return Value("float64", x)
+            if isinstance(x, str):
+                return Value("string", x)
+            if isinstance(x, dict):
+                return Value("map", {k: _py_to_val(v) for k, v in x.items()})
+            if isinstance(x, (list, tuple)):
+                return Value("list", [_py_to_val(item) for item in x])
+            if x is None:
+                return Value("data", None)
+            return Value("string", str(x))
+
+        # Lexer
+        if name == "stdDslCreateLexer":
+            m = _val_to_py(args[0]) if args else {}
+            return Value("data", dslh.dsl_create_lexer(m))
+        if name == "stdDslTokenize":
+            lid = int(args[0].data if args else 0)
+            code = str(args[1].data if len(args) > 1 else "")
+            return _py_to_val(dslh.dsl_tokenize(lid, code))
+        if name == "stdDslGetLexerTokens":
+            lid = int(args[0].data if args else 0)
+            return _py_to_val(dslh.dsl_get_lexer_tokens(lid))
+
+        # Parser
+        if name == "stdDslCreateParser":
+            lid = int(args[0].data if args else 0)
+            rules = _val_to_py(args[1]) if len(args) > 1 else {}
+            return Value("data", dslh.dsl_create_parser(lid, rules))
+        if name == "stdDslIsValidSyntax":
+            pid = int(args[0].data if args else 0)
+            code = str(args[1].data if len(args) > 1 else "")
+            return Value("bool", dslh.dsl_is_valid_syntax(pid, code))
+        if name == "stdDslGetErrors":
+            pid = int(args[0].data if args else 0)
+            code = str(args[1].data if len(args) > 1 else "")
+            return _py_to_val(dslh.dsl_get_errors(pid, code))
+        if name == "stdDslFormatErrors":
+            errs = _val_to_py(args[0]) if args else []
+            code = str(args[1].data if len(args) > 1 else "")
+            return Value("string", dslh.dsl_format_errors(errs, code))
+
+        # AST
+        if name == "stdDslGenerateAst":
+            pid = int(args[0].data if args else 0)
+            code = str(args[1].data if len(args) > 1 else "")
+            return _py_to_val(dslh.dsl_generate_ast(pid, code))
+        if name == "stdDslDumpAst":
+            ast = _val_to_py(args[0]) if args else {}
+            return Value("string", dslh.dsl_dump_ast(ast))
+        if name == "stdDslFindAstNodes":
+            ast = _val_to_py(args[0]) if args else {}
+            nt = str(args[1].data if len(args) > 1 else "")
+            return _py_to_val(dslh.dsl_find_ast_nodes(ast, nt))
+        if name == "stdDslTransformAst":
+            ast = _val_to_py(args[0]) if args else {}
+            rules = _val_to_py(args[1]) if len(args) > 1 else {}
+            return _py_to_val(dslh.dsl_transform_ast(ast, rules))
+
+        # Execution
+        if name == "stdDslCompile":
+            ast = _val_to_py(args[0]) if args else {}
+            target = str(args[1].data if len(args) > 1 else "")
+            return Value("data", dslh.dsl_compile(ast, target))
+        if name == "stdDslExecuteInline":
+            pid = int(args[0].data if args else 0)
+            code = str(args[1].data if len(args) > 1 else "")
+            ctx = _val_to_py(args[2]) if len(args) > 2 else {}
+            return _py_to_val(dslh.dsl_execute_inline(pid, code, ctx))
+
+        # Assembly
+        if name == "stdDslGetAsmEngine":
+            arch = str(args[0].data if args else "x86_64")
+            return Value("data", dslh.dsl_get_asm_engine(arch))
+        if name == "stdDslAsmAssemble":
+            aid = int(args[0].data if args else 0)
+            code = str(args[1].data if len(args) > 1 else "")
+            return _py_to_val(dslh.dsl_asm_assemble(aid, code))
+        if name == "stdDslAsmDisassemble":
+            aid = int(args[0].data if args else 0)
+            mc = _val_to_py(args[1]) if len(args) > 1 else []
+            return Value("string", dslh.dsl_asm_disassemble(aid, mc))
+        if name == "stdDslAsmValidateRegisters":
+            aid = int(args[0].data if args else 0)
+            regs = _val_to_py(args[1]) if len(args) > 1 else []
+            return Value("bool", dslh.dsl_asm_validate_registers(aid, regs))
+        if name == "stdDslAsmGetRegisterMap":
+            aid = int(args[0].data if args else 0)
+            return _py_to_val(dslh.dsl_asm_get_register_map(aid))
+
+        # Sandbox
+        if name == "stdDslSetTimeout":
+            eid = int(args[0].data if args else 0)
+            ms = int(args[1].data if len(args) > 1 else 1000)
+            return Value("bool", dslh.dsl_set_timeout(eid, ms))
+        if name == "stdDslSetInstructionLimit":
+            eid = int(args[0].data if args else 0)
+            ops = int(args[1].data if len(args) > 1 else 100000)
+            return Value("bool", dslh.dsl_set_instruction_limit(eid, ops))
+        if name == "stdDslSetMemoryLimit":
+            eid = int(args[0].data if args else 0)
+            b = int(args[1].data if len(args) > 1 else 10485760)
+            return Value("bool", dslh.dsl_set_memory_limit(eid, b))
+
+        raise InterpreterError(f"unknown dsl intrinsic '{name}'")
 
     def _resolve_agent_op(self, name: str, agent_qual: str = "") -> tuple[Any, Any] | None:
         real = self._op_aliases.get(name, name)

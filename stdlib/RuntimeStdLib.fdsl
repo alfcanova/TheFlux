@@ -1,0 +1,408 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RuntimeStdLib
+#L Modulo nativo para introspeccao, metadados, controle do motor de execucao e heap
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (RuntimeHostContract) {
+      op runtimeBackend () as string
+      op runtimeIsNative () as bool
+      op runtimeIsWasm () as bool
+      op runtimeIsInterpreter () as bool
+      op runtimePointerSize () as int64
+      op runtimeCompilerVersion () as string
+      op runtimeGetArgs () as list of data
+      op runtimeGetArgCount () as int64
+      op runtimeGetArg (as int64: index) as string
+      op runtimeExecutablePath () as string
+
+      #L Aliases
+      op backend () as string
+      op isNative () as bool
+      op isWasm () as bool
+      op isInterpreter () as bool
+      op compilerVersion () as string
+      op getArgs () as list of data
+      op getArgCount () as int64
+      op getArg (as int64: index) as string
+}
+
+contract (RuntimeTypeContract) {
+      op runtimeGetTypeName (as data: value) as string
+      op runtimeGetTypeId (as data: value) as int64
+      op runtimeIsPrimitive (as data: value) as bool
+      op runtimeIsCollection (as data: value) as bool
+      op runtimeIsStruct (as data: value) as bool
+      op runtimeSizeOf (as data: value) as int64
+      op runtimeGetStructMetadata (as string: struct_name) as map
+
+      #L Aliases
+      op getTypeName (as data: value) as string
+      op getTypeId (as data: value) as int64
+      op isPrimitive (as data: value) as bool
+      op isCollection (as data: value) as bool
+      op isStruct (as data: value) as bool
+      op sizeOf (as data: value) as int64
+}
+
+contract (RuntimeMemoryContract) {
+      op runtimeAllocatedMemory () as int64
+      op runtimeHeapSize () as int64
+      op runtimePointerOf (as data: value) as int64
+
+      #L Aliases
+      op allocatedMemory () as int64
+      op heapSize () as int64
+      op pointerOf (as data: value) as int64
+}
+
+contract (RuntimeControlContract) {
+      op runtimePanic (as string: message) as bool
+      op runtimeTrap () as bool
+      op runtimeSetPanicHook (as string: agent_name, as string: op_name) as bool
+      op runtimeStackTrace () as list of data
+
+      #L Aliases
+      op panic (as string: message) as bool
+      op trap () as bool
+      op setPanicHook (as string: agent_name, as string: op_name) as bool
+      op stackTrace () as list of data
+}
+
+agent (RuntimeStdLib) impl RuntimeHostContract, RuntimeTypeContract, RuntimeMemoryContract, RuntimeControlContract {
+
+      #L -- RuntimeHostContract ---------------------------------------
+      op runtimeBackend () as string ==> {
+            emit(nice, stdRuntimeBackend(), "ok")
+      }
+
+      op runtimeIsNative () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "llvm", "ok")
+      }
+
+      op runtimeIsWasm () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "wat" or b == "wasm", "ok")
+      }
+
+      op runtimeIsInterpreter () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "in" or b == "vm" or b == "vmr", "ok")
+      }
+
+      op runtimePointerSize () as int64 ==> {
+            mut as string: b = stdRuntimeBackend()
+            route {
+                  b == "wat" or b == "wasm" ==> { emit(nice, 4, "ok") }
+                  _ ==> { emit(nice, 8, "ok") }
+            }
+      }
+
+      op runtimeCompilerVersion () as string ==> {
+            emit(nice, stdRuntimeCompilerVersion(), "ok")
+      }
+
+      op runtimeGetArgs () as list of data ==> {
+            emit(nice, stdRuntimeGetArgs(), "ok")
+      }
+
+      op runtimeGetArgCount () as int64 ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            emit(nice, stdCollectionLength(a), "ok")
+      }
+
+      op runtimeGetArg (as int64: index) as string ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            mut as int64: n = stdCollectionLength(a)
+            route {
+                  index >= 1 and index <= n ==> {
+                        emit(nice, "" + a[index], "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "", "ok")
+                  }
+            }
+      }
+
+      op runtimeExecutablePath () as string ==> {
+            emit(nice, stdRuntimeExecutablePath(), "ok")
+      }
+
+      #L Aliases Host
+      op backend () as string ==> {
+            emit(nice, stdRuntimeBackend(), "ok")
+      }
+
+      op isNative () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "llvm", "ok")
+      }
+
+      op isWasm () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "wat" or b == "wasm", "ok")
+      }
+
+      op isInterpreter () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "in" or b == "vm" or b == "vmr", "ok")
+      }
+
+      op compilerVersion () as string ==> {
+            emit(nice, stdRuntimeCompilerVersion(), "ok")
+      }
+
+      op getArgs () as list of data ==> {
+            emit(nice, stdRuntimeGetArgs(), "ok")
+      }
+
+      op getArgCount () as int64 ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            emit(nice, stdCollectionLength(a), "ok")
+      }
+
+      op getArg (as int64: index) as string ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            mut as int64: n = stdCollectionLength(a)
+            route {
+                  index >= 1 and index <= n ==> {
+                        emit(nice, "" + a[index], "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "", "ok")
+                  }
+            }
+      }
+
+      #L -- RuntimeTypeContract ---------------------------------------
+      op runtimeGetTypeName (as data: value) as string ==> {
+            emit(nice, stdRuntimeGetTypeName(value), "ok")
+      }
+
+      op runtimeGetTypeId (as data: value) as int64 ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { emit(nice, 1, "ok") }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { emit(nice, 2, "ok") }
+                  tn == "bool" or tn == "BOOL" ==> { emit(nice, 3, "ok") }
+                  tn == "char" or tn == "CHAR" ==> { emit(nice, 4, "ok") }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> { emit(nice, 5, "ok") }
+                  tn == "list" or tn == "LIST" ==> { emit(nice, 6, "ok") }
+                  tn == "set" or tn == "SET" ==> { emit(nice, 7, "ok") }
+                  tn == "map" or tn == "MAP" ==> { emit(nice, 8, "ok") }
+                  _ ==> { emit(nice, 9, "ok") }
+            }
+      }
+
+      op runtimeIsPrimitive (as data: value) as bool ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            mut as bool: res = false
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { res = true }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { res = true }
+                  tn == "bool" or tn == "BOOL" ==> { res = true }
+                  tn == "char" or tn == "CHAR" ==> { res = true }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> { res = true }
+                  _ ==> { res = false }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op runtimeIsCollection (as data: value) as bool ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            mut as bool: res = false
+            route {
+                  tn == "list" or tn == "LIST" ==> { res = true }
+                  tn == "set" or tn == "SET" ==> { res = true }
+                  tn == "map" or tn == "MAP" ==> { res = true }
+                  _ ==> { res = false }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op runtimeIsStruct (as data: value) as bool ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            mut as bool: res = false
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { res = false }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { res = false }
+                  tn == "bool" or tn == "BOOL" ==> { res = false }
+                  tn == "char" or tn == "CHAR" ==> { res = false }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> { res = false }
+                  tn == "list" or tn == "LIST" ==> { res = false }
+                  tn == "set" or tn == "SET" ==> { res = false }
+                  tn == "map" or tn == "MAP" ==> { res = false }
+                  _ ==> { res = true }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op runtimeSizeOf (as data: value) as int64 ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { emit(nice, 8, "ok") }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { emit(nice, 8, "ok") }
+                  tn == "bool" or tn == "BOOL" ==> { emit(nice, 1, "ok") }
+                  tn == "char" or tn == "CHAR" ==> { emit(nice, 1, "ok") }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> {
+                        mut as string: s = "" + value
+                        mut as int64: slen = 0
+                        infinite (c in s) {
+                              slen = slen + 1
+                        }
+                        emit(nice, slen, "ok")
+                  }
+                  tn == "list" or tn == "LIST" or tn == "set" or tn == "SET" or tn == "map" or tn == "MAP" ==> { emit(nice, 16, "ok") }
+                  _ ==> { emit(nice, 32, "ok") }
+            }
+      }
+
+      op runtimeGetStructMetadata (as string: struct_name) as map ==> {
+            mut as map: m = map{"name": struct_name, "valid": true}
+            emit(nice, m, "ok")
+      }
+
+      #L Aliases Type
+      op getTypeName (as data: value) as string ==> {
+            emit(nice, stdRuntimeGetTypeName(value), "ok")
+      }
+
+      op getTypeId (as data: value) as int64 ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { emit(nice, 1, "ok") }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { emit(nice, 2, "ok") }
+                  tn == "bool" or tn == "BOOL" ==> { emit(nice, 3, "ok") }
+                  tn == "char" or tn == "CHAR" ==> { emit(nice, 4, "ok") }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> { emit(nice, 5, "ok") }
+                  tn == "list" or tn == "LIST" ==> { emit(nice, 6, "ok") }
+                  tn == "set" or tn == "SET" ==> { emit(nice, 7, "ok") }
+                  tn == "map" or tn == "MAP" ==> { emit(nice, 8, "ok") }
+                  _ ==> { emit(nice, 9, "ok") }
+            }
+      }
+
+      op isPrimitive (as data: value) as bool ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            mut as bool: res = false
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { res = true }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { res = true }
+                  tn == "bool" or tn == "BOOL" ==> { res = true }
+                  tn == "char" or tn == "CHAR" ==> { res = true }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> { res = true }
+                  _ ==> { res = false }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op isCollection (as data: value) as bool ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            mut as bool: res = false
+            route {
+                  tn == "list" or tn == "LIST" ==> { res = true }
+                  tn == "set" or tn == "SET" ==> { res = true }
+                  tn == "map" or tn == "MAP" ==> { res = true }
+                  _ ==> { res = false }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op isStruct (as data: value) as bool ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            mut as bool: res = false
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { res = false }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { res = false }
+                  tn == "bool" or tn == "BOOL" ==> { res = false }
+                  tn == "char" or tn == "CHAR" ==> { res = false }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> { res = false }
+                  tn == "list" or tn == "LIST" ==> { res = false }
+                  tn == "set" or tn == "SET" ==> { res = false }
+                  tn == "map" or tn == "MAP" ==> { res = false }
+                  _ ==> { res = true }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op sizeOf (as data: value) as int64 ==> {
+            mut as string: tn = stdRuntimeGetTypeName(value)
+            route {
+                  tn == "int" or tn == "int64" or tn == "i64" or tn == "INT" ==> { emit(nice, 8, "ok") }
+                  tn == "float" or tn == "float64" or tn == "f64" or tn == "float32" or tn == "f32" or tn == "FLOAT" ==> { emit(nice, 8, "ok") }
+                  tn == "bool" or tn == "BOOL" ==> { emit(nice, 1, "ok") }
+                  tn == "char" or tn == "CHAR" ==> { emit(nice, 1, "ok") }
+                  tn == "string" or tn == "str" or tn == "STRING" ==> {
+                        mut as string: s = "" + value
+                        mut as int64: slen = 0
+                        infinite (c in s) {
+                              slen = slen + 1
+                        }
+                        emit(nice, slen, "ok")
+                  }
+                  tn == "list" or tn == "LIST" or tn == "set" or tn == "SET" or tn == "map" or tn == "MAP" ==> { emit(nice, 16, "ok") }
+                  _ ==> { emit(nice, 32, "ok") }
+            }
+      }
+
+      #L -- RuntimeMemoryContract -------------------------------------
+      op runtimeAllocatedMemory () as int64 ==> {
+            emit(nice, stdRuntimeAllocatedMemory(), "ok")
+      }
+
+      op runtimeHeapSize () as int64 ==> {
+            emit(nice, stdRuntimeHeapSize(), "ok")
+      }
+
+      op runtimePointerOf (as data: value) as int64 ==> {
+            emit(nice, stdRuntimePointerOf(value), "ok")
+      }
+
+      #L Aliases Memory
+      op allocatedMemory () as int64 ==> {
+            emit(nice, stdRuntimeAllocatedMemory(), "ok")
+      }
+
+      op heapSize () as int64 ==> {
+            emit(nice, stdRuntimeHeapSize(), "ok")
+      }
+
+      op pointerOf (as data: value) as int64 ==> {
+            emit(nice, stdRuntimePointerOf(value), "ok")
+      }
+
+      #L -- RuntimeControlContract ------------------------------------
+      op runtimePanic (as string: message) as bool ==> {
+            emit(nice, stdRuntimePanic(message), "ok")
+      }
+
+      op runtimeTrap () as bool ==> {
+            emit(nice, stdRuntimeTrap(), "ok")
+      }
+
+      op runtimeSetPanicHook (as string: agent_name, as string: op_name) as bool ==> {
+            emit(nice, true, "ok")
+      }
+
+      op runtimeStackTrace () as list of data ==> {
+            emit(nice, stdRuntimeStackTrace(), "ok")
+      }
+
+      #L Aliases Control
+      op panic (as string: message) as bool ==> {
+            emit(nice, stdRuntimePanic(message), "ok")
+      }
+
+      op trap () as bool ==> {
+            emit(nice, stdRuntimeTrap(), "ok")
+      }
+
+      op setPanicHook (as string: agent_name, as string: op_name) as bool ==> {
+            emit(nice, true, "ok")
+      }
+
+      op stackTrace () as list of data ==> {
+            emit(nice, stdRuntimeStackTrace(), "ok")
+      }
+}

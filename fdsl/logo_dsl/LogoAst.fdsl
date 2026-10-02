@@ -1,0 +1,21 @@
+agent (LogoAst) {
+      op createLogoParser (as data: lexer) as data ==> {
+            mut as map: grammar = map{
+                  "script": "comando (SEP comando)*",
+                  "comando": "(CMD_FRENTE NUM) | (CMD_TRAS NUM) | (CMD_GIRAR DIR NUM?)"
+            }
+            emit(nice, stdDslCreateParser(lexer, grammar), "ok")
+      }
+
+      op generateLogoAst (as data: parser, as string: script) as map ==> {
+            emit(nice, stdDslGenerateAst(parser, script), "ok")
+      }
+
+      op dumpLogoAst (as map: ast) as string ==> {
+            emit(nice, stdDslDumpAst(ast), "ok")
+      }
+
+      op findLogoNodes (as map: ast, as string: node_type) as list of data ==> {
+            emit(nice, stdDslFindAstNodes(ast, node_type), "ok")
+      }
+}

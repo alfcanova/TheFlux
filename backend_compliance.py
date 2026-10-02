@@ -136,6 +136,17 @@ TOOLS = {
 }
 
 
+def limpar_scratch_dbs() -> None:
+    scratch = RAIZ / "scratch"
+    if scratch.exists():
+        for pat in ("flux_*.db*", "flux_*.kv", "flux_*.unqlite", "flux_*.duckdb", "flux_*.kuzu", "flux_*.obx"):
+            for f in scratch.glob(pat):
+                try:
+                    f.unlink()
+                except Exception:
+                    pass
+
+
 def limpar_t() -> None:
     for d in T_DIRS:
         if d.exists():
@@ -145,6 +156,7 @@ def limpar_t() -> None:
                         f.unlink()
                     except Exception:
                         pass
+    limpar_scratch_dbs()
     print("Limpado: t_* e intermediates/llvm")
 
 
@@ -215,8 +227,17 @@ def saida_lv(path: Path, stdin_text: str) -> str | None:
     runtime_c = RAIZ / "src" / "flux_proto" / "llvm" / "runtime" / "flux_input.c"
     c = _run([clang, "-o", str(exe_path), str(ll_path), str(runtime_c)])
     if c.returncode != 0:
-        return None
-    return _run([str(exe_path)], input_text=stdin_text, timeout=30).stdout
+        import time
+        time.sleep(0.5)
+        c = _run([clang, "-o", str(exe_path), str(ll_path), str(runtime_c)])
+        if c.returncode != 0:
+            return None
+    res = _run([str(exe_path)], input_text=stdin_text, timeout=30)
+    if res.returncode != 0 and not res.stdout:
+        import time
+        time.sleep(0.5)
+        res = _run([str(exe_path)], input_text=stdin_text, timeout=30)
+    return res.stdout
 
 
 def saida_wat(path: Path, stdin_text: str) -> str | None:
@@ -470,11 +491,12 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
 
 
 def main() -> int:
+    filter_arg = next((a for a in sys.argv[1:] if not a.startswith("--")), None)
     md_path = RAIZ / "backend_compliance.md"
     old_md_path = RAIZ / "backend_compliance_OLD.md"
 
     # Copia backend_compliance.md para backend_compliance_OLD.md antes de executar
-    if md_path.exists():
+    if not filter_arg and md_path.exists():
         shutil.copyfile(md_path, old_md_path)
         print(f"Copiado: {md_path.name} -> {old_md_path.name}")
 
@@ -490,6 +512,10 @@ def main() -> int:
             print(f"AVISO: ferramenta '{nome}' nao encontrada")
 
     flux_files = sorted(FLUX_DIR.glob("*.flux"))
+    if filter_arg:
+        target = Path(filter_arg).name
+        flux_files = [f for f in flux_files if target in f.name]
+        print(f"Executando filtro '{filter_arg}': {len(flux_files)} arquivo(s) encontrado(s)")
     results: dict[str, dict[str, bool]] = {}
     outs: dict[str, dict[str, str | None]] = {}
     falhas = []
@@ -499,12 +525,16 @@ def main() -> int:
         stdin_text = stdin_para(path)
         linha: dict[str, bool] = {}
         outs[nome] = {}
+        if nome.startswith("ExampleOfUseDbStdLib_"):
+            limpar_scratch_dbs()
         ref = BACKENDS["in"](path, stdin_text)
         outs[nome]["in"] = ref
         for col in COLS:
             if col == "in":
                 linha[col] = ref is not None
             else:
+                if nome.startswith("ExampleOfUseDbStdLib_"):
+                    limpar_scratch_dbs()
                 out = BACKENDS[col](path, stdin_text)
                 outs[nome][col] = out
                 ref_norm = normalizar_saida(ref.rstrip("\n")) if ref is not None else None
@@ -540,7 +570,8 @@ def main() -> int:
     for c in COLS:
         print(f"  {c}: {totais[c]}/{len(results)} OK")
 
-    gerar_md(results, totais, md_path, outs, old_results)
+    if not filter_arg:
+        gerar_md(results, totais, md_path, outs, old_results)
 
     # Rastreamento de regressoes no terminal
     regressoes = [
