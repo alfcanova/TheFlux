@@ -1732,6 +1732,14 @@ class Interpreter:
                 sys.stderr.write(str(val.data) + "\n")
                 sys.stderr.flush()
                 return val
+            if name.startswith("stdCompress") or name.startswith("stdDecompress"):
+                return self._eval_compress_intrinsic(name, node.args)
+            if name.startswith("stdArchive"):
+                return self._eval_archive_intrinsic(name, node.args)
+            if name.startswith("stdIoReadBinary") or name.startswith("stdIoWriteBinary") or \
+               name.startswith("stdIoReadHex") or name.startswith("stdIoWriteHex") or \
+               name.startswith("stdIoReadBase64") or name.startswith("stdIoWriteBase64"):
+                return self._eval_io_binary_intrinsic(name, node.args)
             if name.startswith("stdDateTime") or name in ("stdGetCurrentTimeNsString", "stdFormatDurationNs"):
                 return self._eval_datetime_intrinsic(name, node.args)
             if name.startswith("stdFile"):
@@ -1902,6 +1910,226 @@ class Interpreter:
         if name == "stdFileIsBinary":
             return Value("bool", fsh.file_is_binary(p))
         raise InterpreterError(f"unknown file signature intrinsic '{name}'")
+
+    def _eval_compress_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.compress_helpers as ch
+        args = [self._eval(a) for a in raw_args]
+        p = args[0].data if args else ""
+
+        # Deflate
+        if name == "stdCompressDeflate":
+            return Value("string", ch.compress_deflate(p))
+        if name == "stdCompressDeflateLevel":
+            lvl = int(args[1].data if len(args) > 1 else 6)
+            return Value("string", ch.compress_deflate_level(p, lvl))
+        if name == "stdDecompressDeflate":
+            return Value("string", ch.decompress_deflate(p))
+        if name == "stdDecompressDeflateSafe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_deflate_safe(p, q))
+        if name == "stdCompressIsDeflate":
+            return Value("bool", ch.compress_is_deflate(p))
+
+        # Zlib
+        if name == "stdCompressZlib":
+            return Value("string", ch.compress_zlib(p))
+        if name == "stdCompressZlibLevel":
+            lvl = int(args[1].data if len(args) > 1 else 6)
+            return Value("string", ch.compress_zlib_level(p, lvl))
+        if name == "stdDecompressZlib":
+            return Value("string", ch.decompress_zlib(p))
+        if name == "stdDecompressZlibSafe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_zlib_safe(p, q))
+        if name == "stdCompressIsZlib":
+            return Value("bool", ch.compress_is_zlib(p))
+        if name == "stdCompressZlibAdler32":
+            return Value("int64", ch.compress_zlib_adler32(p))
+
+        # Gzip
+        if name == "stdCompressGzip":
+            return Value("string", ch.compress_gzip(p))
+        if name == "stdCompressGzipLevel":
+            lvl = int(args[1].data if len(args) > 1 else 6)
+            return Value("string", ch.compress_gzip_level(p, lvl))
+        if name == "stdDecompressGzip":
+            return Value("string", ch.decompress_gzip(p))
+        if name == "stdDecompressGzipSafe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_gzip_safe(p, q))
+        if name == "stdCompressIsGzip":
+            return Value("bool", ch.compress_is_gzip(p))
+        if name == "stdCompressGzipCrc32":
+            return Value("int64", ch.compress_gzip_crc32(p))
+        if name == "stdCompressGzipTimestamp":
+            return Value("int64", ch.compress_gzip_timestamp(p))
+
+        # Bzip2
+        if name == "stdCompressBzip2":
+            return Value("string", ch.compress_bzip2(p))
+        if name == "stdCompressBzip2Level":
+            lvl = int(args[1].data if len(args) > 1 else 9)
+            return Value("string", ch.compress_bzip2_level(p, lvl))
+        if name == "stdDecompressBzip2":
+            return Value("string", ch.decompress_bzip2(p))
+        if name == "stdDecompressBzip2Safe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_bzip2_safe(p, q))
+        if name == "stdCompressIsBzip2":
+            return Value("bool", ch.compress_is_bzip2(p))
+
+        # LZMA
+        if name == "stdCompressLzma":
+            return Value("string", ch.compress_lzma(p))
+        if name == "stdCompressLzmaLevel":
+            lvl = int(args[1].data if len(args) > 1 else 6)
+            return Value("string", ch.compress_lzma_level(p, lvl))
+        if name == "stdDecompressLzma":
+            return Value("string", ch.decompress_lzma(p))
+        if name == "stdDecompressLzmaSafe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_lzma_safe(p, q))
+        if name == "stdCompressIsLzma":
+            return Value("bool", ch.compress_is_lzma(p))
+
+        # LZMA2 & XZ
+        if name == "stdCompressLzma2":
+            return Value("string", ch.compress_lzma2(p))
+        if name == "stdCompressLzma2Level":
+            lvl = int(args[1].data if len(args) > 1 else 6)
+            return Value("string", ch.compress_lzma2_level(p, lvl))
+        if name == "stdDecompressLzma2":
+            return Value("string", ch.decompress_lzma2(p))
+        if name == "stdDecompressLzma2Safe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_lzma2_safe(p, q))
+        if name == "stdCompressXz":
+            return Value("string", ch.compress_xz(p))
+        if name == "stdCompressXzLevel":
+            lvl = int(args[1].data if len(args) > 1 else 6)
+            return Value("string", ch.compress_xz_level(p, lvl))
+        if name == "stdDecompressXz":
+            return Value("string", ch.decompress_xz(p))
+        if name == "stdDecompressXzSafe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_xz_safe(p, q))
+        if name == "stdCompressIsXz":
+            return Value("bool", ch.compress_is_xz(p))
+
+        # Zstandard
+        if name == "stdCompressZstd":
+            return Value("string", ch.compress_zstd(p))
+        if name == "stdCompressZstdLevel":
+            lvl = int(args[1].data if len(args) > 1 else 3)
+            return Value("string", ch.compress_zstd_level(p, lvl))
+        if name == "stdDecompressZstd":
+            return Value("string", ch.decompress_zstd(p))
+        if name == "stdDecompressZstdSafe":
+            q = args[1].data if len(args) > 1 else None
+            return Value("string", ch.decompress_zstd_safe(p, q))
+        if name == "stdCompressIsZstd":
+            return Value("bool", ch.compress_is_zstd(p))
+        if name == "stdCompressZstdFrameSize":
+            return Value("int64", ch.compress_zstd_frame_size(p))
+
+        # Inspection
+        if name == "stdCompressEstimateDecompressedSize":
+            return Value("int64", ch.compress_estimate_decompressed_size(p))
+        if name == "stdCompressDetectFormat":
+            fmt_str = ch.compress_detect_format(p)
+            return Value("string", fmt_str)
+        if name == "stdCompressStats":
+            u_data = p
+            c_data = args[1].data if len(args) > 1 else ""
+            st = ch.compress_stats(u_data, c_data)
+            fmt_val = Value(f"CompressFormat::{st['format']}", data={})
+            return Value("CompressStats", data={
+                "uncompressed_size": st["uncompressed_size"],
+                "compressed_size": st["compressed_size"],
+                "ratio": st["ratio"],
+                "savings_percent": st["savings_percent"],
+                "format": fmt_val,
+            })
+        if name == "stdDecompressAuto":
+            return Value("string", ch.decompress_auto(p))
+        if name == "stdCompressIsEffective":
+            c_data = args[1].data if len(args) > 1 else ""
+            return Value("bool", ch.compress_is_effective(p, c_data))
+        if name == "stdCompressIsFormatSupported":
+            return Value("bool", ch.compress_is_format_supported(str(p)))
+
+        raise InterpreterError(f"unknown compression intrinsic '{name}'")
+
+    def _eval_archive_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.archive_helpers as ah
+        args = [self._eval(a) for a in raw_args]
+        src = str(args[0].data if args else "")
+        dst = str(args[1].data if len(args) > 1 else "")
+
+        if name == "stdArchiveZip":
+            return Value("bool", ah.archive_zip(src, dst))
+        if name == "stdArchiveUnzip":
+            return Value("bool", ah.archive_unzip(src, dst))
+        if name == "stdArchiveTar":
+            return Value("bool", ah.archive_tar(src, dst))
+        if name == "stdArchiveExtractTar":
+            return Value("bool", ah.archive_extract_tar(src, dst))
+        if name == "stdArchiveTarGz":
+            return Value("bool", ah.archive_tar_gz(src, dst))
+        if name == "stdArchiveExtractTarGz":
+            return Value("bool", ah.archive_extract_tar_gz(src, dst))
+        if name == "stdArchiveTarBz2":
+            return Value("bool", ah.archive_tar_bz2(src, dst))
+        if name == "stdArchiveExtractTarBz2":
+            return Value("bool", ah.archive_extract_tar_bz2(src, dst))
+        if name == "stdArchiveTarXz":
+            return Value("bool", ah.archive_tar_xz(src, dst))
+        if name == "stdArchiveExtractTarXz":
+            return Value("bool", ah.archive_extract_tar_xz(src, dst))
+        if name == "stdArchiveTarZst":
+            return Value("bool", ah.archive_tar_zst(src, dst))
+        if name == "stdArchiveExtractTarZst":
+            return Value("bool", ah.archive_extract_tar_zst(src, dst))
+        if name == "stdArchiveCreate7z":
+            return Value("bool", ah.archive_create_7z(src, dst))
+        if name == "stdArchiveExtract7z":
+            return Value("bool", ah.archive_extract_7z(src, dst))
+        if name == "stdArchiveExtractRar":
+            return Value("bool", ah.archive_extract_rar(src, dst))
+        if name == "stdArchiveListFiles":
+            files = ah.archive_list_files(src)
+            return Value("list", [Value("string", f) for f in files])
+        if name == "stdArchiveExtractFile":
+            entry = str(args[1].data if len(args) > 1 else "")
+            out_dir = str(args[2].data if len(args) > 2 else "")
+            return Value("bool", ah.archive_extract_file(src, entry, out_dir))
+        if name == "stdArchiveIsArchive":
+            return Value("bool", ah.archive_is_archive(src))
+        if name == "stdArchiveDetectFormat":
+            return Value("string", ah.archive_detect_format(src))
+
+        raise InterpreterError(f"unknown archive intrinsic '{name}'")
+
+    def _eval_io_binary_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.io_binary_helpers as iobh
+        args = [self._eval(a) for a in raw_args]
+        p = str(args[0].data if args else "")
+        content = str(args[1].data if len(args) > 1 else "")
+
+        if name == "stdIoReadBinaryFile":
+            return Value("string", iobh.io_read_binary_file(p))
+        if name == "stdIoWriteBinaryFile":
+            return Value("string", iobh.io_write_binary_file(p, content))
+        if name == "stdIoReadHexFile":
+            return Value("string", iobh.io_read_hex_file(p))
+        if name == "stdIoWriteHexFile":
+            return Value("string", iobh.io_write_hex_file(p, content))
+        if name == "stdIoReadBase64File":
+            return Value("string", iobh.io_read_base64_file(p))
+        if name == "stdIoWriteBase64File":
+            return Value("string", iobh.io_write_base64_file(p, content))
+
+        raise InterpreterError(f"unknown io binary intrinsic '{name}'")
 
     def _eval_os_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
         import flux_proto.os_helpers as osh

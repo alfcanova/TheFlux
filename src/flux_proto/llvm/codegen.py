@@ -2870,6 +2870,83 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_gfx_window_width", "i64", ["i64"])
             self._w.declare_function("flux_std_gfx_window_height", "i64", ["i64"])
             self._w.declare_function("flux_std_gfx_export_html", "i64", ["i64", "i8*"])
+            # CompressStdLib
+            self._w.declare_function("flux_std_compress_deflate", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_deflate_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_deflate", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_deflate_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_deflate", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_zlib", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_zlib_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_zlib", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_zlib_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_zlib", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_zlib_adler32", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_gzip", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_gzip_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_gzip", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_gzip_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_gzip", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_gzip_crc32", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_gzip_timestamp", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_bzip2", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_bzip2_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_bzip2", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_bzip2_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_bzip2", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_lzma", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_lzma_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_lzma", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_lzma_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_lzma", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_lzma2", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_lzma2_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_lzma2", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_lzma2_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_xz", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_xz_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_xz", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_xz_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_xz", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_zstd", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_zstd_level", "i8*", ["i8*", "i64"])
+            self._w.declare_function("flux_std_decompress_zstd", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_zstd_safe", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_zstd", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_zstd_frame_size", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_estimate_decompressed_size", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_detect_format", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_decompress_auto", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_compress_is_effective", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_compress_is_format_supported", "i64", ["i8*"])
+            self._w.declare_function("flux_std_compress_stats", "i8*", ["i8*", "i8*"])
+            # IoArchive
+            self._w.declare_function("flux_std_archive_zip", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_unzip", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_tar", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_tar", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_tar_gz", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_tar_gz", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_tar_bz2", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_tar_bz2", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_tar_xz", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_tar_xz", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_tar_zst", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_tar_zst", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_create_7z", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_7z", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_rar", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_extract_file", "i64", ["i8*", "i8*", "i8*"])
+            self._w.declare_function("flux_std_archive_is_archive", "i64", ["i8*"])
+            self._w.declare_function("flux_std_archive_detect_format", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_archive_list_files", "i8*", ["i8*", "i8* (i64, i64)*", "i8* (i8*, i64, i64, i8*)*"])
+            # IoBinaryFile
+            self._w.declare_function("flux_std_io_read_binary_file", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_io_write_binary_file", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_io_read_hex_file", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_io_write_hex_file", "i64", ["i8*", "i8*"])
+            self._w.declare_function("flux_std_io_read_base64_file", "i8*", ["i8*"])
+            self._w.declare_function("flux_std_io_write_base64_file", "i64", ["i8*", "i8*"])
             self._w.begin_function("main", "i32")
             self._new_block("entry")
             frame = self._w.new_local("frame")
@@ -3343,7 +3420,7 @@ class LLVMCodegen:
                     self._emit_struct_from_buf(fstr, target)
                 else:
                     ptr, llvm_t, ft = target
-                    if ft == "string":
+                    if ft == "string" or llvm_t == "i8*":
                         self._w.emit(f"store i8* {fstr}, i8** {ptr}")
                     elif ft in FLOATISH:
                         fd = self._w.new_local(f"fd_{f.name}")
@@ -7567,6 +7644,14 @@ class LLVMCodegen:
             res = self._w.new_local("io_ldir")
             self._w.emit(f"{res} = call i8* @flux_std_io_list_dir(i8* {path_ptr}, i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)")
             return (res, "i8*")
+        if name.startswith("stdCompress") or name.startswith("stdDecompress"):
+            return self._gen_std_compress_intrinsic(name, node.args)
+        if name.startswith("stdArchive"):
+            return self._gen_std_archive_intrinsic(name, node.args)
+        if name.startswith("stdIoReadBinary") or name.startswith("stdIoWriteBinary") or \
+           name.startswith("stdIoReadHex") or name.startswith("stdIoWriteHex") or \
+           name.startswith("stdIoReadBase64") or name.startswith("stdIoWriteBase64"):
+            return self._gen_std_io_binary_intrinsic(name, node.args)
         if name.startswith("stdDateTime") or name in ("stdGetCurrentTimeNsString", "stdFormatDurationNs"):
             return self._gen_std_datetime_intrinsic(name, node.args)
         if name.startswith("stdFile"):
@@ -7794,6 +7879,199 @@ class LLVMCodegen:
             self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
             return (res, "i1")
         raise CodegenError(f"unsupported file signature intrinsic '{name}'")
+
+    def _gen_std_compress_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        # String-returning compress/decompress
+        str_funcs = {
+            "stdCompressDeflate": "flux_std_compress_deflate",
+            "stdDecompressDeflate": "flux_std_decompress_deflate",
+            "stdCompressZlib": "flux_std_compress_zlib",
+            "stdDecompressZlib": "flux_std_decompress_zlib",
+            "stdCompressGzip": "flux_std_compress_gzip",
+            "stdDecompressGzip": "flux_std_decompress_gzip",
+            "stdCompressBzip2": "flux_std_compress_bzip2",
+            "stdDecompressBzip2": "flux_std_decompress_bzip2",
+            "stdCompressLzma": "flux_std_compress_lzma",
+            "stdDecompressLzma": "flux_std_decompress_lzma",
+            "stdCompressLzma2": "flux_std_compress_lzma2",
+            "stdDecompressLzma2": "flux_std_decompress_lzma2",
+            "stdCompressXz": "flux_std_compress_xz",
+            "stdDecompressXz": "flux_std_decompress_xz",
+            "stdCompressZstd": "flux_std_compress_zstd",
+            "stdDecompressZstd": "flux_std_decompress_zstd",
+            "stdDecompressAuto": "flux_std_decompress_auto",
+            "stdCompressDetectFormat": "flux_std_compress_detect_format",
+        }
+        if name in str_funcs:
+            cname = str_funcs[name]
+            res = self._w.new_local("comp_str")
+            self._w.emit(f"{res} = call i8* @{cname}(i8* {sptr(0)})")
+            return (res, "i8*")
+
+        if name == "stdCompressStats":
+            res = self._w.new_local("comp_stats")
+            self._w.emit(f"{res} = call i8* @flux_std_compress_stats(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+
+        if name in ("stdCompressDeflateLevel", "stdCompressZlibLevel", "stdCompressGzipLevel",
+                    "stdCompressBzip2Level", "stdCompressLzmaLevel", "stdCompressLzma2Level",
+                    "stdCompressXzLevel", "stdCompressZstdLevel"):
+            suffix = name.replace("stdCompress", "").replace("Level", "_level").lower()
+            res = self._w.new_local("comp_lvl")
+            self._w.emit(f"{res} = call i8* @flux_std_compress_{suffix}(i8* {sptr(0)}, i64 {i64v(1)})")
+            return (res, "i8*")
+
+        if name in ("stdDecompressDeflateSafe", "stdDecompressZlibSafe", "stdDecompressGzipSafe",
+                    "stdDecompressBzip2Safe", "stdDecompressLzmaSafe", "stdDecompressLzma2Safe",
+                    "stdDecompressXzSafe", "stdDecompressZstdSafe"):
+            suffix = name.replace("stdDecompress", "").replace("Safe", "_safe").lower()
+            res = self._w.new_local("decomp_safe")
+            self._w.emit(f"{res} = call i8* @flux_std_decompress_{suffix}(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+
+        # Bool-returning is_*
+        bool_funcs = {
+            "stdCompressIsDeflate": "flux_std_compress_is_deflate",
+            "stdCompressIsZlib": "flux_std_compress_is_zlib",
+            "stdCompressIsGzip": "flux_std_compress_is_gzip",
+            "stdCompressIsBzip2": "flux_std_compress_is_bzip2",
+            "stdCompressIsLzma": "flux_std_compress_is_lzma",
+            "stdCompressIsXz": "flux_std_compress_is_xz",
+            "stdCompressIsZstd": "flux_std_compress_is_zstd",
+            "stdCompressIsEffective": "flux_std_compress_is_effective",
+            "stdCompressIsFormatSupported": "flux_std_compress_is_format_supported",
+        }
+        if name in bool_funcs:
+            cname = bool_funcs[name]
+            res64 = self._w.new_local("comp_b64")
+            if name == "stdCompressIsEffective":
+                self._w.emit(f"{res64} = call i64 @{cname}(i8* {sptr(0)}, i8* {sptr(1)})")
+            else:
+                self._w.emit(f"{res64} = call i64 @{cname}(i8* {sptr(0)})")
+            res = self._w.new_local("comp_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Integer-returning metadata
+        int_funcs = {
+            "stdCompressZlibAdler32": "flux_std_compress_zlib_adler32",
+            "stdCompressGzipCrc32": "flux_std_compress_gzip_crc32",
+            "stdCompressGzipTimestamp": "flux_std_compress_gzip_timestamp",
+            "stdCompressZstdFrameSize": "flux_std_compress_zstd_frame_size",
+            "stdCompressEstimateDecompressedSize": "flux_std_compress_estimate_decompressed_size",
+        }
+        if name in int_funcs:
+            cname = int_funcs[name]
+            res = self._w.new_local("comp_i64")
+            self._w.emit(f"{res} = call i64 @{cname}(i8* {sptr(0)})")
+            return (res, "i64")
+
+        raise CodegenError(f"unsupported compression intrinsic '{name}'")
+
+    def _gen_std_archive_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        bool_funcs_2args = {
+            "stdArchiveZip": "flux_std_archive_zip",
+            "stdArchiveUnzip": "flux_std_archive_unzip",
+            "stdArchiveTar": "flux_std_archive_tar",
+            "stdArchiveExtractTar": "flux_std_archive_extract_tar",
+            "stdArchiveTarGz": "flux_std_archive_tar_gz",
+            "stdArchiveExtractTarGz": "flux_std_archive_extract_tar_gz",
+            "stdArchiveTarBz2": "flux_std_archive_tar_bz2",
+            "stdArchiveExtractTarBz2": "flux_std_archive_extract_tar_bz2",
+            "stdArchiveTarXz": "flux_std_archive_tar_xz",
+            "stdArchiveExtractTarXz": "flux_std_archive_extract_tar_xz",
+            "stdArchiveTarZst": "flux_std_archive_tar_zst",
+            "stdArchiveExtractTarZst": "flux_std_archive_extract_tar_zst",
+            "stdArchiveCreate7z": "flux_std_archive_create_7z",
+            "stdArchiveExtract7z": "flux_std_archive_extract_7z",
+            "stdArchiveExtractRar": "flux_std_archive_extract_rar",
+        }
+        if name in bool_funcs_2args:
+            cname = bool_funcs_2args[name]
+            res64 = self._w.new_local("arc_b64")
+            self._w.emit(f"{res64} = call i64 @{cname}(i8* {sptr(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("arc_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        if name == "stdArchiveExtractFile":
+            res64 = self._w.new_local("arc_b64")
+            self._w.emit(f"{res64} = call i64 @flux_std_archive_extract_file(i8* {sptr(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            res = self._w.new_local("arc_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        if name == "stdArchiveIsArchive":
+            res64 = self._w.new_local("arc_is64")
+            self._w.emit(f"{res64} = call i64 @flux_std_archive_is_archive(i8* {sptr(0)})")
+            res = self._w.new_local("arc_is")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        if name == "stdArchiveDetectFormat":
+            res = self._w.new_local("arc_fmt")
+            self._w.emit(f"{res} = call i8* @flux_std_archive_detect_format(i8* {sptr(0)})")
+            return (res, "i8*")
+
+        if name == "stdArchiveListFiles":
+            res = self._w.new_local("arc_lfiles")
+            self._w.emit(f"{res} = call i8* @flux_std_archive_list_files(i8* {sptr(0)}, i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)")
+            return (res, "i8*")
+
+        raise CodegenError(f"unsupported archive intrinsic '{name}'")
+
+    def _gen_std_io_binary_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        if name == "stdIoReadBinaryFile":
+            res = self._w.new_local("bin_read")
+            self._w.emit(f"{res} = call i8* @flux_std_io_read_binary_file(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdIoWriteBinaryFile":
+            res = self._w.new_local("bin_write")
+            self._w.emit(f"{res} = call i8* @flux_std_io_write_binary_file(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdIoReadHexFile":
+            res = self._w.new_local("hex_read")
+            self._w.emit(f"{res} = call i8* @flux_std_io_read_hex_file(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdIoWriteHexFile":
+            res = self._w.new_local("hex_write")
+            self._w.emit(f"{res} = call i8* @flux_std_io_write_hex_file(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+        if name == "stdIoReadBase64File":
+            res = self._w.new_local("b64_read")
+            self._w.emit(f"{res} = call i8* @flux_std_io_read_base64_file(i8* {sptr(0)})")
+            return (res, "i8*")
+        if name == "stdIoWriteBase64File":
+            res = self._w.new_local("b64_write")
+            self._w.emit(f"{res} = call i8* @flux_std_io_write_base64_file(i8* {sptr(0)}, i8* {sptr(1)})")
+            return (res, "i8*")
+
+        raise CodegenError(f"unsupported io binary intrinsic '{name}'")
 
     def _gen_std_os_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
         def av(i: int) -> tuple[str, str]:

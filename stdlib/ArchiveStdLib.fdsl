@@ -1,0 +1,133 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ArchiveStdLib
+#L Fachada para gerenciamento de contêineres de arquivos (TAR, ZIP, 7z, RAR)
+#L e operacoes de leitura/gravacao em binario, hex e base64
+#L ==============================================================================
+
+use IoStdLib
+
+contract (ArchiveManagementContract) {
+      op archiveZip (as string: src_path, as string: dst_zip) as bool
+      op archiveUnzip (as string: src_zip, as string: dst_dir) as bool
+      op archiveTar (as string: src_path, as string: dst_tar) as bool
+      op archiveExtractTar (as string: src_tar, as string: dst_dir) as bool
+      op archiveTarGz (as string: src_path, as string: dst_targz) as bool
+      op archiveExtractTarGz (as string: src_targz, as string: dst_dir) as bool
+      op archiveTarBz2 (as string: src_path, as string: dst_tarbz2) as bool
+      op archiveExtractTarBz2 (as string: src_tarbz2, as string: dst_dir) as bool
+      op archiveTarXz (as string: src_path, as string: dst_tarxz) as bool
+      op archiveExtractTarXz (as string: src_tarxz, as string: dst_dir) as bool
+      op archiveTarZst (as string: src_path, as string: dst_tarzst) as bool
+      op archiveExtractTarZst (as string: src_tarzst, as string: dst_dir) as bool
+      op archiveCreate7z (as string: src_path, as string: dst_7z) as bool
+      op archiveExtract7z (as string: src_7z, as string: dst_dir) as bool
+      op archiveExtractRar (as string: src_rar, as string: dst_dir) as bool
+      op archiveListFiles (as string: archive_path) as list of data
+      op archiveExtractFile (as string: archive_path, as string: entry_name, as string: dst_dir) as bool
+      op archiveIsArchive (as string: file_path) as bool
+      op archiveDetectFormat (as string: file_path) as string
+}
+
+agent (ArchiveStdLib) impl ArchiveManagementContract, IoBinaryFileContract {
+      #L -- ArchiveManagementContract ---------------------------------
+      op archiveZip (as string: src_path, as string: dst_zip) as bool ==> {
+            emit(nice, stdArchiveZip(src_path, dst_zip), "ok")
+      }
+
+      op archiveUnzip (as string: src_zip, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveUnzip(src_zip, dst_dir), "ok")
+      }
+
+      op archiveTar (as string: src_path, as string: dst_tar) as bool ==> {
+            emit(nice, stdArchiveTar(src_path, dst_tar), "ok")
+      }
+
+      op archiveExtractTar (as string: src_tar, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractTar(src_tar, dst_dir), "ok")
+      }
+
+      op archiveTarGz (as string: src_path, as string: dst_targz) as bool ==> {
+            emit(nice, stdArchiveTarGz(src_path, dst_targz), "ok")
+      }
+
+      op archiveExtractTarGz (as string: src_targz, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractTarGz(src_targz, dst_dir), "ok")
+      }
+
+      op archiveTarBz2 (as string: src_path, as string: dst_tarbz2) as bool ==> {
+            emit(nice, stdArchiveTarBz2(src_path, dst_tarbz2), "ok")
+      }
+
+      op archiveExtractTarBz2 (as string: src_tarbz2, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractTarBz2(src_tarbz2, dst_dir), "ok")
+      }
+
+      op archiveTarXz (as string: src_path, as string: dst_tarxz) as bool ==> {
+            emit(nice, stdArchiveTarXz(src_path, dst_tarxz), "ok")
+      }
+
+      op archiveExtractTarXz (as string: src_tarxz, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractTarXz(src_tarxz, dst_dir), "ok")
+      }
+
+      op archiveTarZst (as string: src_path, as string: dst_tarzst) as bool ==> {
+            emit(nice, stdArchiveTarZst(src_path, dst_tarzst), "ok")
+      }
+
+      op archiveExtractTarZst (as string: src_tarzst, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractTarZst(src_tarzst, dst_dir), "ok")
+      }
+
+      op archiveCreate7z (as string: src_path, as string: dst_7z) as bool ==> {
+            emit(nice, stdArchiveCreate7z(src_path, dst_7z), "ok")
+      }
+
+      op archiveExtract7z (as string: src_7z, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtract7z(src_7z, dst_dir), "ok")
+      }
+
+      op archiveExtractRar (as string: src_rar, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractRar(src_rar, dst_dir), "ok")
+      }
+
+      op archiveListFiles (as string: archive_path) as list of data ==> {
+            emit(nice, stdArchiveListFiles(archive_path), "ok")
+      }
+
+      op archiveExtractFile (as string: archive_path, as string: entry_name, as string: dst_dir) as bool ==> {
+            emit(nice, stdArchiveExtractFile(archive_path, entry_name, dst_dir), "ok")
+      }
+
+      op archiveIsArchive (as string: file_path) as bool ==> {
+            emit(nice, stdArchiveIsArchive(file_path), "ok")
+      }
+
+      op archiveDetectFormat (as string: file_path) as string ==> {
+            emit(nice, stdArchiveDetectFormat(file_path), "ok")
+      }
+
+      #L -- IoBinaryFileContract --------------------------------------
+      op readBinaryFile (as string: path) as string ==> {
+            emit(nice, stdIoReadBinaryFile(path), "ok")
+      }
+
+      op writeBinaryFile (as string: path, as string: content) as string ==> {
+            emit(nice, stdIoWriteBinaryFile(path, content), "ok")
+      }
+
+      op readHexFile (as string: path) as string ==> {
+            emit(nice, stdIoReadHexFile(path), "ok")
+      }
+
+      op writeHexFile (as string: path, as string: hex_content) as string ==> {
+            emit(nice, stdIoWriteHexFile(path, hex_content), "ok")
+      }
+
+      op readBase64File (as string: path) as string ==> {
+            emit(nice, stdIoReadBase64File(path), "ok")
+      }
+
+      op writeBase64File (as string: path, as string: b64_content) as string ==> {
+            emit(nice, stdIoWriteBase64File(path, b64_content), "ok")
+      }
+}

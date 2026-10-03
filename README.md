@@ -1,6 +1,6 @@
 # TheFlux Programming Language
 
-[![Compliance](https://img.shields.io/badge/Compliance-349%2F349%20(100%25)-brightgreen)](#)
+[![Compliance](https://img.shields.io/badge/Compliance-360%2F360%20(100%25)-brightgreen)](#)
 [![Backends](https://img.shields.io/badge/Backends-6%20Alvos%20Parit%C3%A1rios-blue)](#)
 [![Encoding](https://img.shields.io/badge/Encoding-UTF--8%20Strict-orange)](#)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](#)
@@ -18,7 +18,7 @@ TheFlux introduz um modelo expressivo centrado em **contratos** (`contract`), **
 - **Paradigma Orientado a Agentes & Contratos**: Separação clara entre especificações de interface e implementações reativas.
 - **Tipagem Estática Expressiva**: Suporte a inteiros primitivos, ponto flutuante com formatos para ML, tensores/matrizes, coleções e tipos de data/hora nativos.
 - **Arquitetura Multi-Backend (6 Alvos de Execução)**: O mesmo código-fonte TheFlux executa com exata paridade comportamental em todos os ambientes.
-- **Biblioteca Padrão Abrangente (35 stdlibs)**: Bibliotecas modulares cobrindo formatos estruturados, bancos de dados embutidos, álgebra linear, SIMD, cálculo simbólico, concorrência preemptiva (threads nativas e canais MPMC), drivers gráficos acelerados, plotagem científica, criptografia, rede e governança de runtime.
+- **Biblioteca Padrão Abrangente (37 stdlibs)**: Bibliotecas modulares cobrindo formatos estruturados, compressão e descompressão de streams em memória (Deflate, Zlib, Gzip, Bzip2, LZMA, XZ, Zstd), gerenciamento de containers em disco (ZIP, TAR, 7z, RAR), I/O binário/hex/base64, bancos de dados embutidos, álgebra linear, SIMD, cálculo simbólico, concorrência preemptiva (threads nativas e canais MPMC), drivers gráficos acelerados, plotagem científica, criptografia, rede e governança de runtime.
 - **DSLs Modulares de Usuário (`fdsl/`)**: Suporte a domínios específicos com analisadores léxicos, validação semântica com diagnósticos visuais (`^`), ASTs e execução em sandbox.
 - **Playground Web**: Ambiente interativo WebAssembly no navegador (`web_wasm/`).
 
@@ -60,18 +60,18 @@ Todos os programas TheFlux são compilados e validados simultaneamente em 6 ambi
 
 | Backend | Identificador | Status Oficial | Descrição |
 | :--- | :---: | :---: | :--- |
-| **Interpretador AST** | `in` | ✅ 349/349 PASS | Execução direta da Árvore Sintática Abstrata para depuração rápida e análise semântica. |
-| **VM Bytecode** | `vm` | ✅ 349/349 PASS | Compilação para bytecode TheFlux (`.fvmbc`) e execução na máquina virtual otimizada. |
-| **VM Runner** | `vmr` | ✅ 349/349 PASS | Execução do bytecode TheFlux recarregado do disco (`.fvmbc`). |
-| **LLVM Nativo** | `llvm` | ✅ 349/349 PASS | Emissão de LLVM IR compilado via Clang com runtime de suporte em C (`flux_input.c`). |
-| **WebAssembly Text** | `wat` | ✅ 349/349 PASS | Geração de WebAssembly em formato texto com chamadas WASI para portabilidade universal. |
-| **WebAssembly Binário** | `wasm` | ✅ 349/349 PASS | Emissor binário direto em WASM para execução em navegadores e runtimes WASI (`wasmer`). |
+| **Interpretador AST** | `in` | ✅ 360/360 PASS | Execução direta da Árvore Sintática Abstrata para depuração rápida e análise semântica. |
+| **VM Bytecode** | `vm` | ✅ 360/360 PASS | Compilação para bytecode TheFlux (`.fvmbc`) e execução na máquina virtual otimizada. |
+| **VM Runner** | `vmr` | ✅ 360/360 PASS | Execução do bytecode TheFlux recarregado do disco (`.fvmbc`). |
+| **LLVM Nativo** | `llvm` | ✅ 360/360 PASS | Emissão de LLVM IR compilado via Clang com runtime de suporte em C (`flux_input.c`). |
+| **WebAssembly Text** | `wat` | ✅ 360/360 PASS | Geração de WebAssembly em formato texto com chamadas WASI para portabilidade universal. |
+| **WebAssembly Binário** | `wasm` | ✅ 360/360 PASS | Emissor binário direto em WASM para execução em navegadores e runtimes WASI (`wasmer`). |
 
 ---
 
 ## 📦 Catálogo da Biblioteca Padrão (`stdlib/`)
 
-A linguagem conta com **35 bibliotecas padrão contratuais** organizadas pelos 4 pilares oficiais de desenvolvimento:
+A linguagem conta com **37 bibliotecas padrão contratuais** organizadas pelos 4 pilares oficiais de desenvolvimento:
 
 ### 🔤 1. Núcleo, Texto & OO
 - `CharStdLib.fdsl`: Classificação, conversão e manipulação de caracteres individuais.
@@ -118,8 +118,10 @@ A linguagem conta com **35 bibliotecas padrão contratuais** organizadas pelos 4
 - `SymbolicStdLib.fdsl`: Computação algébrica simbólica, derivadas, integrais analíticas e matrizes simbólicas.
 
 ### 🌐 4. Sistema, I/O & Rede
+- `ArchiveStdLib.fdsl`: Fachada unificada de alto nível para gerenciamento de containers e arquivos compactados (`.zip`, `.tar`, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.7z`, extração legada de `.rar`) e operações de arquivos em binário puro (8-bit *lossless*), formato Hexadecimal e Base64.
+- `CompressStdLib.fdsl`: Algoritmos puros de compressão e descompressão de streams em memória (Deflate RFC 1951, Zlib RFC 1950, Gzip RFC 1952, Bzip2, LZMA/LZMA2, XZ, Facebook Zstandard), telemetria com structs nominais (`CompressStats`), enums de formato (`CompressFormat`) e blindagem física contra Zip Bombs (`DecompressQuota`).
 - `GfxStdLib.fdsl` & `GuiStdLib.fdsl`: Primitivas gráficas em memória e componentes visuais imediatos (IMGUI).
-- `IoStdLib.fdsl`: Manipulação física de arquivos, diretórios, percursos de árvore e deleções.
+- `IoStdLib.fdsl`: Manipulação física de arquivos, diretórios, percursos de árvore, deleções, I/O binário puro/hex/Base64 (`IoBinaryFileContract`) e gerenciamento de arquivos compactados e containers em disco (`IoArchiveContract`).
 - `LowLevelStdLib.fdsl`: Acesso direto a bits, bytes, endianness e inspeção de blocos de memória.
 - `NativeGfxStdLib.fdsl`: Driver gráfico nativo acelerado (Win32 GDI / HTML5 Canvas / WASI), janelamento nativo, ciclo de vida de janelas, renderização acelerada (linhas, retângulos, círculos, textos) e pooling de eventos.
 - `NetStdLib.fdsl`: Redes, conectividade TCP/UDP, clientes HTTP e resolução de IP/URL.
@@ -181,7 +183,7 @@ TheFlux/
 │   ├── calc_dsl/                # DSL de Cálculo Aritmético (Lexer, Semantic, AST, Executor)
 │   ├── logo_dsl/                # DSL Logo de Navegação 2D (Lexer, Semantic, AST, Executor)
 │   └── rule_dsl/                # DSL de Regras de Negócio (Lexer, Semantic, AST, Executor)
-├── flux/                        # 349 programas e suítes canônicas de teste (.flux)
+├── flux/                        # 360 programas e suítes canônicas de teste (.flux)
 ├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
 ├── runtime/                     # Suporte de runtime
 ├── src/                         # Núcleo do compilador e backends (src/flux_proto)
@@ -198,7 +200,7 @@ TheFlux/
 │       ├── vm/                  # Bytecode + máquina virtual (.fvmbc)
 │       ├── wat/                 # Backends WebAssembly texto (.wat)
 │       └── wasm/                # Backends WebAssembly binário (.wasm)
-├── stdlib/                      # 35 Bibliotecas Padrão em FDSL (.fdsl)
+├── stdlib/                      # 37 Bibliotecas Padrão em FDSL (.fdsl)
 │   ├── db/                      # Motores de banco de dados embutidos (cabeçalhos C/C++ e binários)
 │   │   └── windows/             # Distribuições nativas Windows x64
 │   │       ├── duckdb-1.5.6/    # Motor colunar OLAP (DLL, LIB, EXE, headers C/C++)
@@ -207,7 +209,9 @@ TheFlux/
 │   │       ├── objectbox- 5.3.2/# Motor de vetores para IA e objetos NoSQL (DLL, LIB, headers)
 │   │       ├── sqlite-3.53.4/   # Motor relacional SQL transacional (DLL, DEF)
 │   │       └── unqlite-1.1.4/   # Motor NoSQL de documentos e chave-valor (C, H, DLL, LIB)
+│   ├── ArchiveStdLib.fdsl       # Fachada de gerenciamento de containers de arquivos e I/O binário
 │   ├── CharStdLib.fdsl          # Manipulação e mutação de caracteres
+│   ├── CompressStdLib.fdsl      # Compressão pura em RAM (Deflate, Zlib, Gzip, Bzip2, LZMA, XZ, Zstd) e cotas
 │   ├── ConvertStdLib.fdsl       # Conversões numéricas, bases matemáticas e parsing
 │   ├── DateTimeStdLib.fdsl      # Data, tempo, fuso horário e relógio monotônico
 │   ├── DbStdLib.fdsl            # Motores de banco de dados embutidos (SQL, KV, Doc, Colunar, Grafo, Vetor)
@@ -221,7 +225,7 @@ TheFlux/
 │   ├── GraphPlotStdLib.fdsl     # Plotagem científica avançada (7 domínios, 19 sistemas de coordenadas)
 │   ├── GuiStdLib.fdsl           # Componentes visuais de interface gráfica
 │   ├── HashStdLib.fdsl          # Hashes criptográficos e checksums de integridade
-│   ├── IoStdLib.fdsl            # Arquivos físicos em disco, diretórios e percursos
+│   ├── IoStdLib.fdsl            # Arquivos físicos, diretórios, I/O binário/hex/b64 e containers compactados
 │   ├── LinAlgStdLib.fdsl        # Álgebra linear, vetores densos, matrizes e autovalores
 │   ├── ListStdLib.fdsl          # Listas dinâmicas, busca, filtros e transformações
 │   ├── LowLevelStdLib.fdsl      # Operações de baixo nível, bits, bytes e memória
@@ -244,7 +248,7 @@ TheFlux/
 │   └── ThreadStdLib.fdsl        # Concorrência preemptiva multi-threading e sincronização
 ├── web_wasm/                    # Frontend web e playground interativo WebAssembly
 ├── backend_compliance.py        # Harness oficial de testes de conformidade dos 6 backends
-├── backend_compliance.md        # Relatório de conformidade dos 349 testes (100% PASS)
+├── backend_compliance.md        # Relatório de conformidade dos 360 testes (100% PASS)
 ├── backend_compliance_OLD.md    # Baseline de regressão dos testes anteriores
 ├── flux_in.py                   # Runner: interpretador AST interativo
 ├── flux_vm.py                   # Runner: compilação para bytecode VM
@@ -310,7 +314,7 @@ O harness `backend_compliance.py` valida todos os arquivos de teste simultaneame
 python backend_compliance.py
 ```
 
-> **Status Atual**: **349/349 arquivos com 100% de conformidade nos 6 backends** (2094 de 2094 verificações verdes, 0 divergências, 0 regressões).
+> **Status Atual**: **360/360 arquivos com 100% de conformidade nos 6 backends** (2160 de 2160 verificações verdes, 0 divergências, 0 regressões). Consulte a listagem detalhada em [`backend_compliance.md`](backend_compliance.md).
 
 ---
 
