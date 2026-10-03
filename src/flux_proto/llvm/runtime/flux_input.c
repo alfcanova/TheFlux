@@ -3310,4 +3310,925 @@ int64_t flux_std_dsl_set_memory_limit(int64_t engine, int64_t max_bytes) {
     return 1;
 }
 
+/* ──────────────────────────────────────────────────────────────────────────────
+ * ThreadStdLib (Channels, Mutex, Atomics, WaitGroup, Lifecycle, System)
+ * ────────────────────────────────────────────────────────────────────────────── */
+
+typedef struct {
+    int64_t capacity;
+    int64_t count;
+    int64_t head;
+    int64_t tail;
+    int64_t is_closed;
+    void **items;
+#if defined(_WIN32)
+    CRITICAL_SECTION cs;
+    CONDITION_VARIABLE cv_not_empty;
+    CONDITION_VARIABLE cv_not_full;
+#endif
+} flux_channel_t;
+
+#define MAX_CHANNELS 256
+static flux_channel_t *_g_channels[MAX_CHANNELS] = {0};
+static int64_t _g_channel_next_id = 1;
+
+static int64_t _extract_cid(int64_t port_val) {
+    if (port_val > 0 && port_val < MAX_CHANNELS && _g_channels[port_val] != NULL) {
+        return port_val;
+    }
+    if (port_val > 0x10000) {
+        int64_t s = flux_map_get((void *)(uintptr_t)port_val, "send");
+        if (s > 0 && s < MAX_CHANNELS && _g_channels[s] != NULL) return s;
+        int64_t r = flux_map_get((void *)(uintptr_t)port_val, "recv");
+        if (r > 0 && r < MAX_CHANNELS && _g_channels[r] != NULL) return r;
+    }
+    return port_val;
+}
+
+void *flux_std_channel_create(int64_t capacity) {
+    if (capacity < 0) capacity = 0;
+    int64_t cid = _g_channel_next_id++;
+    if (cid < MAX_CHANNELS) {
+        flux_channel_t *ch = (flux_channel_t *)calloc(1, sizeof(flux_channel_t));
+        ch->capacity = capacity;
+        int64_t alloc_cap = capacity > 0 ? capacity : 1024;
+        ch->items = (void **)calloc((size_t)alloc_cap, sizeof(void *));
+        ch->count = 0;
+        ch->head = 0;
+        ch->tail = 0;
+        ch->is_closed = 0;
+#if defined(_WIN32)
+        InitializeCriticalSection(&ch->cs);
+        InitializeConditionVariable(&ch->cv_not_empty);
+        InitializeConditionVariable(&ch->cv_not_full);
+#endif
+        _g_channels[cid] = ch;
+    }
+    void *m = flux_map_build(0);
+    flux_map_set(m, "send", 1, cid);
+    flux_map_set(m, "recv", 1, cid);
+    return m;
+}
+
+int64_t flux_std_channel_send(int64_t port_val, void *msg) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 0;
+    flux_channel_t *ch = _g_channels[cid];
+#if defined(_WIN32)
+    EnterCriticalSection(&ch->cs);
+    if (ch->is_closed) {
+        LeaveCriticalSection(&ch->cs);
+        return 0;
+    }
+    int64_t cap = ch->capacity > 0 ? ch->capacity : 1024;
+    while (ch->count >= cap && !ch->is_closed) {
+        SleepConditionVariableCS(&ch->cv_not_full, &ch->cs, 50);
+    }
+    if (ch->is_closed) {
+        LeaveCriticalSection(&ch->cs);
+        return 0;
+    }
+    ch->items[ch->tail] = msg;
+    ch->tail = (ch->tail + 1) % cap;
+    ch->count++;
+    WakeConditionVariable(&ch->cv_not_empty);
+    LeaveCriticalSection(&ch->cs);
+    return 1;
+#else
+    if (ch->is_closed) return 0;
+    int64_t cap = ch->capacity > 0 ? ch->capacity : 1024;
+    if (ch->count < cap) {
+        ch->items[ch->tail] = msg;
+        ch->tail = (ch->tail + 1) % cap;
+        ch->count++;
+        return 1;
+    }
+    return 0;
+#endif
+}
+
+void *flux_std_channel_recv(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return (void *)(uintptr_t)strdup("");
+    flux_channel_t *ch = _g_channels[cid];
+#if defined(_WIN32)
+    EnterCriticalSection(&ch->cs);
+    int64_t cap = ch->capacity > 0 ? ch->capacity : 1024;
+    while (ch->count == 0 && !ch->is_closed) {
+        if (!SleepConditionVariableCS(&ch->cv_not_empty, &ch->cs, 50)) break;
+    }
+    if (ch->count == 0) {
+        LeaveCriticalSection(&ch->cs);
+        return (void *)(uintptr_t)strdup("");
+    }
+    void *item = ch->items[ch->head];
+    ch->head = (ch->head + 1) % cap;
+    ch->count--;
+    WakeConditionVariable(&ch->cv_not_full);
+    LeaveCriticalSection(&ch->cs);
+    return item ? item : (void *)(uintptr_t)strdup("");
+#else
+    int64_t cap = ch->capacity > 0 ? ch->capacity : 1024;
+    if (ch->count == 0) return (void *)(uintptr_t)strdup("");
+    void *item = ch->items[ch->head];
+    ch->head = (ch->head + 1) % cap;
+    ch->count--;
+    return item ? item : (void *)(uintptr_t)strdup("");
+#endif
+}
+
+int64_t flux_std_channel_try_send(int64_t port_val, void *msg) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 0;
+    flux_channel_t *ch = _g_channels[cid];
+#if defined(_WIN32)
+    EnterCriticalSection(&ch->cs);
+    if (ch->is_closed) { LeaveCriticalSection(&ch->cs); return 0; }
+    int64_t cap = ch->capacity > 0 ? ch->capacity : 1024;
+    if (ch->count >= cap) { LeaveCriticalSection(&ch->cs); return 0; }
+    ch->items[ch->tail] = msg;
+    ch->tail = (ch->tail + 1) % cap;
+    ch->count++;
+    WakeConditionVariable(&ch->cv_not_empty);
+    LeaveCriticalSection(&ch->cs);
+    return 1;
+#else
+    return flux_std_channel_send(port_val, msg);
+#endif
+}
+
+void *flux_std_channel_try_recv(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    void *res = flux_map_build(0);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) {
+        flux_map_set(res, "ok", 2, 0);
+        flux_map_set(res, "data", 4, (int64_t)(uintptr_t)strdup(""));
+        return res;
+    }
+    flux_channel_t *ch = _g_channels[cid];
+#if defined(_WIN32)
+    EnterCriticalSection(&ch->cs);
+    int64_t cap = ch->capacity > 0 ? ch->capacity : 1024;
+    if (ch->count > 0) {
+        void *item = ch->items[ch->head];
+        ch->head = (ch->head + 1) % cap;
+        ch->count--;
+        WakeConditionVariable(&ch->cv_not_full);
+        LeaveCriticalSection(&ch->cs);
+        flux_map_set(res, "ok", 2, 1);
+        flux_map_set(res, "data", 4, item ? (int64_t)(uintptr_t)item : (int64_t)(uintptr_t)strdup(""));
+        return res;
+    }
+    LeaveCriticalSection(&ch->cs);
+#endif
+    flux_map_set(res, "ok", 2, 0);
+    flux_map_set(res, "data", 4, (int64_t)(uintptr_t)strdup(""));
+    return res;
+}
+
+int64_t flux_std_channel_close(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 0;
+    flux_channel_t *ch = _g_channels[cid];
+#if defined(_WIN32)
+    EnterCriticalSection(&ch->cs);
+    ch->is_closed = 1;
+    WakeAllConditionVariable(&ch->cv_not_empty);
+    WakeAllConditionVariable(&ch->cv_not_full);
+    LeaveCriticalSection(&ch->cs);
+#else
+    ch->is_closed = 1;
+#endif
+    return 1;
+}
+
+int64_t flux_std_channel_is_closed(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 1;
+    return _g_channels[cid]->is_closed ? 1 : 0;
+}
+
+int64_t flux_std_channel_is_empty(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 1;
+    return _g_channels[cid]->count == 0 ? 1 : 0;
+}
+
+int64_t flux_std_channel_length(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 0;
+    return _g_channels[cid]->count;
+}
+
+int64_t flux_std_channel_capacity(int64_t port_val) {
+    int64_t cid = _extract_cid(port_val);
+    if (cid <= 0 || cid >= MAX_CHANNELS || !_g_channels[cid]) return 0;
+    return _g_channels[cid]->capacity;
+}
+
+/* Mutex */
+#define MAX_MUTEXES 256
+#if defined(_WIN32)
+static CRITICAL_SECTION _g_mutexes[MAX_MUTEXES];
+#endif
+static int64_t _g_mutex_active[MAX_MUTEXES] = {0};
+static int64_t _g_mutex_next_id = 1;
+
+int64_t flux_std_thread_mutex_create(void) {
+    int64_t mid = _g_mutex_next_id++;
+    if (mid < MAX_MUTEXES) {
+#if defined(_WIN32)
+        InitializeCriticalSection(&_g_mutexes[mid]);
+#endif
+        _g_mutex_active[mid] = 1;
+        return mid;
+    }
+    return 0;
+}
+
+int64_t flux_std_thread_mutex_lock(int64_t mid) {
+    if (mid <= 0 || mid >= MAX_MUTEXES || !_g_mutex_active[mid]) return 0;
+#if defined(_WIN32)
+    EnterCriticalSection(&_g_mutexes[mid]);
+#endif
+    return 1;
+}
+
+int64_t flux_std_thread_mutex_unlock(int64_t mid) {
+    if (mid <= 0 || mid >= MAX_MUTEXES || !_g_mutex_active[mid]) return 0;
+#if defined(_WIN32)
+    LeaveCriticalSection(&_g_mutexes[mid]);
+#endif
+    return 1;
+}
+
+int64_t flux_std_thread_mutex_try_lock(int64_t mid) {
+    if (mid <= 0 || mid >= MAX_MUTEXES || !_g_mutex_active[mid]) return 0;
+#if defined(_WIN32)
+    return TryEnterCriticalSection(&_g_mutexes[mid]) ? 1 : 0;
+#else
+    return 1;
+#endif
+}
+
+int64_t flux_std_thread_mutex_destroy(int64_t mid) {
+    if (mid <= 0 || mid >= MAX_MUTEXES || !_g_mutex_active[mid]) return 0;
+#if defined(_WIN32)
+    DeleteCriticalSection(&_g_mutexes[mid]);
+#endif
+    _g_mutex_active[mid] = 0;
+    return 1;
+}
+
+/* Atomics */
+#define MAX_ATOMICS 512
+static volatile int64_t _g_atomics[MAX_ATOMICS] = {0};
+static int64_t _g_atomic_active[MAX_ATOMICS] = {0};
+static int64_t _g_atomic_next_id = 1;
+
+int64_t flux_std_thread_atomic_create(int64_t initial_val) {
+    int64_t aid = _g_atomic_next_id++;
+    if (aid < MAX_ATOMICS) {
+        _g_atomics[aid] = initial_val;
+        _g_atomic_active[aid] = 1;
+        return aid;
+    }
+    return 0;
+}
+
+int64_t flux_std_thread_atomic_get(int64_t aid) {
+    if (aid <= 0 || aid >= MAX_ATOMICS || !_g_atomic_active[aid]) return 0;
+#if defined(_WIN32)
+    return InterlockedCompareExchange64((volatile LONG64 *)&_g_atomics[aid], 0, 0);
+#else
+    return _g_atomics[aid];
+#endif
+}
+
+int64_t flux_std_thread_atomic_set(int64_t aid, int64_t val) {
+    if (aid <= 0 || aid >= MAX_ATOMICS || !_g_atomic_active[aid]) return 0;
+#if defined(_WIN32)
+    InterlockedExchange64((volatile LONG64 *)&_g_atomics[aid], val);
+#else
+    _g_atomics[aid] = val;
+#endif
+    return 1;
+}
+
+int64_t flux_std_thread_atomic_add(int64_t aid, int64_t delta) {
+    if (aid <= 0 || aid >= MAX_ATOMICS || !_g_atomic_active[aid]) return 0;
+#if defined(_WIN32)
+    return InterlockedAdd64((volatile LONG64 *)&_g_atomics[aid], delta);
+#else
+    _g_atomics[aid] += delta;
+    return _g_atomics[aid];
+#endif
+}
+
+int64_t flux_std_thread_atomic_cas(int64_t aid, int64_t expected, int64_t desired) {
+    if (aid <= 0 || aid >= MAX_ATOMICS || !_g_atomic_active[aid]) return 0;
+#if defined(_WIN32)
+    LONG64 prev = InterlockedCompareExchange64((volatile LONG64 *)&_g_atomics[aid], desired, expected);
+    return prev == expected ? 1 : 0;
+#else
+    if (_g_atomics[aid] == expected) {
+        _g_atomics[aid] = desired;
+        return 1;
+    }
+    return 0;
+#endif
+}
+
+int64_t flux_std_thread_atomic_destroy(int64_t aid) {
+    if (aid <= 0 || aid >= MAX_ATOMICS || !_g_atomic_active[aid]) return 0;
+    _g_atomic_active[aid] = 0;
+    return 1;
+}
+
+/* WaitGroup */
+#define MAX_WAITGROUPS 256
+typedef struct {
+    int64_t count;
+    int64_t active;
+#if defined(_WIN32)
+    CRITICAL_SECTION cs;
+    CONDITION_VARIABLE cv;
+#endif
+} flux_waitgroup_t;
+static flux_waitgroup_t _g_waitgroups[MAX_WAITGROUPS] = {0};
+static int64_t _g_wg_next_id = 1;
+
+int64_t flux_std_thread_wait_group_create(void) {
+    int64_t wgid = _g_wg_next_id++;
+    if (wgid < MAX_WAITGROUPS) {
+        _g_waitgroups[wgid].count = 0;
+        _g_waitgroups[wgid].active = 1;
+#if defined(_WIN32)
+        InitializeCriticalSection(&_g_waitgroups[wgid].cs);
+        InitializeConditionVariable(&_g_waitgroups[wgid].cv);
+#endif
+        return wgid;
+    }
+    return 0;
+}
+
+int64_t flux_std_thread_wait_group_add(int64_t wgid, int64_t delta) {
+    if (wgid <= 0 || wgid >= MAX_WAITGROUPS || !_g_waitgroups[wgid].active) return 0;
+#if defined(_WIN32)
+    EnterCriticalSection(&_g_waitgroups[wgid].cs);
+    _g_waitgroups[wgid].count += delta;
+    if (_g_waitgroups[wgid].count <= 0) {
+        _g_waitgroups[wgid].count = 0;
+        WakeAllConditionVariable(&_g_waitgroups[wgid].cv);
+    }
+    LeaveCriticalSection(&_g_waitgroups[wgid].cs);
+#else
+    _g_waitgroups[wgid].count += delta;
+    if (_g_waitgroups[wgid].count < 0) _g_waitgroups[wgid].count = 0;
+#endif
+    return 1;
+}
+
+int64_t flux_std_thread_wait_group_done(int64_t wgid) {
+    return flux_std_thread_wait_group_add(wgid, -1);
+}
+
+int64_t flux_std_thread_wait_group_wait(int64_t wgid) {
+    if (wgid <= 0 || wgid >= MAX_WAITGROUPS || !_g_waitgroups[wgid].active) return 0;
+#if defined(_WIN32)
+    EnterCriticalSection(&_g_waitgroups[wgid].cs);
+    while (_g_waitgroups[wgid].count > 0) {
+        SleepConditionVariableCS(&_g_waitgroups[wgid].cv, &_g_waitgroups[wgid].cs, 50);
+    }
+    LeaveCriticalSection(&_g_waitgroups[wgid].cs);
+#endif
+    return 1;
+}
+
+int64_t flux_std_thread_wait_group_destroy(int64_t wgid) {
+    if (wgid <= 0 || wgid >= MAX_WAITGROUPS || !_g_waitgroups[wgid].active) return 0;
+#if defined(_WIN32)
+    DeleteCriticalSection(&_g_waitgroups[wgid].cs);
+#endif
+    _g_waitgroups[wgid].active = 0;
+    return 1;
+}
+
+/* Lifecycle & System */
+static int64_t _g_thread_next_id = 1;
+#define MAX_THREADS 128
+typedef struct {
+    int64_t tid;
+    int64_t is_alive;
+    void *result;
+} flux_thread_handle_t;
+static flux_thread_handle_t _g_threads[MAX_THREADS] = {0};
+
+int64_t flux_std_thread_spawn(const char *agent_name, const char *op_name, void *payload) {
+    (void)agent_name; (void)op_name;
+    int64_t tid = _g_thread_next_id++;
+    if (tid < MAX_THREADS) {
+        _g_threads[tid].tid = tid;
+        _g_threads[tid].is_alive = 0;
+        _g_threads[tid].result = payload;
+        return tid;
+    }
+    return 1;
+}
+
+void *flux_std_thread_join(int64_t tid) {
+    if (tid > 0 && tid < MAX_THREADS) {
+        return _g_threads[tid].result ? _g_threads[tid].result : (void *)(uintptr_t)strdup("");
+    }
+    return (void *)(uintptr_t)strdup("");
+}
+
+int64_t flux_std_thread_is_alive(int64_t tid) {
+    if (tid > 0 && tid < MAX_THREADS) {
+        return _g_threads[tid].is_alive;
+    }
+    return 0;
+}
+
+int64_t flux_std_thread_current_id(void) {
+#if defined(_WIN32)
+    return (int64_t)GetCurrentThreadId();
+#else
+    return 1;
+#endif
+}
+
+int64_t flux_std_thread_detach(int64_t tid) {
+    (void)tid;
+    return 1;
+}
+
+int64_t flux_std_thread_hardware_concurrency(void) {
+#if defined(_WIN32)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwNumberOfProcessors > 0 ? (int64_t)si.dwNumberOfProcessors : 1;
+#else
+    return 1;
+#endif
+}
+
+int64_t flux_std_thread_sleep(int64_t ms) {
+    if (ms <= 0) return 1;
+#if defined(_WIN32)
+    Sleep((DWORD)ms);
+#else
+    usleep((useconds_t)(ms * 1000));
+#endif
+    return 1;
+}
+
+int64_t flux_std_thread_yield(void) {
+#if defined(_WIN32)
+    SwitchToThread();
+#endif
+    return 1;
+}
+
+/* ==============================================================================
+ * NativeGfxStdLib - Native Win32 GDI & Double-Buffered Window Driver
+ * ============================================================================== */
+#if defined(_WIN32)
+#pragma comment(lib, "user32")
+#pragma comment(lib, "gdi32")
+
+#define MAX_GFX_WINDOWS 64
+
+typedef struct {
+    HWND hwnd;
+    HDC win_dc;
+    HDC mem_dc;
+    HBITMAP mem_bmp;
+    HBITMAP old_bmp;
+    int64_t width;
+    int64_t height;
+    int64_t is_closed;
+    char title[256];
+} flux_gfx_win_t;
+
+static flux_gfx_win_t _g_gfx_wins[MAX_GFX_WINDOWS] = {0};
+static int64_t _g_gfx_next_win_id = 1;
+static int _g_gfx_class_registered = 0;
+static const char *_GFX_CLASS_NAME = "TheFluxNativeGfxClassC";
+
+static int64_t _g_gfx_last_x = 0;
+static int64_t _g_gfx_last_y = 0;
+static int64_t _g_gfx_last_key = 0;
+
+static LRESULT CALLBACK _flux_gfx_wnd_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (msg == WM_PAINT) {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        for (int i = 1; i < MAX_GFX_WINDOWS; i++) {
+            if (_g_gfx_wins[i].hwnd == hwnd && _g_gfx_wins[i].mem_dc) {
+                BitBlt(hdc, 0, 0, (int)_g_gfx_wins[i].width, (int)_g_gfx_wins[i].height,
+                       _g_gfx_wins[i].mem_dc, 0, 0, SRCCOPY);
+                break;
+            }
+        }
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    if (msg == WM_ERASEBKGND) {
+        return 1;
+    }
+    if (msg == WM_CLOSE) {
+        for (int i = 1; i < MAX_GFX_WINDOWS; i++) {
+            if (_g_gfx_wins[i].hwnd == hwnd) {
+                _g_gfx_wins[i].is_closed = 1;
+                break;
+            }
+        }
+        DestroyWindow(hwnd);
+        return 0;
+    }
+    if (msg == WM_DESTROY) {
+        PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProcA(hwnd, msg, wParam, lParam);
+}
+
+static void _ensure_gfx_class(void) {
+    if (_g_gfx_class_registered) return;
+    WNDCLASSEXA wcex;
+    memset(&wcex, 0, sizeof(wcex));
+    wcex.cbSize = sizeof(wcex);
+    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.lpfnWndProc = _flux_gfx_wnd_proc;
+    wcex.hInstance = GetModuleHandleA(NULL);
+    wcex.hIcon = LoadIconA(NULL, IDI_APPLICATION);
+    wcex.hCursor = LoadCursorA(NULL, IDC_ARROW);
+    wcex.hbrBackground = (HBRUSH)GetStockObject(NULL_BRUSH);
+    wcex.lpszClassName = _GFX_CLASS_NAME;
+    RegisterClassExA(&wcex);
+    _g_gfx_class_registered = 1;
+}
+
+static inline COLORREF _gfx_rgb(int64_t r, int64_t g, int64_t b) {
+    int red = (int)(r < 0 ? 0 : (r > 255 ? 255 : r));
+    int green = (int)(g < 0 ? 0 : (g > 255 ? 255 : g));
+    int blue = (int)(b < 0 ? 0 : (b > 255 ? 255 : b));
+    return RGB(red, green, blue);
+}
+#endif
+
+int64_t flux_std_gfx_clear(int64_t win_id, int64_t r, int64_t g, int64_t b);
+int64_t flux_std_gfx_window_flush(int64_t win_id);
+
+int64_t flux_std_gfx_window_create(int64_t w, int64_t h, const char *title) {
+#if defined(_WIN32)
+    int64_t win_id = _g_gfx_next_win_id++;
+    if (win_id >= MAX_GFX_WINDOWS) return 1;
+    _ensure_gfx_class();
+
+    int width = (int)(w < 10 ? 10 : w);
+    int height = (int)(h < 10 ? 10 : h);
+    const char *title_str = (title && *title) ? title : "TheFlux Native Graphics";
+
+    DWORD style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE;
+    RECT rc = {0, 0, width, height};
+    AdjustWindowRect(&rc, style, FALSE);
+    int win_w = rc.right - rc.left;
+    int win_h = rc.bottom - rc.top;
+
+    HWND hwnd = CreateWindowExA(
+        0, _GFX_CLASS_NAME, title_str, style,
+        100, 100, win_w, win_h,
+        NULL, NULL, GetModuleHandleA(NULL), NULL
+    );
+
+    if (!hwnd) {
+        _g_gfx_wins[win_id].width = width;
+        _g_gfx_wins[win_id].height = height;
+        _g_gfx_wins[win_id].is_closed = 0;
+        return win_id;
+    }
+
+    ShowWindow(hwnd, SW_SHOW);
+    UpdateWindow(hwnd);
+
+    HDC win_dc = GetDC(hwnd);
+    HDC mem_dc = CreateCompatibleDC(win_dc);
+    HBITMAP mem_bmp = CreateCompatibleBitmap(win_dc, width, height);
+    HBITMAP old_bmp = (HBITMAP)SelectObject(mem_dc, mem_bmp);
+
+    _g_gfx_wins[win_id].hwnd = hwnd;
+    _g_gfx_wins[win_id].win_dc = win_dc;
+    _g_gfx_wins[win_id].mem_dc = mem_dc;
+    _g_gfx_wins[win_id].mem_bmp = mem_bmp;
+    _g_gfx_wins[win_id].old_bmp = old_bmp;
+    _g_gfx_wins[win_id].width = width;
+    _g_gfx_wins[win_id].height = height;
+    _g_gfx_wins[win_id].is_closed = 0;
+    strncpy(_g_gfx_wins[win_id].title, title_str, 255);
+
+    flux_std_gfx_clear(win_id, 30, 30, 35);
+    flux_std_gfx_window_flush(win_id);
+    return win_id;
+#else
+    (void)w; (void)h; (void)title;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_window_close(int64_t win_id) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    w->is_closed = 1;
+    if (w->hwnd) {
+        SelectObject(w->mem_dc, w->old_bmp);
+        DeleteObject(w->mem_bmp);
+        DeleteDC(w->mem_dc);
+        ReleaseDC(w->hwnd, w->win_dc);
+        DestroyWindow(w->hwnd);
+        w->hwnd = NULL;
+    }
+    return 1;
+#else
+    (void)win_id;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_window_flush(int64_t win_id) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->hwnd) return 0;
+    BitBlt(w->win_dc, 0, 0, (int)w->width, (int)w->height, w->mem_dc, 0, 0, SRCCOPY);
+    GdiFlush();
+    UpdateWindow(w->hwnd);
+    MSG msg;
+    while (PeekMessageW(&msg, w->hwnd, 0, 0, PM_REMOVE)) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
+    return 1;
+#else
+    (void)win_id;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_clear(int64_t win_id, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    HBRUSH brush = CreateSolidBrush(_gfx_rgb(r, g, b));
+    RECT rc = {0, 0, (int)w->width, (int)w->height};
+    FillRect(w->mem_dc, &rc, brush);
+    DeleteObject(brush);
+    return 1;
+#else
+    (void)win_id; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_fill_rect(int64_t win_id, int64_t x, int64_t y, int64_t rw, int64_t rh, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    HBRUSH brush = CreateSolidBrush(_gfx_rgb(r, g, b));
+    RECT rc = {(int)x, (int)y, (int)(x + rw), (int)(y + rh)};
+    FillRect(w->mem_dc, &rc, brush);
+    DeleteObject(brush);
+    return 1;
+#else
+    (void)win_id; (void)x; (void)y; (void)rw; (void)rh; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_draw_rect(int64_t win_id, int64_t x, int64_t y, int64_t rw, int64_t rh, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    HPEN pen = CreatePen(PS_SOLID, 1, _gfx_rgb(r, g, b));
+    HGDIOBJ old_pen = SelectObject(w->mem_dc, pen);
+    HGDIOBJ old_brush = SelectObject(w->mem_dc, GetStockObject(NULL_BRUSH));
+    Rectangle(w->mem_dc, (int)x, (int)y, (int)(x + rw), (int)(y + rh));
+    SelectObject(w->mem_dc, old_pen);
+    SelectObject(w->mem_dc, old_brush);
+    DeleteObject(pen);
+    return 1;
+#else
+    (void)win_id; (void)x; (void)y; (void)rw; (void)rh; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_draw_line(int64_t win_id, int64_t x1, int64_t y1, int64_t x2, int64_t y2, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    HPEN pen = CreatePen(PS_SOLID, 1, _gfx_rgb(r, g, b));
+    HGDIOBJ old_pen = SelectObject(w->mem_dc, pen);
+    MoveToEx(w->mem_dc, (int)x1, (int)y1, NULL);
+    LineTo(w->mem_dc, (int)x2, (int)y2);
+    SelectObject(w->mem_dc, old_pen);
+    DeleteObject(pen);
+    return 1;
+#else
+    (void)win_id; (void)x1; (void)y1; (void)x2; (void)y2; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_draw_circle(int64_t win_id, int64_t cx, int64_t cy, int64_t radius, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    HPEN pen = CreatePen(PS_SOLID, 1, _gfx_rgb(r, g, b));
+    HGDIOBJ old_pen = SelectObject(w->mem_dc, pen);
+    HGDIOBJ old_brush = SelectObject(w->mem_dc, GetStockObject(NULL_BRUSH));
+    int rad = (int)radius;
+    Ellipse(w->mem_dc, (int)(cx - rad), (int)(cy - rad), (int)(cx + rad), (int)(cy + rad));
+    SelectObject(w->mem_dc, old_pen);
+    SelectObject(w->mem_dc, old_brush);
+    DeleteObject(pen);
+    return 1;
+#else
+    (void)win_id; (void)cx; (void)cy; (void)radius; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_fill_circle(int64_t win_id, int64_t cx, int64_t cy, int64_t radius, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    HBRUSH brush = CreateSolidBrush(_gfx_rgb(r, g, b));
+    HPEN pen = CreatePen(PS_SOLID, 1, _gfx_rgb(r, g, b));
+    HGDIOBJ old_brush = SelectObject(w->mem_dc, brush);
+    HGDIOBJ old_pen = SelectObject(w->mem_dc, pen);
+    int rad = (int)radius;
+    Ellipse(w->mem_dc, (int)(cx - rad), (int)(cy - rad), (int)(cx + rad), (int)(cy + rad));
+    SelectObject(w->mem_dc, old_brush);
+    SelectObject(w->mem_dc, old_pen);
+    DeleteObject(brush);
+    DeleteObject(pen);
+    return 1;
+#else
+    (void)win_id; (void)cx; (void)cy; (void)radius; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_draw_text(int64_t win_id, int64_t x, int64_t y, const char *text, int64_t r, int64_t g, int64_t b) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->mem_dc) return 0;
+    SetBkMode(w->mem_dc, TRANSPARENT);
+    SetTextColor(w->mem_dc, _gfx_rgb(r, g, b));
+    const char *str = text ? text : "";
+    TextOutA(w->mem_dc, (int)x, (int)y, str, (int)strlen(str));
+    return 1;
+#else
+    (void)win_id; (void)x; (void)y; (void)text; (void)r; (void)g; (void)b;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_event_poll(int64_t win_id) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return -1;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed) return -1;
+    if (!w->hwnd) return 0;
+
+    MSG msg;
+    while (PeekMessageA(&msg, w->hwnd, 0, 0, PM_REMOVE)) {
+        if (msg.message == WM_CLOSE || msg.message == WM_DESTROY) {
+            w->is_closed = 1;
+            return -1;
+        } else if (msg.message == WM_LBUTTONDOWN) {
+            _g_gfx_last_x = msg.lParam & 0xFFFF;
+            _g_gfx_last_y = (msg.lParam >> 16) & 0xFFFF;
+            return 1;
+        } else if (msg.message == WM_RBUTTONDOWN) {
+            _g_gfx_last_x = msg.lParam & 0xFFFF;
+            _g_gfx_last_y = (msg.lParam >> 16) & 0xFFFF;
+            return 2;
+        } else if (msg.message == WM_MOUSEMOVE) {
+            _g_gfx_last_x = msg.lParam & 0xFFFF;
+            _g_gfx_last_y = (msg.lParam >> 16) & 0xFFFF;
+            return 3;
+        } else if (msg.message == WM_KEYDOWN) {
+            _g_gfx_last_key = (int64_t)msg.wParam;
+            return 4;
+        }
+        TranslateMessage(&msg);
+        DispatchMessageA(&msg);
+    }
+    return 0;
+#else
+    (void)win_id;
+    return 0;
+#endif
+}
+
+int64_t flux_std_gfx_event_x(void) {
+    return _g_gfx_last_x;
+}
+
+int64_t flux_std_gfx_event_y(void) {
+    return _g_gfx_last_y;
+}
+
+int64_t flux_std_gfx_event_key(void) {
+    return _g_gfx_last_key;
+}
+
+int64_t flux_std_gfx_window_closed(int64_t win_id) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 1;
+    return _g_gfx_wins[win_id].is_closed ? 1 : 0;
+#else
+    (void)win_id;
+    return 0;
+#endif
+}
+
+int64_t flux_std_gfx_window_width(int64_t win_id) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 800;
+    return _g_gfx_wins[win_id].width;
+#else
+    (void)win_id;
+    return 800;
+#endif
+}
+
+int64_t flux_std_gfx_window_height(int64_t win_id) {
+#if defined(_WIN32)
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 600;
+    return _g_gfx_wins[win_id].height;
+#else
+    (void)win_id;
+    return 600;
+#endif
+}
+
+int64_t flux_std_gfx_window_wait(int64_t win_id, int64_t ms) {
+#if defined(_WIN32)
+    if (getenv("FLUX_CI") != NULL) return 1;
+    if (win_id <= 0 || win_id >= MAX_GFX_WINDOWS) return 0;
+    flux_gfx_win_t *w = &_g_gfx_wins[win_id];
+    if (w->is_closed || !w->hwnd) return 0;
+    int is_persistent = (ms <= 0);
+    int64_t dur_ns = ms > 0 ? (ms * 1000000LL) : 0;
+    int64_t start_ns = flux_std_datetime_monotonic_now();
+    while (!w->is_closed) {
+        if (!is_persistent && flux_std_datetime_monotonic_elapsed(start_ns) >= dur_ns) {
+            break;
+        }
+        MSG msg;
+        while (PeekMessageW(&msg, w->hwnd, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_CLOSE || msg.message == WM_DESTROY) {
+                w->is_closed = 1;
+                return 1;
+            }
+            if (msg.message == WM_KEYDOWN && msg.wParam == 27) { /* VK_ESCAPE */
+                w->is_closed = 1;
+                DestroyWindow(w->hwnd);
+                return 1;
+            }
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+        if (w->win_dc && w->mem_dc) {
+            BitBlt(w->win_dc, 0, 0, (int)w->width, (int)w->height, w->mem_dc, 0, 0, SRCCOPY);
+            GdiFlush();
+        }
+        Sleep(16);
+    }
+    return 1;
+#else
+    (void)win_id;
+    (void)ms;
+    return 1;
+#endif
+}
+
+int64_t flux_std_gfx_export_html(int64_t win_id, const char *path) {
+    (void)win_id;
+    (void)path;
+    return 1;
+}
+
 

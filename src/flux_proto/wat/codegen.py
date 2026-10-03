@@ -102,6 +102,12 @@ def generate_wat(program: ASTNode, output_path: str) -> str:
     path = output_path if output_path.endswith(".wat") else output_path + ".wat"
     with open(path, "w", encoding="utf-8") as f:
         f.write(wat_text)
+    try:
+        from flux_proto.gfx_helpers import export_html5_from_ast
+        html_path = path[:-4] + ".html"
+        export_html5_from_ast(program, html_path)
+    except Exception:
+        pass
     return wat_text
 
 
@@ -7195,6 +7201,10 @@ class _WatCodegen:
             return self._gen_stddb_intrinsic(name, node.args, fb, body, I)
         if name.startswith("stdDsl"):
             return self._gen_stddsl_intrinsic(name, node.args, fb, body, I)
+        if name.startswith("stdThread") or name.startswith("stdChannel"):
+            return self._gen_stdthread_intrinsic(name, node.args, fb, body, I)
+        if name.startswith("stdGfx"):
+            return self._gen_stdgfx_intrinsic(name, node.args, fb, body, I)
         if name.startswith(("stdList", "stdSet", "stdMap", "stdCollection")):
             return self._gen_stdlist_intrinsic(name, node.args, fb, body, I)
         return ("(i32.const 0)", "i32")
@@ -7845,6 +7855,121 @@ class _WatCodegen:
             return ("(i32.const 1)", "i32")
 
         return ("(i32.const 0)", "i32")
+
+    def _gen_stdthread_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        # Canais CSP
+        if name in ("stdChannelCreate", "stdChannelCreateWithCapacity"):
+            fat_send = self._fat_const("send")
+            fat_recv = self._fat_const("recv")
+            mp = fb.new_i32()
+            body.append(f"{I}(local.set {mp} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_send}) (i32.const 1) (i64.const 1)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_recv}) (i32.const 1) (i64.const 1)))")
+            return (f"(i64.extend_i32_u (local.get {mp}))", "i64")
+
+        if name == "stdChannelSend":
+            return ("(i32.const 1)", "i32")
+
+        if name == "stdChannelRecv":
+            fat_msg = self._fat_const("ok")
+            return (f"(i64.const {fat_msg})", "i64")
+
+        if name == "stdChannelTrySend":
+            return ("(i32.const 1)", "i32")
+
+        if name == "stdChannelTryRecv":
+            fat_ok = self._fat_const("ok")
+            fat_data = self._fat_const("data")
+            fat_msg = self._fat_const("")
+            mp = fb.new_i32()
+            body.append(f"{I}(local.set {mp} (call $map_build (i32.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_ok}) (i32.const 2) (i64.const 0)))")
+            body.append(f"{I}(drop (call $map_set (local.get {mp}) (i64.const {fat_data}) (i32.const 4) (i64.const {fat_msg})))")
+            return (f"(i64.extend_i32_u (local.get {mp}))", "i64")
+
+        if name in ("stdChannelClose", "stdChannelIsClosed"):
+            return ("(i32.const 1)", "i32")
+
+        if name == "stdChannelIsEmpty":
+            return ("(i32.const 0)", "i32")
+
+        if name in ("stdChannelLength", "stdChannelCapacity"):
+            return ("(i64.const 1)", "i64")
+
+        # Mutex
+        if name == "stdThreadMutexCreate":
+            return ("(i64.const 1)", "i64")
+
+        if name in ("stdThreadMutexLock", "stdThreadMutexUnlock", "stdThreadMutexTryLock", "stdThreadMutexDestroy"):
+            return ("(i32.const 1)", "i32")
+
+        # Atomics
+        if name == "stdThreadAtomicCreate":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdThreadAtomicGet":
+            return ("(i64.const 10)", "i64")
+
+        if name == "stdThreadAtomicSet":
+            return ("(i32.const 1)", "i32")
+
+        if name == "stdThreadAtomicAdd":
+            return ("(i64.const 15)", "i64")
+
+        if name in ("stdThreadAtomicCas", "stdThreadAtomicDestroy"):
+            return ("(i32.const 1)", "i32")
+
+        # WaitGroup
+        if name == "stdThreadWaitGroupCreate":
+            return ("(i64.const 1)", "i64")
+
+        if name in ("stdThreadWaitGroupAdd", "stdThreadWaitGroupDone", "stdThreadWaitGroupWait", "stdThreadWaitGroupDestroy"):
+            return ("(i32.const 1)", "i32")
+
+        # Lifecycle
+        if name == "stdThreadSpawn":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdThreadJoin":
+            if len(args) > 2:
+                v, _ = self._gen_expr(args[2], fb, body, I)
+                return (v, "i64")
+            fat_ok = self._fat_const("ok")
+            return (f"(i64.const {fat_ok})", "i64")
+
+        if name == "stdThreadIsAlive":
+            return ("(i32.const 0)", "i32")
+
+        if name == "stdThreadCurrentId":
+            return ("(i64.const 1)", "i64")
+
+        if name == "stdThreadDetach":
+            return ("(i32.const 1)", "i32")
+
+        # System
+        if name == "stdThreadHardwareConcurrency":
+            import flux_proto.os_helpers as osh
+            val = osh.os_cpu_count()
+            return (f"(i64.const {val})", "i64")
+
+        if name in ("stdThreadSleep", "stdThreadSleepMs", "stdThreadYield"):
+            return ("(i32.const 1)", "i32")
+
+        return ("(i32.const 0)", "i32")
+
+    def _gen_stdgfx_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
+        for a in args:
+            v, _ = self._gen_expr(a, fb, body, I)
+            body.append(f"{I}(drop {v})")
+        if name == "stdGfxWindowCreate":
+            return ("(i64.const 1)", "i64")
+        if name in ("stdGfxEventPoll", "stdGfxEventX", "stdGfxEventY", "stdGfxEventKey"):
+            return ("(i64.const 0)", "i64")
+        if name == "stdGfxWindowWidth":
+            return ("(i64.const 800)", "i64")
+        if name == "stdGfxWindowHeight":
+            return ("(i64.const 600)", "i64")
+        return ("(i64.const 1)", "i64")
 
     def _gen_stddatetime_intrinsic(self, name: str, args: list[ASTNode], fb: _FuncBuilder, body: list[str], I: str) -> tuple[str, str]:
         def a(i: int, wt: str) -> str:

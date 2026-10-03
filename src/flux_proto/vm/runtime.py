@@ -14,6 +14,8 @@ import flux_proto.simd_helpers as _simdh
 import flux_proto.runtime_helpers as _rth
 import flux_proto.db_helpers as _dbh
 import flux_proto.dsl_helpers as _dslh
+import flux_proto.thread_helpers as _thh
+import flux_proto.gfx_helpers as _gfxh
 
 
 class RuntimeError(Exception):
@@ -1739,6 +1741,63 @@ _BUILTINS: dict[str, tuple[int, object]] = {
     "stdDslSetTimeout": (2, lambda eid, ms: _dslh.dsl_set_timeout(int(eid), int(ms))),
     "stdDslSetInstructionLimit": (2, lambda eid, ops: _dslh.dsl_set_instruction_limit(int(eid), int(ops))),
     "stdDslSetMemoryLimit": (2, lambda eid, b: _dslh.dsl_set_memory_limit(int(eid), int(b))),
+    # ThreadStdLib intrinsics
+    "stdChannelCreate": (0, lambda: _thh.channel_create(0)),
+    "stdChannelCreateWithCapacity": (1, lambda cap: _thh.channel_create_with_capacity(int(cap))),
+    "stdChannelSend": (2, lambda port, msg: _thh.channel_send(port, msg)),
+    "stdChannelRecv": (1, lambda port: _thh.channel_recv(port)),
+    "stdChannelTrySend": (2, lambda port, msg: _thh.channel_try_send(port, msg)),
+    "stdChannelTryRecv": (1, lambda port: _thh.channel_try_recv(port)),
+    "stdChannelClose": (1, lambda port: _thh.channel_close(port)),
+    "stdChannelIsClosed": (1, lambda port: _thh.channel_is_closed(port)),
+    "stdChannelIsEmpty": (1, lambda port: _thh.channel_is_empty(port)),
+    "stdChannelLength": (1, lambda port: _thh.channel_length(port)),
+    "stdChannelCapacity": (1, lambda port: _thh.channel_capacity(port)),
+    "stdThreadMutexCreate": (0, _thh.mutex_create),
+    "stdThreadMutexLock": (1, lambda mid: _thh.mutex_lock(int(mid))),
+    "stdThreadMutexUnlock": (1, lambda mid: _thh.mutex_unlock(int(mid))),
+    "stdThreadMutexTryLock": (1, lambda mid: _thh.mutex_try_lock(int(mid))),
+    "stdThreadMutexDestroy": (1, lambda mid: _thh.mutex_destroy(int(mid))),
+    "stdThreadAtomicCreate": (1, lambda val: _thh.atomic_create(int(val))),
+    "stdThreadAtomicGet": (1, lambda aid: _thh.atomic_get(int(aid))),
+    "stdThreadAtomicSet": (2, lambda aid, val: _thh.atomic_set(int(aid), int(val))),
+    "stdThreadAtomicAdd": (2, lambda aid, d: _thh.atomic_add(int(aid), int(d))),
+    "stdThreadAtomicCas": (3, lambda aid, exp, des: _thh.atomic_cas(int(aid), int(exp), int(des))),
+    "stdThreadAtomicDestroy": (1, lambda aid: _thh.atomic_destroy(int(aid))),
+    "stdThreadWaitGroupCreate": (0, _thh.wait_group_create),
+    "stdThreadWaitGroupAdd": (2, lambda wgid, d: _thh.wait_group_add(int(wgid), int(d))),
+    "stdThreadWaitGroupDone": (1, lambda wgid: _thh.wait_group_done(int(wgid))),
+    "stdThreadWaitGroupWait": (1, lambda wgid: _thh.wait_group_wait(int(wgid))),
+    "stdThreadWaitGroupDestroy": (1, lambda wgid: _thh.wait_group_destroy(int(wgid))),
+    "stdThreadSpawn": (3, lambda ag, op, pl: _thh.thread_spawn(str(ag), str(op), pl)),
+    "stdThreadJoin": (1, lambda tid: _thh.thread_join(int(tid))),
+    "stdThreadIsAlive": (1, lambda tid: _thh.thread_is_alive(int(tid))),
+    "stdThreadCurrentId": (0, _thh.thread_current_id),
+    "stdThreadDetach": (1, lambda tid: _thh.thread_detach(int(tid))),
+    "stdThreadHardwareConcurrency": (0, _thh.thread_hardware_concurrency),
+    "stdThreadSleep": (1, lambda ms: _thh.thread_sleep(int(ms))),
+    "stdThreadSleepMs": (1, lambda ms: _thh.thread_sleep_ms(int(ms))),
+    "stdThreadYield": (0, _thh.thread_yield),
+    # NativeGfxStdLib intrinsics
+    "stdGfxWindowCreate": (3, lambda w, h, title: _gfxh.gfx_window_create(int(w), int(h), str(title))),
+    "stdGfxWindowClose": (1, lambda wid: bool(_gfxh.gfx_window_close(int(wid)))),
+    "stdGfxWindowWait": (2, lambda wid, ms: bool(_gfxh.gfx_window_wait(int(wid), int(ms)))),
+    "stdGfxWindowFlush": (1, lambda wid: bool(_gfxh.gfx_window_flush(int(wid)))),
+    "stdGfxClear": (4, lambda wid, r, g, b: bool(_gfxh.gfx_clear(int(wid), int(r), int(g), int(b)))),
+    "stdGfxFillRect": (8, lambda wid, x, y, w, h, r, g, b: bool(_gfxh.gfx_fill_rect(int(wid), int(x), int(y), int(w), int(h), int(r), int(g), int(b)))),
+    "stdGfxDrawRect": (8, lambda wid, x, y, w, h, r, g, b: bool(_gfxh.gfx_draw_rect(int(wid), int(x), int(y), int(w), int(h), int(r), int(g), int(b)))),
+    "stdGfxDrawLine": (8, lambda wid, x1, y1, x2, y2, r, g, b: bool(_gfxh.gfx_draw_line(int(wid), int(x1), int(y1), int(x2), int(y2), int(r), int(g), int(b)))),
+    "stdGfxDrawCircle": (7, lambda wid, cx, cy, rad, r, g, b: bool(_gfxh.gfx_draw_circle(int(wid), int(cx), int(cy), int(rad), int(r), int(g), int(b)))),
+    "stdGfxFillCircle": (7, lambda wid, cx, cy, rad, r, g, b: bool(_gfxh.gfx_fill_circle(int(wid), int(cx), int(cy), int(rad), int(r), int(g), int(b)))),
+    "stdGfxDrawText": (7, lambda wid, x, y, txt, r, g, b: bool(_gfxh.gfx_draw_text(int(wid), int(x), int(y), str(txt), int(r), int(g), int(b)))),
+    "stdGfxEventPoll": (1, lambda wid: _gfxh.gfx_event_poll(int(wid))),
+    "stdGfxEventX": (0, lambda: _gfxh.gfx_event_x()),
+    "stdGfxEventY": (0, lambda: _gfxh.gfx_event_y()),
+    "stdGfxEventKey": (0, lambda: _gfxh.gfx_event_key()),
+    "stdGfxWindowClosed": (1, lambda wid: bool(_gfxh.gfx_window_closed(int(wid)))),
+    "stdGfxWindowWidth": (1, lambda wid: _gfxh.gfx_window_width(int(wid))),
+    "stdGfxWindowHeight": (1, lambda wid: _gfxh.gfx_window_height(int(wid))),
+    "stdGfxExportHtml": (2, lambda wid, path: bool(_gfxh.export_html5_canvas(int(wid), str(path)))),
 }
 
 BUILTIN_NAMES = frozenset(_BUILTINS)

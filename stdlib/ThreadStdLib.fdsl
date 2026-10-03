@@ -1,0 +1,326 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ThreadStdLib
+#L Modulo nativo para Concorrencia, Threads, Canais CSP e Sincronizacao (Threads/Sync)
+#L Regra: 1-index para humanos/TheFlux e 0-index para maquinas
+#L ==============================================================================
+
+contract (ThreadChannelContract) {
+      op channelCreate () as map
+      op channelCreateWithCapacity (as int64: capacity) as map
+      op channelSend (as data: port, as data: message) as bool
+      op channelRecv (as data: port) as data
+      op channelTrySend (as data: port, as data: message) as bool
+      op channelTryRecv (as data: port) as map
+      op channelClose (as data: port) as bool
+      op channelIsClosed (as data: port) as bool
+      op channelIsEmpty (as data: port) as bool
+      op channelLength (as data: port) as int64
+      op channelCapacity (as data: port) as int64
+
+      #L Aliases universais
+      op chanCreate () as map
+      op chanSend (as data: port, as data: message) as bool
+      op chanRecv (as data: port) as data
+      op chanClose (as data: port) as bool
+      op chanLen (as data: port) as int64
+      op chanCap (as data: port) as int64
+}
+
+contract (ThreadSyncContract) {
+      #L Mutex
+      op mutexCreate () as int64
+      op mutexLock (as int64: mutex_id) as bool
+      op mutexUnlock (as int64: mutex_id) as bool
+      op mutexTryLock (as int64: mutex_id) as bool
+      op mutexDestroy (as int64: mutex_id) as bool
+
+      #L Atomics
+      op atomicCreate (as int64: initial_value) as int64
+      op atomicGet (as int64: atomic_id) as int64
+      op atomicSet (as int64: atomic_id, as int64: value) as bool
+      op atomicAdd (as int64: atomic_id, as int64: delta) as int64
+      op atomicCas (as int64: atomic_id, as int64: expected, as int64: desired) as bool
+      op atomicDestroy (as int64: atomic_id) as bool
+
+      #L WaitGroup
+      op waitGroupCreate () as int64
+      op waitGroupAdd (as int64: wg_id, as int64: delta) as bool
+      op waitGroupDone (as int64: wg_id) as bool
+      op waitGroupWait (as int64: wg_id) as bool
+      op waitGroupDestroy (as int64: wg_id) as bool
+
+      #L Aliases
+      op lock (as int64: mutex_id) as bool
+      op unlock (as int64: mutex_id) as bool
+      op tryLock (as int64: mutex_id) as bool
+      op atomicLoad (as int64: atomic_id) as int64
+      op atomicStore (as int64: atomic_id, as int64: value) as bool
+      op wgAdd (as int64: wg_id, as int64: delta) as bool
+      op wgDone (as int64: wg_id) as bool
+      op wgWait (as int64: wg_id) as bool
+}
+
+contract (ThreadLifecycleContract) {
+      op threadSpawn (as string: agent_name, as string: op_name, as data: payload) as int64
+      op threadJoin (as int64: thread_id) as data
+      op threadIsAlive (as int64: thread_id) as bool
+      op threadCurrentId () as int64
+      op threadDetach (as int64: thread_id) as bool
+
+      #L Aliases
+      op spawnTask (as string: agent_name, as string: op_name, as data: payload) as int64
+      op joinTask (as int64: thread_id) as data
+      op isAlive (as int64: thread_id) as bool
+      op currentThreadId () as int64
+}
+
+contract (ThreadSystemContract) {
+      op threadHardwareConcurrency () as int64
+      op threadSleep (as int64: milliseconds) as bool
+      op threadSleepMs (as int64: milliseconds) as bool
+      op threadYield () as bool
+
+      #L Aliases
+      op hardwareConcurrency () as int64
+      op sleepMs (as int64: milliseconds) as bool
+      op yield () as bool
+}
+
+agent (ThreadStdLib) impl ThreadChannelContract, ThreadSyncContract, ThreadLifecycleContract, ThreadSystemContract {
+
+      #L -- ThreadChannelContract -------------------------------------
+      op channelCreate () as map ==> {
+            emit(nice, stdChannelCreate(), "ok")
+      }
+
+      op channelCreateWithCapacity (as int64: capacity) as map ==> {
+            emit(nice, stdChannelCreateWithCapacity(capacity), "ok")
+      }
+
+      op channelSend (as data: port, as data: message) as bool ==> {
+            emit(nice, stdChannelSend(port, message), "ok")
+      }
+
+      op channelRecv (as data: port) as data ==> {
+            emit(nice, stdChannelRecv(port), "ok")
+      }
+
+      op channelTrySend (as data: port, as data: message) as bool ==> {
+            emit(nice, stdChannelTrySend(port, message), "ok")
+      }
+
+      op channelTryRecv (as data: port) as map ==> {
+            emit(nice, stdChannelTryRecv(port), "ok")
+      }
+
+      op channelClose (as data: port) as bool ==> {
+            emit(nice, stdChannelClose(port), "ok")
+      }
+
+      op channelIsClosed (as data: port) as bool ==> {
+            emit(nice, stdChannelIsClosed(port), "ok")
+      }
+
+      op channelIsEmpty (as data: port) as bool ==> {
+            emit(nice, stdChannelIsEmpty(port), "ok")
+      }
+
+      op channelLength (as data: port) as int64 ==> {
+            emit(nice, stdChannelLength(port), "ok")
+      }
+
+      op channelCapacity (as data: port) as int64 ==> {
+            emit(nice, stdChannelCapacity(port), "ok")
+      }
+
+      #L Aliases universais
+      op chanCreate () as map ==> {
+            emit(nice, stdChannelCreate(), "ok")
+      }
+
+      op chanSend (as data: port, as data: message) as bool ==> {
+            emit(nice, stdChannelSend(port, message), "ok")
+      }
+
+      op chanRecv (as data: port) as data ==> {
+            emit(nice, stdChannelRecv(port), "ok")
+      }
+
+      op chanClose (as data: port) as bool ==> {
+            emit(nice, stdChannelClose(port), "ok")
+      }
+
+      op chanLen (as data: port) as int64 ==> {
+            emit(nice, stdChannelLength(port), "ok")
+      }
+
+      op chanCap (as data: port) as int64 ==> {
+            emit(nice, stdChannelCapacity(port), "ok")
+      }
+
+      #L -- ThreadSyncContract ----------------------------------------
+      op mutexCreate () as int64 ==> {
+            emit(nice, stdThreadMutexCreate(), "ok")
+      }
+
+      op mutexLock (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexLock(mutex_id), "ok")
+      }
+
+      op mutexUnlock (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexUnlock(mutex_id), "ok")
+      }
+
+      op mutexTryLock (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexTryLock(mutex_id), "ok")
+      }
+
+      op mutexDestroy (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexDestroy(mutex_id), "ok")
+      }
+
+      op atomicCreate (as int64: initial_value) as int64 ==> {
+            emit(nice, stdThreadAtomicCreate(initial_value), "ok")
+      }
+
+      op atomicGet (as int64: atomic_id) as int64 ==> {
+            emit(nice, stdThreadAtomicGet(atomic_id), "ok")
+      }
+
+      op atomicSet (as int64: atomic_id, as int64: value) as bool ==> {
+            emit(nice, stdThreadAtomicSet(atomic_id, value), "ok")
+      }
+
+      op atomicAdd (as int64: atomic_id, as int64: delta) as int64 ==> {
+            emit(nice, stdThreadAtomicAdd(atomic_id, delta), "ok")
+      }
+
+      op atomicCas (as int64: atomic_id, as int64: expected, as int64: desired) as bool ==> {
+            emit(nice, stdThreadAtomicCas(atomic_id, expected, desired), "ok")
+      }
+
+      op atomicDestroy (as int64: atomic_id) as bool ==> {
+            emit(nice, stdThreadAtomicDestroy(atomic_id), "ok")
+      }
+
+      op waitGroupCreate () as int64 ==> {
+            emit(nice, stdThreadWaitGroupCreate(), "ok")
+      }
+
+      op waitGroupAdd (as int64: wg_id, as int64: delta) as bool ==> {
+            emit(nice, stdThreadWaitGroupAdd(wg_id, delta), "ok")
+      }
+
+      op waitGroupDone (as int64: wg_id) as bool ==> {
+            emit(nice, stdThreadWaitGroupDone(wg_id), "ok")
+      }
+
+      op waitGroupWait (as int64: wg_id) as bool ==> {
+            emit(nice, stdThreadWaitGroupWait(wg_id), "ok")
+      }
+
+      op waitGroupDestroy (as int64: wg_id) as bool ==> {
+            emit(nice, stdThreadWaitGroupDestroy(wg_id), "ok")
+      }
+
+      #L Aliases
+      op lock (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexLock(mutex_id), "ok")
+      }
+
+      op unlock (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexUnlock(mutex_id), "ok")
+      }
+
+      op tryLock (as int64: mutex_id) as bool ==> {
+            emit(nice, stdThreadMutexTryLock(mutex_id), "ok")
+      }
+
+      op atomicLoad (as int64: atomic_id) as int64 ==> {
+            emit(nice, stdThreadAtomicGet(atomic_id), "ok")
+      }
+
+      op atomicStore (as int64: atomic_id, as int64: value) as bool ==> {
+            emit(nice, stdThreadAtomicSet(atomic_id, value), "ok")
+      }
+
+      op wgAdd (as int64: wg_id, as int64: delta) as bool ==> {
+            emit(nice, stdThreadWaitGroupAdd(wg_id, delta), "ok")
+      }
+
+      op wgDone (as int64: wg_id) as bool ==> {
+            emit(nice, stdThreadWaitGroupDone(wg_id), "ok")
+      }
+
+      op wgWait (as int64: wg_id) as bool ==> {
+            emit(nice, stdThreadWaitGroupWait(wg_id), "ok")
+      }
+
+      #L -- ThreadLifecycleContract -----------------------------------
+      op threadSpawn (as string: agent_name, as string: op_name, as data: payload) as int64 ==> {
+            emit(nice, stdThreadSpawn(agent_name, op_name, payload), "ok")
+      }
+
+      op threadJoin (as int64: thread_id) as data ==> {
+            emit(nice, stdThreadJoin(thread_id), "ok")
+      }
+
+      op threadIsAlive (as int64: thread_id) as bool ==> {
+            emit(nice, stdThreadIsAlive(thread_id), "ok")
+      }
+
+      op threadCurrentId () as int64 ==> {
+            emit(nice, stdThreadCurrentId(), "ok")
+      }
+
+      op threadDetach (as int64: thread_id) as bool ==> {
+            emit(nice, stdThreadDetach(thread_id), "ok")
+      }
+
+      #L Aliases
+      op spawnTask (as string: agent_name, as string: op_name, as data: payload) as int64 ==> {
+            emit(nice, stdThreadSpawn(agent_name, op_name, payload), "ok")
+      }
+
+      op joinTask (as int64: thread_id) as data ==> {
+            emit(nice, stdThreadJoin(thread_id), "ok")
+      }
+
+      op isAlive (as int64: thread_id) as bool ==> {
+            emit(nice, stdThreadIsAlive(thread_id), "ok")
+      }
+
+      op currentThreadId () as int64 ==> {
+            emit(nice, stdThreadCurrentId(), "ok")
+      }
+
+      #L -- ThreadSystemContract --------------------------------------
+      op threadHardwareConcurrency () as int64 ==> {
+            emit(nice, stdThreadHardwareConcurrency(), "ok")
+      }
+
+      op threadSleep (as int64: milliseconds) as bool ==> {
+            emit(nice, stdThreadSleep(milliseconds), "ok")
+      }
+
+      op threadSleepMs (as int64: milliseconds) as bool ==> {
+            emit(nice, stdThreadSleep(milliseconds), "ok")
+      }
+
+      op threadYield () as bool ==> {
+            emit(nice, stdThreadYield(), "ok")
+      }
+
+      #L Aliases
+      op hardwareConcurrency () as int64 ==> {
+            emit(nice, stdThreadHardwareConcurrency(), "ok")
+      }
+
+      op sleepMs (as int64: milliseconds) as bool ==> {
+            emit(nice, stdThreadSleep(milliseconds), "ok")
+      }
+
+      op yield () as bool ==> {
+            emit(nice, stdThreadYield(), "ok")
+      }
+}

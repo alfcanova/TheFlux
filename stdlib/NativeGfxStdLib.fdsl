@@ -1,0 +1,223 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NativeGfxStdLib
+#L Driver Grafico Nativo de Hardware & Janelamento (Win32 GDI / HTML5 Canvas)
+#L Implementacao de saida grafica real multi-backend para TheFlux
+#L ==============================================================================
+
+contract (NativeGfxWindowContract) {
+      op gfxWindowCreate (as int64: w, as int64: h, as string: title) as int64
+      op gfxWindowClose (as int64: win_id) as bool
+      op gfxWindowFlush (as int64: win_id) as bool
+      op gfxWindowClosed (as int64: win_id) as bool
+      op gfxWindowWidth (as int64: win_id) as int64
+      op gfxWindowHeight (as int64: win_id) as int64
+      op gfxWindowWait (as int64: win_id, as int64: ms) as bool
+
+      op nativeGfxWindowCreate (as int64: w, as int64: h, as string: title) as int64
+      op nativeGfxWindowClose (as int64: win_id) as bool
+      op nativeGfxWindowFlush (as int64: win_id) as bool
+      op nativeGfxWindowClosed (as int64: win_id) as bool
+      op nativeGfxWindowWidth (as int64: win_id) as int64
+      op nativeGfxWindowHeight (as int64: win_id) as int64
+      op nativeGfxWindowWait (as int64: win_id, as int64: ms) as bool
+}
+
+contract (NativeGfxDrawContract) {
+      op nativeGfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawLine (as int64: win_id, as int64: x1, as int64: y1, as int64: x2, as int64: y2, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawText (as int64: win_id, as int64: x, as int64: y, as string: text, as int64: r, as int64: g, as int64: b) as bool
+
+      op gfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool
+      op gfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool
+      op gfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool
+}
+
+contract (NativeGfxEventContract) {
+      op gfxEventPoll (as int64: win_id) as int64
+      op gfxEventX () as int64
+      op gfxEventY () as int64
+      op gfxEventKey () as int64
+
+      op nativeGfxEventPoll (as int64: win_id) as int64
+      op nativeGfxEventX () as int64
+      op nativeGfxEventY () as int64
+      op nativeGfxEventKey () as int64
+}
+
+agent (NativeGfxStdLib) impl NativeGfxWindowContract, NativeGfxDrawContract, NativeGfxEventContract {
+      #L =====================================================================
+      #L 1. NativeGfxWindowContract
+      #L =====================================================================
+
+      op gfxWindowCreate (as int64: w, as int64: h, as string: title) as int64 ==> {
+            mut as int64: win_id = stdGfxWindowCreate(w, h, title)
+            emit(nice, win_id, "ok")
+      }
+
+      op gfxWindowClose (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClose(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowFlush (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowFlush(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowClosed (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClosed(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowWidth (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowWidth(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowHeight (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowHeight(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowWait (as int64: win_id, as int64: ms) as bool ==> {
+            mut as bool: res = stdGfxWindowWait(win_id, ms)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowCreate (as int64: w, as int64: h, as string: title) as int64 ==> {
+            mut as int64: win_id = stdGfxWindowCreate(w, h, title)
+            emit(nice, win_id, "ok")
+      }
+
+      op nativeGfxWindowClose (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClose(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowFlush (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowFlush(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowClosed (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClosed(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowWidth (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowWidth(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowHeight (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowHeight(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowWait (as int64: win_id, as int64: ms) as bool ==> {
+            mut as bool: res = stdGfxWindowWait(win_id, ms)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 2. NativeGfxDrawContract
+      #L =====================================================================
+
+      op nativeGfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxClear(win_id, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillRect(win_id, x, y, w, h, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawRect(win_id, x, y, w, h, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawLine (as int64: win_id, as int64: x1, as int64: y1, as int64: x2, as int64: y2, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawLine(win_id, x1, y1, x2, y2, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawCircle(win_id, cx, cy, radius, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillCircle(win_id, cx, cy, radius, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawText (as int64: win_id, as int64: x, as int64: y, as string: text, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawText(win_id, x, y, text, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op gfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxClear(win_id, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op gfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillRect(win_id, x, y, w, h, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op gfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillCircle(win_id, cx, cy, radius, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 3. NativeGfxEventContract
+      #L =====================================================================
+
+      op gfxEventPoll (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxEventPoll(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxEventX () as int64 ==> {
+            mut as int64: res = stdGfxEventX()
+            emit(nice, res, "ok")
+      }
+
+      op gfxEventY () as int64 ==> {
+            mut as int64: res = stdGfxEventY()
+            emit(nice, res, "ok")
+      }
+
+      op gfxEventKey () as int64 ==> {
+            mut as int64: res = stdGfxEventKey()
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventPoll (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxEventPoll(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventX () as int64 ==> {
+            mut as int64: res = stdGfxEventX()
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventY () as int64 ==> {
+            mut as int64: res = stdGfxEventY()
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventKey () as int64 ==> {
+            mut as int64: res = stdGfxEventKey()
+            emit(nice, res, "ok")
+      }
+}

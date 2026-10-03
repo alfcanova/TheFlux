@@ -1748,6 +1748,10 @@ class Interpreter:
                 return self._eval_db_intrinsic(name, node.args)
             if name.startswith("stdDsl"):
                 return self._eval_dsl_intrinsic(name, node.args)
+            if name.startswith("stdThread") or name.startswith("stdChannel"):
+                return self._eval_thread_intrinsic(name, node.args)
+            if name.startswith("stdGfx"):
+                return self._eval_gfx_intrinsic(name, node.args)
             op_ctx = self._resolve_agent_op(name, agent_qual)
             if op_ctx is not None:
                 return self._exec_agent_op(op_ctx, node.args)
@@ -2503,6 +2507,299 @@ class Interpreter:
             return Value("bool", dslh.dsl_set_memory_limit(eid, b))
 
         raise InterpreterError(f"unknown dsl intrinsic '{name}'")
+
+    def _eval_thread_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.thread_helpers as thh
+        args = [self._eval(a) for a in raw_args]
+
+        def _val_to_py(v: Value | Any) -> Any:
+            if not isinstance(v, Value):
+                return v
+            if isinstance(v.data, dict):
+                return {str(k).lstrip("."): _val_to_py(val) for k, val in v.data.items()}
+            if isinstance(v.data, list):
+                return [_val_to_py(item) for item in v.data]
+            return v.data
+
+        def _py_to_val(x: Any) -> Value:
+            if isinstance(x, Value):
+                return x
+            if isinstance(x, bool):
+                return Value("bool", x)
+            if isinstance(x, int):
+                return Value("int64", x)
+            if isinstance(x, float):
+                return Value("float64", x)
+            if isinstance(x, str):
+                return Value("string", x)
+            if isinstance(x, dict):
+                return Value("map", {str(k): _py_to_val(v) for k, v in x.items()})
+            if isinstance(x, (list, tuple)):
+                return Value("list", [_py_to_val(item) for item in x])
+            if x is None:
+                return Value("data", "")
+            return Value("string", str(x))
+
+        py_args = [_val_to_py(a) for a in args]
+
+        # Canais CSP
+        if name == "stdChannelCreate":
+            return _py_to_val(thh.channel_create(0))
+        if name == "stdChannelCreateWithCapacity":
+            cap = int(py_args[0]) if py_args else 0
+            return _py_to_val(thh.channel_create_with_capacity(cap))
+        if name == "stdChannelSend":
+            port = py_args[0] if len(py_args) > 0 else 0
+            msg = py_args[1] if len(py_args) > 1 else ""
+            return Value("bool", thh.channel_send(port, msg))
+        if name == "stdChannelRecv":
+            port = py_args[0] if py_args else 0
+            return _py_to_val(thh.channel_recv(port))
+        if name == "stdChannelTrySend":
+            port = py_args[0] if len(py_args) > 0 else 0
+            msg = py_args[1] if len(py_args) > 1 else ""
+            return Value("bool", thh.channel_try_send(port, msg))
+        if name == "stdChannelTryRecv":
+            port = py_args[0] if py_args else 0
+            return _py_to_val(thh.channel_try_recv(port))
+        if name == "stdChannelClose":
+            port = py_args[0] if py_args else 0
+            return Value("bool", thh.channel_close(port))
+        if name == "stdChannelIsClosed":
+            port = py_args[0] if py_args else 0
+            return Value("bool", thh.channel_is_closed(port))
+        if name == "stdChannelIsEmpty":
+            port = py_args[0] if py_args else 0
+            return Value("bool", thh.channel_is_empty(port))
+        if name == "stdChannelLength":
+            port = py_args[0] if py_args else 0
+            return Value("int64", thh.channel_length(port))
+        if name == "stdChannelCapacity":
+            port = py_args[0] if py_args else 0
+            return Value("int64", thh.channel_capacity(port))
+
+        # Mutex
+        if name == "stdThreadMutexCreate":
+            return Value("int64", thh.mutex_create())
+        if name == "stdThreadMutexLock":
+            mid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.mutex_lock(mid))
+        if name == "stdThreadMutexUnlock":
+            mid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.mutex_unlock(mid))
+        if name == "stdThreadMutexTryLock":
+            mid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.mutex_try_lock(mid))
+        if name == "stdThreadMutexDestroy":
+            mid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.mutex_destroy(mid))
+
+        # Atomics
+        if name == "stdThreadAtomicCreate":
+            init = int(py_args[0]) if py_args else 0
+            return Value("int64", thh.atomic_create(init))
+        if name == "stdThreadAtomicGet":
+            aid = int(py_args[0]) if py_args else 0
+            return Value("int64", thh.atomic_get(aid))
+        if name == "stdThreadAtomicSet":
+            aid = int(py_args[0]) if len(py_args) > 0 else 0
+            val = int(py_args[1]) if len(py_args) > 1 else 0
+            return Value("bool", thh.atomic_set(aid, val))
+        if name == "stdThreadAtomicAdd":
+            aid = int(py_args[0]) if len(py_args) > 0 else 0
+            delta = int(py_args[1]) if len(py_args) > 1 else 0
+            return Value("int64", thh.atomic_add(aid, delta))
+        if name == "stdThreadAtomicCas":
+            aid = int(py_args[0]) if len(py_args) > 0 else 0
+            exp = int(py_args[1]) if len(py_args) > 1 else 0
+            des = int(py_args[2]) if len(py_args) > 2 else 0
+            return Value("bool", thh.atomic_cas(aid, exp, des))
+        if name == "stdThreadAtomicDestroy":
+            aid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.atomic_destroy(aid))
+
+        # WaitGroup
+        if name == "stdThreadWaitGroupCreate":
+            return Value("int64", thh.wait_group_create())
+        if name == "stdThreadWaitGroupAdd":
+            wgid = int(py_args[0]) if len(py_args) > 0 else 0
+            delta = int(py_args[1]) if len(py_args) > 1 else 0
+            return Value("bool", thh.wait_group_add(wgid, delta))
+        if name == "stdThreadWaitGroupDone":
+            wgid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.wait_group_done(wgid))
+        if name == "stdThreadWaitGroupWait":
+            wgid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.wait_group_wait(wgid))
+        if name == "stdThreadWaitGroupDestroy":
+            wgid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.wait_group_destroy(wgid))
+
+        # Lifecycle
+        if name == "stdThreadSpawn":
+            ag = str(py_args[0]) if len(py_args) > 0 else ""
+            op = str(py_args[1]) if len(py_args) > 1 else ""
+            pl = py_args[2] if len(py_args) > 2 else None
+            op_ctx = self._resolve_agent_op(op, ag)
+            if op_ctx is not None:
+                def _runner():
+                    res = self._exec_agent_op(op_ctx, [_SinkValue(_py_to_val(pl))])
+                    return _val_to_py(res)
+                tid = thh.thread_spawn_with_runner(_runner)
+            else:
+                tid = thh.thread_spawn(ag, op, pl)
+            return Value("int64", tid)
+        if name == "stdThreadJoin":
+            tid = int(py_args[0]) if py_args else 0
+            return _py_to_val(thh.thread_join(tid))
+        if name == "stdThreadIsAlive":
+            tid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.thread_is_alive(tid))
+        if name == "stdThreadCurrentId":
+            return Value("int64", thh.thread_current_id())
+        if name == "stdThreadDetach":
+            tid = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.thread_detach(tid))
+
+        # System
+        if name == "stdThreadHardwareConcurrency":
+            return Value("int64", thh.thread_hardware_concurrency())
+        if name in ("stdThreadSleep", "stdThreadSleepMs"):
+            ms = int(py_args[0]) if py_args else 0
+            return Value("bool", thh.thread_sleep(ms))
+        if name == "stdThreadYield":
+            return Value("bool", thh.thread_yield())
+
+        raise InterpreterError(f"unknown thread intrinsic '{name}'")
+
+    def _eval_gfx_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:
+        import flux_proto.gfx_helpers as gfxh
+        args = [self._eval(a) for a in raw_args]
+        py_args = [a.data if isinstance(a, Value) else a for a in args]
+
+        if name == "stdGfxWindowCreate":
+            w = int(py_args[0]) if len(py_args) > 0 else 800
+            h = int(py_args[1]) if len(py_args) > 1 else 600
+            title = str(py_args[2]) if len(py_args) > 2 else "TheFlux Window"
+            return Value("int64", gfxh.gfx_window_create(w, h, title))
+
+        if name == "stdGfxWindowClose":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("bool", bool(gfxh.gfx_window_close(wid)))
+
+        if name == "stdGfxWindowWait":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            ms = int(py_args[1]) if len(py_args) > 1 else 0
+            return Value("bool", bool(gfxh.gfx_window_wait(wid, ms)))
+
+        if name == "stdGfxWindowFlush":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("bool", bool(gfxh.gfx_window_flush(wid)))
+
+        if name == "stdGfxClear":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            r = int(py_args[1]) if len(py_args) > 1 else 0
+            g = int(py_args[2]) if len(py_args) > 2 else 0
+            b = int(py_args[3]) if len(py_args) > 3 else 0
+            return Value("bool", bool(gfxh.gfx_clear(wid, r, g, b)))
+
+        if name == "stdGfxFillRect":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            x = int(py_args[1]) if len(py_args) > 1 else 0
+            y = int(py_args[2]) if len(py_args) > 2 else 0
+            w = int(py_args[3]) if len(py_args) > 3 else 0
+            h = int(py_args[4]) if len(py_args) > 4 else 0
+            r = int(py_args[5]) if len(py_args) > 5 else 0
+            g = int(py_args[6]) if len(py_args) > 6 else 0
+            b = int(py_args[7]) if len(py_args) > 7 else 0
+            return Value("bool", bool(gfxh.gfx_fill_rect(wid, x, y, w, h, r, g, b)))
+
+        if name == "stdGfxDrawRect":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            x = int(py_args[1]) if len(py_args) > 1 else 0
+            y = int(py_args[2]) if len(py_args) > 2 else 0
+            w = int(py_args[3]) if len(py_args) > 3 else 0
+            h = int(py_args[4]) if len(py_args) > 4 else 0
+            r = int(py_args[5]) if len(py_args) > 5 else 0
+            g = int(py_args[6]) if len(py_args) > 6 else 0
+            b = int(py_args[7]) if len(py_args) > 7 else 0
+            return Value("bool", bool(gfxh.gfx_draw_rect(wid, x, y, w, h, r, g, b)))
+
+        if name == "stdGfxDrawLine":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            x1 = int(py_args[1]) if len(py_args) > 1 else 0
+            y1 = int(py_args[2]) if len(py_args) > 2 else 0
+            x2 = int(py_args[3]) if len(py_args) > 3 else 0
+            y2 = int(py_args[4]) if len(py_args) > 4 else 0
+            r = int(py_args[5]) if len(py_args) > 5 else 0
+            g = int(py_args[6]) if len(py_args) > 6 else 0
+            b = int(py_args[7]) if len(py_args) > 7 else 0
+            return Value("bool", bool(gfxh.gfx_draw_line(wid, x1, y1, x2, y2, r, g, b)))
+
+        if name == "stdGfxDrawCircle":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            cx = int(py_args[1]) if len(py_args) > 1 else 0
+            cy = int(py_args[2]) if len(py_args) > 2 else 0
+            rad = int(py_args[3]) if len(py_args) > 3 else 0
+            r = int(py_args[4]) if len(py_args) > 4 else 0
+            g = int(py_args[5]) if len(py_args) > 5 else 0
+            b = int(py_args[6]) if len(py_args) > 6 else 0
+            return Value("bool", bool(gfxh.gfx_draw_circle(wid, cx, cy, rad, r, g, b)))
+
+        if name == "stdGfxFillCircle":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            cx = int(py_args[1]) if len(py_args) > 1 else 0
+            cy = int(py_args[2]) if len(py_args) > 2 else 0
+            rad = int(py_args[3]) if len(py_args) > 3 else 0
+            r = int(py_args[4]) if len(py_args) > 4 else 0
+            g = int(py_args[5]) if len(py_args) > 5 else 0
+            b = int(py_args[6]) if len(py_args) > 6 else 0
+            return Value("bool", bool(gfxh.gfx_fill_circle(wid, cx, cy, rad, r, g, b)))
+
+        if name == "stdGfxDrawText":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            x = int(py_args[1]) if len(py_args) > 1 else 0
+            y = int(py_args[2]) if len(py_args) > 2 else 0
+            txt = str(py_args[3]) if len(py_args) > 3 else ""
+            r = int(py_args[4]) if len(py_args) > 4 else 0
+            g = int(py_args[5]) if len(py_args) > 5 else 0
+            b = int(py_args[6]) if len(py_args) > 6 else 0
+            return Value("bool", bool(gfxh.gfx_draw_text(wid, x, y, txt, r, g, b)))
+
+        if name == "stdGfxEventPoll":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("int64", gfxh.gfx_event_poll(wid))
+
+        if name == "stdGfxEventX":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("int64", gfxh.gfx_event_x(wid))
+
+        if name == "stdGfxEventY":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("int64", gfxh.gfx_event_y(wid))
+
+        if name == "stdGfxEventKey":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("int64", gfxh.gfx_event_key(wid))
+
+        if name == "stdGfxWindowClosed":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("bool", bool(gfxh.gfx_window_closed(wid)))
+
+        if name == "stdGfxWindowWidth":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("int64", gfxh.gfx_window_width(wid))
+
+        if name == "stdGfxWindowHeight":
+            wid = int(py_args[0]) if py_args else 0
+            return Value("int64", gfxh.gfx_window_height(wid))
+
+        if name == "stdGfxExportHtml":
+            wid = int(py_args[0]) if len(py_args) > 0 else 0
+            path = str(py_args[1]) if len(py_args) > 1 else "output.html"
+            return Value("bool", bool(gfxh.export_html5_canvas(wid, path)))
+
+        raise InterpreterError(f"unknown gfx intrinsic '{name}'")
 
     def _resolve_agent_op(self, name: str, agent_qual: str = "") -> tuple[Any, Any] | None:
         real = self._op_aliases.get(name, name)

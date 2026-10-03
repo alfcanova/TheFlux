@@ -34,6 +34,10 @@ contract (GuiStateContract) {
       op guiGetFrameCount (as map: ctx) as int64
       op guiGetScreenWidth (as map: ctx) as int64
       op guiGetScreenHeight (as map: ctx) as int64
+      op guiBindNativeWindow (as map: ctx, as int64: win_id) as map
+      op guiGetNativeWindow (as map: ctx) as int64
+      op guiUpdateInput (as map: ctx) as map
+      op guiPollNativeEvents (as map: ctx) as int64
 }
 
 contract (GuiThemeContract) {
@@ -260,6 +264,53 @@ agent (GuiStdLib) impl GuiConstantsContract, GuiStateContract, GuiThemeContract,
             emit(nice, h, "ok")
       }
 
+      op guiBindNativeWindow (as map: ctx, as int64: win_id) as map ==> {
+            ctx["native_win"] = win_id
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetNativeWindow (as map: ctx) as int64 ==> {
+            mut as int64: win_id = 0
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        win_id = ctx["native_win"] as int64
+                  }
+            }
+            emit(nice, win_id, "ok")
+      }
+
+      op guiPollNativeEvents (as map: ctx) as int64 ==> {
+            mut as int64: ev = 0
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    ev = stdGfxEventPoll(win_id)
+                              }
+                        }
+                  }
+            }
+            emit(nice, ev, "ok")
+      }
+
+      op guiUpdateInput (as map: ctx) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    mut as int64: ev = stdGfxEventPoll(win_id)
+                                    ctx["mouse_x"] = stdGfxEventX()
+                                    ctx["mouse_y"] = stdGfxEventY()
+                                    ctx["mouse_down"] = ev == 1
+                              }
+                        }
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
       #L =====================================================================
       #L 3. GuiThemeContract
       #L =====================================================================
@@ -431,13 +482,88 @@ agent (GuiStdLib) impl GuiConstantsContract, GuiStateContract, GuiThemeContract,
             mut as int64: len = 0
             infinite (c in label) { len = len + 1 }
             mut as int64: w = len * 8 + 24
+            mut as int64: bx = ctx["cursor_x"] as int64
+            mut as int64: by = ctx["cursor_y"] as int64
+            mut as bool: clicked = true
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    mut as int64: mx = 0
+                                    mut as int64: my = 0
+                                    mut as bool: mdown = false
+                                    route {
+                                          _mapHasKey(ctx, "mouse_x") ==> {
+                                                mx = ctx["mouse_x"] as int64
+                                                my = ctx["mouse_y"] as int64
+                                                mdown = ctx["mouse_down"] == true
+                                          }
+                                    }
+                                    mut as bool: hover = mx >= bx and mx <= (bx + w) and my >= by and my <= (by + 28)
+                                    clicked = hover and mdown
+                                    route {
+                                          clicked ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, 28, 74, 144, 217)
+                                          }
+                                          hover ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, 28, 55, 90, 130)
+                                          }
+                                          _ ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, 28, 38, 50, 68)
+                                          }
+                                    }
+                                    stdGfxDrawRect(win_id, bx, by, w, 28, 100, 150, 220)
+                                    stdGfxDrawText(win_id, bx + 12, by + 18, label, 255, 255, 255)
+                              }
+                        }
+                  }
+            }
             mut as map: new_ctx = _advanceWidget(ctx, w, 28)
-            emit(nice, [new_ctx, true], "ok")
+            emit(nice, [new_ctx, clicked], "ok")
       }
 
       op guiButtonEx (as map: ctx, as string: label, as int64: w, as int64: h) as list of data ==> {
+            mut as int64: bx = ctx["cursor_x"] as int64
+            mut as int64: by = ctx["cursor_y"] as int64
+            mut as bool: clicked = true
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    mut as int64: mx = 0
+                                    mut as int64: my = 0
+                                    mut as bool: mdown = false
+                                    route {
+                                          _mapHasKey(ctx, "mouse_x") ==> {
+                                                mx = ctx["mouse_x"] as int64
+                                                my = ctx["mouse_y"] as int64
+                                                mdown = ctx["mouse_down"] == true
+                                          }
+                                    }
+                                    mut as bool: hover = mx >= bx and mx <= (bx + w) and my >= by and my <= (by + h)
+                                    clicked = hover and mdown
+                                    route {
+                                          clicked ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, h, 74, 144, 217)
+                                          }
+                                          hover ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, h, 55, 90, 130)
+                                          }
+                                          _ ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, h, 38, 50, 68)
+                                          }
+                                    }
+                                    stdGfxDrawRect(win_id, bx, by, w, h, 100, 150, 220)
+                                    mut as int64: ty = by + 18
+                                    stdGfxDrawText(win_id, bx + 12, ty, label, 255, 255, 255)
+                              }
+                        }
+                  }
+            }
             mut as map: new_ctx = _advanceWidget(ctx, w, h)
-            emit(nice, [new_ctx, true], "ok")
+            emit(nice, [new_ctx, clicked], "ok")
       }
 
       op guiCheckbox (as map: ctx, as string: label, as bool: active) as list of data ==> {

@@ -99,7 +99,8 @@ def stdin_para(path: Path) -> str:
     return STDIN_MAP.get(path.name, "")
 
 PYTHON = sys.executable
-ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+os.environ["FLUX_CI"] = "1"
+ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="utf-8", FLUX_CI="1")
 
 T_DIRS = [
     RAIZ / "t_benchmarks",
@@ -256,7 +257,7 @@ def saida_wat(path: Path, stdin_text: str) -> str | None:
         c = _run([w2w, str(wat_path), "-o", str(bin_path)])
         if c.returncode != 0:
             return None
-        return _run([wasmer, "run", str(bin_path)], input_text=stdin_text, timeout=30).stdout
+        return _run([wasmer, "run", "--forward-host-env", str(bin_path)], input_text=stdin_text, timeout=30).stdout
 
 
 def saida_wasm(path: Path, stdin_text: str) -> str | None:
@@ -269,7 +270,7 @@ def saida_wasm(path: Path, stdin_text: str) -> str | None:
     wasmer = TOOLS.get("wasmer")
     if not wasmer:
         return None
-    return _run([wasmer, "run", str(wasm_path)], input_text=stdin_text, timeout=30).stdout
+    return _run([wasmer, "run", "--forward-host-env", str(wasm_path)], input_text=stdin_text, timeout=30).stdout
 
 
 BACKENDS = {

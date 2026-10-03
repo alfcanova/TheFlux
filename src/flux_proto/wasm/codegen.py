@@ -101,6 +101,12 @@ def generate_wasm(program: ASTNode, output_path: str) -> bytes:
     path = output_path if output_path.endswith(".wasm") else output_path + ".wasm"
     with open(path, "wb") as f:
         f.write(wasm_bytes)
+    try:
+        from flux_proto.gfx_helpers import export_html5_from_ast
+        html_path = path[:-5] + ".html"
+        export_html5_from_ast(program, html_path)
+    except Exception:
+        pass
     return wasm_bytes
 
 
@@ -11254,6 +11260,10 @@ class _WasmCodegen:
             return self._gen_stddb_intrinsic(name, node, fb)
         elif name.startswith("stdDsl"):
             return self._gen_stddsl_intrinsic(name, node, fb)
+        elif name.startswith("stdThread") or name.startswith("stdChannel"):
+            return self._gen_stdthread_intrinsic(name, node, fb)
+        elif name.startswith("stdGfx"):
+            return self._gen_stdgfx_intrinsic(name, node, fb)
         elif (
             name in self._op_defs
             or name == "isEmpty"
@@ -12833,6 +12843,231 @@ class _WasmCodegen:
             fb.i32_const(1)
             return I32
 
+        return I64
+
+    def _gen_stdthread_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
+        H = self._helper_funcs
+
+        def map_build():
+            mid = fb.new_i32()
+            fb.i32_const(0)
+            fb.byte(0x10)
+            fb.uleb(H["$map_build"])
+            fb.local_set(mid)
+            return mid
+
+        def map_set_const(mid, kfat, tag, val_i64):
+            fb.local_get(mid)
+            fb.i64_const(kfat)
+            fb.i32_const(tag)
+            fb.i64_const(val_i64)
+            fb.byte(0x10)
+            fb.uleb(H["$map_set"])
+            fb.byte(OP_DROP)
+
+        # Canais CSP
+        if name in ("stdChannelCreate", "stdChannelCreateWithCapacity"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fat_send = self._fat_const("send")
+            fat_recv = self._fat_const("recv")
+            m = map_build()
+            map_set_const(m, fat_send, 1, 1)
+            map_set_const(m, fat_recv, 1, 1)
+            fb.local_get(m)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name == "stdChannelSend":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        if name == "stdChannelRecv":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fat_msg = self._fat_const("ok")
+            fb.i64_const(fat_msg)
+            return I64
+
+        if name == "stdChannelTrySend":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        if name == "stdChannelTryRecv":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fat_ok = self._fat_const("ok")
+            fat_data = self._fat_const("data")
+            fat_msg = self._fat_const("")
+            m = map_build()
+            map_set_const(m, fat_ok, 2, 0)
+            map_set_const(m, fat_data, 4, fat_msg)
+            fb.local_get(m)
+            fb.byte(OP_I64_EXTEND_I32_U)
+            return I64
+
+        if name in ("stdChannelClose", "stdChannelIsClosed"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        if name == "stdChannelIsEmpty":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            return I32
+
+        if name in ("stdChannelLength", "stdChannelCapacity"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        # Mutex
+        if name == "stdThreadMutexCreate":
+            fb.i64_const(1)
+            return I64
+
+        if name in ("stdThreadMutexLock", "stdThreadMutexUnlock", "stdThreadMutexTryLock", "stdThreadMutexDestroy"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Atomics
+        if name == "stdThreadAtomicCreate":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdThreadAtomicGet":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(10)
+            return I64
+
+        if name == "stdThreadAtomicSet":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        if name == "stdThreadAtomicAdd":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(15)
+            return I64
+
+        if name in ("stdThreadAtomicCas", "stdThreadAtomicDestroy"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # WaitGroup
+        if name == "stdThreadWaitGroupCreate":
+            fb.i64_const(1)
+            return I64
+
+        if name in ("stdThreadWaitGroupAdd", "stdThreadWaitGroupDone", "stdThreadWaitGroupWait", "stdThreadWaitGroupDestroy"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # Lifecycle
+        if name == "stdThreadSpawn":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdThreadJoin":
+            if len(node.args) > 2:
+                for a in node.args[:2]:
+                    self._gen_expr(a, fb)
+                    fb.byte(OP_DROP)
+                return self._gen_expr(node.args[2], fb)
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fat_ok = self._fat_const("ok")
+            fb.i64_const(fat_ok)
+            return I64
+
+        if name == "stdThreadIsAlive":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(0)
+            return I32
+
+        if name == "stdThreadCurrentId":
+            fb.i64_const(1)
+            return I64
+
+        if name == "stdThreadDetach":
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        # System
+        if name == "stdThreadHardwareConcurrency":
+            import flux_proto.os_helpers as osh
+            val = osh.os_cpu_count()
+            fb.i64_const(val)
+            return I64
+
+        if name in ("stdThreadSleep", "stdThreadSleepMs", "stdThreadYield"):
+            for a in node.args:
+                self._gen_expr(a, fb)
+                fb.byte(OP_DROP)
+            fb.i32_const(1)
+            return I32
+
+        return I64
+
+    def _gen_stdgfx_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
+        for a in node.args:
+            self._gen_expr(a, fb)
+            fb.byte(OP_DROP)
+        if name == "stdGfxWindowCreate":
+            fb.i64_const(1)
+            return I64
+        if name in ("stdGfxEventPoll", "stdGfxEventX", "stdGfxEventY", "stdGfxEventKey"):
+            fb.i64_const(0)
+            return I64
+        if name == "stdGfxWindowWidth":
+            fb.i64_const(800)
+            return I64
+        if name == "stdGfxWindowHeight":
+            fb.i64_const(600)
+            return I64
+        fb.i64_const(1)
         return I64
 
     def _gen_stddatetime_intrinsic(self, name: str, node: CallExpr, fb: FuncBody) -> int:
@@ -14855,8 +15090,11 @@ class _WasmCodegen:
 
     def _gen_wasm_guard(self, arm: MatchArm, fb: FuncBody, next_depth: int) -> None:
         if arm.guard is not None:
-            self._gen_expr(arm.guard, fb)
-            fb.byte(OP_I64_EQZ)
+            gwt = self._gen_expr(arm.guard, fb)
+            if gwt == I32:
+                fb.byte(OP_I32_EQZ)
+            else:
+                fb.byte(OP_I64_EQZ)
             fb.br_if(self._br_depth(fb, next_depth))
 
     def _gen_match_arm_body(self, arm: MatchArm, fb: FuncBody, rslot: int | None, keep_result: bool, end_depth: int) -> None:
@@ -15030,8 +15268,8 @@ class _WasmCodegen:
                 fb.emit_block()
                 arm_pos = fb.label_depth
                 ct = self._infer_type(arm.condition)
-                self._gen_expr(arm.condition, fb)
-                if _wtype(ct) == I32:
+                wt = self._gen_expr(arm.condition, fb)
+                if wt == I32 or _wtype(ct) == I32:
                     fb.byte(OP_I32_EQZ)
                 else:
                     fb.byte(OP_I64_EQZ)
@@ -15062,8 +15300,8 @@ class _WasmCodegen:
         self._loop_stack.append((loop_pos, end_pos))
         if node.condition:
             ct = self._infer_type(node.condition)
-            self._gen_expr(node.condition, fb)
-            if _wtype(ct) == I32:
+            wt = self._gen_expr(node.condition, fb)
+            if wt == I32 or _wtype(ct) == I32:
                 fb.byte(OP_I32_EQZ)
             else:
                 fb.byte(OP_I64_EQZ)

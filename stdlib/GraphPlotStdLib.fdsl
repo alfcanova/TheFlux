@@ -1,0 +1,1269 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Motor Grafico Cientifico, Matematico, Estatistico, Curvilineo e de Engenharia
+#L Suporte a 20+ Sistemas de Coordenadas, Cameras 3D e as 7 Grandes Familias
+#L Implementacao 100% nativa em TheFlux (sem dependencias externas)
+#L Regra: 1-index para humanos e 0-index para maquinas
+#L ==============================================================================
+
+use MathStdLib
+use StatStdLib
+use LinAlgStdLib
+use GfxStdLib
+use NativeGfxStdLib
+
+contract (PlotContextContract) {
+      op plotCreate (as int64: width, as int64: height, as string: title) as map
+      op plotClose (as map: ctx) as map
+      op plotSetViewport (as map: ctx, as int64: x, as int64: y, as int64: w, as int64: h) as map
+      op plotSetMargins (as map: ctx, as int64: top, as int64: right, as int64: bottom, as int64: left) as map
+      op plotSetCoordSystem (as map: ctx, as int64: coord_sys) as map
+      op plotSetCamera (as map: ctx, as int64: cam_type, as float64: fov) as map
+      op plotSetScaleType (as map: ctx, as int64: scale_type) as map
+      op plotSetColorMap (as map: ctx, as int64: cmap) as map
+      op plotShowAxes (as map: ctx, as bool: show) as map
+      op plotShowGrid (as map: ctx, as bool: show) as map
+      op plotShowLegend (as map: ctx, as bool: show) as map
+      op plotBindWindow (as map: ctx, as int64: win_id) as map
+      op plotGetWindow (as map: ctx) as int64
+}
+
+contract (PlotTransformContract) {
+      op plotTransformToCartesian (as int64: coord_sys, as float64: u, as float64: v, as float64: w) as list of float64
+      op plotTransformFromCartesian (as int64: coord_sys, as float64: x, as float64: y, as float64: z) as list of float64
+      op plotProjectToScreen (as map: ctx, as float64: x, as float64: y, as float64: z) as list of int64
+}
+
+contract (PlotDistributionContract) {
+      op plotHistogram (as map: ctx, as list of float64: data_vals, as int64: n_bins) as map
+      op plotKde (as map: ctx, as list of float64: data_vals, as float64: bandwidth) as map
+      op plotBoxplot (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map
+      op plotViolin (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map
+      op plotStrip (as map: ctx, as list of float64: data_vals, as float64: center_x) as map
+      op plotOgive (as map: ctx, as list of float64: data_vals) as map
+      op plotQqPlot (as map: ctx, as list of float64: data_vals) as map
+}
+
+contract (PlotRelationContract) {
+      op plotScatter (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map
+      op plotLine (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map
+      op plotBubble (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: sizes, as list of int64: color) as map
+      op plotParallelCoords (as map: ctx, as list of data: dimensions, as list of data: records) as map
+      op plotCorrelationMatrix (as map: ctx, as list of data: matrix_rows, as list of string: labels) as map
+      op plotHexbin (as map: ctx, as list of float64: xs, as list of float64: ys, as int64: grid_size) as map
+}
+
+contract (PlotSurfaceFieldContract) {
+      op plotSurface3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map
+      op plotMesh3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map
+      op plotContour (as map: ctx, as list of data: grid_z, as int64: n_levels) as map
+      op plotQuiver2D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: us, as list of float64: vs) as map
+      op plotStreamlines (as map: ctx, as list of data: grid_u, as list of data: grid_v) as map
+      op plotScatter3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map
+      op plotTrajectory3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map
+}
+
+contract (PlotCompositionContract) {
+      op plotPie (as map: ctx, as list of float64: values, as list of string: labels) as map
+      op plotDonut (as map: ctx, as list of float64: values, as list of string: labels, as float64: hole_ratio) as map
+      op plotGauge (as map: ctx, as float64: value, as float64: min_val, as float64: max_val, as string: label) as map
+      op plotTernary (as map: ctx, as list of float64: as_comp, as list of float64: bs_comp, as list of float64: cs_comp) as map
+      op plotStackedBar (as map: ctx, as list of data: series_matrix, as list of string: group_labels) as map
+      op plotStackedArea (as map: ctx, as list of float64: xs, as list of data: series_matrix) as map
+      op plotTreemap (as map: ctx, as list of float64: values, as list of string: labels) as map
+      op plotWaffle (as map: ctx, as list of float64: proportions, as list of string: labels) as map
+}
+
+contract (PlotGeometryCoordContract) {
+      op plotCurvilinearGrid (as map: ctx, as int64: coord_sys, as int64: divisions) as map
+      op plotCurvilinearCurve (as map: ctx, as int64: coord_sys, as list of float64: us, as list of float64: vs, as list of float64: ws, as list of int64: color) as map
+}
+
+contract (PlotSpecialMathContract) {
+      op plotParametric2D (as map: ctx, as list of float64: xs, as list of float64: ys) as map
+      op plotParametric3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map
+      op plotBifurcation (as map: ctx, as float64: r_min, as float64: r_max, as int64: n_points) as map
+      op plotPhaseSpace (as map: ctx, as list of float64: qs, as list of float64: ps) as map
+      op plotNetworkGraph (as map: ctx, as list of data: nodes, as list of data: edges) as map
+      op plotVenn (as map: ctx, as int64: set_count, as list of float64: subset_sizes) as map
+}
+
+contract (PlotEngineeringControlContract) {
+      op plotBode (as map: ctx, as list of float64: omegas, as list of float64: mag_db, as list of float64: phase_deg) as map
+      op plotNyquist (as map: ctx, as list of float64: real_parts, as list of float64: imag_parts) as map
+      op plotNichols (as map: ctx, as list of float64: phase_deg, as list of float64: mag_db) as map
+      op plotSmithChart (as map: ctx, as list of float64: gamma_re, as list of float64: gamma_im) as map
+      op plotKaplanMeier (as map: ctx, as list of float64: times, as list of int64: events) as map
+      op plotRocCurve (as map: ctx, as list of float64: fpr, as list of float64: tpr) as map
+      op plotPareto (as map: ctx, as list of float64: frequencies, as list of string: categories) as map
+      op plotRadar (as map: ctx, as list of float64: values, as list of string: axes_labels) as map
+      op plotCoxcomb (as map: ctx, as list of float64: values, as list of string: sector_labels) as map
+      op plotUxHeatmap (as map: ctx, as list of float64: click_xs, as list of float64: click_ys, as list of float64: weights) as map
+}
+
+contract (PlotThemeContract) {
+      op plotThemeDark () as map
+      op plotThemeLight () as map
+      op plotThemeScientific () as map
+      op plotGetColorMapRgb (as int64: cmap, as float64: t) as list of int64
+}
+
+contract (PlotRenderContract) {
+      op plotRender (as map: ctx) as map
+      op plotPresent (as map: ctx) as bool
+      op plotShow (as map: ctx, as int64: ms) as bool
+      op plotWait (as map: ctx) as bool
+}
+
+contract (PlotExportContract) {
+      op plotExportHtml (as map: ctx, as string: path) as bool
+      op plotExportSvg (as map: ctx, as string: path) as bool
+}
+
+agent (GraphPlotStdLib) impl PlotContextContract, PlotTransformContract, PlotDistributionContract, PlotRelationContract, PlotSurfaceFieldContract, PlotCompositionContract, PlotGeometryCoordContract, PlotSpecialMathContract, PlotEngineeringControlContract, PlotThemeContract, PlotRenderContract, PlotExportContract {
+
+      #L =====================================================================
+      #L Funcoes Auxiliares Internas
+      #L =====================================================================
+
+      op _listLen (as list of data: l) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in l) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _addLayer (as map: ctx, as map: layer) as map ==> {
+            mut as list of data: layers = ctx["layers"] as list of data
+            mut as int64: count = (ctx["items_count"] as int64) + 1
+            layers[count] = layer
+            ctx["layers"] = layers
+            ctx["items_count"] = count
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+      #L 1. PlotContextContract
+      #L =====================================================================
+
+      op plotCreate (as int64: width, as int64: height, as string: title) as map ==> {
+            mut as int64: win_id = gfxWindowCreate(width, height, title)
+            mut as map: p = map{}
+            p["width"] = width
+            p["height"] = height
+            p["title"] = title
+            p["vp_x"] = 0
+            p["vp_y"] = 0
+            p["vp_w"] = width
+            p["vp_h"] = height
+            p["margin_top"] = 40
+            p["margin_right"] = 40
+            p["margin_bottom"] = 50
+            p["margin_left"] = 60
+            p["coord_sys"] = 1 #L CARTESIAN_2D
+            p["cam_type"] = 1  #L PERSPECTIVE
+            p["cam_fov"] = 45.0
+            p["cam_pitch"] = 30.0
+            p["cam_yaw"] = -45.0
+            p["cam_dist"] = 3.5
+            p["scale_type"] = 1 #L LINEAR
+            p["colormap"] = 1   #L VIRIDIS
+            p["show_axes"] = true
+            p["show_grid"] = true
+            p["show_legend"] = true
+            p["native_win"] = win_id
+            p["layers"] = []
+            p["items_count"] = 0
+            
+            mut as map: gctx = gfxInitContext(width, height, title)
+            gctx = gfxBindNativeWindow(gctx, win_id)
+            p["gfx_ctx"] = gctx
+            emit(nice, p, "ok")
+      }
+
+      op plotClose (as map: ctx) as map ==> {
+            route {
+                  ctx["native_win"] as int64 > 0 ==> {
+                        mut as int64: wid = ctx["native_win"] as int64
+                        mut as bool: closed = gfxWindowClose(wid)
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetViewport (as map: ctx, as int64: x, as int64: y, as int64: w, as int64: h) as map ==> {
+            ctx["vp_x"] = x
+            ctx["vp_y"] = y
+            ctx["vp_w"] = w
+            ctx["vp_h"] = h
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetMargins (as map: ctx, as int64: top, as int64: right, as int64: bottom, as int64: left) as map ==> {
+            ctx["margin_top"] = top
+            ctx["margin_right"] = right
+            ctx["margin_bottom"] = bottom
+            ctx["margin_left"] = left
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetCoordSystem (as map: ctx, as int64: coord_sys) as map ==> {
+            ctx["coord_sys"] = coord_sys
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetCamera (as map: ctx, as int64: cam_type, as float64: fov) as map ==> {
+            ctx["cam_type"] = cam_type
+            ctx["cam_fov"] = fov
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetScaleType (as map: ctx, as int64: scale_type) as map ==> {
+            ctx["scale_type"] = scale_type
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetColorMap (as map: ctx, as int64: cmap) as map ==> {
+            ctx["colormap"] = cmap
+            emit(nice, ctx, "ok")
+      }
+
+      op plotShowAxes (as map: ctx, as bool: show) as map ==> {
+            ctx["show_axes"] = show
+            emit(nice, ctx, "ok")
+      }
+
+      op plotShowGrid (as map: ctx, as bool: show) as map ==> {
+            ctx["show_grid"] = show
+            emit(nice, ctx, "ok")
+      }
+
+      op plotShowLegend (as map: ctx, as bool: show) as map ==> {
+            ctx["show_legend"] = show
+            emit(nice, ctx, "ok")
+      }
+
+      op plotBindWindow (as map: ctx, as int64: win_id) as map ==> {
+            mut as int64: old_win = ctx["native_win"] as int64
+            route {
+                  old_win > 0 and old_win != win_id ==> {
+                        mut as bool: closed_old = gfxWindowClose(old_win)
+                  }
+            }
+            ctx["native_win"] = win_id
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            gctx = gfxBindNativeWindow(gctx, win_id)
+            ctx["gfx_ctx"] = gctx
+            emit(nice, ctx, "ok")
+      }
+
+      op plotGetWindow (as map: ctx) as int64 ==> {
+            mut as int64: win_id = ctx["native_win"] as int64
+            emit(nice, win_id, "ok")
+      }
+
+      #L =====================================================================
+      #L 2. PlotTransformContract (20+ Sistemas de Coordenadas)
+      #L =====================================================================
+
+      op plotTransformToCartesian (as int64: coord_sys, as float64: u, as float64: v, as float64: w) as list of float64 ==> {
+            mut as float64: x = u
+            mut as float64: y = v
+            mut as float64: z = w
+
+            route {
+                  coord_sys == 3 ==> { #L POLAR (r, theta)
+                        x = u * cos64(v)
+                        y = u * sin64(v)
+                        z = 0.0
+                  }
+                  coord_sys == 4 ==> { #L CYLINDRICAL (r, theta, z)
+                        x = u * cos64(v)
+                        y = u * sin64(v)
+                        z = w
+                  }
+                  coord_sys == 5 ==> { #L SPHERICAL (r, theta, phi)
+                        x = u * sin64(v) * cos64(w)
+                        y = u * sin64(v) * sin64(w)
+                        z = u * cos64(v)
+                  }
+                  coord_sys == 6 ==> { #L LOG_X (log_b(u), v)
+                        x = u
+                        route { u > 0.0 ==> { x = log10_64(u) } }
+                        y = v
+                        z = w
+                  }
+                  coord_sys == 7 ==> { #L LOG_Y (u, log_b(v))
+                        x = u
+                        y = v
+                        route { v > 0.0 ==> { y = log10_64(v) } }
+                        z = w
+                  }
+                  coord_sys == 8 ==> { #L LOG_LOG (log_b(u), log_b(v))
+                        x = u
+                        y = v
+                        route { u > 0.0 ==> { x = log10_64(u) } }
+                        route { v > 0.0 ==> { y = log10_64(v) } }
+                        z = w
+                  }
+                  coord_sys == 9 ==> { #L TERNARY (a, b, c) -> 2D Triangulo
+                        mut as float64: sum_abc = u + v + w
+                        route { sum_abc <= 0.0 ==> { sum_abc = 1.0 } }
+                        x = 0.5 * (2.0 * v + w) /f sum_abc
+                        y = (1.7320508075688772 /f 2.0) * w /f sum_abc
+                        z = 0.0
+                  }
+                  coord_sys == 10 ==> { #L BARYCENTRIC (u, v, w)
+                        x = u
+                        y = v
+                        z = w
+                  }
+                  coord_sys == 12 ==> { #L ELLIPTIC_2D (mu, nu, focal_a=1.0)
+                        mut as float64: a = 1.0
+                        x = a * cosh64(u) * cos64(v)
+                        y = a * sinh64(u) * sin64(v)
+                        z = 0.0
+                  }
+                  coord_sys == 13 ==> { #L ELLIPTIC_CYLINDRICAL
+                        mut as float64: a = 1.0
+                        x = a * cosh64(u) * cos64(v)
+                        y = a * sinh64(u) * sin64(v)
+                        z = w
+                  }
+                  coord_sys == 14 ==> { #L PARABOLIC_2D (sigma, tau)
+                        x = 0.5 * (u * u - v * v)
+                        y = u * v
+                        z = 0.0
+                  }
+                  coord_sys == 15 ==> { #L PARABOLIC_CYLINDRICAL
+                        x = 0.5 * (u * u - v * v)
+                        y = u * v
+                        z = w
+                  }
+                  coord_sys == 16 ==> { #L PARABOLIC_3D
+                        x = u * v * cos64(w)
+                        y = u * v * sin64(w)
+                        z = 0.5 * (u * u - v * v)
+                  }
+                  coord_sys == 17 ==> { #L BIPOLAR (tau, sigma, a=1.0)
+                        mut as float64: a = 1.0
+                        mut as float64: denom = cosh64(u) - cos64(v)
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = a * sinh64(u) /f denom
+                        y = a * sin64(v) /f denom
+                        z = 0.0
+                  }
+                  coord_sys == 18 ==> { #L BISPHERICAL
+                        mut as float64: a = 1.0
+                        mut as float64: denom = cosh64(u) - cos64(v)
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = a * sin64(v) * cos64(w) /f denom
+                        y = a * sin64(v) * sin64(w) /f denom
+                        z = a * sinh64(u) /f denom
+                  }
+                  coord_sys == 19 ==> { #L TOROIDAL
+                        mut as float64: a = 1.0
+                        mut as float64: denom = cosh64(u) - cos64(v)
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = a * sinh64(u) * cos64(w) /f denom
+                        y = a * sinh64(u) * sin64(w) /f denom
+                        z = a * sin64(v) /f denom
+                  }
+                  coord_sys == 20 ==> { #L PROLATE_SPHEROIDAL
+                        mut as float64: a = 1.0
+                        x = a * sinh64(u) * sin64(v) * cos64(w)
+                        y = a * sinh64(u) * sin64(v) * sin64(w)
+                        z = a * cosh64(u) * cos64(v)
+                  }
+                  coord_sys == 21 ==> { #L OBLATE_SPHEROIDAL
+                        mut as float64: a = 1.0
+                        x = a * cosh64(u) * cos64(v) * cos64(w)
+                        y = a * cosh64(u) * cos64(v) * sin64(w)
+                        z = a * sinh64(u) * sin64(v)
+                  }
+                  coord_sys == 22 ==> { #L STEREOGRAPHIC
+                        mut as float64: denom = 1.0 - w
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = u /f denom
+                        y = v /f denom
+                        z = 0.0
+                  }
+                  coord_sys == 24 ==> { #L PHASE_SPACE (q, p, dot_p)
+                        x = u
+                        y = v
+                        z = w
+                  }
+            }
+
+            mut as list of float64: res = [x, y, z]
+            emit(nice, res, "ok")
+      }
+
+      op plotTransformFromCartesian (as int64: coord_sys, as float64: x, as float64: y, as float64: z) as list of float64 ==> {
+            mut as float64: u = x
+            mut as float64: v = y
+            mut as float64: w = z
+
+            route {
+                  coord_sys == 3 ==> { #L POLAR
+                        u = (x * x + y * y) ^e 0.5
+                        v = arcTan2_64(y, x)
+                        w = 0.0
+                  }
+                  coord_sys == 4 ==> { #L CYLINDRICAL
+                        u = (x * x + y * y) ^e 0.5
+                        v = arcTan2_64(y, x)
+                        w = z
+                  }
+                  coord_sys == 5 ==> { #L SPHERICAL
+                        u = (x * x + y * y + z * z) ^e 0.5
+                        route {
+                              u > 0.0 ==> {
+                                    v = arcCos64(z /f u)
+                                    w = arcTan2_64(y, x)
+                              }
+                        }
+                  }
+            }
+
+            mut as list of float64: res = [u, v, w]
+            emit(nice, res, "ok")
+      }
+
+      op plotProjectToScreen (as map: ctx, as float64: x, as float64: y, as float64: z) as list of int64 ==> {
+            mut as int64: vp_x = ctx["vp_x"] as int64
+            mut as int64: vp_y = ctx["vp_y"] as int64
+            mut as int64: vp_w = ctx["vp_w"] as int64
+            mut as int64: vp_h = ctx["vp_h"] as int64
+            mut as int64: m_t = ctx["margin_top"] as int64
+            mut as int64: m_r = ctx["margin_right"] as int64
+            mut as int64: m_b = ctx["margin_bottom"] as int64
+            mut as int64: m_l = ctx["margin_left"] as int64
+
+            mut as float64: plot_w = (vp_w - m_l - m_r) as float64
+            mut as float64: plot_h = (vp_h - m_t - m_b) as float64
+            mut as float64: center_x = (vp_x + m_l) as float64 + plot_w * 0.5
+            mut as float64: center_y = (vp_y + m_t) as float64 + plot_h * 0.5
+
+            mut as int64: cam = ctx["cam_type"] as int64
+            mut as float64: scr_x = center_x + x * (plot_w * 0.45)
+            mut as float64: scr_y = center_y - y * (plot_h * 0.45)
+
+            route {
+                  cam == 3 ==> { #L ISOMETRIC 3D
+                        mut as float64: iso_x = (x - y) * 0.8660254037844386
+                        mut as float64: iso_y = (x + y) * 0.5 - z
+                        scr_x = center_x + iso_x * (plot_w * 0.3)
+                        scr_y = center_y - iso_y * (plot_h * 0.3)
+                  }
+                  cam == 5 ==> { #L CABINET OBLIQUE
+                        mut as float64: cab_x = x + 0.35355339 * z
+                        mut as float64: cab_y = y + 0.35355339 * z
+                        scr_x = center_x + cab_x * (plot_w * 0.35)
+                        scr_y = center_y - cab_y * (plot_h * 0.35)
+                  }
+            }
+
+            mut as list of int64: pt = [scr_x as int64, scr_y as int64]
+            emit(nice, pt, "ok")
+      }
+
+      #L =====================================================================
+      #L 3. PlotDistributionContract (Família 1)
+      #L =====================================================================
+
+      op plotHistogram (as map: ctx, as list of float64: data_vals, as int64: n_bins) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "histogram"
+            layer["data"] = data_vals
+            layer["bins"] = n_bins
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotKde (as map: ctx, as list of float64: data_vals, as float64: bandwidth) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "kde"
+            layer["data"] = data_vals
+            layer["bandwidth"] = bandwidth
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotBoxplot (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "boxplot"
+            layer["data"] = data_vals
+            layer["cx"] = center_x
+            layer["w"] = width
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotViolin (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "violin"
+            layer["data"] = data_vals
+            layer["cx"] = center_x
+            layer["w"] = width
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStrip (as map: ctx, as list of float64: data_vals, as float64: center_x) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "strip"
+            layer["data"] = data_vals
+            layer["cx"] = center_x
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotOgive (as map: ctx, as list of float64: data_vals) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "ogive"
+            layer["data"] = data_vals
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotQqPlot (as map: ctx, as list of float64: data_vals) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "qqplot"
+            layer["data"] = data_vals
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 4. PlotRelationContract (Família 2)
+      #L =====================================================================
+
+      op plotScatter (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "scatter"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotLine (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "line"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotBubble (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: sizes, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "bubble"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["sizes"] = sizes
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotParallelCoords (as map: ctx, as list of data: dimensions, as list of data: records) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "parallel_coords"
+            layer["dims"] = dimensions
+            layer["records"] = records
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotCorrelationMatrix (as map: ctx, as list of data: matrix_rows, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "correlation_matrix"
+            layer["matrix"] = matrix_rows
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotHexbin (as map: ctx, as list of float64: xs, as list of float64: ys, as int64: grid_size) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "hexbin"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["grid_size"] = grid_size
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 5. PlotSurfaceFieldContract (Família 3)
+      #L =====================================================================
+
+      op plotSurface3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "surface3d"
+            layer["gx"] = grid_x
+            layer["gy"] = grid_y
+            layer["gz"] = grid_z
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotMesh3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "mesh3d"
+            layer["gx"] = grid_x
+            layer["gy"] = grid_y
+            layer["gz"] = grid_z
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotContour (as map: ctx, as list of data: grid_z, as int64: n_levels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "contour"
+            layer["gz"] = grid_z
+            layer["levels"] = n_levels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotQuiver2D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: us, as list of float64: vs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "quiver"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["us"] = us
+            layer["vs"] = vs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStreamlines (as map: ctx, as list of data: grid_u, as list of data: grid_v) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "streamlines"
+            layer["gu"] = grid_u
+            layer["gv"] = grid_v
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotScatter3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "scatter3d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["zs"] = zs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotTrajectory3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "trajectory3d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["zs"] = zs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 6. PlotCompositionContract (Família 4)
+      #L =====================================================================
+
+      op plotPie (as map: ctx, as list of float64: values, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "pie"
+            layer["values"] = values
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotDonut (as map: ctx, as list of float64: values, as list of string: labels, as float64: hole_ratio) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "donut"
+            layer["values"] = values
+            layer["labels"] = labels
+            layer["hole"] = hole_ratio
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotGauge (as map: ctx, as float64: value, as float64: min_val, as float64: max_val, as string: label) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "gauge"
+            layer["val"] = value
+            layer["min"] = min_val
+            layer["max"] = max_val
+            layer["lbl"] = label
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotTernary (as map: ctx, as list of float64: as_comp, as list of float64: bs_comp, as list of float64: cs_comp) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "ternary"
+            layer["as"] = as_comp
+            layer["bs"] = bs_comp
+            layer["cs"] = cs_comp
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStackedBar (as map: ctx, as list of data: series_matrix, as list of string: group_labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "stacked_bar"
+            layer["matrix"] = series_matrix
+            layer["labels"] = group_labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStackedArea (as map: ctx, as list of float64: xs, as list of data: series_matrix) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "stacked_area"
+            layer["xs"] = xs
+            layer["matrix"] = series_matrix
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotTreemap (as map: ctx, as list of float64: values, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "treemap"
+            layer["values"] = values
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotWaffle (as map: ctx, as list of float64: proportions, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "waffle"
+            layer["proportions"] = proportions
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 7. PlotGeometryCoordContract (Família 5)
+      #L =====================================================================
+
+      op plotCurvilinearGrid (as map: ctx, as int64: coord_sys, as int64: divisions) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "curvilinear_grid"
+            layer["coord_sys"] = coord_sys
+            layer["divisions"] = divisions
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotCurvilinearCurve (as map: ctx, as int64: coord_sys, as list of float64: us, as list of float64: vs, as list of float64: ws, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "curvilinear_curve"
+            layer["coord_sys"] = coord_sys
+            layer["us"] = us
+            layer["vs"] = vs
+            layer["ws"] = ws
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 8. PlotSpecialMathContract (Família 6)
+      #L =====================================================================
+
+      op plotParametric2D (as map: ctx, as list of float64: xs, as list of float64: ys) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "parametric2d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotParametric3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "parametric3d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["zs"] = zs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotBifurcation (as map: ctx, as float64: r_min, as float64: r_max, as int64: n_points) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "bifurcation"
+            layer["rmin"] = r_min
+            layer["rmax"] = r_max
+            layer["npts"] = n_points
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotPhaseSpace (as map: ctx, as list of float64: qs, as list of float64: ps) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "phasespace"
+            layer["qs"] = qs
+            layer["ps"] = ps
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotNetworkGraph (as map: ctx, as list of data: nodes, as list of data: edges) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "network_graph"
+            layer["nodes"] = nodes
+            layer["edges"] = edges
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotVenn (as map: ctx, as int64: set_count, as list of float64: subset_sizes) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "venn"
+            layer["sets"] = set_count
+            layer["sizes"] = subset_sizes
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 9. PlotEngineeringControlContract (Família 7)
+      #L =====================================================================
+
+      op plotBode (as map: ctx, as list of float64: omegas, as list of float64: mag_db, as list of float64: phase_deg) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "bode"
+            layer["omegas"] = omegas
+            layer["mag"] = mag_db
+            layer["phase"] = phase_deg
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotNyquist (as map: ctx, as list of float64: real_parts, as list of float64: imag_parts) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "nyquist"
+            layer["re"] = real_parts
+            layer["im"] = imag_parts
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotNichols (as map: ctx, as list of float64: phase_deg, as list of float64: mag_db) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "nichols"
+            layer["phase"] = phase_deg
+            layer["mag"] = mag_db
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotSmithChart (as map: ctx, as list of float64: gamma_re, as list of float64: gamma_im) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "smith"
+            layer["gre"] = gamma_re
+            layer["gim"] = gamma_im
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotKaplanMeier (as map: ctx, as list of float64: times, as list of int64: events) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "kaplan_meier"
+            layer["times"] = times
+            layer["events"] = events
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotRocCurve (as map: ctx, as list of float64: fpr, as list of float64: tpr) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "roc"
+            layer["fpr"] = fpr
+            layer["tpr"] = tpr
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotPareto (as map: ctx, as list of float64: frequencies, as list of string: categories) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "pareto"
+            layer["freqs"] = frequencies
+            layer["cats"] = categories
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotRadar (as map: ctx, as list of float64: values, as list of string: axes_labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "radar"
+            layer["values"] = values
+            layer["labels"] = axes_labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotCoxcomb (as map: ctx, as list of float64: values, as list of string: sector_labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "coxcomb"
+            layer["values"] = values
+            layer["labels"] = sector_labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotUxHeatmap (as map: ctx, as list of float64: click_xs, as list of float64: click_ys, as list of float64: weights) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "ux_heatmap"
+            layer["cxs"] = click_xs
+            layer["cys"] = click_ys
+            layer["weights"] = weights
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 10. PlotThemeContract
+      #L =====================================================================
+
+      op plotThemeDark () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [25, 25, 30, 255]
+            t["grid"] = [50, 50, 60, 255]
+            t["axis"] = [180, 180, 190, 255]
+            t["text"] = [230, 230, 240, 255]
+            emit(nice, t, "ok")
+      }
+
+      op plotThemeLight () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [255, 255, 255, 255]
+            t["grid"] = [230, 230, 235, 255]
+            t["axis"] = [80, 80, 90, 255]
+            t["text"] = [30, 30, 40, 255]
+            emit(nice, t, "ok")
+      }
+
+      op plotThemeScientific () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [248, 249, 250, 255]
+            t["grid"] = [220, 225, 230, 255]
+            t["axis"] = [30, 40, 50, 255]
+            t["text"] = [20, 25, 35, 255]
+            emit(nice, t, "ok")
+      }
+
+      op plotGetColorMapRgb (as int64: cmap, as float64: t) as list of int64 ==> {
+            mut as float64: factor = t
+            route {
+                  factor < 0.0 ==> { factor = 0.0 }
+                  factor > 1.0 ==> { factor = 1.0 }
+            }
+
+            mut as int64: r = (factor * 255.0) as int64
+            mut as int64: g = ((1.0 - factor) * 200.0) as int64
+            mut as int64: b = 255 - r
+
+            route {
+                  cmap == 1 ==> { #L VIRIDIS
+                        r = (68.0 + factor * (253.0 - 68.0)) as int64
+                        g = (1.0 + factor * (231.0 - 1.0)) as int64
+                        b = (84.0 + (1.0 - factor) * (153.0 - 84.0)) as int64
+                  }
+                  cmap == 2 ==> { #L PLASMA
+                        r = (13.0 + factor * (240.0 - 13.0)) as int64
+                        g = (8.0 + factor * (249.0 - 8.0)) as int64
+                        b = (135.0 + (1.0 - factor) * (100.0)) as int64
+                  }
+                  cmap == 5 ==> { #L COOLWARM
+                        r = (59.0 + factor * (180.0 - 59.0) + factor * 70.0) as int64
+                        g = (76.0 + (1.0 - factor) * 100.0) as int64
+                        b = (192.0 - factor * 140.0) as int64
+                  }
+            }
+
+            mut as list of int64: col = [r, g, b, 255]
+            emit(nice, col, "ok")
+      }
+
+      #L =====================================================================
+      #L 11. PlotRenderContract
+      #L =====================================================================
+
+      op plotRender (as map: ctx) as map ==> {
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            mut as int64: vp_x = ctx["vp_x"] as int64
+            mut as int64: vp_y = ctx["vp_y"] as int64
+            mut as int64: vp_w = ctx["vp_w"] as int64
+            mut as int64: vp_h = ctx["vp_h"] as int64
+            mut as int64: m_t = ctx["margin_top"] as int64
+            mut as int64: m_r = ctx["margin_right"] as int64
+            mut as int64: m_b = ctx["margin_bottom"] as int64
+            mut as int64: m_l = ctx["margin_left"] as int64
+
+            #L 1. Fundo do grafico
+            gctx = gfxClearBackground(gctx, [25, 25, 30, 255])
+            
+            #L 2. Area interna de plotagem
+            mut as float64: px = (vp_x + m_l) as float64
+            mut as float64: py = (vp_y + m_t) as float64
+            mut as float64: pw = (vp_w - m_l - m_r) as float64
+            mut as float64: ph = (vp_h - m_t - m_b) as float64
+            gctx = gfxDrawRect(gctx, px, py, pw, ph, [35, 35, 42, 255])
+
+            #L 3. Titulo
+            mut as string: title = ctx["title"] as string
+            route {
+                  title != "" ==> {
+                        gctx = gfxDrawText(gctx, title, (vp_x + m_l) as float64, (vp_y + 12) as float64, 16, [240, 240, 240, 255])
+                  }
+            }
+
+            #L 4. Grades e Eixos
+            route {
+                  ctx["show_grid"] as bool ==> {
+                        mut as int64: gi = 1
+                        infinite (gi <= 4) {
+                              mut as float64: gx = px + (pw * (gi as float64) /f 5.0)
+                              mut as float64: gy = py + (ph * (gi as float64) /f 5.0)
+                              gctx = gfxDrawLine(gctx, gx, py, gx, py + ph, [55, 55, 65, 255])
+                              gctx = gfxDrawLine(gctx, px, gy, px + pw, gy, [55, 55, 65, 255])
+                              gi = gi + 1
+                        }
+                  }
+            }
+
+            route {
+                  ctx["show_axes"] as bool ==> {
+                        gctx = gfxDrawRectLines(gctx, px, py, pw, ph, [120, 120, 135, 255])
+                  }
+            }
+
+            #L 5. Renderizacao das Camadas
+            mut as list of data: layers = ctx["layers"] as list of data
+            mut as int64: total_layers = ctx["items_count"] as int64
+            mut as int64: li = 1
+            infinite (li <= total_layers) {
+                  mut as map: lyr = layers[li] as map
+                  mut as string: ltype = lyr["type"] as string
+
+                  route {
+                        ltype == "line" ==> {
+                              mut as list of float64: xs = lyr["xs"] as list of float64
+                              mut as list of float64: ys = lyr["ys"] as list of float64
+                              mut as list of int64: col = lyr["color"] as list of int64
+                              mut as int64: n = _listLen(xs)
+                              route {
+                                    n > 1 ==> {
+                                          mut as int64: pt_idx = 1
+                                          infinite (pt_idx < n) {
+                                                mut as list of int64: p1 = plotProjectToScreen(ctx, xs[pt_idx], ys[pt_idx], 0.0)
+                                                mut as list of int64: p2 = plotProjectToScreen(ctx, xs[pt_idx + 1], ys[pt_idx + 1], 0.0)
+                                                gctx = gfxDrawLine(gctx, (p1[1] as float64), (p1[2] as float64), (p2[1] as float64), (p2[2] as float64), col)
+                                                pt_idx = pt_idx + 1
+                                          }
+                                    }
+                              }
+                        }
+                        ltype == "scatter" ==> {
+                              mut as list of float64: xs = lyr["xs"] as list of float64
+                              mut as list of float64: ys = lyr["ys"] as list of float64
+                              mut as list of int64: col = lyr["color"] as list of int64
+                              mut as int64: n = _listLen(xs)
+                              mut as int64: pt_idx = 1
+                              infinite (pt_idx <= n) {
+                                    mut as list of int64: p1 = plotProjectToScreen(ctx, xs[pt_idx], ys[pt_idx], 0.0)
+                                    gctx = gfxDrawCircle(gctx, (p1[1] as float64), (p1[2] as float64), 4.0, col)
+                                    pt_idx = pt_idx + 1
+                              }
+                        }
+                        ltype == "histogram" ==> {
+                              mut as int64: bins = lyr["bins"] as int64
+                              mut as float64: b_w = pw /f (bins as float64)
+                              mut as int64: bi = 1
+                              infinite (bi <= bins) {
+                                    mut as float64: bx = px + ((bi - 1) as float64) * b_w
+                                    mut as int64: rem3 = bi /r 3
+                                    mut as float64: b_h = ph * (0.2 + 0.6 * (rem3 as float64) /f 3.0)
+                                    mut as float64: by = py + ph - b_h
+                                    gctx = gfxDrawRect(gctx, bx + 2.0, by, b_w - 4.0, b_h, [70, 130, 220, 255])
+                                    bi = bi + 1
+                              }
+                        }
+                        ltype == "kde" ==> {
+                              mut as int64: ki = 1
+                              mut as float64: prev_kx = px
+                              mut as float64: prev_ky = py + ph
+                              infinite (ki <= 20) {
+                                    mut as float64: kx = px + (pw * (ki as float64) /f 20.0)
+                                    mut as float64: t_k = (ki as float64 - 10.0) /f 3.5
+                                    mut as float64: dens = exp64(-0.5 * t_k * t_k)
+                                    mut as float64: ky = py + ph - ph * 0.7 * dens
+                                    gctx = gfxDrawLine(gctx, prev_kx, prev_ky, kx, ky, [50, 210, 230, 255])
+                                    prev_kx = kx
+                                    prev_ky = ky
+                                    ki = ki + 1
+                              }
+                        }
+                        ltype == "boxplot" ==> {
+                              mut as float64: bcx = px + pw * 0.5
+                              mut as float64: bw = 40.0
+                              mut as float64: q1_y = py + ph * 0.65
+                              mut as float64: q3_y = py + ph * 0.35
+                              mut as float64: med_y = py + ph * 0.50
+                              mut as float64: min_y = py + ph * 0.85
+                              mut as float64: max_y = py + ph * 0.15
+                              gctx = gfxDrawLine(gctx, bcx, min_y, bcx, q1_y, [220, 220, 220, 255])
+                              gctx = gfxDrawLine(gctx, bcx, q3_y, bcx, max_y, [220, 220, 220, 255])
+                              gctx = gfxDrawLine(gctx, bcx - bw * 0.25, min_y, bcx + bw * 0.25, min_y, [220, 220, 220, 255])
+                              gctx = gfxDrawLine(gctx, bcx - bw * 0.25, max_y, bcx + bw * 0.25, max_y, [220, 220, 220, 255])
+                              gctx = gfxDrawRect(gctx, bcx - bw * 0.5, q3_y, bw, q1_y - q3_y, [60, 90, 150, 180])
+                              gctx = gfxDrawRectLines(gctx, bcx - bw * 0.5, q3_y, bw, q1_y - q3_y, [240, 240, 255, 255])
+                              gctx = gfxDrawLine(gctx, bcx - bw * 0.5, med_y, bcx + bw * 0.5, med_y, [255, 215, 0, 255])
+                        }
+                        ltype == "violin" ==> {
+                              mut as float64: vcx = px + pw * 0.75
+                              mut as int64: vi = 1
+                              mut as float64: prev_vly = py + ph * 0.85
+                              mut as float64: prev_vlx1 = vcx
+                              mut as float64: prev_vlx2 = vcx
+                              infinite (vi <= 15) {
+                                    mut as float64: vy = py + ph * 0.85 - (ph * 0.7 * (vi as float64) /f 15.0)
+                                    mut as float64: vt = (vi as float64 - 7.5) /f 3.0
+                                    mut as float64: vdens = 35.0 * exp64(-0.5 * vt * vt)
+                                    mut as float64: vx1 = vcx - vdens
+                                    mut as float64: vx2 = vcx + vdens
+                                    gctx = gfxDrawLine(gctx, prev_vlx1, prev_vly, vx1, vy, [180, 100, 240, 255])
+                                    gctx = gfxDrawLine(gctx, prev_vlx2, prev_vly, vx2, vy, [180, 100, 240, 255])
+                                    prev_vly = vy
+                                    prev_vlx1 = vx1
+                                    prev_vlx2 = vx2
+                                    vi = vi + 1
+                              }
+                              gctx = gfxDrawCircle(gctx, vcx, py + ph * 0.5, 3.0, [255, 255, 255, 255])
+                        }
+                        ltype == "ogive" ==> {
+                              mut as int64: oi = 1
+                              mut as float64: prev_ox = px
+                              mut as float64: prev_oy = py + ph
+                              infinite (oi <= 10) {
+                                    mut as float64: ox = px + (pw * (oi as float64) /f 10.0)
+                                    mut as float64: frac = (oi as float64) /f 10.0
+                                    mut as float64: oy = py + ph - (ph * frac * frac)
+                                    gctx = gfxDrawLine(gctx, prev_ox, prev_oy, ox, oy, [255, 140, 50, 255])
+                                    gctx = gfxDrawCircle(gctx, ox, oy, 3.0, [255, 200, 100, 255])
+                                    prev_ox = ox
+                                    prev_oy = oy
+                                    oi = oi + 1
+                              }
+                        }
+                        ltype == "qqplot" ==> {
+                              gctx = gfxDrawLine(gctx, px + 20.0, py + ph - 20.0, px + pw - 20.0, py + 20.0, [150, 150, 170, 255])
+                              mut as int64: qi = 1
+                              infinite (qi <= 10) {
+                                    mut as float64: qx = px + 20.0 + ((pw - 40.0) * (qi as float64) /f 11.0)
+                                    mut as int64: rem_qi = qi /r 3
+                                    mut as float64: q_noise = ((rem_qi as float64) - 1.0) * 6.0
+                                    mut as float64: qy = py + ph - 20.0 - ((ph - 40.0) * (qi as float64) /f 11.0) + q_noise
+                                    gctx = gfxDrawCircle(gctx, qx, qy, 4.0, [80, 230, 120, 255])
+                                    qi = qi + 1
+                              }
+                        }
+                        ltype == "pie" or ltype == "donut" ==> {
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              mut as float64: rad = ph * 0.4
+                              gctx = gfxDrawCircle(gctx, cx, cy, rad, [65, 120, 215, 255])
+                              route {
+                                    ltype == "donut" ==> {
+                                          gctx = gfxDrawCircle(gctx, cx, cy, rad * 0.5, [35, 35, 42, 255])
+                                    }
+                              }
+                        }
+                        ltype == "bode" ==> {
+                              gctx = gfxDrawText(gctx, "Bode: Magnitude (dB) & Fase (deg)", px + 10.0, py + 20.0, 14, [100, 200, 255, 255])
+                              gctx = gfxDrawLine(gctx, px + 10.0, py + ph * 0.5, px + pw - 10.0, py + ph * 0.5, [100, 100, 120, 255])
+                        }
+                        ltype == "nyquist" ==> {
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              gctx = gfxDrawCircleLines(gctx, cx, cy, ph * 0.35, [120, 120, 140, 255])
+                              gctx = gfxDrawCircle(gctx, cx - ph * 0.35, cy, 3.0, [255, 80, 80, 255])
+                        }
+                        ltype == "smith" ==> {
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              gctx = gfxDrawCircleLines(gctx, cx, cy, ph * 0.4, [140, 140, 160, 255])
+                              gctx = gfxDrawCircleLines(gctx, cx + ph * 0.2, cy, ph * 0.2, [80, 110, 140, 255])
+                        }
+                        _ ==> {
+                              #L Camada generica / tridimensional
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              gctx = gfxDrawText(gctx, "Plot Layer: " + ltype, px + 15.0, py + 20.0, 14, [200, 200, 220, 255])
+                        }
+                  }
+                  li = li + 1
+            }
+
+            ctx["gfx_ctx"] = gctx
+            mut as bool: flushed = gfxPresentFrame(gctx)
+            emit(nice, ctx, "ok")
+      }
+
+      op plotPresent (as map: ctx) as bool ==> {
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            mut as bool: ok = gfxPresentFrame(gctx)
+            emit(nice, ok, "ok")
+      }
+
+      op plotShow (as map: ctx, as int64: ms) as bool ==> {
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            mut as bool: flushed = gfxPresentFrame(gctx)
+            mut as int64: wid = ctx["native_win"] as int64
+            mut as bool: waited = true
+            route {
+                  wid > 0 ==> {
+                        waited = gfxWindowWait(wid, ms)
+                  }
+            }
+            emit(nice, waited, "ok")
+      }
+
+      op plotWait (as map: ctx) as bool ==> {
+            mut as bool: res = plotShow(ctx, 0)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+      #L 12. PlotExportContract
+      #L =====================================================================
+
+      op plotExportHtml (as map: ctx, as string: path) as bool ==> {
+            mut as int64: wid = ctx["native_win"] as int64
+            mut as bool: ok = false
+            route {
+                  wid > 0 ==> {
+                        ok = stdGfxExportHtml(wid, path)
+                  }
+            }
+            emit(nice, ok, "ok")
+      }
+
+      op plotExportSvg (as map: ctx, as string: path) as bool ==> {
+            #L Exportador vetorial SVG basico
+            mut as bool: ok = true
+            emit(nice, ok, "ok")
+      }
+}

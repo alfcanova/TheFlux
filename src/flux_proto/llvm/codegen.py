@@ -149,6 +149,9 @@ _STD_BOOL_RETURNING = {
     "stdListIsEmpty", "stdListContains",
     "stdMapContainsKey", "stdMapContainsValue", "stdMapIsEmpty",
     "stdCollectionContains", "stdCollectionIsEmpty",
+    "stdGfxWindowClose", "stdGfxWindowFlush", "stdGfxClear", "stdGfxFillRect",
+    "stdGfxDrawRect", "stdGfxDrawLine", "stdGfxDrawCircle", "stdGfxFillCircle",
+    "stdGfxDrawText", "stdGfxWindowClosed",
 }
 
 _STD_LIST_RETURNING = {
@@ -2806,6 +2809,67 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_dsl_set_timeout", "i64", ["i64", "i64"])
             self._w.declare_function("flux_std_dsl_set_instruction_limit", "i64", ["i64", "i64"])
             self._w.declare_function("flux_std_dsl_set_memory_limit", "i64", ["i64", "i64"])
+
+            # ThreadStdLib
+            self._w.declare_function("flux_std_channel_create", "i8*", ["i64"])
+            self._w.declare_function("flux_std_channel_send", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_channel_recv", "i8*", ["i64"])
+            self._w.declare_function("flux_std_channel_try_send", "i64", ["i64", "i8*"])
+            self._w.declare_function("flux_std_channel_try_recv", "i8*", ["i64"])
+            self._w.declare_function("flux_std_channel_close", "i64", ["i64"])
+            self._w.declare_function("flux_std_channel_is_closed", "i64", ["i64"])
+            self._w.declare_function("flux_std_channel_is_empty", "i64", ["i64"])
+            self._w.declare_function("flux_std_channel_length", "i64", ["i64"])
+            self._w.declare_function("flux_std_channel_capacity", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_thread_mutex_create", "i64", [])
+            self._w.declare_function("flux_std_thread_mutex_lock", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_mutex_unlock", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_mutex_try_lock", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_mutex_destroy", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_thread_atomic_create", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_atomic_get", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_atomic_set", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_thread_atomic_add", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_thread_atomic_cas", "i64", ["i64", "i64", "i64"])
+            self._w.declare_function("flux_std_thread_atomic_destroy", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_thread_wait_group_create", "i64", [])
+            self._w.declare_function("flux_std_thread_wait_group_add", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_thread_wait_group_done", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_wait_group_wait", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_wait_group_destroy", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_thread_spawn", "i64", ["i8*", "i8*", "i8*"])
+            self._w.declare_function("flux_std_thread_join", "i8*", ["i64"])
+            self._w.declare_function("flux_std_thread_is_alive", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_current_id", "i64", [])
+            self._w.declare_function("flux_std_thread_detach", "i64", ["i64"])
+
+            self._w.declare_function("flux_std_thread_hardware_concurrency", "i64", [])
+            self._w.declare_function("flux_std_thread_sleep", "i64", ["i64"])
+            self._w.declare_function("flux_std_thread_yield", "i64", [])
+
+            self._w.declare_function("flux_std_gfx_window_create", "i64", ["i64", "i64", "i8*"])
+            self._w.declare_function("flux_std_gfx_window_close", "i64", ["i64"])
+            self._w.declare_function("flux_std_gfx_window_wait", "i64", ["i64", "i64"])
+            self._w.declare_function("flux_std_gfx_window_flush", "i64", ["i64"])
+            self._w.declare_function("flux_std_gfx_clear", "i64", ["i64", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_fill_rect", "i64", ["i64", "i64", "i64", "i64", "i64", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_draw_rect", "i64", ["i64", "i64", "i64", "i64", "i64", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_draw_line", "i64", ["i64", "i64", "i64", "i64", "i64", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_draw_circle", "i64", ["i64", "i64", "i64", "i64", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_fill_circle", "i64", ["i64", "i64", "i64", "i64", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_draw_text", "i64", ["i64", "i64", "i64", "i8*", "i64", "i64", "i64"])
+            self._w.declare_function("flux_std_gfx_event_poll", "i64", ["i64"])
+            self._w.declare_function("flux_std_gfx_event_x", "i64", [])
+            self._w.declare_function("flux_std_gfx_event_y", "i64", [])
+            self._w.declare_function("flux_std_gfx_event_key", "i64", [])
+            self._w.declare_function("flux_std_gfx_window_closed", "i64", ["i64"])
+            self._w.declare_function("flux_std_gfx_window_width", "i64", ["i64"])
+            self._w.declare_function("flux_std_gfx_window_height", "i64", ["i64"])
+            self._w.declare_function("flux_std_gfx_export_html", "i64", ["i64", "i8*"])
             self._w.begin_function("main", "i32")
             self._new_block("entry")
             frame = self._w.new_local("frame")
@@ -6018,7 +6082,7 @@ class LLVMCodegen:
         data = self._w.new_local("ldata")
         self._w.emit(f"{data} = call i8* @flux_list_data(i8* {ovv})")
         et = self._list_elem_type(ot)
-        if et in ("double", "float"):
+        if et.lower() in FLOATISH or et.lower() in ("double", "float", "float64", "float32"):
             fv = self._w.new_local("fval")
             self._w.emit(f"{fv} = call i64 @flux_row_val(i8* {data}, i64 {ivv})")
             fd = self._w.new_local("fbits")
@@ -7519,6 +7583,10 @@ class LLVMCodegen:
             return self._gen_std_db_intrinsic(name, node.args)
         if name.startswith("stdDsl"):
             return self._gen_std_dsl_intrinsic(name, node.args)
+        if name.startswith("stdThread") or name.startswith("stdChannel"):
+            return self._gen_std_thread_intrinsic(name, node.args)
+        if name.startswith("stdGfx"):
+            return self._gen_std_gfx_intrinsic(name, node.args)
         if name.startswith(("stdSet", "stdList", "stdMap", "stdCollection")):
             return self._gen_std_collection_intrinsic(name, node.args)
         raise CodegenError(f"unsupported call to '{name}'")
@@ -8555,6 +8623,326 @@ class LLVMCodegen:
             return (res, "i1")
 
         raise CodegenError(f"unsupported dsl intrinsic '{name}'")
+
+    def _gen_std_thread_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        # Canais CSP
+        if name == "stdChannelCreate":
+            res = self._w.new_local("chan_create")
+            self._w.emit(f"{res} = call i8* @flux_std_channel_create(i64 0)")
+            return (res, "i8*")
+        if name == "stdChannelCreateWithCapacity":
+            res = self._w.new_local("chan_create_cap")
+            self._w.emit(f"{res} = call i8* @flux_std_channel_create(i64 {i64v(0)})")
+            return (res, "i8*")
+        if name == "stdChannelSend":
+            res64 = self._w.new_local("chan_send_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_channel_send(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("chan_send_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdChannelRecv":
+            res = self._w.new_local("chan_recv")
+            self._w.emit(f"{res} = call i8* @flux_std_channel_recv(i64 {i64v(0)})")
+            return (res, "i8*")
+        if name == "stdChannelTrySend":
+            res64 = self._w.new_local("chan_ts_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_channel_try_send(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("chan_ts_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdChannelTryRecv":
+            res = self._w.new_local("chan_tr")
+            self._w.emit(f"{res} = call i8* @flux_std_channel_try_recv(i64 {i64v(0)})")
+            return (res, "i8*")
+        if name == "stdChannelClose":
+            res64 = self._w.new_local("chan_close_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_channel_close(i64 {i64v(0)})")
+            res = self._w.new_local("chan_close_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdChannelIsClosed":
+            res64 = self._w.new_local("chan_ic_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_channel_is_closed(i64 {i64v(0)})")
+            res = self._w.new_local("chan_ic_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdChannelIsEmpty":
+            res64 = self._w.new_local("chan_ie_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_channel_is_empty(i64 {i64v(0)})")
+            res = self._w.new_local("chan_ie_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdChannelLength":
+            res = self._w.new_local("chan_len")
+            self._w.emit(f"{res} = call i64 @flux_std_channel_length(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdChannelCapacity":
+            res = self._w.new_local("chan_cap")
+            self._w.emit(f"{res} = call i64 @flux_std_channel_capacity(i64 {i64v(0)})")
+            return (res, "i64")
+
+        # Mutex
+        if name == "stdThreadMutexCreate":
+            res = self._w.new_local("mutex_create")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_mutex_create()")
+            return (res, "i64")
+        if name == "stdThreadMutexLock":
+            res64 = self._w.new_local("mutex_lock_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_mutex_lock(i64 {i64v(0)})")
+            res = self._w.new_local("mutex_lock_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadMutexUnlock":
+            res64 = self._w.new_local("mutex_unlock_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_mutex_unlock(i64 {i64v(0)})")
+            res = self._w.new_local("mutex_unlock_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadMutexTryLock":
+            res64 = self._w.new_local("mutex_tl_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_mutex_try_lock(i64 {i64v(0)})")
+            res = self._w.new_local("mutex_tl_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadMutexDestroy":
+            res64 = self._w.new_local("mutex_dst_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_mutex_destroy(i64 {i64v(0)})")
+            res = self._w.new_local("mutex_dst_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Atomics
+        if name == "stdThreadAtomicCreate":
+            res = self._w.new_local("atomic_create")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_atomic_create(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdThreadAtomicGet":
+            res = self._w.new_local("atomic_get")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_atomic_get(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdThreadAtomicSet":
+            res64 = self._w.new_local("atomic_set_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_atomic_set(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("atomic_set_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadAtomicAdd":
+            res = self._w.new_local("atomic_add")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_atomic_add(i64 {i64v(0)}, i64 {i64v(1)})")
+            return (res, "i64")
+        if name == "stdThreadAtomicCas":
+            res64 = self._w.new_local("atomic_cas_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_atomic_cas(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)})")
+            res = self._w.new_local("atomic_cas_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadAtomicDestroy":
+            res64 = self._w.new_local("atomic_dst_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_atomic_destroy(i64 {i64v(0)})")
+            res = self._w.new_local("atomic_dst_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # WaitGroup
+        if name == "stdThreadWaitGroupCreate":
+            res = self._w.new_local("wg_create")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_wait_group_create()")
+            return (res, "i64")
+        if name == "stdThreadWaitGroupAdd":
+            res64 = self._w.new_local("wg_add_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_wait_group_add(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("wg_add_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadWaitGroupDone":
+            res64 = self._w.new_local("wg_done_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_wait_group_done(i64 {i64v(0)})")
+            res = self._w.new_local("wg_done_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadWaitGroupWait":
+            res64 = self._w.new_local("wg_wait_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_wait_group_wait(i64 {i64v(0)})")
+            res = self._w.new_local("wg_wait_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadWaitGroupDestroy":
+            res64 = self._w.new_local("wg_dst_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_wait_group_destroy(i64 {i64v(0)})")
+            res = self._w.new_local("wg_dst_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # Lifecycle
+        if name == "stdThreadSpawn":
+            res = self._w.new_local("thread_spawn")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_spawn(i8* {sptr(0)}, i8* {sptr(1)}, i8* {sptr(2)})")
+            return (res, "i64")
+        if name == "stdThreadJoin":
+            res = self._w.new_local("thread_join")
+            self._w.emit(f"{res} = call i8* @flux_std_thread_join(i64 {i64v(0)})")
+            return (res, "i8*")
+        if name == "stdThreadIsAlive":
+            res64 = self._w.new_local("thread_ia_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_is_alive(i64 {i64v(0)})")
+            res = self._w.new_local("thread_ia_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadCurrentId":
+            res = self._w.new_local("thread_cid")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_current_id()")
+            return (res, "i64")
+        if name == "stdThreadDetach":
+            res64 = self._w.new_local("thread_dt_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_detach(i64 {i64v(0)})")
+            res = self._w.new_local("thread_dt_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        # System
+        if name == "stdThreadHardwareConcurrency":
+            res = self._w.new_local("thread_hw")
+            self._w.emit(f"{res} = call i64 @flux_std_thread_hardware_concurrency()")
+            return (res, "i64")
+        if name in ("stdThreadSleep", "stdThreadSleepMs"):
+            res64 = self._w.new_local("thread_sleep_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_sleep(i64 {i64v(0)})")
+            res = self._w.new_local("thread_sleep_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdThreadYield":
+            res64 = self._w.new_local("thread_yield_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_thread_yield()")
+            res = self._w.new_local("thread_yield_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+
+        raise CodegenError(f"unsupported thread intrinsic '{name}'")
+
+    def _gen_std_gfx_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
+        def av(i: int) -> tuple[str, str]:
+            return self._emit_expr_text(args[i])
+
+        def i64v(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i64")
+
+        def sptr(i: int) -> str:
+            v, t = av(i)
+            return self._coerce_to(v, t, "i8*")
+
+        if name == "stdGfxWindowCreate":
+            res = self._w.new_local("gfx_win")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_window_create(i64 {i64v(0)}, i64 {i64v(1)}, i8* {sptr(2)})")
+            return (res, "i64")
+        if name == "stdGfxWindowClose":
+            res64 = self._w.new_local("gfx_wclose_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_window_close(i64 {i64v(0)})")
+            res = self._w.new_local("gfx_wclose_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxWindowWait":
+            res64 = self._w.new_local("gfx_wwait_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_window_wait(i64 {i64v(0)}, i64 {i64v(1)})")
+            res = self._w.new_local("gfx_wwait_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxExportHtml":
+            res64 = self._w.new_local("gfx_exporthtml_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_export_html(i64 {i64v(0)}, i8* {sptr(1)})")
+            res = self._w.new_local("gfx_exporthtml_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxWindowFlush":
+            res64 = self._w.new_local("gfx_wflush_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_window_flush(i64 {i64v(0)})")
+            res = self._w.new_local("gfx_wflush_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxClear":
+            res64 = self._w.new_local("gfx_clr_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_clear(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i64 {i64v(3)})")
+            res = self._w.new_local("gfx_clr_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxFillRect":
+            res64 = self._w.new_local("gfx_frect_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_fill_rect(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i64 {i64v(3)}, i64 {i64v(4)}, i64 {i64v(5)}, i64 {i64v(6)}, i64 {i64v(7)})")
+            res = self._w.new_local("gfx_frect_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxDrawRect":
+            res64 = self._w.new_local("gfx_drect_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_draw_rect(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i64 {i64v(3)}, i64 {i64v(4)}, i64 {i64v(5)}, i64 {i64v(6)}, i64 {i64v(7)})")
+            res = self._w.new_local("gfx_drect_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxDrawLine":
+            res64 = self._w.new_local("gfx_dline_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_draw_line(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i64 {i64v(3)}, i64 {i64v(4)}, i64 {i64v(5)}, i64 {i64v(6)}, i64 {i64v(7)})")
+            res = self._w.new_local("gfx_dline_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxDrawCircle":
+            res64 = self._w.new_local("gfx_dcirc_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_draw_circle(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i64 {i64v(3)}, i64 {i64v(4)}, i64 {i64v(5)}, i64 {i64v(6)})")
+            res = self._w.new_local("gfx_dcirc_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxFillCircle":
+            res64 = self._w.new_local("gfx_fcirc_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_fill_circle(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i64 {i64v(3)}, i64 {i64v(4)}, i64 {i64v(5)}, i64 {i64v(6)})")
+            res = self._w.new_local("gfx_fcirc_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxDrawText":
+            res64 = self._w.new_local("gfx_dtxt_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_draw_text(i64 {i64v(0)}, i64 {i64v(1)}, i64 {i64v(2)}, i8* {sptr(3)}, i64 {i64v(4)}, i64 {i64v(5)}, i64 {i64v(6)})")
+            res = self._w.new_local("gfx_dtxt_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxEventPoll":
+            res = self._w.new_local("gfx_epoll")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_event_poll(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdGfxEventX":
+            res = self._w.new_local("gfx_ev_x")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_event_x()")
+            return (res, "i64")
+        if name == "stdGfxEventY":
+            res = self._w.new_local("gfx_ev_y")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_event_y()")
+            return (res, "i64")
+        if name == "stdGfxEventKey":
+            res = self._w.new_local("gfx_ev_key")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_event_key()")
+            return (res, "i64")
+        if name == "stdGfxWindowClosed":
+            res64 = self._w.new_local("gfx_wclosed_i64")
+            self._w.emit(f"{res64} = call i64 @flux_std_gfx_window_closed(i64 {i64v(0)})")
+            res = self._w.new_local("gfx_wclosed_b")
+            self._w.emit(f"{res} = icmp ne i64 {res64}, 0")
+            return (res, "i1")
+        if name == "stdGfxWindowWidth":
+            res = self._w.new_local("gfx_wwidth")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_window_width(i64 {i64v(0)})")
+            return (res, "i64")
+        if name == "stdGfxWindowHeight":
+            res = self._w.new_local("gfx_wheight")
+            self._w.emit(f"{res} = call i64 @flux_std_gfx_window_height(i64 {i64v(0)})")
+            return (res, "i64")
+        raise CodegenError(f"unsupported gfx intrinsic '{name}'")
 
     def _gen_std_collection_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:
         def av(i: int) -> tuple[str, str]:
@@ -9976,7 +10364,7 @@ class LLVMCodegen:
                 self._w.emit(f"{elem_sval_ptr} = alloca i8*")
                 self._var_tag_slots[name] = elem_tag_ptr
                 self._var_sval_slots[name] = elem_sval_ptr
-            elif et in ("double", "float"):
+            elif et.lower() in FLOATISH or et.lower() in ("double", "float", "float64", "float32"):
                 llvm_t = "double"
                 elem_ptr = self._w.new_local(f"elem_{name}")
                 self._w.emit(f"{elem_ptr} = alloca {llvm_t}")
@@ -10031,7 +10419,7 @@ class LLVMCodegen:
             sv = self._w.new_local("isval")
             self._w.emit(f"{sv} = call i8* @flux_row_sval(i8* {data}, i64 {cur_idx})")
             self._w.emit(f"store i8* {sv}, i8** {elem_sval_ptr}")
-        elif et in ("double", "float"):
+        elif et.lower() in FLOATISH or et.lower() in ("double", "float", "float64", "float32"):
             fv = self._w.new_local("fval")
             self._w.emit(f"{fv} = call i64 @flux_row_val(i8* {data}, i64 {cur_idx})")
             fd = self._w.new_local("fbits")
