@@ -8,30 +8,30 @@
 
 ## 📊 1. Resumo Executivo & Métricas do Catálogo
 
-- **Total de Entradas Catalogadas**: 1.294 algoritmos
-- **Algoritmos Únicos (Deduplicados)**: 1.220 algoritmos
-- **Algoritmos Já Implementados**: 24 programas em [`flux/`](file:///D:/Projetos/TheFlux/flux)
-- **Algoritmos a Implementar**: 1.196 algoritmos
+- **Total de Entradas Catalogadas**: 1.278 algoritmos (1.294 nos títulos temáticos)
+- **Algoritmos Já Implementados**: **201** (167 na suíte [`examples/algorithms/`](file:///D:/Projetos/TheFlux/examples/algorithms) + 35 em [`flux/`](file:///D:/Projetos/TheFlux/flux))
+- **Algoritmos a Implementar**: **1.077** algoritmos restantes
+- **Taxa de Conclusão Global**: **15,7%**
+- **Suíte Ativa (`examples/algorithms/`)**: **166** arquivos `.flux` com 100% de paridade nos 6 backends
 - **Divisão Estrutural**: **10 Grandes Domínios Científicos** e **49 Categorias Temáticas**
 
 ### Tabela de Domínios e Volumes
 
-| Domínio | Escopo Temático | Total de Algoritmos |
-| :--- | :--- | :---: |
-| **Domínio I: Fundamentos, Busca e Ordenação** | Subcategorias especializadas | **149** |
-| **Domínio II: Estruturas de Dados Avançadas & Streaming** | Subcategorias especializadas | **63** |
-| **Domínio III: Teoria dos Grafos & Redes** | Subcategorias especializadas | **119** |
-| **Domínio IV: Strings, Texto & Teoria da Informação** | Subcategorias especializadas | **105** |
-| **Domínio V: Matemática Computacional, Teoria dos Números & Álgebra** | Subcategorias especializadas | **143** |
-| **Domínio VI: Métodos Numéricos, Geometria & Física Computacional** | Subcategorias especializadas | **144** |
-| **Domínio VII: Otimização & Estatística Científica** | Subcategorias especializadas | **84** |
-| **Domínio VIII: Inteligência Artificial, ML & Deep Learning** | Subcategorias especializadas | **261** |
-| **Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura** | Subcategorias especializadas | **185** |
-| **Domínio X: Bioinformática & Computação Quântica** | Subcategorias especializadas | **41** |
-| **Total Geral** | **10 Grandes Domínios** | **1.294** |
+| Domínio | Escopo Temático | Total de Algoritmos | Implementados | % Concluído | Status |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **Domínio I: Fundamentos, Busca e Ordenação** | Subcategorias especializadas | **149** | **149** | **100,0%** | ✅ Concluído |
+| **Domínio II: Estruturas de Dados Avançadas & Streaming** | Subcategorias especializadas | **63** | **7** | **11,1%** | 🔄 Em andamento |
+| **Domínio III: Teoria dos Grafos & Redes** | Subcategorias especializadas | **119** | **9** | **7,6%** | 🔄 Em andamento |
+| **Domínio IV: Strings, Texto & Teoria da Informação** | Subcategorias especializadas | **105** | **9** | **8,6%** | 🔄 Em andamento |
+| **Domínio V: Matemática Computacional, Teoria dos Números & Álgebra** | Subcategorias especializadas | **143** | **10** | **7,0%** | 🔄 Em andamento |
+| **Domínio VI: Métodos Numéricos, Geometria & Física Computacional** | Subcategorias especializadas | **144** | **0** | **0,0%** | ⏳ Planejado |
+| **Domínio VII: Otimização & Estatística Científica** | Subcategorias especializadas | **84** | **0** | **0,0%** | ⏳ Planejado |
+| **Domínio VIII: Inteligência Artificial, ML & Deep Learning** | Subcategorias especializadas | **245** | **1** | **0,4%** | 🔄 Em andamento |
+| **Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura** | Subcategorias especializadas | **185** | **16** | **8,6%** | 🔄 Em andamento |
+| **Domínio X: Bioinformática & Computação Quântica** | Subcategorias especializadas | **41** | **0** | **0,0%** | ⏳ Planejado |
+| **Total Geral** | **10 Grandes Domínios** | **1.278** | **201** | **15,7%** | 🚀 **Suíte Ativa** |
 
 ---
-
 ## 📁 2. Arquitetura da Suíte e Diretórios
 
 Os algoritmos serão organizados de forma hierárquica e modular sob a pasta `examples/algorithms/`:
@@ -50,7 +50,7 @@ TheFlux/
 │       ├── 08_artificial_intel/    # Regressões, Árvores, SVM, MLP Backprop, CNN, Transformer, Q-Learning
 │       ├── 09_systems_infra/       # Shunting-Yard, Pratt, Thompson DFA, AES, RSA, Paxos, Raft, Joins
 │       └── 10_bio_quantum/         # BLAST, Needleman-Wunsch, UPGMA, Grover, Deutsch-Jozsa, QFT
-├── test_scientific_algorithms.py   # Runner dedicado nos 6 backends com relatórios
+├── SciAlgo_compliance.py   # Runner dedicado nos 6 backends com relatórios
 └── docs/
     └── TODO_SciAlgo.md             # Este catálogo e checklist mestre
 ```
@@ -89,7 +89,7 @@ program (ExampleOfCooleyTukeyFFT) {
 
 ## 🚀 4. Cronograma de Fases (Milestones)
 
-- **Fase 0: Infraestrutura e Padrões**: Setup de `examples/algorithms/`, runner `test_scientific_algorithms.py` e espelhamento dos 24 exemplos existentes.
+- **Fase 0: Infraestrutura e Padrões**: Setup de `examples/algorithms/`, runner `SciAlgo_compliance.py` e espelhamento dos 24 exemplos existentes.
 - **Fase 1: Fundamentos da Computação (Domínio I)**: Buscas e ordenações remanescentes, arrays e técnicas com ponteiros.
 - **Fase 2: Estruturas de Dados Avançadas & Streaming (Domínio II)**: Árvores AVL/Red-Black, Segment Tree com Lazy Propagation, Heaps e Sketches.
 - **Fase 3: Teoria dos Grafos & Redes (Domínio III)**: Bellman-Ford, Floyd-Warshall, Kruskal, Dinic, Hopcroft-Karp, Bron-Kerbosch.
@@ -105,24 +105,23 @@ program (ExampleOfCooleyTukeyFFT) {
 
 ## ⭐ 5. As 15 Recomendações Prioritárias de Alto Impacto
 
-Algoritmos de especial relevância para sistemas modernos destacados para implementação prioritária:
+Algoritmos de especial relevância para sistemas modernos destacados para implementação prioritária (todos 100% implementados em TheFlux nativo e verdes nos 6 backends):
 
-- [ ] **Binary Heap**
-- [ ] **Hash Table**
-- [ ] **Persistent Segment Tree**
-- [ ] **Wavelet Tree**
-- [ ] **Chu–Liu/Edmonds**
-- [ ] **Yen’s Algorithm**
-- [ ] **Bron–Kerbosch**
-- [ ] **Christofides’ Algorithm**
-- [ ] **Misra–Gries**
-- [ ] **Consistent Hashing**
-- [ ] **Gossip Protocol**
-- [ ] **PBFT**
-- [ ] **MapReduce**
-- [ ] **Merkle Tree**
-- [ ] **HNSW**
-
+- [x] **Binary Heap** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfBinaryHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfBinaryHeap.flux))*
+- [x] **Hash Table** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfHashTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfHashTable.flux))*
+- [x] **Persistent Segment Tree** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfPersistentSegmentTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfPersistentSegmentTree.flux))*
+- [x] **Wavelet Tree** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfWaveletTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfWaveletTree.flux))*
+- [x] **Chu–Liu/Edmonds** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfChuLiuEdmonds.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfChuLiuEdmonds.flux))*
+- [x] **Yen’s Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfYenKShortestPaths.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfYenKShortestPaths.flux))*
+- [x] **Bron–Kerbosch** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfBronKerbosch.flux))*
+- [x] **Christofides’ Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfChristofidesTSP.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfChristofidesTSP.flux))*
+- [x] **Misra–Gries** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfMisraGriesStreaming.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfMisraGriesStreaming.flux))*
+- [x] **Consistent Hashing** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfConsistentHashingRing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfConsistentHashingRing.flux) e [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux))*
+- [x] **Gossip Protocol** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfGossipProtocol.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfGossipProtocol.flux))*
+- [x] **PBFT** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfPBFTConsensus.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfPBFTConsensus.flux))*
+- [x] **MapReduce** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfMapReducePipeline.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfMapReducePipeline.flux))*
+- [x] **Merkle Tree** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfMerkleTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfMerkleTree.flux))*
+- [x] **HNSW** — *(Implementado em [`examples/algorithms/08_artificial_intel/ExampleOfHNSWVectorSearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ExampleOfHNSWVectorSearch.flux))*
 ---
 
 ## 📚 6. Catálogo Completo dos 1.294 Algoritmos por Domínio
@@ -131,167 +130,167 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 #### 1. Fundamentos e paradigmas algorítmicos (25 algoritmos)
 
-- [ ] Brute Force
-- [ ] Divide and Conquer
-- [ ] Decrease and Conquer
-- [ ] Transform and Conquer
-- [ ] Greedy Algorithm
-- [ ] Dynamic Programming
-- [ ] Backtracking
-- [ ] Branch and Bound
-- [ ] Meet-in-the-Middle
-- [ ] Randomized Algorithm
-- [ ] Monte Carlo Algorithm
-- [ ] Las Vegas Algorithm
-- [ ] Online Algorithm
-- [ ] Offline Algorithm
-- [ ] Approximation Algorithm
-- [ ] Streaming Algorithm
-- [ ] Amortized Algorithms
-- [ ] Incremental Algorithm
-- [ ] Decremental Algorithm
-- [ ] Parallel Algorithm
-- [ ] Distributed Algorithm
-- [ ] External-Memory Algorithm
-- [ ] External Sorting
-- [ ] Heuristic Search
-- [ ] Metaheuristic Optimization
+- [x] **Brute Force** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsBruteForce.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsBruteForce.flux))*
+- [x] **Divide and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDivideAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDivideAndConquer.flux))*
+- [x] **Decrease and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDecreaseAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDecreaseAndConquer.flux))*
+- [x] **Transform and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsTransformAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsTransformAndConquer.flux))*
+- [x] **Greedy Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsGreedyAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsGreedyAlgorithm.flux))*
+- [x] **Dynamic Programming** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDynamicProgramming.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDynamicProgramming.flux))*
+- [x] **Backtracking** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsBacktracking.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsBacktracking.flux))*
+- [x] **Branch and Bound** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsBranchAndBound.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsBranchAndBound.flux))*
+- [x] **Meet-in-the-Middle** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsMeetInTheMiddle.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsMeetInTheMiddle.flux))*
+- [x] **Randomized Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsRandomizedAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsRandomizedAlgorithm.flux))*
+- [x] **Monte Carlo Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsMonteCarloAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsMonteCarloAlgorithm.flux))*
+- [x] **Las Vegas Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsLasVegasAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsLasVegasAlgorithm.flux))*
+- [x] **Online Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsOnlineAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsOnlineAlgorithm.flux))*
+- [x] **Offline Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsOfflineAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsOfflineAlgorithm.flux))*
+- [x] **Approximation Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsApproximationAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsApproximationAlgorithm.flux))*
+- [x] **Streaming Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsStreamingAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsStreamingAlgorithm.flux))*
+- [x] **Amortized Algorithms** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsAmortizedAlgorithms.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsAmortizedAlgorithms.flux))*
+- [x] **Incremental Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsIncrementalAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsIncrementalAlgorithm.flux))*
+- [x] **Decremental Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDecrementalAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDecrementalAlgorithm.flux))*
+- [x] **Parallel Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsParallelAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsParallelAlgorithm.flux))*
+- [x] **Distributed Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDistributedAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsDistributedAlgorithm.flux))*
+- [x] **External-Memory Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsExternalMemoryAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsExternalMemoryAlgorithm.flux))*
+- [x] **External Sorting** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsExternalSorting.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsExternalSorting.flux))*
+- [x] **Heuristic Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsHeuristicSearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsHeuristicSearch.flux))*
+- [x] **Metaheuristic Optimization** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsMetaheuristicOptimization.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfAlgorithmicFoundationsAndParadigmsMetaheuristicOptimization.flux))*
 
 #### 2. Busca (33 algoritmos)
 
-- [x] **Linear Search** — *(Já implementado em [`flux/ExampleOfBuscaSequencial.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfBuscaSequencial.flux))*
-- [x] **Binary Search** — *(Já implementado em [`flux/ExampleOfBuscaBinaria.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfBuscaBinaria.flux))*
-- [ ] Ternary Search
-- [ ] Fibonacci Search
-- [ ] Jump Search
-- [ ] Interpolation Search
-- [ ] Exponential Search
-- [ ] Uniform Binary Search
-- [ ] Eytzinger Search
-- [x] **Depth-First Search — DFS** — *(Já implementado em [lux/ExampleOfBuscaEmProfundidade.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfBuscaEmProfundidade.flux))*
-- [x] **Breadth-First Search — BFS** — *(Já implementado em [lux/ExampleOfBuscaEmLargura.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfBuscaEmLargura.flux))*
-- [ ] Bidirectional Search
-- [ ] Iterative Deepening DFS
-- [ ] Iterative Deepening A*
-- [ ] Uniform-Cost Search
-- [ ] Best-First Search
-- [ ] Beam Search
-- [ ] Beam Stack Search
-- [x] **A*** — *(Já implementado em [`flux/ExampleOfBuscaAStar.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfBuscaAStar.flux))*
-- [ ] B*
-- [ ] D*
-- [ ] D* Lite
-- [ ] Jump Point Search
-- [ ] IDA*
-- [ ] SMA*
-- [ ] Recursive Best-First Search
-- [ ] Minimax
-- [ ] Expectimax
-- [ ] Alpha-Beta Pruning
-- [ ] Negamax
-- [ ] Principal Variation Search
-- [ ] MTD(f)
-- [ ] Monte Carlo Tree Search
+- [x] **Linear Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchSequencial.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchSequencial.flux))*
+- [x] **Binary Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchBinaria.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchBinaria.flux))*
+- [x] **Ternary Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchTernary.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchTernary.flux))*
+- [x] **Fibonacci Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchFibonacci.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchFibonacci.flux))*
+- [x] **Jump Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchJump.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchJump.flux))*
+- [x] **Interpolation Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchInterpolation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchInterpolation.flux))*
+- [x] **Exponential Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchExponential.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchExponential.flux))*
+- [x] **Uniform Binary Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchUniformBinary.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchUniformBinary.flux))*
+- [x] **Eytzinger Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchEytzinger.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchEytzinger.flux))*
+- [x] **Depth-First Search — DFS** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchEmProfundidade.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchEmProfundidade.flux))*
+- [x] **Breadth-First Search — BFS** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchEmLargura.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchEmLargura.flux))*
+- [x] **Bidirectional Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchBidirectional.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchBidirectional.flux))*
+- [x] **Iterative Deepening DFS** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchIDDFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchIDDFS.flux))*
+- [x] **Iterative Deepening A\*** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchIterativeDeepeningAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchIterativeDeepeningAStar.flux))*
+- [x] **Uniform-Cost Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchUniformCost.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchUniformCost.flux))*
+- [x] **Best-First Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchBestFirst.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchBestFirst.flux))*
+- [x] **Beam Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchBeam.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchBeam.flux))*
+- [x] **Beam Stack Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchBeamStack.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchBeamStack.flux))*
+- [x] **A\*** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchAStar.flux))*
+- [x] **B\*** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchBStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchBStar.flux))*
+- [x] **D\*** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchDStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchDStar.flux))*
+- [x] **D\* Lite** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchDStarLite.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchDStarLite.flux))*
+- [x] **Jump Point Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchJumpPoint.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchJumpPoint.flux))*
+- [x] **IDA\*** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchIDAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchIDAStar.flux))*
+- [x] **SMA\*** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchSMAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchSMAStar.flux))*
+- [x] **Recursive Best-First Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchRBFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchRBFS.flux))*
+- [x] **Minimax** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchMinimax.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchMinimax.flux))*
+- [x] **Expectimax** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchExpectimax.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchExpectimax.flux))*
+- [x] **Alpha-Beta Pruning** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchAlphaBeta.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchAlphaBeta.flux))*
+- [x] **Negamax** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchNegamax.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchNegamax.flux))*
+- [x] **Principal Variation Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchPVS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchPVS.flux))*
+- [x] **MTD(f)** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchMTDf.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchMTDf.flux))*
+- [x] **Monte Carlo Tree Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchMCTS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchMCTS.flux))*
 
 #### 3. Ordenação (42 algoritmos)
 
-- [x] **Bubble Sort** — *(Já implementado em [`flux/ExampleOfSortBubble.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortBubble.flux))*
-- [x] **Cocktail Shaker Sort** — *(Já implementado em [`flux/ExampleOfSortShaker.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortShaker.flux))*
-- [x] **Comb Sort** — *(Já implementado em [`flux/ExampleOfSortComb.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortComb.flux))*
-- [x] **Gnome Sort** — *(Já implementado em [`flux/ExampleOfSortGnome.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortGnome.flux))*
-- [x] **Odd-Even Sort** — *(Já implementado em [`flux/ExampleOfSortOddEven.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortOddEven.flux))*
-- [x] **Insertion Sort** — *(Já implementado em [`flux/ExampleOfSortInsertion.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortInsertion.flux))*
-- [x] **Selection Sort** — *(Já implementado em [`flux/ExampleOfSortSelection.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortSelection.flux))*
-- [x] **Shell Sort** — *(Já implementado em [`flux/ExampleOfSortShell.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortShell.flux))*
-- [x] **Quick Sort** — *(Já implementado em [`flux/ExampleOfSortQuick.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortQuick.flux))*
-- [ ] Randomized QuickSort
-- [x] **Merge Sort** — *(Já implementado em [`flux/ExampleOfSortMerge.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortMerge.flux))*
-- [x] **Bottom-Up Merge Sort** — *(Já implementado em [`flux/ExampleOfSortMergeBottomUp.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortMergeBottomUp.flux))*
-- [x] **Heap Sort** — *(Já implementado em [`flux/ExampleOfSortHeap.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortHeap.flux))*
-- [ ] Tree Sort
-- [ ] Cycle Sort
-- [ ] Counting Sort
-- [x] **Radix Sort** — *(Já implementado em [`flux/ExampleOfSortRadix.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortRadix.flux))*
-- [ ] Bucket Sort
-- [ ] Pigeonhole Sort
-- [ ] Flashsort
-- [ ] Patience Sort
-- [ ] Strand Sort
-- [ ] Library Sort
-- [ ] Bead Sort
-- [x] **Pancake Sort** — *(Já implementado em [`flux/ExampleOfSortPancake.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortPancake.flux))*
-- [x] **Bitonic Sort** — *(Já implementado em [`flux/ExampleOfSortBitonic.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortBitonic.flux))*
-- [ ] Bitonic Sorting Network
-- [ ] Odd-Even Merge Sort
-- [x] **Stooge Sort** — *(Já implementado em [`flux/ExampleOfSortStooge.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortStooge.flux))*
-- [ ] Slowsort
-- [x] **Bogosort** — *(Já implementado em [`flux/ExampleOfSortBogo.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfSortBogo.flux))*
-- [ ] Spaghetti Sort
-- [ ] Burstsort
-- [ ] Postman Sort
-- [ ] Introsort
-- [ ] Timsort
-- [ ] Smoothsort
-- [ ] Tournament Sort
-- [ ] External Merge Sort
-- [ ] Polyphase Merge Sort
-- [ ] Natural Merge Sort
-- [ ] Samplesort
+- [x] **Bubble Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBubble.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBubble.flux))*
+- [x] **Cocktail Shaker Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortShaker.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortShaker.flux))*
+- [x] **Comb Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortComb.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortComb.flux))*
+- [x] **Gnome Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortGnome.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortGnome.flux))*
+- [x] **Odd-Even Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortOddEven.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortOddEven.flux))*
+- [x] **Insertion Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortInsertion.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortInsertion.flux))*
+- [x] **Selection Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortSelection.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortSelection.flux))*
+- [x] **Shell Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortShell.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortShell.flux))*
+- [x] **Quick Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortQuick.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortQuick.flux))*
+- [x] **Randomized QuickSort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortRandomizedQuick.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortRandomizedQuick.flux))*
+- [x] **Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortMerge.flux) e [`examples/algorithms/01_foundations/ExampleOfSortMergeTopDown.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortMergeTopDown.flux))*
+- [x] **Bottom-Up Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortMergeBottomUp.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortMergeBottomUp.flux))*
+- [x] **Heap Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortHeap.flux))*
+- [x] **Tree Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortTree.flux))*
+- [x] **Cycle Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortCycle.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortCycle.flux))*
+- [x] **Counting Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortCounting.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortCounting.flux))*
+- [x] **Radix Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortRadix.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortRadix.flux))*
+- [x] **Bucket Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBucket.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBucket.flux))*
+- [x] **Pigeonhole Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortPigeonhole.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortPigeonhole.flux))*
+- [x] **Flashsort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortFlash.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortFlash.flux))*
+- [x] **Patience Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortPatience.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortPatience.flux))*
+- [x] **Strand Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortStrand.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortStrand.flux))*
+- [x] **Library Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortLibrary.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortLibrary.flux))*
+- [x] **Bead Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBead.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBead.flux))*
+- [x] **Pancake Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortPancake.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortPancake.flux))*
+- [x] **Bitonic Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBitonic.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBitonic.flux))*
+- [x] **Bitonic Sorting Network** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBitonicNetwork.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBitonicNetwork.flux))*
+- [x] **Odd-Even Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortOddEvenMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortOddEvenMerge.flux))*
+- [x] **Stooge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortStooge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortStooge.flux))*
+- [x] **Slowsort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortSlow.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortSlow.flux))*
+- [x] **Bogosort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBogo.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBogo.flux))*
+- [x] **Spaghetti Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortSpaghetti.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortSpaghetti.flux))*
+- [x] **Burstsort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortBurst.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortBurst.flux))*
+- [x] **Postman Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortPostman.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortPostman.flux))*
+- [x] **Introsort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortIntro.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortIntro.flux))*
+- [x] **Timsort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortTim.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortTim.flux))*
+- [x] **Smoothsort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortSmooth.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortSmooth.flux))*
+- [x] **Tournament Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortTournament.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortTournament.flux))*
+- [x] **External Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortExternalMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortExternalMerge.flux))*
+- [x] **Polyphase Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortPolyphaseMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortPolyphaseMerge.flux))*
+- [x] **Natural Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortNaturalMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortNaturalMerge.flux))*
+- [x] **Samplesort** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSortSample.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSortSample.flux))*
 
 #### 4. Arrays e sequências (30 algoritmos)
 
-- [ ] Two-Pointer Technique
-- [ ] Sliding Window
-- [ ] Fast and Slow Pointers
-- [ ] Kadane's Algorithm
-- [ ] Boyer-Moore Majority Vote
-- [ ] Dutch National Flag
-- [ ] Fisher-Yates Shuffle
-- [ ] Reservoir Sampling
-- [ ] Floyd Random Sampling
-- [ ] Quickselect
-- [ ] Introselect
-- [ ] Median of Medians
-- [ ] Mo's Algorithm
-- [ ] Mo's Algorithm with Modifications
-- [ ] Offline Query Processing
-- [ ] Parallel Binary Search
-- [ ] CDQ Divide and Conquer
-- [ ] Square-Root Decomposition
-- [ ] Sparse Table
-- [ ] Range Minimum Query
-- [ ] Range Maximum Query
-- [ ] Prefix Sum
-- [ ] Difference Array
-- [ ] Difference Constraints
-- [ ] Monotonic Stack
-- [ ] Monotonic Queue
-- [ ] Sliding Window Minimum
-- [ ] Sliding Window Maximum
-- [ ] Coordinate Compression
-- [ ] Sweep Line
+- [x] **Two-Pointer Technique** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysTwoPointer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysTwoPointer.flux))*
+- [x] **Sliding Window** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysSlidingWindow.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysSlidingWindow.flux))*
+- [x] **Fast and Slow Pointers** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysFastAndSlowPointers.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysFastAndSlowPointers.flux))*
+- [x] **Kadane's Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysKadane.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysKadane.flux))*
+- [x] **Boyer-Moore Majority Vote** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysBoyerMooreMajorityVote.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysBoyerMooreMajorityVote.flux))*
+- [x] **Dutch National Flag** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysDutchNationalFlag.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysDutchNationalFlag.flux))*
+- [x] **Fisher-Yates Shuffle** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysFisherYates.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysFisherYates.flux))*
+- [x] **Reservoir Sampling** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysReservoirSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysReservoirSampling.flux))*
+- [x] **Floyd Random Sampling** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysFloydRandomSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysFloydRandomSampling.flux))*
+- [x] **Quickselect** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysQuickselect.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysQuickselect.flux))*
+- [x] **Introselect** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysIntroselect.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysIntroselect.flux))*
+- [x] **Median of Medians** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysMedianOfMedians.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysMedianOfMedians.flux))*
+- [x] **Mo's Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysMosAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysMosAlgorithm.flux))*
+- [x] **Mo's Algorithm with Modifications** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysMosAlgorithmWithModifications.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysMosAlgorithmWithModifications.flux))*
+- [x] **Offline Query Processing** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysOfflineQueryProcessing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysOfflineQueryProcessing.flux))*
+- [x] **Parallel Binary Search** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysParallelBinarySearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysParallelBinarySearch.flux))*
+- [x] **CDQ Divide and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysCDQDivideAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysCDQDivideAndConquer.flux))*
+- [x] **Square-Root Decomposition** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysSquareRootDecomposition.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysSquareRootDecomposition.flux))*
+- [x] **Sparse Table** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysSparseTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysSparseTable.flux))*
+- [x] **Range Minimum Query** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysRangeMinimumQuery.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysRangeMinimumQuery.flux))*
+- [x] **Range Maximum Query** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysRangeMaximumQuery.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysRangeMaximumQuery.flux))*
+- [x] **Prefix Sum** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysPrefixSum.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysPrefixSum.flux))*
+- [x] **Difference Array** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysDifferenceArray.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysDifferenceArray.flux))*
+- [x] **Difference Constraints** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysDifferenceConstraints.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysDifferenceConstraints.flux))*
+- [x] **Monotonic Stack** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysMonotonicStack.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysMonotonicStack.flux))*
+- [x] **Monotonic Queue** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysMonotonicQueue.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysMonotonicQueue.flux))*
+- [x] **Sliding Window Minimum** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysSlidingWindowMinimum.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysSlidingWindowMinimum.flux))*
+- [x] **Sliding Window Maximum** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysSlidingWindowMaximum.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysSlidingWindowMaximum.flux))*
+- [x] **Coordinate Compression** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysCoordinateCompression.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysCoordinateCompression.flux))*
+- [x] **Sweep Line** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfArraysSweepLine.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfArraysSweepLine.flux))*
 
 #### 42. Algoritmos especiais (19 algoritmos)
 
-- [ ] Josephus
-- [ ] Tortoise and Hare
-- [ ] Brent's Cycle Detection
-- [ ] Ackermann Function
-- [ ] Doomsday Algorithm
-- [ ] Zeller's Congruence
-- [ ] Easter Algorithms
-- [ ] Zobrist Hashing
-- [ ] Cuckoo Hashing
-- [ ] Bloom Filter
-- [ ] Skip List Algorithms
-- [ ] Reservoir Sampling
-- [ ] Alias Method
-- [ ] Shunting-Yard
-- [ ] Ramer-Douglas-Peucker
-- [ ] Kahan Summation
-- [ ] Horner's Method
-- [ ] Booth's Algorithm
-- [ ] Fast Doubling
+- [x] **Josephus** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsJosephus.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsJosephus.flux))*
+- [x] **Tortoise and Hare** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsTortoiseAndHare.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsTortoiseAndHare.flux))*
+- [x] **Brent's Cycle Detection** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsBrent.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsBrent.flux))*
+- [x] **Ackermann Function** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsAckermann.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsAckermann.flux))*
+- [x] **Doomsday Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsDoomsday.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsDoomsday.flux))*
+- [x] **Zeller's Congruence** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsZeller.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsZeller.flux))*
+- [x] **Easter Algorithms** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsEaster.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsEaster.flux))*
+- [x] **Zobrist Hashing** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsZobrist.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsZobrist.flux))*
+- [x] **Cuckoo Hashing** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsCuckoo.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsCuckoo.flux))*
+- [x] **Bloom Filter** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsBloomFilter.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsBloomFilter.flux))*
+- [x] **Skip List Algorithms** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsSkipList.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsSkipList.flux))*
+- [x] **Reservoir Sampling** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsReservoirSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsReservoirSampling.flux))*
+- [x] **Alias Method** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsAliasMethod.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsAliasMethod.flux))*
+- [x] **Shunting-Yard** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsShuntingYard.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsShuntingYard.flux))*
+- [x] **Ramer-Douglas-Peucker** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsRamerDouglasPeucker.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsRamerDouglasPeucker.flux))*
+- [x] **Kahan Summation** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsKahanSummation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsKahanSummation.flux))*
+- [x] **Horner's Method** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsHorner.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsHorner.flux))*
+- [x] **Booth's Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsBooth.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsBooth.flux))*
+- [x] **Fast Doubling** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsFastDoubling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSpecialAlgorithmsFastDoubling.flux))*
 
 ### Domínio II: Estruturas de Dados Avançadas & Streaming (63 algoritmos)
 
@@ -332,26 +331,26 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] DSU on Tree
 - [ ] Euler Tour Tree
 - [ ] Rope
-- [ ] Bloom Filter
+- [x] **Bloom Filter** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux))*
 - [ ] Cuckoo Hashing
 - [ ] Cuckoo Filter
 - [ ] Count-Min Sketch
 - [ ] HyperLogLog
-- [ ] MinHash
+- [x] **MinHash** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux))*
 - [ ] Locality-Sensitive Hashing
 
 #### Estruturas de dados (Adições Prioritárias) (12 algoritmos)
 
 > A lista cita várias árvores avançadas, mas não destaca suficientemente estruturas extremamente usadas na prática, como heaps, tabelas hash e caches.
 
-- [ ] Binary Heap
+- [x] **Binary Heap** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfBinaryHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfBinaryHeap.flux))*
 - [ ] D-ary Heap
 - [ ] Pairing Heap
 - [ ] Van Emde Boas Tree
-- [ ] Wavelet Tree
-- [ ] Persistent Segment Tree
+- [x] **Wavelet Tree** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfWaveletTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfWaveletTree.flux))*
+- [x] **Persistent Segment Tree** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfPersistentSegmentTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfPersistentSegmentTree.flux))*
 - [ ] Persistent Data Structures
-- [ ] Hash Table
+- [x] **Hash Table** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfHashTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfHashTable.flux))*
 - [ ] Robin Hood Hashing
 - [ ] Hopscotch Hashing
 - [ ] LRU Cache
@@ -363,7 +362,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 - [ ] Floyd’s Tortoise and Hare Algorithm — embora a ideia apareça como “Tortoise and Hare”, deveria estar também na seção de arrays e sequências
 - [ ] Brent’s Cycle Detection — já aparece apenas no final
-- [ ] Misra–Gries Algorithm — elementos frequentes em streams
+- [x] **Misra–Gries Algorithm** — elementos frequentes em streams — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfMisraGriesStreaming.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfMisraGriesStreaming.flux))*
 - [ ] Space-Saving Algorithm — top-k em streams
 - [ ] Count-Min Sketch já aparece
 - [ ] HyperLogLog já aparece
@@ -418,7 +417,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 #### 7. Caminhos mínimos (19 algoritmos)
 
-- [x] **Dijkstra** — *(Já implementado em [`flux/ExampleOfBuscaDijkstra.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfBuscaDijkstra.flux))*
+- [x] **Dijkstra** — *(Implementado em [`examples/algorithms/01_foundations/ExampleOfSearchDijkstra.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfSearchDijkstra.flux))*
 - [ ] Bidirectional Dijkstra
 - [ ] Bellman-Ford
 - [ ] SPFA
@@ -481,11 +480,11 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 > Também adicionaria uma subseção específica para algoritmos difíceis de grafos, com coloração, clique, caminhos disjuntos e problemas NP-difíceis.
 
-- [ ] Chu–Liu/Edmonds Algorithm — árvore geradora mínima direcionada
-- [ ] Yen’s Algorithm — k menores caminhos
+- [x] **Chu–Liu/Edmonds Algorithm** — árvore geradora mínima direcionada — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfChuLiuEdmonds.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfChuLiuEdmonds.flux))*
+- [x] **Yen’s Algorithm** — k menores caminhos — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfYenKShortestPaths.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfYenKShortestPaths.flux))*
 - [ ] Suurballe’s Algorithm — caminhos disjuntos
 - [ ] Karger’s Algorithm já aparece, mas poderia ser acompanhado de outras variantes de corte
-- [ ] Bron–Kerbosch Algorithm — cliques máximas
+- [x] **Bron–Kerbosch Algorithm** — cliques máximas — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfBronKerbosch.flux))*
 - [ ] Welsh–Powell Algorithm — coloração de grafos
 - [ ] DSATUR — coloração de grafos
 - [ ] Edmonds’ Algorithm for Directed MST
@@ -508,11 +507,11 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Algoritmo de Hopcroft–Karp já aparece, mas pode ser associado à complexidade
 - [ ] Algoritmos de aproximação para Set Cover
 - [ ] Algoritmo de aproximação para Vertex Cover
-- [ ] Christofides’ Algorithm
+- [x] **Christofides’ Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfChristofidesTSP.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfChristofidesTSP.flux))*
 - [ ] PTAS para Knapsack
 - [ ] FPTAS para Knapsack
 - [ ] Branch and Cut já aparece
-- [ ] Bron–Kerbosch
+- [x] **Bron–Kerbosch** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfBronKerbosch.flux))*
 - [ ] Algoritmos parametrizados
 - [ ] Kernelization
 
@@ -547,7 +546,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Rolling Hash
 - [ ] Double Hashing
 - [ ] String Hashing
-- [ ] Burrows-Wheeler Transform
+- [x] **Burrows-Wheeler Transform** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux))*
 - [ ] FM-Index
 - [ ] Trigram Search
 - [ ] Wildcard Matching
@@ -587,12 +586,12 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] LZ78
 - [ ] LZW
 - [ ] LZSS
-- [ ] LZMA
+- [x] **LZMA** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressLzmaContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressLzmaContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressXzContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressXzContract.flux))*
 - [ ] LZO
 - [ ] LZ4
-- [ ] DEFLATE
+- [x] **DEFLATE** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressDeflateContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressDeflateContract.flux), [`flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux))*
 - [ ] PPM
-- [ ] Burrows-Wheeler Transform
+- [x] **Burrows-Wheeler Transform** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux))*
 - [ ] Move-to-Front
 - [ ] Delta Encoding
 - [ ] Byte Pair Encoding
@@ -613,10 +612,10 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Viterbi Decoder
 - [ ] Turbo Codes
 - [ ] LDPC
-- [ ] CRC
-- [ ] Adler-32
-- [ ] Fletcher Checksum
-- [ ] Luhn Algorithm
+- [x] **CRC** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux))*
+- [x] **Adler-32** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux))*
+- [x] **Fletcher Checksum** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux))*
+- [x] **Luhn Algorithm** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux))*
 - [ ] Verhoeff
 - [ ] Damm Algorithm
 - [ ] Gray Code
@@ -625,7 +624,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 #### 6. Compressão e processamento de dados (Adições Prioritárias) (13 algoritmos)
 
 - [ ] Brotli
-- [ ] Zstandard — Zstd
+- [x] **Zstandard — Zstd** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressZstdContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressZstdContract.flux))*
 - [ ] LZ4 já aparece
 - [ ] Snappy
 - [ ] LZMA já aparece
@@ -682,10 +681,10 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Bell Numbers
 - [ ] Stirling Numbers
 - [ ] Pascal Triangle
-- [ ] Binomial Coefficient
+- [x] **Binomial Coefficient** — *(Já implementado em [`flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux))*
 - [ ] Heap's Permutation Algorithm
 - [ ] Steinhaus-Johnson-Trotter
-- [ ] Fisher-Yates
+- [x] **Fisher-Yates** — *(Já implementado em [`flux/ExampleOfUseRandomStdLib_RandomSequenceContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseRandomStdLib_RandomSequenceContract.flux))*
 - [ ] Josephus Problem
 - [ ] Prüfer Code
 - [ ] Generating Functions
@@ -698,7 +697,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 #### 14. Teoria dos números (52 algoritmos)
 
-- [ ] Euclidean Algorithm
+- [x] **Euclidean Algorithm** — *(Já implementado em [`flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux))*
 - [ ] Extended Euclidean Algorithm
 - [ ] Binary GCD
 - [ ] Binary Exponentiation
@@ -758,17 +757,17 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Gaussian Elimination over GF(2)
 - [ ] Gauss-Seidel
 - [ ] Jacobi Method
-- [ ] Cholesky
+- [x] **Cholesky** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux))*
 - [ ] Gram-Schmidt
-- [ ] QR Decomposition
-- [ ] LU Decomposition
-- [ ] Singular Value Decomposition
+- [x] **QR Decomposition** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixQRContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixQRContract.flux))*
+- [x] **LU Decomposition** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux))*
+- [x] **Singular Value Decomposition** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixSVDContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixSVDContract.flux))*
 - [ ] Conjugate Gradient
 - [ ] BiCG
 - [ ] GMRES
 - [ ] Arnoldi
 - [ ] Lanczos
-- [ ] Power Iteration
+- [x] **Power Iteration** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux))*
 - [ ] Inverse Iteration
 - [ ] Rayleigh Quotient Iteration
 - [ ] Strassen Matrix Multiplication
@@ -785,11 +784,11 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Berlekamp Algorithm
 - [ ] Berlekamp-Massey
 - [ ] Cantor-Zassenhaus
-- [ ] Fast Polynomial Multiplication
+- [x] **Fast Polynomial Multiplication** — *(Já implementado em [`flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux))*
 - [ ] Multipoint Evaluation
 - [ ] Formal Power Series
 - [ ] NTT
-- [ ] FFT
+- [x] **FFT** — *(Já implementado em [`flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux](file:///D:/Projetos/TheFlux/flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux))*
 - [ ] FWHT
 - [ ] Bluestein FFT
 - [ ] Rader FFT
@@ -1313,11 +1312,6 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 > Especialmente HNSW, Product Quantization e RAG são importantes para sistemas modernos de busca semântica e IA generativa.
 
-> Minhas 15 principais recomendações
-
-> Se fosse para acrescentar apenas quinze, eu escolheria:
-
-- [ ] A parte de IA está boa, mas acrescentaria:
 - [ ] Beam Search with Diverse Decoding
 - [ ] Speculative Decoding
 - [ ] Contrastive Search
@@ -1325,7 +1319,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Monte Carlo Dropout
 - [ ] Retrieval-Augmented Generation — RAG
 - [ ] Maximal Marginal Relevance — MMR
-- [ ] HNSW — Hierarchical Navigable Small World
+- [x] **HNSW** — Hierarchical Navigable Small World — *(Implementado em [`examples/algorithms/08_artificial_intel/ExampleOfHNSWVectorSearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ExampleOfHNSWVectorSearch.flux))*
 - [ ] Product Quantization
 - [ ] IVF-Flat
 - [ ] IVF-PQ
@@ -1333,21 +1327,6 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] QLoRA
 - [ ] Knowledge Distillation
 - [ ] Neural Architecture Search
-- [ ] Binary Heap
-- [ ] Hash Table
-- [ ] Persistent Segment Tree
-- [ ] Wavelet Tree
-- [ ] Chu–Liu/Edmonds
-- [ ] Yen’s Algorithm
-- [ ] Bron–Kerbosch
-- [ ] Christofides’ Algorithm
-- [ ] Misra–Gries
-- [ ] Consistent Hashing
-- [ ] Gossip Protocol
-- [ ] PBFT
-- [ ] MapReduce
-- [ ] Merkle Tree
-- [ ] HNSW
 
 ### Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura (185 algoritmos)
 
@@ -1372,19 +1351,19 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] IDEA
 - [ ] Threefish
 - [ ] TEA
-- [ ] MD5
-- [ ] SHA-1
-- [ ] SHA-2
-- [ ] SHA-3
-- [ ] BLAKE
-- [ ] RIPEMD
+- [x] **MD5** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **SHA-1** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **SHA-2** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **SHA-3** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **BLAKE** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **RIPEMD** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
 - [ ] Whirlpool
-- [ ] HMAC
+- [x] **HMAC** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashSecurityContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashSecurityContract.flux))*
 - [ ] Poly1305
 - [ ] SipHash
 - [ ] Argon2
 - [ ] bcrypt
-- [ ] PBKDF2
+- [x] **PBKDF2** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashSecurityContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashSecurityContract.flux))*
 - [ ] scrypt
 - [ ] Shamir Secret Sharing
 - [ ] Blum Blum Shub
@@ -1507,18 +1486,18 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 
 > Paxos e Raft estão presentes, mas faltam algoritmos muito relevantes para sistemas distribuídos modernos, especialmente PBFT, consistent hashing, gossip e MapReduce.
 
-- [ ] Consistent Hashing
+- [x] **Consistent Hashing** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfConsistentHashingRing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfConsistentHashingRing.flux) e [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux))*
 - [ ] Rendezvous Hashing
-- [ ] Gossip Protocol
+- [x] **Gossip Protocol** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfGossipProtocol.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfGossipProtocol.flux))*
 - [ ] SWIM Membership Protocol
 - [ ] Chord Distributed Hash Table
 - [ ] Kademlia
 - [ ] Two-Phase Commit
 - [ ] Three-Phase Commit
 - [ ] Byzantine Fault Tolerant Consensus
-- [ ] PBFT
+- [x] **PBFT** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfPBFTConsensus.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfPBFTConsensus.flux))*
 - [ ] HotStuff
-- [ ] MapReduce
+- [x] **MapReduce** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfMapReducePipeline.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfMapReducePipeline.flux))*
 - [ ] Work Stealing
 - [ ] Token Bucket
 - [ ] Leaky Bucket
@@ -1534,9 +1513,9 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Ed25519
 - [ ] HKDF
 - [ ] PBKDF2, scrypt e Argon2 já aparecem
-- [ ] BLAKE2
-- [ ] BLAKE3
-- [ ] Merkle Tree
+- [x] **BLAKE2** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **BLAKE3** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashCryptoContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashCryptoContract.flux))*
+- [x] **Merkle Tree** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfMerkleTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfMerkleTree.flux))*
 - [ ] Merkle–Damgård Construction
 - [ ] Fiat–Shamir Identification
 - [ ] Oblivious Transfer
@@ -1564,7 +1543,7 @@ Algoritmos de especial relevância para sistemas modernos destacados para implem
 - [ ] Parallel Quicksort
 - [ ] Parallel BFS
 - [ ] Parallel DFS
-- [ ] MapReduce
+- [x] **MapReduce** — *(Implementado em [`examples/algorithms/09_systems_infra/ExampleOfMapReducePipeline.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/ExampleOfMapReducePipeline.flux))*
 - [ ] Fork-Join
 - [ ] Work Stealing
 - [ ] BSP — Bulk Synchronous Parallel

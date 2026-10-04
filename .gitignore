@@ -25,6 +25,8 @@ env/
 *~
 *.tmp
 *.log
+.~lock.*#
+.~lock.*
 .DS_Store
 Thumbs.db
 
