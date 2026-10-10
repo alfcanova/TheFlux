@@ -49,7 +49,7 @@ DOMAIN_TITLES = {
     "07_optimization_stat": "Domínio VII: Otimização & Estatística Científica (07_optimization_stat)",
     "08_artificial_intel": "Domínio VIII: Inteligência Artificial, ML & Deep Learning (08_artificial_intel)",
     "09_systems_infra": "Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura (09_systems_infra)",
-    "10_bio_quantum": "Domínio X: Bioinformática & Computação Quântica (10_bio_quantum)",
+    "10_bio_quantum": "Domínio X: Bioinformática, Computação Quântica & Criptografia Pós-Quântica (10_bio_quantum)",
 }
 
 
