@@ -77,11 +77,15 @@ def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
 
 
 def obter_ordem_listagem() -> dict[str, int]:
-    """Obtém a ordem em que os arquivos .flux aparecem listados em docs/TODO_SciAlgo.md."""
+    """Obtém a ordem em que os arquivos .flux aparecem listados no Catálogo de docs/TODO_SciAlgo.md."""
     if not TODO_MD.exists():
         return {}
     import re
     text = TODO_MD.read_text(encoding="utf-8")
+    marker = "## 📚 6. Catálogo Completo"
+    idx_marker = text.find(marker)
+    if idx_marker != -1:
+        text = text[idx_marker:]
     matches = re.findall(r"ExampleOf[A-Za-z0-9_]+\.flux", text)
     ordem: dict[str, int] = {}
     for idx, name in enumerate(matches):
@@ -213,6 +217,9 @@ def sincronizar_metricas_todo(todo_path: Path = TODO_MD) -> bool:
         body = parts[i + 1]
         checked = len(re.findall(r"- \[x\]", body))
         unchecked = len(re.findall(r"- \[ \]", body))
+        table_fluxes = set(re.findall(r"ExampleOf[A-Za-z0-9_]+\.flux", body))
+        if checked == 0 and table_fluxes:
+            checked = len(table_fluxes)
         tot = checked + unchecked
         pct = (checked / tot * 100) if tot > 0 else 0.0
         status = "✅ Concluído" if tot > 0 and checked == tot else ("🔄 Em andamento" if checked > 0 else "⏳ Planejado")
@@ -230,8 +237,9 @@ def sincronizar_metricas_todo(todo_path: Path = TODO_MD) -> bool:
     sec6_start = content.find("## 📚 6. Catálogo Completo")
     sec6_text = content[sec6_start:] if sec6_start != -1 else content
     chk_all = re.findall(r"- \[x\][^\n]+", sec6_text)
-    chk_examples = sum(1 for l in chk_all if "examples/algorithms" in l)
-    chk_flux = sum(1 for l in chk_all if "flux/" in l)
+    table_flux_matches = re.findall(r"\((file:///[^\)]+/(ExampleOf[A-Za-z0-9_]+\.flux))\)", sec6_text)
+    chk_examples = sum(1 for l in chk_all if "examples/algorithms" in l) + sum(1 for u, _ in table_flux_matches if "examples/algorithms" in u)
+    chk_flux = sum(1 for l in chk_all if "flux/" in l) + sum(1 for u, _ in table_flux_matches if "flux/" in u)
 
     total_declared = sum(r["declared"] for r in rows)
     total_catalogados = sum(r["total"] for r in rows)

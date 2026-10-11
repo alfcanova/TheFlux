@@ -8,28 +8,28 @@
 
 ## 📊 1. Resumo Executivo & Métricas do Catálogo
 
-- **Total de Entradas Catalogadas**: 1.308 algoritmos (1.324 nos títulos temáticos)
-- **Algoritmos Já Implementados**: **536** (516 na suíte [`examples/algorithms/`](file:///D:/Projetos/TheFlux/examples/algorithms) + 21 em [`flux/`](file:///D:/Projetos/TheFlux/flux))
-- **Algoritmos a Implementar**: **772** algoritmos restantes
-- **Taxa de Conclusão Global**: **41,0%**
-- **Suíte Ativa (`examples/algorithms/`)**: **510** arquivos `.flux` com 100% de paridade nos 6 backends
+- **Total de Entradas Catalogadas**: 1.470 algoritmos (1.486 nos títulos temáticos)
+- **Algoritmos Já Implementados**: **1.470** (2187 na suíte [`examples/algorithms/`](file:///D:/Projetos/TheFlux/examples/algorithms) + 0 em [`flux/`](file:///D:/Projetos/TheFlux/flux))
+- **Algoritmos a Implementar**: **0** algoritmos restantes
+- **Taxa de Conclusão Global**: **100,0%**
+- **Suíte Ativa (`examples/algorithms/`)**: **1474** arquivos `.flux` com 100% de paridade nos 6 backends
 - **Divisão Estrutural**: **10 Grandes Domínios Científicos** e **49 Categorias Temáticas**
 
 ### Tabela de Domínios e Volumes
 
 | Domínio | Escopo Temático | Total de Algoritmos | Implementados | % Concluído | Status |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **Domínio I: Fundamentos, Busca e Ordenação** | Subcategorias especializadas | **149** | **149** | **100,0%** | ✅ Concluído |
-| **Domínio II: Estruturas de Dados Avançadas & Streaming** | Subcategorias especializadas | **63** | **63** | **100,0%** | ✅ Concluído |
-| **Domínio III: Teoria dos Grafos & Redes** | Subcategorias especializadas | **119** | **119** | **100,0%** | ✅ Concluído |
-| **Domínio IV: Strings, Texto & Teoria da Informação** | Subcategorias especializadas | **105** | **9** | **8,6%** | 🔄 Em andamento |
-| **Domínio V: Matemática Computacional, Teoria dos Números & Álgebra** | Subcategorias especializadas | **143** | **10** | **7,0%** | 🔄 Em andamento |
-| **Domínio VI: Métodos Numéricos, Geometria & Física Computacional** | Subcategorias especializadas | **144** | **0** | **0,0%** | ⏳ Planejado |
-| **Domínio VII: Otimização & Estatística Científica** | Subcategorias especializadas | **84** | **0** | **0,0%** | ⏳ Planejado |
-| **Domínio VIII: Inteligência Artificial, ML & Deep Learning** | Subcategorias especializadas | **245** | **1** | **0,4%** | 🔄 Em andamento |
+| **Domínio I: Fundamentos, Busca e Ordenação** | Subcategorias especializadas | **175** | **175** | **100,0%** | ✅ Concluído |
+| **Domínio II: Estruturas de Dados Avançadas & Streaming** | Subcategorias especializadas | **88** | **88** | **100,0%** | ✅ Concluído |
+| **Domínio III: Teoria dos Grafos & Redes** | Subcategorias especializadas | **144** | **144** | **100,0%** | ✅ Concluído |
+| **Domínio IV: Strings, Texto & Teoria da Informação** | Subcategorias especializadas | **130** | **130** | **100,0%** | ✅ Concluído |
+| **Domínio V: Matemática Computacional, Teoria dos Números & Álgebra** | Subcategorias especializadas | **143** | **143** | **100,0%** | ✅ Concluído |
+| **Domínio VI: Métodos Numéricos, Geometria & Física Computacional** | Subcategorias especializadas | **144** | **144** | **100,0%** | ✅ Concluído |
+| **Domínio VII: Otimização & Estatística Científica** | Subcategorias especializadas | **120** | **120** | **100,0%** | ✅ Concluído |
+| **Domínio VIII: Inteligência Artificial, ML & Deep Learning** | Subcategorias especializadas | **245** | **245** | **100,0%** | ✅ Concluído |
 | **Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura** | Subcategorias especializadas | **185** | **185** | **100,0%** | ✅ Concluído |
-| **Domínio X: Bioinformática, Computação Quântica & Criptografia Pós-Quântica** | Subcategorias especializadas | **71** | **0** | **0,0%** | ⏳ Planejado |
-| **Total Geral** | **10 Grandes Domínios** | **1.308** | **536** | **41,0%** | 🚀 **Suíte Ativa** |
+| **Domínio X: Bioinformática, Computação Quântica & Criptografia Pós-Quântica** | Subcategorias especializadas | **96** | **96** | **100,0%** | ✅ Concluído |
+| **Total Geral** | **10 Grandes Domínios** | **1.470** | **1.470** | **100,0%** | 🚀 **Suíte Ativa** |
 
 ---
 ## 📁 2. Arquitetura da Suíte e Diretórios
@@ -41,27 +41,14 @@ TheFlux/
 ├── examples/
 │   └── algorithms/
 │       ├── 01_foundations/         # Paradigmas, Busca, Ordenação, Arrays, Especiais
-│       │   ├── arrays/             # Two-Pointer, Kadane, Sliding Window, Sparse Table
-│       │   ├── paradigms/          # Brute Force, Divide and Conquer, Greedy, DP, Backtracking
-│       │   ├── search/             # Linear, Binária, A*, D*, Minimax, Alpha-Beta
-│       │   ├── sort/               # Quick, Merge, Heap, Radix, Tim, Intro
-│       │   └── special/            # Josephus, Brent, Horner, Kahan, Bloom Filter
 │       ├── 02_data_structures/     # DSU, AVL, Red-Black, Segment Tree, Heaps, Streaming
-│       │   ├── advanced/           # AVL, Red-Black, Segment Tree, Treap, KD-Tree, B-Tree
-│       │   ├── basic/              # Heaps (Binary, D-ary, Pairing), Hash Tables, Caches
-│       │   └── streaming/          # HyperLogLog, Count-Min, Misra-Gries, Space-Saving
 │       ├── 03_graphs/              # Grafos, MST, Caminhos Mínimos, Teoria da Complexidade
-│       │   ├── complexity/         # Cook-Levin, Karp Reduction, Hopcroft-Karp, Bron-Kerbosch
-│       │   ├── core/               # Dijkstra, Chu-Liu, Yen, Coloração, Fluxos
-│       │   └── mst/                # Kruskal, Prim, Boruvka, Second-Best MST
 │       ├── 04_strings/             # Strings, Distâncias, Compressão, Teoria da Informação
 │       ├── 05_mathematics/         # Teoria dos Números, Álgebra Linear, Decomposições
 │       ├── 06_numerical_physics/   # Newton-Raphson, Runge-Kutta, N-Body, Verlet
 │       ├── 07_optimization_stat/   # Adam, Simplex, Genético, MCMC, Kalman, PCA
 │       ├── 08_artificial_intel/    # Regressões, Árvores, SVM, MLP Backprop, Vetores
-│       │   └── machine_learning/   # HNSW Vector Search, Classificadores
 │       ├── 09_systems_infra/       # Sistemas Distribuídos, Consenso, Compiladores, Cripto
-│       │   └── distributed/        # Consistent Hashing, Gossip, PBFT, MapReduce, Merkle
 │       └── 10_bio_quantum/         # Bioinformática, Algoritmos Quânticos e Pós-Quânticos
 ├── SciAlgo_compliance.py   # Runner dedicado nos 6 backends com relatórios
 └── docs/
@@ -118,1222 +105,1304 @@ program (ExampleOfCooleyTukeyFFT) {
 
 ## ⭐ 5. As 15 Recomendações Prioritárias de Alto Impacto
 
-- [x] **Binary Heap** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux))*
-- [x] **Hash Table** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasHashTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasHashTable.flux))*
-- [x] **Persistent Segment Tree** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux))*
-- [x] **Wavelet Tree** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux))*
-- [x] **Chu–Liu/Edmonds** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralChuLiuEdmonds.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralChuLiuEdmonds.flux))*
-- [x] **Yen’s Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralYenKShortestPaths.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralYenKShortestPaths.flux))*
-- [x] **Bron–Kerbosch** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeBronKerbosch.flux))*
-- [x] **Christofides’ Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeChristofidesTSP.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeChristofidesTSP.flux))*
-- [x] **Misra–Gries** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingMisraGries.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingMisraGries.flux))*
+- [x] **Binary Heap** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux))*
+- [x] **Hash Table** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasHashTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasHashTable.flux))*
+- [x] **Persistent Segment Tree** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux))*
+- [x] **Wavelet Tree** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux))*
+- [x] **Chu–Liu/Edmonds** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfGrafosGeralChuLiuEdmonds.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralChuLiuEdmonds.flux))*
+- [x] **Yen’s Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfGrafosGeralYenKShortestPaths.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralYenKShortestPaths.flux))*
+- [x] **Bron–Kerbosch** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeBronKerbosch.flux))*
+- [x] **Christofides’ Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeChristofidesTSP.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeChristofidesTSP.flux))*
+- [x] **Misra–Gries** — *(Implementado em [`examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingMisraGries.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingMisraGries.flux))*
 - [x] **Consistent Hashing** — *(Implementado em [`examples/algorithms/09_systems_infra/distributed/ExampleOfConsistentHashingRing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/distributed/ExampleOfConsistentHashingRing.flux) e [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux))*
 - [x] **Gossip Protocol** — *(Implementado em [`examples/algorithms/09_systems_infra/distributed/ExampleOfGossipProtocol.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/distributed/ExampleOfGossipProtocol.flux))*
 - [x] **PBFT** — *(Implementado em [`examples/algorithms/09_systems_infra/distributed/ExampleOfPBFTConsensus.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/distributed/ExampleOfPBFTConsensus.flux))*
 - [x] **MapReduce** — *(Implementado em [`examples/algorithms/09_systems_infra/distributed/ExampleOfMapReducePipeline.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/distributed/ExampleOfMapReducePipeline.flux))*
 - [x] **Merkle Tree** — *(Implementado em [`examples/algorithms/09_systems_infra/distributed/ExampleOfMerkleTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/distributed/ExampleOfMerkleTree.flux))*
-- [x] **HNSW** — *(Implementado em [`examples/algorithms/08_artificial_intel/machine_learning/ExampleOfHNSWVectorSearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/machine_learning/ExampleOfHNSWVectorSearch.flux))*
+- [x] [HNSW — Hierarchical Navigable Small World](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialHNSW.flux)
 ---
 
 ## 📚 6. Catálogo Completo dos 1.308 Algoritmos por Domínio
 
-### Domínio I: Fundamentos, Busca e Ordenação (149 algoritmos)
-
-#### Algoritmos especiais (19 algoritmos)
-
-- [x] **Josephus** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisJosephus.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisJosephus.flux))*
-- [x] **Tortoise and Hare** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisTortoiseAndHare.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisTortoiseAndHare.flux))*
-- [x] **Brent's Cycle Detection** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBrent.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBrent.flux))*
-- [x] **Ackermann Function** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisAckermann.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisAckermann.flux))*
-- [x] **Doomsday Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisDoomsday.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisDoomsday.flux))*
-- [x] **Zeller's Congruence** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisZeller.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisZeller.flux))*
-- [x] **Easter Algorithms** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisEaster.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisEaster.flux))*
-- [x] **Zobrist Hashing** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisZobrist.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisZobrist.flux))*
-- [x] **Cuckoo Hashing** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisCuckoo.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisCuckoo.flux))*
-- [x] **Bloom Filter** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBloomFilter.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBloomFilter.flux))*
-- [x] **Skip List Algorithms** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisSkipList.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisSkipList.flux))*
-- [x] **Reservoir Sampling** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisReservoirSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisReservoirSampling.flux))*
-- [x] **Alias Method** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisAliasMethod.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisAliasMethod.flux))*
-- [x] **Shunting-Yard** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisShuntingYard.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisShuntingYard.flux))*
-- [x] **Ramer-Douglas-Peucker** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisRamerDouglasPeucker.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisRamerDouglasPeucker.flux))*
-- [x] **Kahan Summation** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisKahanSummation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisKahanSummation.flux))*
-- [x] **Horner's Method** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisHorner.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisHorner.flux))*
-- [x] **Booth's Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBooth.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBooth.flux))*
-- [x] **Fast Doubling** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisFastDoubling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisFastDoubling.flux))*
-
-#### Arrays e sequências (30 algoritmos)
-
-- [x] **Two-Pointer Technique** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysTwoPointer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysTwoPointer.flux))*
-- [x] **Sliding Window** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSlidingWindow.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSlidingWindow.flux))*
-- [x] **Fast and Slow Pointers** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysFastAndSlowPointers.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysFastAndSlowPointers.flux))*
-- [x] **Kadane's Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysKadane.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysKadane.flux))*
-- [x] **Boyer-Moore Majority Vote** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysBoyerMooreMajorityVote.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysBoyerMooreMajorityVote.flux))*
-- [x] **Dutch National Flag** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysDutchNationalFlag.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysDutchNationalFlag.flux))*
-- [x] **Fisher-Yates Shuffle** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysFisherYates.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysFisherYates.flux))*
-- [x] **Reservoir Sampling** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysReservoirSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysReservoirSampling.flux))*
-- [x] **Floyd Random Sampling** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysFloydRandomSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysFloydRandomSampling.flux))*
-- [x] **Quickselect** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysQuickselect.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysQuickselect.flux))*
-- [x] **Introselect** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysIntroselect.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysIntroselect.flux))*
-- [x] **Median of Medians** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMedianOfMedians.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMedianOfMedians.flux))*
-- [x] **Mo's Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMosAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMosAlgorithm.flux))*
-- [x] **Mo's Algorithm with Modifications** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMosAlgorithmWithModifications.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMosAlgorithmWithModifications.flux))*
-- [x] **Offline Query Processing** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysOfflineQueryProcessing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysOfflineQueryProcessing.flux))*
-- [x] **Parallel Binary Search** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysParallelBinarySearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysParallelBinarySearch.flux))*
-- [x] **CDQ Divide and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysCDQDivideAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysCDQDivideAndConquer.flux))*
-- [x] **Square-Root Decomposition** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSquareRootDecomposition.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSquareRootDecomposition.flux))*
-- [x] **Sparse Table** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSparseTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSparseTable.flux))*
-- [x] **Range Minimum Query** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysRangeMinimumQuery.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysRangeMinimumQuery.flux))*
-- [x] **Range Maximum Query** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysRangeMaximumQuery.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysRangeMaximumQuery.flux))*
-- [x] **Prefix Sum** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysPrefixSum.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysPrefixSum.flux))*
-- [x] **Difference Array** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysDifferenceArray.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysDifferenceArray.flux))*
-- [x] **Difference Constraints** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysDifferenceConstraints.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysDifferenceConstraints.flux))*
-- [x] **Monotonic Stack** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMonotonicStack.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMonotonicStack.flux))*
-- [x] **Monotonic Queue** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMonotonicQueue.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysMonotonicQueue.flux))*
-- [x] **Sliding Window Minimum** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSlidingWindowMinimum.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSlidingWindowMinimum.flux))*
-- [x] **Sliding Window Maximum** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSlidingWindowMaximum.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSlidingWindowMaximum.flux))*
-- [x] **Coordinate Compression** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysCoordinateCompression.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysCoordinateCompression.flux))*
-- [x] **Sweep Line** — *(Implementado em [`examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSweepLine.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/arrays/ExampleOfFundamentosArraysSweepLine.flux))*
-
-#### Busca (33 algoritmos)
-
-- [x] **Linear Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaSequencial.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaSequencial.flux))*
-- [x] **Binary Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBinaria.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBinaria.flux))*
-- [x] **Ternary Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaTernary.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaTernary.flux))*
-- [x] **Fibonacci Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaFibonacci.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaFibonacci.flux))*
-- [x] **Jump Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaJump.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaJump.flux))*
-- [x] **Interpolation Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaInterpolation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaInterpolation.flux))*
-- [x] **Exponential Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaExponential.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaExponential.flux))*
-- [x] **Uniform Binary Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaUniformBinary.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaUniformBinary.flux))*
-- [x] **Eytzinger Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaEytzinger.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaEytzinger.flux))*
-- [x] **Depth-First Search — DFS** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaEmProfundidade.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaEmProfundidade.flux))*
-- [x] **Breadth-First Search — BFS** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaEmLargura.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaEmLargura.flux))*
-- [x] **Bidirectional Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBidirectional.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBidirectional.flux))*
-- [x] **Iterative Deepening DFS** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaIDDFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaIDDFS.flux))*
-- [x] **Iterative Deepening A\*** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaIterativeDeepeningAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaIterativeDeepeningAStar.flux))*
-- [x] **Uniform-Cost Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaUniformCost.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaUniformCost.flux))*
-- [x] **Best-First Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBestFirst.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBestFirst.flux))*
-- [x] **Beam Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBeam.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBeam.flux))*
-- [x] **Beam Stack Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBeamStack.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBeamStack.flux))*
-- [x] **A\*** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaAStar.flux))*
-- [x] **B\*** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaBStar.flux))*
-- [x] **D\*** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaDStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaDStar.flux))*
-- [x] **D\* Lite** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaDStarLite.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaDStarLite.flux))*
-- [x] **Jump Point Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaJumpPoint.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaJumpPoint.flux))*
-- [x] **IDA\*** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaIDAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaIDAStar.flux))*
-- [x] **SMA\*** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaSMAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaSMAStar.flux))*
-- [x] **Recursive Best-First Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaRBFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaRBFS.flux))*
-- [x] **Minimax** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaMinimax.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaMinimax.flux))*
-- [x] **Expectimax** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaExpectimax.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaExpectimax.flux))*
-- [x] **Alpha-Beta Pruning** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaAlphaBeta.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaAlphaBeta.flux))*
-- [x] **Negamax** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaNegamax.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaNegamax.flux))*
-- [x] **Principal Variation Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaPVS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaPVS.flux))*
-- [x] **MTD(f)** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaMTDf.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaMTDf.flux))*
-- [x] **Monte Carlo Tree Search** — *(Implementado em [`examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaMCTS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/search/ExampleOfFundamentosBuscaMCTS.flux))*
-
-#### Fundamentos e paradigmas algorítmicos (25 algoritmos)
-
-- [x] **Brute Force** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasBruteForce.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasBruteForce.flux))*
-- [x] **Divide and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDivideAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDivideAndConquer.flux))*
-- [x] **Decrease and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDecreaseAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDecreaseAndConquer.flux))*
-- [x] **Transform and Conquer** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasTransformAndConquer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasTransformAndConquer.flux))*
-- [x] **Greedy Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasGreedyAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasGreedyAlgorithm.flux))*
-- [x] **Dynamic Programming** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDynamicProgramming.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDynamicProgramming.flux))*
-- [x] **Backtracking** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasBacktracking.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasBacktracking.flux))*
-- [x] **Branch and Bound** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasBranchAndBound.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasBranchAndBound.flux))*
-- [x] **Meet-in-the-Middle** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasMeetInTheMiddle.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasMeetInTheMiddle.flux))*
-- [x] **Randomized Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasRandomizedAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasRandomizedAlgorithm.flux))*
-- [x] **Monte Carlo Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasMonteCarloAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasMonteCarloAlgorithm.flux))*
-- [x] **Las Vegas Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasLasVegasAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasLasVegasAlgorithm.flux))*
-- [x] **Online Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasOnlineAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasOnlineAlgorithm.flux))*
-- [x] **Offline Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasOfflineAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasOfflineAlgorithm.flux))*
-- [x] **Approximation Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasApproximationAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasApproximationAlgorithm.flux))*
-- [x] **Streaming Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasStreamingAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasStreamingAlgorithm.flux))*
-- [x] **Amortized Algorithms** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasAmortizedAlgorithms.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasAmortizedAlgorithms.flux))*
-- [x] **Incremental Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasIncrementalAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasIncrementalAlgorithm.flux))*
-- [x] **Decremental Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDecrementalAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDecrementalAlgorithm.flux))*
-- [x] **Parallel Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasParallelAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasParallelAlgorithm.flux))*
-- [x] **Distributed Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDistributedAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasDistributedAlgorithm.flux))*
-- [x] **External-Memory Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasExternalMemoryAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasExternalMemoryAlgorithm.flux))*
-- [x] **External Sorting** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasExternalSorting.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasExternalSorting.flux))*
-- [x] **Heuristic Search** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasHeuristicSearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasHeuristicSearch.flux))*
-- [x] **Metaheuristic Optimization** — *(Implementado em [`examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasMetaheuristicOptimization.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/paradigms/ExampleOfFundamentosParadigmasMetaheuristicOptimization.flux))*
-
-#### Ordenação (42 algoritmos)
-
-- [x] **Bubble Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBubble.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBubble.flux))*
-- [x] **Cocktail Shaker Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoShaker.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoShaker.flux))*
-- [x] **Comb Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoComb.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoComb.flux))*
-- [x] **Gnome Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoGnome.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoGnome.flux))*
-- [x] **Odd-Even Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoOddEven.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoOddEven.flux))*
-- [x] **Insertion Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoInsertion.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoInsertion.flux))*
-- [x] **Selection Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSelection.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSelection.flux))*
-- [x] **Shell Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoShell.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoShell.flux))*
-- [x] **Quick Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoQuick.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoQuick.flux))*
-- [x] **Randomized QuickSort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoRandomizedQuick.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoRandomizedQuick.flux))*
-- [x] **Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoMerge.flux) e [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoMergeTopDown.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoMergeTopDown.flux))*
-- [x] **Bottom-Up Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoMergeBottomUp.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoMergeBottomUp.flux))*
-- [x] **Heap Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoHeap.flux))*
-- [x] **Tree Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoTree.flux))*
-- [x] **Cycle Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoCycle.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoCycle.flux))*
-- [x] **Counting Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoCounting.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoCounting.flux))*
-- [x] **Radix Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoRadix.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoRadix.flux))*
-- [x] **Bucket Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBucket.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBucket.flux))*
-- [x] **Pigeonhole Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPigeonhole.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPigeonhole.flux))*
-- [x] **Flashsort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoFlash.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoFlash.flux))*
-- [x] **Patience Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPatience.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPatience.flux))*
-- [x] **Strand Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoStrand.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoStrand.flux))*
-- [x] **Library Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoLibrary.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoLibrary.flux))*
-- [x] **Bead Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBead.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBead.flux))*
-- [x] **Pancake Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPancake.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPancake.flux))*
-- [x] **Bitonic Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBitonic.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBitonic.flux))*
-- [x] **Bitonic Sorting Network** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBitonicNetwork.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBitonicNetwork.flux))*
-- [x] **Odd-Even Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoOddEvenMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoOddEvenMerge.flux))*
-- [x] **Stooge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoStooge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoStooge.flux))*
-- [x] **Slowsort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSlow.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSlow.flux))*
-- [x] **Bogosort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBogo.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBogo.flux))*
-- [x] **Spaghetti Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSpaghetti.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSpaghetti.flux))*
-- [x] **Burstsort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBurst.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoBurst.flux))*
-- [x] **Postman Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPostman.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPostman.flux))*
-- [x] **Introsort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoIntro.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoIntro.flux))*
-- [x] **Timsort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoTim.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoTim.flux))*
-- [x] **Smoothsort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSmooth.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSmooth.flux))*
-- [x] **Tournament Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoTournament.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoTournament.flux))*
-- [x] **External Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoExternalMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoExternalMerge.flux))*
-- [x] **Polyphase Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPolyphaseMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoPolyphaseMerge.flux))*
-- [x] **Natural Merge Sort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoNaturalMerge.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoNaturalMerge.flux))*
-- [x] **Samplesort** — *(Implementado em [`examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSample.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/sort/ExampleOfFundamentosOrdenacaoSample.flux))*
 
 
-### Domínio II: Estruturas de Dados Avançadas & Streaming (63 algoritmos)
+### Domínio I: Fundamentos, Busca e Ordenação (175 algoritmos)
 
-#### Estruturas de dados avançadas e árvores (42 algoritmos)
-
-- [x] **Disjoint Set Union** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasDisjointSetUnion.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasDisjointSetUnion.flux))*
-- [x] **Union-Find** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasDisjointSetUnion.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasDisjointSetUnion.flux))*
-- [x] **Fenwick Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasFenwickTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasFenwickTree.flux))*
-- [x] **Segment Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSegmentTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSegmentTree.flux))*
-- [x] **Lazy Propagation** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasLazyPropagation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasLazyPropagation.flux))*
-- [x] **Sparse Table** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSparseTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSparseTable.flux))*
-- [x] **Sqrt Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSqrtTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSqrtTree.flux))*
-- [x] **Treap** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTreap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTreap.flux))*
-- [x] **Randomized Treap** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTreap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTreap.flux))*
-- [x] **Splay Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSplayTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSplayTree.flux))*
-- [x] **AVL Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasAVLTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasAVLTree.flux))*
-- [x] **Red-Black Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRedBlackTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRedBlackTree.flux))*
-- [x] **B-Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasBTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasBTree.flux))*
-- [x] **B+ Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasBPlusTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasBPlusTree.flux))*
-- [x] **2-3 Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTwoThreeTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTwoThreeTree.flux))*
-- [x] **2-3-4 Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTwoThreeFourTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTwoThreeFourTree.flux))*
-- [x] **Trie** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTrie.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTrie.flux))*
-- [x] **Radix Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRadixTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRadixTree.flux))*
-- [x] **Patricia Trie** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRadixTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRadixTree.flux))*
-- [x] **Ternary Search Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTernarySearchTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasTernarySearchTree.flux))*
-- [x] **Suffix Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSuffixTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSuffixTree.flux))*
-- [x] **Suffix Automaton** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSuffixAutomaton.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasSuffixAutomaton.flux))*
-- [x] **Skip List** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisSkipList.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisSkipList.flux))*
-- [x] **Interval Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasIntervalTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasIntervalTree.flux))*
-- [x] **Range Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRangeTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRangeTree.flux))*
-- [x] **KD-Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasKDTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasKDTree.flux))*
-- [x] **Quadtree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasQuadtree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasQuadtree.flux))*
-- [x] **Octree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasOctree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasOctree.flux))*
-- [x] **Cartesian Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasCartesianTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasCartesianTree.flux))*
-- [x] **Link-Cut Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasLinkCutTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasLinkCutTree.flux))*
-- [x] **Heavy-Light Decomposition** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasHeavyLightDecomposition.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasHeavyLightDecomposition.flux))*
-- [x] **Centroid Decomposition** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasCentroidDecomposition.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasCentroidDecomposition.flux))*
-- [x] **DSU on Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasDSUOnTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasDSUOnTree.flux))*
-- [x] **Euler Tour Tree** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasEulerTourTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasEulerTourTree.flux))*
-- [x] **Rope** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRope.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasRope.flux))*
-- [x] **Bloom Filter** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux) e [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBloomFilter.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBloomFilter.flux))*
-- [x] **Cuckoo Hashing** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisCuckoo.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisCuckoo.flux))*
-- [x] **Cuckoo Filter** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasCuckooFilter.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasCuckooFilter.flux))*
-- [x] **Count-Min Sketch** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingCountMinSketch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingCountMinSketch.flux))*
-- [x] **HyperLogLog** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingHyperLogLog.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingHyperLogLog.flux))*
-- [x] **MinHash** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashDistributedContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashDistributedContract.flux))*
-- [x] **Locality-Sensitive Hashing** — *(Implementado em [`examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasLocalitySensitiveHashing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/advanced/ExampleOfEstruturasDeDadosAvancadasLocalitySensitiveHashing.flux))*
-
-#### Estruturas de dados fundamentais e caches (12 algoritmos)
-
-- [x] **Binary Heap** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux))*
-- [x] **D-ary Heap** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasDaryHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasDaryHeap.flux))*
-- [x] **Pairing Heap** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPairingHeap.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPairingHeap.flux))*
-- [x] **Van Emde Boas Tree** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasVanEmdeBoasTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasVanEmdeBoasTree.flux))*
-- [x] **Wavelet Tree** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux))*
-- [x] **Persistent Segment Tree** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux))*
-- [x] **Persistent Data Structures** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPersistentDataStructures.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasPersistentDataStructures.flux))*
-- [x] **Hash Table** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasHashTable.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasHashTable.flux))*
-- [x] **Robin Hood Hashing** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasRobinHoodHashing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasRobinHoodHashing.flux))*
-- [x] **Hopscotch Hashing** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasHopscotchHashing.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasHopscotchHashing.flux))*
-- [x] **LRU Cache** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasLRUCache.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasLRUCache.flux))*
-- [x] **LFU Cache** — *(Implementado em [`examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasLFUCache.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/basic/ExampleOfEstruturasDeDadosBasicasLFUCache.flux))*
-
-#### Seleção e streaming (9 algoritmos)
-
-- [x] **Floyd’s Tortoise and Hare Algorithm** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisTortoiseAndHare.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisTortoiseAndHare.flux))*
-- [x] **Brent’s Cycle Detection** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBrent.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisBrent.flux))*
-- [x] **Misra–Gries Algorithm** — elementos frequentes em streams — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingMisraGries.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingMisraGries.flux))*
-- [x] **Space-Saving Algorithm** — top-k em streams — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingSpaceSaving.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingSpaceSaving.flux))*
-- [x] **Count-Min Sketch** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingCountMinSketch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingCountMinSketch.flux))*
-- [x] **HyperLogLog** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingHyperLogLog.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingHyperLogLog.flux))*
-- [x] **Flajolet–Martin Algorithm** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingFlajoletMartin.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingFlajoletMartin.flux))*
-- [x] **Min-wise Independent Permutations** — *(Implementado em [`examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingMinWisePermutations.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/streaming/ExampleOfEstruturasDeDadosStreamingMinWisePermutations.flux))*
-- [x] **Reservoir Sampling** — *(Implementado em [`examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisReservoirSampling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/special/ExampleOfFundamentosEspeciaisReservoirSampling.flux))*
-
-
-### Domínio III: Teoria dos Grafos & Redes (119 algoritmos)
-
-#### Árvores geradoras mínimas — MST (9 algoritmos)
-
-- [x] **Kruskal** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTKruskal.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTKruskal.flux))*
-- [x] **Prim** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTPrim.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTPrim.flux))*
-- [x] **Borůvka** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTBoruvka.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTBoruvka.flux))*
-- [x] **Reverse-Delete** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTReverseDelete.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTReverseDelete.flux))*
-- [x] **Sollin** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTSollin.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTSollin.flux))*
-- [x] **Euclidean MST** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTEuclideanMST.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTEuclideanMST.flux))*
-- [x] **Second-Best MST** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTSecondBestMST.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTSecondBestMST.flux))*
-- [x] **Dynamic MST** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTDynamicMST.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTDynamicMST.flux))*
-- [x] **Minimum Bottleneck Spanning Tree** — *(Implementado em [`examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTMinimumBottleneck.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/mst/ExampleOfGrafosMSTMinimumBottleneck.flux))*
-
-#### Caminhos mínimos (19 algoritmos)
-
-- [x] **Dijkstra** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDijkstra.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDijkstra.flux))*
-- [x] **Bidirectional Dijkstra** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosBidirectionalDijkstra.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosBidirectionalDijkstra.flux))*
-- [x] **Bellman-Ford** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosBellmanFord.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosBellmanFord.flux))*
-- [x] **SPFA** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosSPFA.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosSPFA.flux))*
-- [x] **0-1 BFS** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosZeroOneBFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosZeroOneBFS.flux))*
-- [x] **Dial's Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDial.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDial.flux))*
-- [x] **D'Esopo-Pape** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDEsopoPape.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDEsopoPape.flux))*
-- [x] **Floyd-Warshall** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosFloydWarshall.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosFloydWarshall.flux))*
-- [x] **Johnson** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosJohnson.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosJohnson.flux))*
-- [x] **A*** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosAStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosAStar.flux))*
-- [x] **D*** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDStar.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDStar.flux))*
-- [x] **D* Lite** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDStarLite.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosDStarLite.flux))*
-- [x] **ALT** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosALT.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosALT.flux))*
-- [x] **Contraction Hierarchies** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosContractionHierarchies.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosContractionHierarchies.flux))*
-- [x] **Hub Labeling** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosHubLabeling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosHubLabeling.flux))*
-- [x] **Lee Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosLeeAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosLeeAlgorithm.flux))*
-- [x] **Shortest Path Faster Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosShortestPathFasterAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosShortestPathFasterAlgorithm.flux))*
-- [x] **Longest Path in DAG** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosLongestPathInDAG.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosLongestPathInDAG.flux))*
-- [x] **Critical Path Method** — *(Implementado em [`examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosCriticalPathMethod.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/shortest_path/ExampleOfGrafosCaminhosMinimosCriticalPathMethod.flux))*
-
-#### Conectividade, travessia e representação de grafos (40 algoritmos)
-
-- [x] **DFS** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeDFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeDFS.flux))*
-- [x] **BFS** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBFS.flux))*
-- [x] **Connected Components** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeConnectedComponents.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeConnectedComponents.flux))*
-- [x] **Strongly Connected Components** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeStronglyConnectedComponents.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeStronglyConnectedComponents.flux))*
-- [x] **Kosaraju** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeKosaraju.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeKosaraju.flux))*
-- [x] **Tarjan SCC** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTarjanSCC.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTarjanSCC.flux))*
-- [x] **Gabow SCC** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeGabowSCC.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeGabowSCC.flux))*
-- [x] **Path-Based SCC** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadePathBasedSCC.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadePathBasedSCC.flux))*
-- [x] **Topological Sort** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTopologicalSort.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTopologicalSort.flux))*
-- [x] **Kahn's Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeKahn.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeKahn.flux))*
-- [x] **Cycle Detection** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeCycleDetection.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeCycleDetection.flux))*
-- [x] **Bipartite Graph Test** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBipartiteGraphTest.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBipartiteGraphTest.flux))*
-- [x] **Articulation Points** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeArticulationPoints.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeArticulationPoints.flux))*
-- [x] **Bridge Finding** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBridgeFinding.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBridgeFinding.flux))*
-- [x] **Online Bridge Finding** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeOnlineBridgeFinding.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeOnlineBridgeFinding.flux))*
-- [x] **Biconnected Components** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBiconnectedComponents.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBiconnectedComponents.flux))*
-- [x] **Block-Cut Tree** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBlockCutTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBlockCutTree.flux))*
-- [x] **2-SAT** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTwoSAT.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTwoSAT.flux))*
-- [x] **Graph Condensation** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeGraphCondensation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeGraphCondensation.flux))*
-- [x] **Transitive Closure** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTransitiveClosure.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTransitiveClosure.flux))*
-- [x] **Warshall Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeWarshall.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeWarshall.flux))*
-- [x] **Eulerian Path** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeEulerianPath.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeEulerianPath.flux))*
-- [x] **Eulerian Circuit** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeEulerianCircuit.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeEulerianCircuit.flux))*
-- [x] **Hierholzer** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeHierholzer.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeHierholzer.flux))*
-- [x] **Prüfer Code** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadePruferCode.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadePruferCode.flux))*
-- [x] **Tree Diameter** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeDiameter.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeDiameter.flux))*
-- [x] **Tree Center** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeCenter.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeCenter.flux))*
-- [x] **Tree Centroid** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeCentroid.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeCentroid.flux))*
-- [x] **Tree Isomorphism** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeIsomorphism.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeIsomorphism.flux))*
-- [x] **Tree Traversal** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeTraversal.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTreeTraversal.flux))*
-- [x] **Euler Tour Technique** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeEulerTourTechnique.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeEulerTourTechnique.flux))*
-- [x] **Lowest Common Ancestor** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeLowestCommonAncestor.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeLowestCommonAncestor.flux))*
-- [x] **Binary Lifting** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBinaryLifting.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeBinaryLifting.flux))*
-- [x] **Tarjan Offline LCA** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTarjanOfflineLCA.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeTarjanOfflineLCA.flux))*
-- [x] **Farach-Colton and Bender LCA** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeFarachColtonBenderLCA.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeFarachColtonBenderLCA.flux))*
-- [x] **Heavy-Light Decomposition** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeHeavyLightDecomposition.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeHeavyLightDecomposition.flux))*
-- [x] **Centroid Decomposition** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeCentroidDecomposition.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeCentroidDecomposition.flux))*
-- [x] **DSU on Tree** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeDSUOnTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeDSUOnTree.flux))*
-- [x] **Rerooting** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeRerooting.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeRerooting.flux))*
-- [x] **Virtual Tree** — *(Implementado em [`examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeVirtualTree.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/connectivity/ExampleOfGrafosConectividadeVirtualTree.flux))*
-
-#### Fluxo, corte e matching (24 algoritmos)
-
-- [x] **Ford-Fulkerson** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteFordFulkerson.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteFordFulkerson.flux))*
-- [x] **Edmonds-Karp** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteEdmondsKarp.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteEdmondsKarp.flux))*
-- [x] **Dinic** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteDinic.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteDinic.flux))*
-- [x] **Dinic with Scaling** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteDinicWithScaling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteDinicWithScaling.flux))*
-- [x] **Push-Relabel** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCortePushRelabel.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCortePushRelabel.flux))*
-- [x] **Highest-Label Push-Relabel** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteHighestLabelPushRelabel.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteHighestLabelPushRelabel.flux))*
-- [x] **MPM** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteMPM.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteMPM.flux))*
-- [x] **Stoer-Wagner** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteStoerWagner.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteStoerWagner.flux))*
-- [x] **Karger's Min-Cut** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKargerMinCut.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKargerMinCut.flux))*
-- [x] **Karger-Stein** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKargerStein.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKargerStein.flux))*
-- [x] **Minimum-Cost Flow** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteMinimumCostFlow.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteMinimumCostFlow.flux))*
-- [x] **Successive Shortest Path** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteSuccessiveShortestPath.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteSuccessiveShortestPath.flux))*
-- [x] **Min-Cost Max-Flow with Potentials** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteMinCostMaxFlowWithPotentials.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteMinCostMaxFlowWithPotentials.flux))*
-- [x] **Cycle-Canceling** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteCycleCanceling.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteCycleCanceling.flux))*
-- [x] **Flow with Demands** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteFlowWithDemands.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteFlowWithDemands.flux))*
-- [x] **Kuhn Matching** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKuhnMatching.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKuhnMatching.flux))*
-- [x] **Hungarian Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteHungarianAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteHungarianAlgorithm.flux))*
-- [x] **Kuhn-Munkres** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKuhnMunkres.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteKuhnMunkres.flux))*
-- [x] **Hopcroft-Karp** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteHopcroftKarp.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteHopcroftKarp.flux))*
-- [x] **Edmonds' Blossom** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteEdmondsBlossom.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteEdmondsBlossom.flux))*
-- [x] **Gale-Shapley** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteGaleShapley.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteGaleShapley.flux))*
-- [x] **Stable Marriage** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteStableMarriage.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteStableMarriage.flux))*
-- [x] **Stable Roommates** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteStableRoommates.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteStableRoommates.flux))*
-- [x] **Assignment Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteAssignmentAlgorithm.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/flow/ExampleOfGrafosFluxoCorteAssignmentAlgorithm.flux))*
-
-#### Grafos avançados, coloração e cortes (14 algoritmos)
-
-- [x] **Chu–Liu/Edmonds Algorithm** — árvore geradora mínima direcionada — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralChuLiuEdmonds.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralChuLiuEdmonds.flux))*
-- [x] **Yen’s Algorithm** — k menores caminhos — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralYenKShortestPaths.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralYenKShortestPaths.flux))*
-- [x] **Suurballe’s Algorithm** — caminhos disjuntos — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralSuurballe.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralSuurballe.flux))*
-- [x] **Karger’s Algorithm** — corte mínimo global — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralKargerMinCut.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralKargerMinCut.flux))*
-- [x] **Bron–Kerbosch Algorithm** — cliques máximas — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralBronKerbosch.flux))*
-- [x] **Welsh–Powell Algorithm** — coloração de grafos — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralWelshPowell.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralWelshPowell.flux))*
-- [x] **DSATUR** — coloração de grafos — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralDSATUR.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralDSATUR.flux))*
-- [x] **Edmonds’ Algorithm for Directed MST** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralEdmondsDirectedMST.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralEdmondsDirectedMST.flux))*
-- [x] **Transitive Reduction** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralTransitiveReduction.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralTransitiveReduction.flux))*
-- [x] **Graph Coloring Algorithms** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralGraphColoring.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralGraphColoring.flux))*
-- [x] **Maximum Clique Algorithms** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralMaximumClique.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralMaximumClique.flux))*
-- [x] **Minimum Feedback Vertex Set** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralMinimumFeedbackVertexSet.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralMinimumFeedbackVertexSet.flux))*
-- [x] **BFS/DFS Paralelo** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralParallelBFSDFS.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralParallelBFSDFS.flux))*
-- [x] **Graph Contraction** — *(Implementado em [`examples/algorithms/03_graphs/core/ExampleOfGrafosGeralGraphContraction.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/core/ExampleOfGrafosGeralGraphContraction.flux))*
-
-#### Teoria da computação e complexidade (13 algoritmos)
-
-- [x] **Redução de Karp** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeKarpReduction.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeKarpReduction.flux))*
-- [x] **Redução de Cook** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeCookReduction.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeCookReduction.flux))*
-- [x] **Teorema de Cook-Levin** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeCookLevinTheorem.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeCookLevinTheorem.flux))*
-- [x] **Algoritmo de Hopcroft–Karp** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeHopcroftKarp.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeHopcroftKarp.flux))*
-- [x] **Algoritmos de aproximação para Set Cover** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeSetCoverApproximation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeSetCoverApproximation.flux))*
-- [x] **Algoritmo de aproximação para Vertex Cover** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeVertexCoverApproximation.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeVertexCoverApproximation.flux))*
-- [x] **Christofides’ Algorithm** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeChristofidesTSP.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeChristofidesTSP.flux))*
-- [x] **PTAS para Knapsack** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadePTASKnapsack.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadePTASKnapsack.flux))*
-- [x] **FPTAS para Knapsack** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeFPTASKnapsack.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeFPTASKnapsack.flux))*
-- [x] **Branch and Cut** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeBranchAndCut.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeBranchAndCut.flux))*
-- [x] **Bron–Kerbosch** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeBronKerbosch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeBronKerbosch.flux))*
-- [x] **Algoritmos parametrizados** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeParameterizedAlgorithms.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeParameterizedAlgorithms.flux))*
-- [x] **Kernelization** — *(Implementado em [`examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeKernelization.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/complexity/ExampleOfGrafosComplexidadeKernelization.flux))*
+| Nome do Algoritmo                                            | Local em Disco                                                                                                 |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **Boyer-Moore Majority Vote**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysBoyerMooreMajorityVote.flux) |
+| **CDQ Divide and Conquer**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysCDQDivideAndConquer.flux) |
+| **Coordinate Compression**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysCoordinateCompression.flux) |
+| **Difference Array**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysDifferenceArray.flux) |
+| **Difference Constraints**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysDifferenceConstraints.flux) |
+| **Dutch National Flag**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysDutchNationalFlag.flux) |
+| **Fast and Slow Pointers**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysFastAndSlowPointers.flux) |
+| **Fisher-Yates Shuffle**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysFisherYates.flux) |
+| **Floyd Random Sampling**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysFloydRandomSampling.flux) |
+| **Introselect**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysIntroselect.flux) |
+| **Inversion Count**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysInversionCount.flux) |
+| **Kadane's Algorithm**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysKadane.flux) |
+| **Longest Increasing Subsequence — LIS**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysLongestIncreasingSubsequence.flux) |
+| **Maximum Product Subarray**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysMaximumProductSubarray.flux) |
+| **Median of Medians**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysMedianOfMedians.flux) |
+| **Monotonic Queue**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysMonotonicQueue.flux) |
+| **Monotonic Stack**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysMonotonicStack.flux) |
+| **Mo's Algorithm**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysMosAlgorithm.flux) |
+| **Mo's Algorithm with Modifications**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysMosAlgorithmWithModifications.flux) |
+| **Next Permutation (Narayana Pandita)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysNextPermutation.flux) |
+| **Offline Query Processing**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysOfflineQueryProcessing.flux) |
+| **Parallel Binary Search**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysParallelBinarySearch.flux) |
+| **Prefix Sum**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysPrefixSum.flux) |
+| **Quickselect**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysQuickselect.flux) |
+| **Range Maximum Query**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysRangeMaximumQuery.flux) |
+| **Range Minimum Query**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysRangeMinimumQuery.flux) |
+| **Reservoir Sampling**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysReservoirSampling.flux) |
+| **Sliding Window**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysSlidingWindow.flux) |
+| **Sliding Window Maximum**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysSlidingWindowMaximum.flux) |
+| **Sliding Window Minimum**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysSlidingWindowMinimum.flux) |
+| **Sparse Table**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysSparseTable.flux) |
+| **Square-Root Decomposition**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysSquareRootDecomposition.flux) |
+| **Sweep Line**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysSweepLine.flux) |
+| **Trapping Rain Water**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysTrappingRainWater.flux) |
+| **Two-Pointer Technique**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosArraysTwoPointer.flux) |
+| **A-Star Search**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaAStar.flux) |
+| **Alpha-Beta Pruning**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaAlphaBeta.flux) |
+| **Breadth-First Search — BFS**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBFS.flux) |
+| **B-Star Search**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBStar.flux) |
+| **Beam Search**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBeam.flux) |
+| **Beam Stack Search**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBeamStack.flux) |
+| **Best-First Search**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBestFirst.flux) |
+| **Bidirectional Search**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBidirectional.flux) |
+| **Bidirectional A-Star**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBidirectionalAStar.flux) |
+| **Binary Search**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaBinarySearch.flux) |
+| **Depth-First Search — DFS**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaDFS.flux) |
+| **D-Star Search**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaDStar.flux) |
+| **D-Star Lite Search**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaDStarLite.flux) |
+| **Dijkstra Search**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaDijkstra.flux) |
+| **Expectimax**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaExpectimax.flux) |
+| **Exponential Search**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaExponential.flux) |
+| **Eytzinger Search**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaEytzinger.flux) |
+| **Fibonacci Search**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaFibonacci.flux) |
+| **Fringe Search**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaFringe.flux) |
+| **Hill Climbing (Steepest Ascent)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaHillClimbing.flux) |
+| **IDA-Star Search**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaIDAStar.flux) |
+| **Iterative Deepening DFS**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaIDDFS.flux) |
+| **Interpolation Search**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaInterpolation.flux) |
+| **Iterative Deepening A-Star**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaIterativeDeepeningAStar.flux) |
+| **Jump Search**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaJump.flux) |
+| **Jump Point Search**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaJumpPoint.flux) |
+| **Lifelong Planning A-Star — LPA-Star**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaLPAStar.flux) |
+| **Linear Search**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaLinearSearch.flux) |
+| **Monte Carlo Tree Search**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaMCTS.flux) |
+| **MTD(f)**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaMTDf.flux) |
+| **Minimax**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaMinimax.flux) |
+| **Negamax**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaNegamax.flux) |
+| **Principal Variation Search**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaPVS.flux) |
+| **Recursive Best-First Search**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaRBFS.flux) |
+| **SMA-Star Search**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaSMAStar.flux) |
+| **Tabu Search**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaTabu.flux) |
+| **Ternary Search**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaTernary.flux) |
+| **Uniform Binary Search**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaUniformBinary.flux) |
+| **Uniform-Cost Search**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosBuscaUniformCost.flux) |
+| **Ackermann Function**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisAckermann.flux) |
+| **Alias Method**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisAliasMethod.flux) |
+| **Bloom Filter**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisBloomFilter.flux) |
+| **Booth's Algorithm**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisBooth.flux) |
+| **Brent's Cycle Detection**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisBrent.flux) |
+| **Brian Kernighan's Bit Counting**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisBrianKernighan.flux) |
+| **Cuckoo Hashing**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisCuckoo.flux) |
+| **Doomsday Algorithm**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisDoomsday.flux) |
+| **Easter Algorithms**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisEaster.flux) |
+| **Fast Doubling**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisFastDoubling.flux) |
+| **Fischer-Heun RMQ**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisFischerHeunRMQ.flux) |
+| **Gosper's Hack**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisGospersHack.flux) |
+| **Horner's Method**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisHorner.flux) |
+| **Josephus**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisJosephus.flux) |
+| **Kahan Summation**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisKahanSummation.flux) |
+| **Karatsuba Multiplication**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisKaratsuba.flux) |
+| **Ramer-Douglas-Peucker**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisRamerDouglasPeucker.flux) |
+| **Reservoir Sampling**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisReservoirSampling.flux) |
+| **Russian Peasant Multiplication**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisRussianPeasant.flux) |
+| **Shunting-Yard**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisShuntingYard.flux) |
+| **Skip List Algorithms**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisSkipList.flux) |
+| **Tortoise and Hare**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisTortoiseAndHare.flux) |
+| **Zeller's Congruence**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisZeller.flux) |
+| **Zobrist Hashing**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosEspeciaisZobrist.flux) |
+| **Bead Sort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBead.flux) |
+| **Bitonic Sort**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBitonic.flux) |
+| **Bitonic Sorting Network**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBitonicNetwork.flux) |
+| **Block Sort (WikiSort / GrailSort)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBlock.flux) |
+| **Bogosort**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBogo.flux) |
+| **Bubble Sort**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBubble.flux) |
+| **Bucket Sort**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBucket.flux) |
+| **Burstsort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoBurst.flux) |
+| **Comb Sort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoComb.flux) |
+| **Counting Sort**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoCounting.flux) |
+| **Cycle Sort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoCycle.flux) |
+| **Drop-Merge Sort**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoDropMerge.flux) |
+| **Dual-Pivot Quicksort (Yaroslavskiy)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoDualPivotQuick.flux) |
+| **External Merge Sort**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoExternalMerge.flux) |
+| **Flashsort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoFlash.flux) |
+| **Gnome Sort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoGnome.flux) |
+| **Heap Sort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoHeap.flux) |
+| **Insertion Sort**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoInsertion.flux) |
+| **Introsort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoIntro.flux) |
+| **Library Sort**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoLibrary.flux) |
+| **Bottom-Up Merge Sort**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoMergeBottomUp.flux) |
+| **Merge Sort (Top-Down)**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoMergeTopDown.flux) |
+| **Natural Merge Sort**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoNaturalMerge.flux) |
+| **Odd-Even Sort**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoOddEven.flux) |
+| **Odd-Even Merge Sort**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoOddEvenMerge.flux) |
+| **Pancake Sort**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoPancake.flux) |
+| **Patience Sort**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoPatience.flux) |
+| **Pigeonhole Sort**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoPigeonhole.flux) |
+| **Polyphase Merge Sort**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoPolyphaseMerge.flux) |
+| **Postman Sort**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoPostman.flux) |
+| **Quick Sort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoQuick.flux) |
+| **Radix Sort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoRadix.flux) |
+| **Randomized QuickSort**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoRandomizedQuick.flux) |
+| **Samplesort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoSample.flux) |
+| **Selection Sort**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoSelection.flux) |
+| **Cocktail Shaker Sort**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoShaker.flux) |
+| **Shear Sort (2D Mesh)**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoShear.flux) |
+| **Shell Sort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoShell.flux) |
+| **Slowsort**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoSlow.flux) |
+| **Smoothsort**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoSmooth.flux) |
+| **Spaghetti Sort**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoSpaghetti.flux) |
+| **Stooge Sort**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoStooge.flux) |
+| **Strand Sort**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoStrand.flux) |
+| **Three-Way Quicksort (Bentley-McIlroy)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoThreeWayQuick.flux) |
+| **Timsort**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoTim.flux) |
+| **Tournament Sort**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoTournament.flux) |
+| **Tree Sort**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosOrdenacaoTree.flux) |
+| **Amortized Algorithms**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasAmortizedAlgorithms.flux) |
+| **Approximation Algorithm**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasApproximationAlgorithm.flux) |
+| **Backtracking**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasBacktracking.flux) |
+| **Branch and Bound**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasBranchAndBound.flux) |
+| **Brute Force**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasBruteForce.flux) |
+| **Decrease and Conquer**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasDecreaseAndConquer.flux) |
+| **Decremental Algorithm**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasDecrementalAlgorithm.flux) |
+| **Distributed Algorithm**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasDistributedAlgorithm.flux) |
+| **Divide and Conquer**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasDivideAndConquer.flux) |
+| **Dynamic Convex Hull**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasDynamicConvexHull.flux) |
+| **Dynamic Programming**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasDynamicProgramming.flux) |
+| **External-Memory Algorithm**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasExternalMemoryAlgorithm.flux) |
+| **External Sorting**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasExternalSorting.flux) |
+| **Fractional Cascading**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasFractionalCascading.flux) |
+| **Greedy Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasGreedyAlgorithm.flux) |
+| **Heuristic Search**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasHeuristicSearch.flux) |
+| **Incremental Algorithm**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasIncrementalAlgorithm.flux) |
+| **Las Vegas Algorithm**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasLasVegasAlgorithm.flux) |
+| **Matrix Exponentiation Paradigm**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasMatrixExponentiation.flux) |
+| **Meet-in-the-Middle**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasMeetInTheMiddle.flux) |
+| **Metaheuristic Optimization**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasMetaheuristicOptimization.flux) |
+| **Monotone Chain Convex Hull**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasMonotoneChain.flux) |
+| **Monte Carlo Algorithm**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasMonteCarloAlgorithm.flux) |
+| **Offline Algorithm**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasOfflineAlgorithm.flux) |
+| **Online Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasOnlineAlgorithm.flux) |
+| **Parallel Algorithm**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasParallelAlgorithm.flux) |
+| **Prune and Search (Megiddo)**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasPruneAndSearch.flux) |
+| **Randomized Algorithm**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasRandomizedAlgorithm.flux) |
+| **Streaming Algorithm**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasStreamingAlgorithm.flux) |
+| **Transform and Conquer**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/01_foundations/ExampleOfFundamentosParadigmasTransformAndConquer.flux) |
 
 
-### Domínio IV: Strings, Texto & Teoria da Informação (105 algoritmos)
 
-#### Codecs modernos e formatos de compressão (13 algoritmos)
+### Domínio II: Estruturas de Dados Avançadas & Streaming (88 algoritmos)
 
-- [ ] Brotli
-- [x] **Zstandard — Zstd** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressZstdContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressZstdContract.flux))*
-- [ ] LZ4 já aparece
-- [ ] Snappy
-- [ ] LZMA já aparece
-- [ ] Huffman Canonical Coding
-- [ ] ANS — Asymmetric Numeral Systems
-- [ ] tANS
-- [ ] rANS
-- [ ] Burrows-Wheeler + Move-to-Front já aparecem separadamente
-- [ ] Delta-of-Delta Encoding
-- [ ] Frame of Reference Encoding
-- [ ] Roaring Bitmaps
+| Nome do Algoritmo                                            | Local em Disco                                                                                                 |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **AA-Tree**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasAATree.flux) |
+| **AVL Tree**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasAVLTree.flux) |
+| **BK-Tree**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasBKTree.flux) |
+| **B+ Tree**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasBPlusTree.flux) |
+| **B-Tree**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasBTree.flux) |
+| **Binomial Heap**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasBinomialHeap.flux) |
+| **Bloom Filter**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasBloomFilter.flux) |
+| **Cartesian Tree**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasCartesianTree.flux) |
+| **Centroid Decomposition**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasCentroidDecomposition.flux) |
+| **Count-Min Sketch (Conservative Update)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasCountMinSketch.flux) |
+| **Counting Bloom Filter**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasCountingBloomFilter.flux) |
+| **Cuckoo Filter**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasCuckooFilter.flux) |
+| **DSU on Tree**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasDSUOnTree.flux) |
+| **Disjoint Set Union**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasDisjointSetUnion.flux) |
+| **Euler Tour Tree**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasEulerTourTree.flux) |
+| **Fenwick Tree**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasFenwickTree.flux) |
+| **Fenwick Tree 2D**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasFenwickTree2D.flux) |
+| **Fibonacci Heap**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasFibonacciHeap.flux) |
+| **Finger Tree**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasFingerTree.flux) |
+| **Heavy-Light Decomposition**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasHeavyLightDecomposition.flux) |
+| **HyperLogLog++**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasHyperLogLogPlusPlus.flux) |
+| **Implicit Treap**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasImplicitTreap.flux) |
+| **Interval Tree**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasIntervalTree.flux) |
+| **KD-Tree**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasKDTree.flux) |
+| **Lazy Propagation**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasLazyPropagation.flux) |
+| **Leftist Heap**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasLeftistHeap.flux) |
+| **Link-Cut Tree**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasLinkCutTree.flux) |
+| **Locality-Sensitive Hashing**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasLocalitySensitiveHashing.flux) |
+| **MinHash**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasMinHash.flux) |
+| **Octree**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasOctree.flux) |
+| **Order Statistic Tree**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasOrderStatisticTree.flux) |
+| **Patricia Trie**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasPatriciaTrie.flux) |
+| **Quadtree**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasQuadtree.flux) |
+| **Quotient Filter**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasQuotientFilter.flux) |
+| **R-Star Tree**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRStarTree.flux) |
+| **R-Tree**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRTree.flux) |
+| **Radix Heap**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRadixHeap.flux) |
+| **Radix Tree**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRadixTree.flux) |
+| **Randomized Treap**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRandomizedTreap.flux) |
+| **Range Tree**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRangeTree.flux) |
+| **Red-Black Tree**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRedBlackTree.flux) |
+| **Roaring Bitmap**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRoaringBitmap.flux) |
+| **Rope**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasRope.flux) |
+| **Scapegoat Tree**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasScapegoatTree.flux) |
+| **Segment Tree**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSegmentTree.flux) |
+| **Segment Tree 2D**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSegmentTree2D.flux) |
+| **Skew Heap**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSkewHeap.flux) |
+| **Skip List**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSkipList.flux) |
+| **Sparse Table**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSparseTable.flux) |
+| **Splay Tree**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSplayTree.flux) |
+| **Sqrt Tree**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSqrtTree.flux) |
+| **Succinct Bit Vector**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSuccinctBitVector.flux) |
+| **Suffix Automaton**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSuffixAutomaton.flux) |
+| **Suffix Tree**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasSuffixTree.flux) |
+| **Ternary Search Tree**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasTernarySearchTree.flux) |
+| **Treap**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasTreap.flux) |
+| **Trie**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasTrie.flux) |
+| **2-3-4 Tree**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasTwoThreeFourTree.flux) |
+| **2-3 Tree**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasTwoThreeTree.flux) |
+| **Union-Find**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasUnionFind.flux) |
+| **XOR Filter**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosAvancadasXORFilter.flux) |
+| **Binary Heap**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasBinaryHeap.flux) |
+| **Brent's Cycle Detection**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasBrentCycleDetection.flux) |
+| **Cuckoo Hashing**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasCuckooHashing.flux) |
+| **D-ary Heap**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasDaryHeap.flux) |
+| **Hash Table**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasHashTable.flux) |
+| **Hopscotch Hashing**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasHopscotchHashing.flux) |
+| **LFU Cache**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasLFUCache.flux) |
+| **LRU Cache**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasLRUCache.flux) |
+| **Pairing Heap**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasPairingHeap.flux) |
+| **Persistent Data Structures**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasPersistentDataStructures.flux) |
+| **Persistent Segment Tree**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasPersistentSegmentTree.flux) |
+| **Robin Hood Hashing**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasRobinHoodHashing.flux) |
+| **Floyd's Tortoise and Hare**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasTortoiseAndHare.flux) |
+| **Van Emde Boas Tree**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasVanEmdeBoasTree.flux) |
+| **Wavelet Tree**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosBasicasWaveletTree.flux) |
+| **Count-Min Sketch**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingCountMinSketch.flux) |
+| **Count-Sketch**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingCountSketch.flux) |
+| **Flajolet-Martin Algorithm**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingFlajoletMartin.flux) |
+| **HyperLogLog**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingHyperLogLog.flux) |
+| **KLL Sketch**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingKLLSketch.flux) |
+| **Lossy Counting**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingLossyCounting.flux) |
+| **Min-wise Independent Permutations**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingMinWisePermutations.flux) |
+| **Misra-Gries Algorithm**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingMisraGries.flux) |
+| **Reservoir Sampling**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingReservoirSampling.flux) |
+| **Space-Saving Algorithm**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingSpaceSaving.flux) |
+| **Sticky Sampling**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingStickySampling.flux) |
+| **t-digest**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/02_data_structures/ExampleOfEstruturasDeDadosStreamingTDigest.flux) |
 
-#### Compressão de dados e codificação clássica (30 algoritmos)
 
-- [ ] Huffman Coding
-- [ ] Adaptive Huffman
-- [ ] Shannon-Fano
-- [ ] Arithmetic Coding
-- [ ] Range Coding
-- [ ] Golomb Coding
-- [ ] Rice Coding
-- [ ] Elias Gamma
-- [ ] Elias Delta
-- [ ] Elias Omega
-- [ ] Fibonacci Coding
-- [ ] Run-Length Encoding
-- [ ] LZ77
-- [ ] LZ78
-- [ ] LZW
-- [ ] LZSS
-- [x] **LZMA** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressLzmaContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressLzmaContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressXzContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressXzContract.flux))*
-- [ ] LZO
-- [ ] LZ4
-- [x] **DEFLATE** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressDeflateContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressDeflateContract.flux), [`flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux))*
-- [ ] PPM
-- [x] **Burrows-Wheeler Transform** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux))*
-- [ ] Move-to-Front
-- [ ] Delta Encoding
-- [ ] Byte Pair Encoding
-- [ ] Vector Quantization
-- [ ] SPIHT
-- [ ] Embedded Zerotree Wavelet
-- [ ] Fractal Compression
-- [ ] Wavelet Compression
 
-#### Distância e similaridade de strings (14 algoritmos)
+### Domínio III: Teoria dos Grafos & Redes (144 algoritmos)
 
-- [ ] Hamming Distance
-- [ ] Levenshtein Distance
-- [ ] Damerau-Levenshtein Distance
-- [ ] Jaro Distance
-- [ ] Jaro-Winkler
-- [ ] Jaccard Similarity
-- [ ] Dice Coefficient
-- [ ] Longest Common Subsequence
-- [ ] Longest Common Substring
-- [ ] Shortest Common Supersequence
-- [ ] Hirschberg Algorithm
-- [ ] Needleman-Wunsch
-- [ ] Smith-Waterman
-- [ ] Dynamic Time Warping
+| Nome do Algoritmo                                            | Local em Disco                                                                                                 |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **Chinese Postman Problem**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosChinesePostman.flux) |
+| **Eppstein's Algorithm (k-Shortest Paths)**                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosEppsteinKShortestPaths.flux) |
+| **Held-Karp TSP**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosHeldKarpTSP.flux) |
+| **Lifelong Planning A-Star (LPA-Star)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosLifelongPlanningAStar.flux) |
+| **ALT**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosALT.flux) |
+| **A-Star**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosAStar.flux) |
+| **Bellman-Ford**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosBellmanFord.flux) |
+| **Bidirectional Dijkstra**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosBidirectionalDijkstra.flux) |
+| **Contraction Hierarchies**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosContractionHierarchies.flux) |
+| **Critical Path Method**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosCriticalPathMethod.flux) |
+| **D'Esopo-Pape**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosDEsopoPape.flux) |
+| **D-Star**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosDStar.flux) |
+| **D-Star Lite**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosDStarLite.flux) |
+| **Dial's Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosDial.flux) |
+| **Dijkstra**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosDijkstra.flux) |
+| **Floyd-Warshall**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosFloydWarshall.flux) |
+| **Hub Labeling**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosHubLabeling.flux) |
+| **Johnson**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosJohnson.flux) |
+| **Lee Algorithm**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosLeeAlgorithm.flux) |
+| **Longest Path in DAG**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosLongestPathInDAG.flux) |
+| **SPFA**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosSPFA.flux) |
+| **Shortest Path Faster Algorithm**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosShortestPathFasterAlgorithm.flux) |
+| **0-1 BFS**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosMinimosZeroOneBFS.flux) |
+| **Thorup Undirected Shortest Path**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosCaminhosThorupShortestPath.flux) |
+| **Branch and Cut**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeBranchAndCut.flux) |
+| **Bron–Kerbosch**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeBronKerbosch.flux) |
+| **Christofides’ Algorithm**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeChristofidesTSP.flux) |
+| **Teorema de Cook-Levin**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeCookLevinTheorem.flux) |
+| **Redução de Cook**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeCookReduction.flux) |
+| **FPTAS para Knapsack**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeFPTASKnapsack.flux) |
+| **Algoritmo de Hopcroft–Karp**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeHopcroftKarp.flux) |
+| **Redução de Karp**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeKarpReduction.flux) |
+| **Kernelization**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeKernelization.flux) |
+| **PTAS para Knapsack**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadePTASKnapsack.flux) |
+| **Algoritmos parametrizados**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeParameterizedAlgorithms.flux) |
+| **Algoritmos de aproximação para Set Cover**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeSetCoverApproximation.flux) |
+| **Algoritmo de aproximação para Vertex Cover**               | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosComplexidadeVertexCoverApproximation.flux) |
+| **Articulation Points**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeArticulationPoints.flux) |
+| **BFS**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeBFS.flux) |
+| **Biconnected Components**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeBiconnectedComponents.flux) |
+| **Binary Lifting**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeBinaryLifting.flux) |
+| **Bipartite Graph Test**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeBipartiteGraphTest.flux) |
+| **Block-Cut Tree**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeBlockCutTree.flux) |
+| **Bridge Finding**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeBridgeFinding.flux) |
+| **Centroid Decomposition**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeCentroidDecomposition.flux) |
+| **Connected Components**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeConnectedComponents.flux) |
+| **Cycle Detection**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeCycleDetection.flux) |
+| **DFS**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeDFS.flux) |
+| **DSU on Tree**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeDSUOnTree.flux) |
+| **Euler Tour Technique**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeEulerTourTechnique.flux) |
+| **Eulerian Circuit**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeEulerianCircuit.flux) |
+| **Eulerian Path**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeEulerianPath.flux) |
+| **Farach-Colton and Bender LCA**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeFarachColtonBenderLCA.flux) |
+| **Gabow SCC**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeGabowSCC.flux) |
+| **Graph Condensation**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeGraphCondensation.flux) |
+| **Heavy-Light Decomposition**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeHeavyLightDecomposition.flux) |
+| **Hierholzer**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeHierholzer.flux) |
+| **Kahn's Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeKahn.flux) |
+| **Kosaraju**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeKosaraju.flux) |
+| **Lowest Common Ancestor**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeLowestCommonAncestor.flux) |
+| **Online Bridge Finding**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeOnlineBridgeFinding.flux) |
+| **Path-Based SCC**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadePathBasedSCC.flux) |
+| **Prüfer Code**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadePruferCode.flux) |
+| **Rerooting**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeRerooting.flux) |
+| **Strongly Connected Components**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeStronglyConnectedComponents.flux) |
+| **Tarjan Offline LCA**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTarjanOfflineLCA.flux) |
+| **Tarjan SCC**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTarjanSCC.flux) |
+| **Topological Sort**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTopologicalSort.flux) |
+| **Transitive Closure**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTransitiveClosure.flux) |
+| **Tree Center**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTreeCenter.flux) |
+| **Tree Centroid**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTreeCentroid.flux) |
+| **Tree Diameter**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTreeDiameter.flux) |
+| **Tree Isomorphism**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTreeIsomorphism.flux) |
+| **Tree Traversal**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTreeTraversal.flux) |
+| **2-SAT**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeTwoSAT.flux) |
+| **Virtual Tree**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeVirtualTree.flux) |
+| **Warshall Algorithm**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosConectividadeWarshall.flux) |
+| **Chordal Graph Recognition (MCS)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosEstruturaisChordalGraphMCS.flux) |
+| **Lexicographic BFS (LexBFS)**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosEstruturaisLexicographicBFS.flux) |
+| **Modular Decomposition**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosEstruturaisModularDecomposition.flux) |
+| **SPQR Tree Decomposition**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosEstruturaisSPQRTree.flux) |
+| **Tree Decomposition (Treewidth)**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosEstruturaisTreeDecomposition.flux) |
+| **Assignment Algorithm**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteAssignmentAlgorithm.flux) |
+| **Cycle-Canceling**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteCycleCanceling.flux) |
+| **Dinic**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteDinic.flux) |
+| **Dinic with Scaling**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteDinicWithScaling.flux) |
+| **Edmonds' Blossom**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteEdmondsBlossom.flux) |
+| **Edmonds-Karp**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteEdmondsKarp.flux) |
+| **Flow with Demands**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteFlowWithDemands.flux) |
+| **Ford-Fulkerson**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteFordFulkerson.flux) |
+| **Gale-Shapley**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteGaleShapley.flux) |
+| **Highest-Label Push-Relabel**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteHighestLabelPushRelabel.flux) |
+| **Hopcroft-Karp**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteHopcroftKarp.flux) |
+| **Hungarian Algorithm**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteHungarianAlgorithm.flux) |
+| **Karger's Min-Cut**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteKargerMinCut.flux) |
+| **Karger-Stein**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteKargerStein.flux) |
+| **Kuhn Matching**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteKuhnMatching.flux) |
+| **Kuhn-Munkres**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteKuhnMunkres.flux) |
+| **MPM**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteMPM.flux) |
+| **Min-Cost Max-Flow with Potentials**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteMinCostMaxFlowWithPotentials.flux) |
+| **Minimum-Cost Flow**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteMinimumCostFlow.flux) |
+| **Push-Relabel**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCortePushRelabel.flux) |
+| **Stable Marriage**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteStableMarriage.flux) |
+| **Stable Roommates**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteStableRoommates.flux) |
+| **Stoer-Wagner**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteStoerWagner.flux) |
+| **Successive Shortest Path**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoCorteSuccessiveShortestPath.flux) |
+| **Excess-Scaling Min-Cost Flow**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoExcessScalingMinCost.flux) |
+| **FIFO Push-Relabel**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoFIFOPushRelabel.flux) |
+| **Gomory-Hu Cut Tree**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoGomoryHuTree.flux) |
+| **Maximum Weight General Matching**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoMaximumWeightGeneralMatching.flux) |
+| **Push-Relabel (Highest-Label and Gap)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosFluxoPushRelabelGapHeuristic.flux) |
+| **Bron–Kerbosch Algorithm**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralBronKerbosch.flux) |
+| **Chu–Liu/Edmonds Algorithm**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralChuLiuEdmonds.flux) |
+| **DSATUR**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralDSATUR.flux) |
+| **Edmonds’ Algorithm for Directed MST**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralEdmondsDirectedMST.flux) |
+| **Graph Coloring Algorithms**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralGraphColoring.flux) |
+| **Graph Contraction**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralGraphContraction.flux) |
+| **Karger’s Algorithm**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralKargerMinCut.flux) |
+| **Maximum Clique Algorithms**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralMaximumClique.flux) |
+| **Minimum Feedback Vertex Set**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralMinimumFeedbackVertexSet.flux) |
+| **BFS/DFS Paralelo**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralParallelBFSDFS.flux) |
+| **Suurballe’s Algorithm**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralSuurballe.flux) |
+| **Transitive Reduction**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralTransitiveReduction.flux) |
+| **Welsh–Powell Algorithm**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralWelshPowell.flux) |
+| **Yen’s Algorithm**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosGeralYenKShortestPaths.flux) |
+| **Borůvka**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTBoruvka.flux) |
+| **Dynamic MST**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTDynamicMST.flux) |
+| **Euclidean MST**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTEuclideanMST.flux) |
+| **Kruskal**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTKruskal.flux) |
+| **Minimum Bottleneck Spanning Tree**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTMinimumBottleneck.flux) |
+| **Prim**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTPrim.flux) |
+| **Reverse-Delete**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTReverseDelete.flux) |
+| **Second-Best MST**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTSecondBestMST.flux) |
+| **Sollin**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosMSTSollin.flux) |
+| **Boyer-Myrvold Planarity Test**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosPlanaresBoyerMyrvold.flux) |
+| **Hopcroft-Tarjan Planarity Test**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosPlanaresHopcroftTarjan.flux) |
+| **Lipton-Tarjan Planar Separator**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosPlanaresLiptonTarjanSeparator.flux) |
+| **Schnyder Grid Embedding**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosPlanaresSchnyderEmbedding.flux) |
+| **Tutte Spring Embedding**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosPlanaresTutteSpringEmbedding.flux) |
+| **Brandes Betweenness Centrality**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosRedesBrandesBetweenness.flux) |
+| **Closeness Centrality**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosRedesClosenessCentrality.flux) |
+| **HITS Algorithm (Hubs and Authorities)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosRedesHITSAlgorithm.flux) |
+| **Katz Centrality**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosRedesKatzCentrality.flux) |
+| **Louvain Community Detection**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/03_graphs/ExampleOfGrafosRedesLouvainCommunityDetection.flux) |
 
-#### Strings e casamento de padrões (31 algoritmos)
 
-- [ ] Naive String Matching
-- [ ] Knuth-Morris-Pratt
-- [ ] Prefix Function
-- [ ] Rabin-Karp
-- [ ] Z Algorithm
-- [ ] Boyer-Moore
-- [ ] Boyer-Moore-Horspool
-- [ ] Sunday Algorithm
-- [ ] Zhu-Takaoka
-- [ ] Wu-Manber
-- [ ] Bitap
-- [ ] Aho-Corasick
-- [ ] Ukkonen
-- [ ] Suffix Array
-- [ ] Kasai Algorithm
-- [ ] DC3 / Kärkkäinen-Sanders
-- [ ] Suffix Tree
-- [ ] Suffix Automaton
-- [ ] Palindromic Tree / Eertree
-- [ ] Manacher
-- [ ] Lyndon Factorization
-- [ ] Duval Algorithm
-- [ ] Booth's Algorithm
-- [ ] Minimal Rotation
-- [ ] Rolling Hash
-- [ ] Double Hashing
-- [ ] String Hashing
-- [x] **Burrows-Wheeler Transform** — *(Já implementado em [`flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressBzip2Contract.flux))*
-- [ ] FM-Index
-- [ ] Trigram Search
-- [ ] Wildcard Matching
 
-#### Teoria da informação e códigos corretores (17 algoritmos)
+### Domínio IV: Strings, Texto & Teoria da Informação (130 algoritmos)
 
-- [ ] Hamming Code
-- [ ] Reed-Solomon
-- [ ] BCH
-- [ ] Berlekamp-Massey
-- [ ] Peterson-Gorenstein-Zierler
-- [ ] BCJR
-- [ ] Viterbi Decoder
-- [ ] Turbo Codes
-- [ ] LDPC
-- [x] **CRC** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressGzipContract.flux))*
-- [x] **Adler-32** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux) e [`flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseCompressStdLib_CompressZlibContract.flux))*
-- [x] **Fletcher Checksum** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux))*
-- [x] **Luhn Algorithm** — *(Já implementado em [`flux/ExampleOfUseHashStdLib_HashChecksumContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseHashStdLib_HashChecksumContract.flux))*
-- [ ] Verhoeff
-- [ ] Damm Algorithm
-- [ ] Gray Code
-- [ ] Parity Check
+| Nome do Algoritmo                                            | Local em Disco                                                                                                 |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **Aho-Corasick**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoAhoCorasick.flux) |
+| **Bitap**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoBitap.flux) |
+| **Booth's Algorithm**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoBoothsAlgorithm.flux) |
+| **Boyer-Moore**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoBoyerMoore.flux) |
+| **Boyer-Moore-Horspool**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoBoyerMooreHorspool.flux) |
+| **Burrows-Wheeler Transform**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoBurrowsWheeler.flux) |
+| **DC3 / Kärkkäinen-Sanders**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoDC3.flux) |
+| **Double Hashing**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoDoubleHashing.flux) |
+| **Duval Algorithm**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoDuvalAlgorithm.flux) |
+| **FM-Index**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoFMIndex.flux) |
+| **Kasai Algorithm**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoKasaiAlgorithm.flux) |
+| **Knuth-Morris-Pratt**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoKnuthMorrisPratt.flux) |
+| **Lyndon Factorization**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoLyndonFactorization.flux) |
+| **Manacher**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoManacher.flux) |
+| **Minimal Rotation**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoMinimalRotation.flux) |
+| **Myers' Bit-Parallel String Matching**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoMyersBitParallel.flux) |
+| **Naive String Matching**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoNaiveMatching.flux) |
+| **Palindromic Tree / Eertree**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoPalindromicTree.flux) |
+| **Prefix Function**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoPrefixFunction.flux) |
+| **Rabin-Karp**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoRabinKarp.flux) |
+| **Rolling Hash**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoRollingHash.flux) |
+| **String Hashing**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoStringHashing.flux) |
+| **Suffix Array**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoSuffixArray.flux) |
+| **Suffix Automaton**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoSuffixAutomaton.flux) |
+| **Suffix Tree**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoSuffixTree.flux) |
+| **Sunday Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoSundayAlgorithm.flux) |
+| **Trigram Search**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoTrigramSearch.flux) |
+| **Ukkonen**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoUkkonen.flux) |
+| **Ukkonen's Cutoff Approximate Matching**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoUkkonenCutoff.flux) |
+| **Wildcard Matching**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoWildcardMatching.flux) |
+| **Wu-Manber**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoWuManber.flux) |
+| **Z Algorithm**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoZAlgorithm.flux) |
+| **Zhu-Takaoka**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCasamentoZhuTakaoka.flux) |
+| **ANS — Asymmetric Numeral Systems**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsANS.flux) |
+| **Burrows-Wheeler + Move-to-Front**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsBWTMovedToFront.flux) |
+| **Brotli**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsBrotli.flux) |
+| **Huffman Canonical Coding**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsCanonicalHuffman.flux) |
+| **Delta-of-Delta Encoding**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsDeltaOfDelta.flux) |
+| **FastPFOR Integer Codec**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsFastPFOR.flux) |
+| **Frame of Reference Encoding**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsFrameOfReference.flux) |
+| **LZ4**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsLZ4.flux) |
+| **LZMA**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsLZMA.flux) |
+| **Roaring Bitmaps**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsRoaringBitmaps.flux) |
+| **Snappy**                                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsSnappy.flux) |
+| **Zstandard — Zstd**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsZstandard.flux) |
+| **Direct Asymmetric Numeral Systems (dANS)**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsdANS.flux) |
+| **rANS**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecsrANS.flux) |
+| **tANS**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCodecstANS.flux) |
+| **Adaptive Huffman**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoAdaptiveHuffman.flux) |
+| **Arithmetic Coding**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoArithmeticCoding.flux) |
+| **Burrows-Wheeler Transform**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoBurrowsWheeler.flux) |
+| **Byte Pair Encoding**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoBytePairEncoding.flux) |
+| **Context Tree Weighting (CTW)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoContextTreeWeighting.flux) |
+| **DEFLATE**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoDEFLATE.flux) |
+| **Delta Encoding**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoDeltaEncoding.flux) |
+| **Dynamic Markov Compression (DMC)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoDynamicMarkov.flux) |
+| **Embedded Zerotree Wavelet**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoEZW.flux) |
+| **Elias Delta**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoEliasDelta.flux) |
+| **Elias Gamma**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoEliasGamma.flux) |
+| **Elias Omega**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoEliasOmega.flux) |
+| **Fibonacci Coding**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoFibonacciCoding.flux) |
+| **Fractal Compression**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoFractalCompression.flux) |
+| **Golomb Coding**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoGolombCoding.flux) |
+| **Huffman Coding**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoHuffmanCoding.flux) |
+| **LZ4**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZ4.flux) |
+| **LZ77**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZ77.flux) |
+| **LZ78**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZ78.flux) |
+| **LZMA**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZMA.flux) |
+| **LZO**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZO.flux) |
+| **LZSS**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZSS.flux) |
+| **LZW**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoLZW.flux) |
+| **Move-to-Front**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoMoveToFront.flux) |
+| **PAQ Multi-Context Mixing Compression**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoPAQContextMixing.flux) |
+| **PPM**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoPPM.flux) |
+| **Range Coding**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoRangeCoding.flux) |
+| **Rice Coding**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoRiceCoding.flux) |
+| **Run-Length Encoding**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoRunLengthEncoding.flux) |
+| **SPIHT**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoSPIHT.flux) |
+| **Shannon-Fano**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoShannonFano.flux) |
+| **Vector Quantization**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoVectorQuantization.flux) |
+| **Wavelet Compression**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsCompressaoWaveletCompression.flux) |
+| **Damerau-Levenshtein Distance**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaDamerauLevenshtein.flux) |
+| **Dice Coefficient**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaDiceCoefficient.flux) |
+| **Dynamic Time Warping**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaDynamicTimeWarping.flux) |
+| **Gotoh Affine Gap Penalty Alignment**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaGotohAffineGap.flux) |
+| **Hamming Distance**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaHammingDistance.flux) |
+| **Hirschberg Algorithm**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaHirschbergAlgorithm.flux) |
+| **Jaccard Similarity**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaJaccardSimilarity.flux) |
+| **Jaro Distance**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaJaroDistance.flux) |
+| **Jaro-Winkler**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaJaroWinkler.flux) |
+| **Extended Jaro-Winkler Distance**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaJaroWinklerExtended.flux) |
+| **Levenshtein Distance**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaLevenshteinDistance.flux) |
+| **Longest Common Subsequence**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaLongestCommonSubsequence.flux) |
+| **Longest Common Substring**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaLongestCommonSubstring.flux) |
+| **Munkres String Assignment Distance**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaMunkresAssignment.flux) |
+| **Needleman-Wunsch**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaNeedlemanWunsch.flux) |
+| **Normalized Compression Distance (NCD)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaNormalizedCompression.flux) |
+| **Q-Gram Distance & Inverted Filter**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaQGramFilter.flux) |
+| **Shortest Common Supersequence**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaShortestCommonSupersequence.flux) |
+| **Smith-Waterman**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsDistanciaSmithWaterman.flux) |
+| **Compact Directed Acyclic Word Graph (CDAWG)**              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsIndicesCDAWG.flux) |
+| **Run-Length Burrows-Wheeler Transform (RLBWT)**             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsIndicesRLBWT.flux) |
+| **Wavelet Matrix on Strings**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsIndicesWaveletMatrix.flux) |
+| **Byte-Pair Encoding (BPE) LLM Tokenizer**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsParsingBPETokenizerLLM.flux) |
+| **Crochemore's Maximal Suffix & Periodicity**                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsParsingCrochemoreMaximalSuffix.flux) |
+| **Sliding Window LZSS Compression**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsParsingLZSSSlidingWindow.flux) |
+| **Recursive Pairing (Re-Pair) Grammar Compression**          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsParsingRePair.flux) |
+| **Sequitur Grammar Induction**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsParsingSequiturGrammar.flux) |
+| **Adler-32**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoAdler32.flux) |
+| **BCH**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoBCH.flux) |
+| **BCJR**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoBCJR.flux) |
+| **Berlekamp-Massey**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoBerlekampMassey.flux) |
+| **CRC**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoCRC.flux) |
+| **Damm Algorithm**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoDammAlgorithm.flux) |
+| **Fletcher Checksum**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoFletcherChecksum.flux) |
+| **Gray Code**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoGrayCode.flux) |
+| **Hamming Code**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoHammingCode.flux) |
+| **HighwayHash 4-Lane High Speed Hash**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoHighwayHash.flux) |
+| **LDPC**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoLDPC.flux) |
+| **Luby Transform (LT) Fountain Codes**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoLubyTransform.flux) |
+| **Luhn Algorithm**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoLuhnAlgorithm.flux) |
+| **Parity Check**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoParityCheck.flux) |
+| **Peterson-Gorenstein-Zierler**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoPetersonGorensteinZierler.flux) |
+| **Polar Codes (Arikan SC Decoder)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoPolarCodes.flux) |
+| **Raptor Codes (Systematic Fountain Code)**                  | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoRaptorCodes.flux) |
+| **Reed-Solomon**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoReedSolomon.flux) |
+| **SipHash-2-4 Keyed Hash Function**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoSipHash.flux) |
+| **Turbo Codes**                                              | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoTurboCodes.flux) |
+| **Verhoeff**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoVerhoeff.flux) |
+| **Viterbi Decoder**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/04_strings/ExampleOfStringsTeoriaInformacaoViterbiDecoder.flux) |
+
 
 
 ### Domínio V: Matemática Computacional, Teoria dos Números & Álgebra (143 algoritmos)
 
 #### Álgebra computacional e polinômios (41 algoritmos)
 
-- [ ] Gaussian Elimination
-- [ ] Gauss-Jordan
-- [ ] Gaussian Elimination over GF(2)
-- [ ] Gauss-Seidel
-- [ ] Jacobi Method
-- [x] **Cholesky** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux))*
-- [ ] Gram-Schmidt
-- [x] **QR Decomposition** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixQRContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixQRContract.flux))*
-- [x] **LU Decomposition** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux))*
-- [x] **Singular Value Decomposition** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixSVDContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixSVDContract.flux))*
-- [ ] Conjugate Gradient
-- [ ] BiCG
-- [ ] GMRES
-- [ ] Arnoldi
-- [ ] Lanczos
-- [x] **Power Iteration** — *(Já implementado em [`flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseLinAlgStdLib_MatrixAdvancedDecompositionContract.flux))*
-- [ ] Inverse Iteration
-- [ ] Rayleigh Quotient Iteration
-- [ ] Strassen Matrix Multiplication
-- [ ] Coppersmith-Winograd
-- [ ] Cannon's Algorithm
-- [ ] Karatsuba Multiplication
-- [ ] Toom-Cook
-- [ ] Schönhage-Strassen
-- [ ] Fürer's Algorithm
-- [ ] Polynomial GCD
-- [ ] Polynomial Interpolation
-- [ ] Lagrange Interpolation
-- [ ] Newton Interpolation
-- [ ] Berlekamp Algorithm
-- [ ] Berlekamp-Massey
-- [ ] Cantor-Zassenhaus
-- [x] **Fast Polynomial Multiplication** — *(Já implementado em [`flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux))*
-- [ ] Multipoint Evaluation
-- [ ] Formal Power Series
-- [ ] NTT
-- [x] **FFT** — *(Já implementado em [`flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux))*
-- [ ] FWHT
-- [ ] Bluestein FFT
-- [ ] Rader FFT
-- [ ] Cooley-Tukey FFT
+- [x] [Gaussian Elimination](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraGaussianElimination.flux)
+- [x] [Gauss-Jordan](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraGaussJordan.flux)
+- [x] [Gaussian Elimination over GF(2)](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraGaussianGF2.flux)
+- [x] [Gauss-Seidel](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraGaussSeidel.flux)
+- [x] [Jacobi Method](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraJacobiMethod.flux)
+- [x] [Cholesky](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraCholesky.flux)
+- [x] [Gram-Schmidt](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraGramSchmidt.flux)
+- [x] [QR Decomposition](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraQRDecomposition.flux)
+- [x] [LU Decomposition](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraLUDecomposition.flux)
+- [x] [Singular Value Decomposition](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraSVD.flux)
+- [x] [Conjugate Gradient](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraConjugateGradient.flux)
+- [x] [BiCG](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraBiCG.flux)
+- [x] [GMRES](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraGMRES.flux)
+- [x] [Arnoldi](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraArnoldi.flux)
+- [x] [Lanczos](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraLanczos.flux)
+- [x] [Power Iteration](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraPowerIteration.flux)
+- [x] [Inverse Iteration](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraInverseIteration.flux)
+- [x] [Rayleigh Quotient Iteration](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraRayleighQuotient.flux)
+- [x] [Strassen Matrix Multiplication](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraStrassen.flux)
+- [x] [Coppersmith-Winograd](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraCoppersmithWinograd.flux)
+- [x] [Cannon's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraCannonsAlgorithm.flux)
+- [x] [Karatsuba Multiplication](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraKaratsuba.flux)
+- [x] [Toom-Cook](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraToomCook.flux)
+- [x] [Schönhage-Strassen](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraSchonhageStrassen.flux)
+- [x] [Fürer's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraFurersAlgorithm.flux)
+- [x] [Polynomial GCD](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraPolynomialGCD.flux)
+- [x] [Polynomial Interpolation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraPolynomialInterpolation.flux)
+- [x] [Lagrange Interpolation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraLagrangeInterpolation.flux)
+- [x] [Newton Interpolation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraNewtonInterpolation.flux)
+- [x] [Berlekamp Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraBerlekampAlgorithm.flux)
+- [x] [Berlekamp-Massey](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraBerlekampMassey.flux)
+- [x] [Cantor-Zassenhaus](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraCantorZassenhaus.flux)
+- [x] [Fast Polynomial Multiplication](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraFastPolynomialMultiplication.flux)
+- [x] [Multipoint Evaluation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraMultipointEvaluation.flux)
+- [x] [Formal Power Series](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraFormalPowerSeries.flux)
+- [x] [NTT](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraNTT.flux)
+- [x] [FFT](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraFFT.flux)
+- [x] [FWHT](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraFWHT.flux)
+- [x] [Bluestein FFT](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraBluesteinFFT.flux)
+- [x] [Rader FFT](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraRaderFFT.flux)
+- [x] [Cooley-Tukey FFT](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/algebra_polynomials/ExampleOfMatematicaAlgebraCooleyTukeyFFT.flux)
 
 #### Combinatória (21 algoritmos)
 
-- [ ] Inclusion-Exclusion
-- [ ] Burnside's Lemma
-- [ ] Pólya Enumeration
-- [ ] Stars and Bars
-- [ ] Catalan Numbers
-- [ ] Bell Numbers
-- [ ] Stirling Numbers
-- [ ] Pascal Triangle
-- [x] **Binomial Coefficient** — *(Já implementado em [`flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux))*
-- [ ] Heap's Permutation Algorithm
-- [ ] Steinhaus-Johnson-Trotter
-- [x] **Fisher-Yates** — *(Já implementado em [`flux/ExampleOfUseRandomStdLib_RandomSequenceContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseRandomStdLib_RandomSequenceContract.flux))*
-- [ ] Josephus Problem
-- [ ] Prüfer Code
-- [ ] Generating Functions
-- [ ] Partition Algorithms
-- [ ] Subset Enumeration
-- [ ] Submask Enumeration
-- [ ] Gray Code
-- [ ] Balanced Parentheses Generation
-- [ ] Meet-in-the-Middle
+- [x] [Inclusion-Exclusion](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaInclusionExclusion.flux)
+- [x] [Burnside's Lemma](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaBurnsidesLemma.flux)
+- [x] [Pólya Enumeration](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaPolyaEnumeration.flux)
+- [x] [Stars and Bars](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaStarsAndBars.flux)
+- [x] [Catalan Numbers](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaCatalanNumbers.flux)
+- [x] [Bell Numbers](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaBellNumbers.flux)
+- [x] [Stirling Numbers](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaStirlingNumbers.flux)
+- [x] [Pascal Triangle](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaPascalTriangle.flux)
+- [x] [Binomial Coefficient](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaBinomialCoefficient.flux)
+- [x] [Heap's Permutation Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaHeapsPermutation.flux)
+- [x] [Steinhaus-Johnson-Trotter](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaSteinhausJohnsonTrotter.flux)
+- [x] [Fisher-Yates](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaFisherYates.flux)
+- [x] [Josephus Problem](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaJosephusProblem.flux)
+- [x] [Prüfer Code](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaPruferCode.flux)
+- [x] [Generating Functions](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaGeneratingFunctions.flux)
+- [x] [Partition Algorithms](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaPartitionAlgorithms.flux)
+- [x] [Subset Enumeration](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaSubsetEnumeration.flux)
+- [x] [Submask Enumeration](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaSubmaskEnumeration.flux)
+- [x] [Gray Code](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaGrayCode.flux)
+- [x] [Balanced Parentheses Generation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaBalancedParentheses.flux)
+- [x] [Meet-in-the-Middle](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/combinatorics/ExampleOfMatematicaCombinatoriaMeetInTheMiddle.flux)
 
 #### Programação dinâmica (29 algoritmos)
 
-- [ ] 0/1 Knapsack
-- [ ] Unbounded Knapsack
-- [ ] Bounded Knapsack
-- [ ] Longest Increasing Subsequence
-- [ ] Longest Decreasing Subsequence
-- [ ] Longest Common Subsequence
-- [ ] Matrix Chain Multiplication
-- [ ] Edit Distance
-- [ ] Digit DP
-- [ ] Bitmask DP
-- [ ] Tree DP
-- [ ] Profile DP
-- [ ] Broken Profile DP
-- [ ] Rerooting DP
-- [ ] SOS DP
-- [ ] Subset Convolution
-- [ ] Divide-and-Conquer DP
-- [ ] Knuth Optimization
-- [ ] Convex Hull Trick
-- [ ] Li Chao Tree
-- [ ] Monotonic Queue Optimization
-- [ ] Aliens Trick
-- [ ] Lagrangian Relaxation
-- [ ] Kitamasa Algorithm
-- [ ] Linear Recurrence
-- [ ] Bostan-Mori
-- [ ] Viterbi
-- [ ] Forward-Backward
-- [ ] Baum-Welch
+- [x] [0/1 Knapsack](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaZeroOneKnapsack.flux)
+- [x] [Unbounded Knapsack](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaUnboundedKnapsack.flux)
+- [x] [Bounded Knapsack](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaBoundedKnapsack.flux)
+- [x] [Longest Increasing Subsequence](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaLongestIncreasingSubsequence.flux)
+- [x] [Longest Decreasing Subsequence](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaLongestDecreasingSubsequence.flux)
+- [x] [Longest Common Subsequence](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaLongestCommonSubsequence.flux)
+- [x] [Matrix Chain Multiplication](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaMatrixChainMultiplication.flux)
+- [x] [Edit Distance](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaEditDistance.flux)
+- [x] [Digit DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaDigitDP.flux)
+- [x] [Bitmask DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaBitmaskDP.flux)
+- [x] [Tree DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaTreeDP.flux)
+- [x] [Profile DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaProfileDP.flux)
+- [x] [Broken Profile DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaBrokenProfileDP.flux)
+- [x] [Rerooting DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaRerootingDP.flux)
+- [x] [SOS DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaSOSDP.flux)
+- [x] [Subset Convolution](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaSubsetConvolution.flux)
+- [x] [Divide-and-Conquer DP](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaDivideAndConquerDP.flux)
+- [x] [Knuth Optimization](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaKnuthOptimization.flux)
+- [x] [Convex Hull Trick](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaConvexHullTrick.flux)
+- [x] [Li Chao Tree](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaLiChaoTree.flux)
+- [x] [Monotonic Queue Optimization](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaMonotonicQueueOptimization.flux)
+- [x] [Aliens Trick](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaAliensTrick.flux)
+- [x] [Lagrangian Relaxation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaLagrangianRelaxation.flux)
+- [x] [Kitamasa Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaKitamasaAlgorithm.flux)
+- [x] [Linear Recurrence](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaLinearRecurrence.flux)
+- [x] [Bostan-Mori](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaBostanMori.flux)
+- [x] [Viterbi](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaViterbi.flux)
+- [x] [Forward-Backward](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaForwardBackward.flux)
+- [x] [Baum-Welch](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/dynamic_programming/ExampleOfMatematicaProgramacaoDinamicaBaumWelch.flux)
 
 #### Teoria dos números (52 algoritmos)
 
-- [x] **Euclidean Algorithm** — *(Já implementado em [`flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux`](file:///D:/Projetos/TheFlux/flux/ExampleOfUseMathStdLib_CombinatoricsContract.flux))*
-- [ ] Extended Euclidean Algorithm
-- [ ] Binary GCD
-- [ ] Binary Exponentiation
-- [ ] Exponentiation by Squaring
-- [ ] Addition Chain
-- [ ] Sieve of Eratosthenes
-- [ ] Linear Sieve
-- [ ] Segmented Sieve
-- [ ] Sieve of Atkin
-- [ ] Sieve of Sundaram
-- [ ] Wheel Factorization
-- [ ] Trial Division
-- [ ] Fermat Primality Test
-- [ ] Solovay-Strassen
-- [ ] Miller-Rabin
-- [ ] Baillie-PSW
-- [ ] Lucas Primality Test
-- [ ] Pocklington
-- [ ] AKS
-- [ ] Lucas-Lehmer
-- [ ] Pollard Rho
-- [ ] Pollard p−1
-- [ ] Fermat Factorization
-- [ ] Dixon Factorization
-- [ ] Quadratic Sieve
-- [ ] General Number Field Sieve
-- [ ] Special Number Field Sieve
-- [ ] Lenstra ECM
-- [ ] Discrete Logarithm
-- [ ] Baby-Step Giant-Step
-- [ ] Pollard Rho for Discrete Log
-- [ ] Pollard Kangaroo
-- [ ] Pohlig-Hellman
-- [ ] Index Calculus
-- [ ] Primitive Root
-- [ ] Modular Inverse
-- [ ] Chinese Remainder Theorem
-- [ ] Garner Algorithm
-- [ ] Tonelli-Shanks
-- [ ] Cipolla Algorithm
-- [ ] Modular Square Root
-- [ ] Legendre Formula
-- [ ] Lucas Theorem
-- [ ] Wilson Theorem
-- [ ] Euler Totient Sieve
-- [ ] Möbius Sieve
-- [ ] Fast Doubling
-- [ ] Pell Equation
-- [ ] Continued Fractions
-- [ ] Stern-Brocot
-- [ ] Farey Sequence
+- [x] [Euclidean Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosEuclideanAlgorithm.flux)
+- [x] [Extended Euclidean Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosExtendedEuclidean.flux)
+- [x] [Binary GCD](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosBinaryGCD.flux)
+- [x] [Binary Exponentiation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosBinaryExponentiation.flux)
+- [x] [Exponentiation by Squaring](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosExponentiationBySquaring.flux)
+- [x] [Addition Chain](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosAdditionChain.flux)
+- [x] [Sieve of Eratosthenes](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSieveOfEratosthenes.flux)
+- [x] [Linear Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosLinearSieve.flux)
+- [x] [Segmented Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSegmentedSieve.flux)
+- [x] [Sieve of Atkin](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSieveOfAtkin.flux)
+- [x] [Sieve of Sundaram](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSieveOfSundaram.flux)
+- [x] [Wheel Factorization](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosWheelFactorization.flux)
+- [x] [Trial Division](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosTrialDivision.flux)
+- [x] [Fermat Primality Test](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosFermatPrimalityTest.flux)
+- [x] [Solovay-Strassen](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSolovayStrassen.flux)
+- [x] [Miller-Rabin](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosMillerRabin.flux)
+- [x] [Baillie-PSW](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosBailliePSW.flux)
+- [x] [Lucas Primality Test](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosLucasPrimalityTest.flux)
+- [x] [Pocklington](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPocklington.flux)
+- [x] [AKS](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosAKS.flux)
+- [x] [Lucas-Lehmer](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosLucasLehmer.flux)
+- [x] [Pollard Rho](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPollardRho.flux)
+- [x] [Pollard p−1](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPollardPMinus1.flux)
+- [x] [Fermat Factorization](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosFermatFactorization.flux)
+- [x] [Dixon Factorization](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosDixonFactorization.flux)
+- [x] [Quadratic Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosQuadraticSieve.flux)
+- [x] [General Number Field Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosGeneralNumberFieldSieve.flux)
+- [x] [Special Number Field Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSpecialNumberFieldSieve.flux)
+- [x] [Lenstra ECM](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosLenstraECM.flux)
+- [x] [Discrete Logarithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosDiscreteLogarithm.flux)
+- [x] [Baby-Step Giant-Step](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosBabyStepGiantStep.flux)
+- [x] [Pollard Rho for Discrete Log](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPollardRhoDiscreteLog.flux)
+- [x] [Pollard Kangaroo](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPollardKangaroo.flux)
+- [x] [Pohlig-Hellman](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPohligHellman.flux)
+- [x] [Index Calculus](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosIndexCalculus.flux)
+- [x] [Primitive Root](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPrimitiveRoot.flux)
+- [x] [Modular Inverse](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosModularInverse.flux)
+- [x] [Chinese Remainder Theorem](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosChineseRemainderTheorem.flux)
+- [x] [Garner Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosGarnerAlgorithm.flux)
+- [x] [Tonelli-Shanks](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosTonelliShanks.flux)
+- [x] [Cipolla Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosCipollaAlgorithm.flux)
+- [x] [Modular Square Root](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosModularSquareRoot.flux)
+- [x] [Legendre Formula](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosLegendreFormula.flux)
+- [x] [Lucas Theorem](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosLucasTheorem.flux)
+- [x] [Wilson Theorem](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosWilsonTheorem.flux)
+- [x] [Euler Totient Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosEulerTotientSieve.flux)
+- [x] [Möbius Sieve](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosMobiusSieve.flux)
+- [x] [Fast Doubling](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosFastDoubling.flux)
+- [x] [Pell Equation](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosPellEquation.flux)
+- [x] [Continued Fractions](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosContinuedFractions.flux)
+- [x] [Stern-Brocot](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosSternBrocot.flux)
+- [x] [Farey Sequence](file:///D:/Projetos/TheFlux/examples/algorithms/05_mathematics/number_theory/ExampleOfMatematicaTeoriaDosNumerosFareySequence.flux)
 
 
 ### Domínio VI: Métodos Numéricos, Geometria & Física Computacional (144 algoritmos)
 
 #### Computação gráfica (21 algoritmos)
 
-- [ ] Bresenham Line Algorithm
-- [ ] Digital Differential Analyzer
-- [ ] Xiaolin Wu
-- [ ] Midpoint Circle Algorithm
-- [ ] Scanline Rendering
-- [ ] Painter's Algorithm
-- [ ] Z-Buffer
-- [ ] Binary Space Partitioning
-- [ ] Warnock Algorithm
-- [ ] Newell's Algorithm
-- [ ] Gouraud Shading
-- [ ] Phong Shading
-- [ ] Blinn-Phong
-- [ ] Ray Casting
-- [ ] Ray Tracing
-- [ ] Path Tracing
-- [ ] Bidirectional Path Tracing
-- [ ] Photon Mapping
-- [ ] Metropolis Light Transport
-- [ ] SLERP
-- [ ] Summed Area Table
+- [x] [Bresenham Line Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaBresenhamLine.flux)
+- [x] [Digital Differential Analyzer](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaDDA.flux)
+- [x] [Xiaolin Wu](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaXiaolinWu.flux)
+- [x] [Midpoint Circle Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaMidpointCircle.flux)
+- [x] [Scanline Rendering](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaScanlineRendering.flux)
+- [x] [Painter's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaPaintersAlgorithm.flux)
+- [x] [Z-Buffer](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaZBuffer.flux)
+- [x] [Binary Space Partitioning](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaBSP.flux)
+- [x] [Warnock Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaWarnockAlgorithm.flux)
+- [x] [Newell's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaNewellsAlgorithm.flux)
+- [x] [Gouraud Shading](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaGouraudShading.flux)
+- [x] [Phong Shading](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaPhongShading.flux)
+- [x] [Blinn-Phong](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaBlinnPhong.flux)
+- [x] [Ray Casting](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaRayCasting.flux)
+- [x] [Ray Tracing](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaRayTracing.flux)
+- [x] [Path Tracing](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaPathTracing.flux)
+- [x] [Bidirectional Path Tracing](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaBidirectionalPathTracing.flux)
+- [x] [Photon Mapping](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaPhotonMapping.flux)
+- [x] [Metropolis Light Transport](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaMetropolisLightTransport.flux)
+- [x] [SLERP](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaSLERP.flux)
+- [x] [Summed Area Table](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/graphics/ExampleOfNumericoComputacaoGraficaSummedAreaTable.flux)
 
 #### Física computacional (47 algoritmos)
 
-- [ ] N-Body Simulation
-- [ ] Barnes-Hut
-- [ ] Fast Multipole Method
-- [ ] Verlet Integration
-- [ ] Velocity Verlet
-- [ ] Leapfrog Integration
-- [ ] Runge-Kutta
-- [ ] Symplectic Integrator
-- [ ] Molecular Dynamics
-- [ ] Monte Carlo Simulation
-- [ ] Metropolis Algorithm
-- [ ] Glauber Dynamics
-- [ ] Ising Model Monte Carlo
-- [ ] Wang-Landau Algorithm
-- [ ] Kinetic Monte Carlo
-- [ ] Gillespie Algorithm
-- [ ] Gillespie Direct Method
-- [ ] Gillespie First-Reaction Method
-- [ ] Finite Difference Method
-- [ ] Finite Element Method
-- [ ] Finite Volume Method
-- [ ] Spectral Method
-- [ ] Pseudospectral Method
-- [ ] Fast Fourier Transform
-- [ ] Multigrid
-- [ ] Conjugate Gradient
-- [ ] Thomas Algorithm
-- [ ] Crank-Nicolson
-- [ ] Lax-Wendroff
-- [ ] Lax-Friedrichs
-- [ ] Upwind Scheme
-- [ ] Leapfrog Scheme
-- [ ] ADI Method
-- [ ] Poisson Solver
-- [ ] Jacobi Poisson Solver
-- [ ] Gauss-Seidel Poisson Solver
-- [ ] Successive Over-Relaxation
-- [ ] Fast Poisson Solver
-- [ ] Particle-in-Cell
-- [ ] Smoothed Particle Hydrodynamics
-- [ ] Lattice Boltzmann Method
-- [ ] Finite Element PDE Solver
-- [ ] Level Set Method
-- [ ] Fast Marching Method
-- [ ] Rainflow Counting
-- [ ] Constraint Dynamics
-- [ ] Featherstone Algorithm
+- [x] [N-Body Simulation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaNBodySimulation.flux)
+- [x] [Barnes-Hut](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaBarnesHut.flux)
+- [x] [Fast Multipole Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFastMultipoleMethod.flux)
+- [x] [Verlet Integration](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaVerletIntegration.flux)
+- [x] [Velocity Verlet](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaVelocityVerlet.flux)
+- [x] [Leapfrog Integration](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaLeapfrogIntegration.flux)
+- [x] [Runge-Kutta](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaRungeKutta.flux)
+- [x] [Symplectic Integrator](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaSymplecticIntegrator.flux)
+- [x] [Molecular Dynamics](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaMolecularDynamics.flux)
+- [x] [Monte Carlo Simulation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaMonteCarloSimulation.flux)
+- [x] [Metropolis Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaMetropolisAlgorithm.flux)
+- [x] [Glauber Dynamics](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaGlauberDynamics.flux)
+- [x] [Ising Model Monte Carlo](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaIsingModelMonteCarlo.flux)
+- [x] [Wang-Landau Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaWangLandau.flux)
+- [x] [Kinetic Monte Carlo](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaKineticMonteCarlo.flux)
+- [x] [Gillespie Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaGillespieAlgorithm.flux)
+- [x] [Gillespie Direct Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaGillespieDirectMethod.flux)
+- [x] [Gillespie First-Reaction Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaGillespieFirstReaction.flux)
+- [x] [Finite Difference Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFiniteDifference.flux)
+- [x] [Finite Element Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFiniteElement.flux)
+- [x] [Finite Volume Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFiniteVolume.flux)
+- [x] [Spectral Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaSpectralMethod.flux)
+- [x] [Pseudospectral Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaPseudospectralMethod.flux)
+- [x] [Fast Fourier Transform](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFastFourierTransform.flux)
+- [x] [Multigrid](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaMultigrid.flux)
+- [x] [Conjugate Gradient](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaConjugateGradient.flux)
+- [x] [Thomas Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaThomasAlgorithm.flux)
+- [x] [Crank-Nicolson](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaCrankNicolson.flux)
+- [x] [Lax-Wendroff](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaLaxWendroff.flux)
+- [x] [Lax-Friedrichs](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaLaxFriedrichs.flux)
+- [x] [Upwind Scheme](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaUpwindScheme.flux)
+- [x] [Leapfrog Scheme](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaLeapfrogScheme.flux)
+- [x] [ADI Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaADIMethod.flux)
+- [x] [Poisson Solver](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaPoissonSolver.flux)
+- [x] [Jacobi Poisson Solver](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaJacobiPoissonSolver.flux)
+- [x] [Gauss-Seidel Poisson Solver](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaGaussSeidelPoissonSolver.flux)
+- [x] [Successive Over-Relaxation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaSuccessiveOverRelaxation.flux)
+- [x] [Fast Poisson Solver](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFastPoissonSolver.flux)
+- [x] [Particle-in-Cell](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaParticleInCell.flux)
+- [x] [Smoothed Particle Hydrodynamics](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaSmoothedParticleHydrodynamics.flux)
+- [x] [Lattice Boltzmann Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaLatticeBoltzmann.flux)
+- [x] [Finite Element PDE Solver](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFiniteElementPDESolver.flux)
+- [x] [Level Set Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaLevelSetMethod.flux)
+- [x] [Fast Marching Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFastMarchingMethod.flux)
+- [x] [Rainflow Counting](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaRainflowCounting.flux)
+- [x] [Constraint Dynamics](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaConstraintDynamics.flux)
+- [x] [Featherstone Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/physics/ExampleOfNumericoFisicaFeatherstoneAlgorithm.flux)
 
 #### Geometria computacional (41 algoritmos)
 
-- [ ] Graham Scan
-- [ ] Andrew Monotone Chain
-- [ ] Jarvis March
-- [ ] Quickhull
-- [ ] Chan's Algorithm
-- [ ] Kirkpatrick-Seidel
-- [ ] Divide-and-Conquer Convex Hull
-- [ ] Closest Pair of Points
-- [ ] Line Segment Intersection
-- [ ] Bentley-Ottmann
-- [ ] Shamos-Hoey
-- [ ] Sweep Line
-- [ ] Rotating Calipers
-- [ ] Point in Polygon
-- [ ] Ray Casting
-- [ ] Winding Number
-- [ ] Point Location
-- [ ] Half-Plane Intersection
-- [ ] Polygon Triangulation
-- [ ] Sutherland-Hodgman
-- [ ] Weiler-Atherton
-- [ ] Vatti Clipping
-- [ ] Cohen-Sutherland
-- [ ] Liang-Barsky
-- [ ] Cyrus-Beck
-- [ ] Nicholl-Lee-Nicholl
-- [ ] Minkowski Sum
-- [ ] Shoelace Formula
-- [ ] Minimum Enclosing Circle
-- [ ] Minimum Bounding Rectangle
-- [ ] Delaunay Triangulation
-- [ ] Voronoi Diagram
-- [ ] Bowyer-Watson
-- [ ] Fortune's Algorithm
-- [ ] Chew's Algorithm
-- [ ] Ruppert's Algorithm
-- [ ] Marching Cubes
-- [ ] Marching Triangles
-- [ ] Ramer-Douglas-Peucker
-- [ ] Gilbert-Johnson-Keerthi
-- [ ] Iterative Closest Point
+- [x] [Graham Scan](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaGrahamScan.flux)
+- [x] [Andrew Monotone Chain](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaAndrewMonotoneChain.flux)
+- [x] [Jarvis March](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaJarvisMarch.flux)
+- [x] [Quickhull](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaQuickhull.flux)
+- [x] [Chan's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaChansAlgorithm.flux)
+- [x] [Kirkpatrick-Seidel](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaKirkpatrickSeidel.flux)
+- [x] [Divide-and-Conquer Convex Hull](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaDivideAndConquerConvexHull.flux)
+- [x] [Closest Pair of Points](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaClosestPairOfPoints.flux)
+- [x] [Line Segment Intersection](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaLineSegmentIntersection.flux)
+- [x] [Bentley-Ottmann](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaBentleyOttmann.flux)
+- [x] [Shamos-Hoey](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaShamosHoey.flux)
+- [x] [Sweep Line](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaSweepLine.flux)
+- [x] [Rotating Calipers](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaRotatingCalipers.flux)
+- [x] [Point in Polygon](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaPointInPolygon.flux)
+- [x] [Ray Casting](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaRayCasting.flux)
+- [x] [Winding Number](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaWindingNumber.flux)
+- [x] [Point Location](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaPointLocation.flux)
+- [x] [Half-Plane Intersection](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaHalfPlaneIntersection.flux)
+- [x] [Polygon Triangulation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaPolygonTriangulation.flux)
+- [x] [Sutherland-Hodgman](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaSutherlandHodgman.flux)
+- [x] [Weiler-Atherton](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaWeilerAtherton.flux)
+- [x] [Vatti Clipping](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaVattiClipping.flux)
+- [x] [Cohen-Sutherland](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaCohenSutherland.flux)
+- [x] [Liang-Barsky](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaLiangBarsky.flux)
+- [x] [Cyrus-Beck](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaCyrusBeck.flux)
+- [x] [Nicholl-Lee-Nicholl](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaNichollLeeNicholl.flux)
+- [x] [Minkowski Sum](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaMinkowskiSum.flux)
+- [x] [Shoelace Formula](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaShoelaceFormula.flux)
+- [x] [Minimum Enclosing Circle](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaMinimumEnclosingCircle.flux)
+- [x] [Minimum Bounding Rectangle](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaMinimumBoundingRectangle.flux)
+- [x] [Delaunay Triangulation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaDelaunayTriangulation.flux)
+- [x] [Voronoi Diagram](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaVoronoiDiagram.flux)
+- [x] [Bowyer-Watson](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaBowyerWatson.flux)
+- [x] [Fortune's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaFortunesAlgorithm.flux)
+- [x] [Chew's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaChewsAlgorithm.flux)
+- [x] [Ruppert's Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaRuppertsAlgorithm.flux)
+- [x] [Marching Cubes](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaMarchingCubes.flux)
+- [x] [Marching Triangles](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaMarchingTriangles.flux)
+- [x] [Ramer-Douglas-Peucker](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaRamerDouglasPeucker.flux)
+- [x] [Gilbert-Johnson-Keerthi](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaGilbertJohnsonKeerthi.flux)
+- [x] [Iterative Closest Point](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/geometry/ExampleOfNumericoGeometriaIterativeClosestPoint.flux)
 
 #### Métodos numéricos (35 algoritmos)
 
-- [ ] Bisection
-- [ ] False Position
-- [ ] Illinois Method
-- [ ] Newton-Raphson
-- [ ] Secant Method
-- [ ] Ridder Method
-- [ ] Muller's Method
-- [ ] Halley's Method
-- [ ] ITP Method
-- [ ] Golden-Section Search
-- [ ] Trapezoidal Rule
-- [ ] Simpson's Rule
-- [ ] Romberg Integration
-- [ ] Gaussian Quadrature
-- [ ] Monte Carlo Integration
-- [ ] Euler Method
-- [ ] Backward Euler
-- [ ] Runge-Kutta
-- [ ] Verlet Integration
-- [ ] Velocity Verlet
-- [ ] Leapfrog Integration
-- [ ] Crank-Nicolson
-- [ ] Finite Difference Method
-- [ ] Finite Element Method
-- [ ] Finite Volume Method
-- [ ] Lax-Friedrichs
-- [ ] Lax-Wendroff
-- [ ] Upwind Method
-- [ ] Runge-Kutta-Fehlberg
-- [ ] Multigrid
-- [ ] Fast Marching Method
-- [ ] Level Set Method
-- [ ] Kahan Summation
-- [ ] Pairwise Summation
-- [ ] Binary Splitting
+- [x] [Bisection](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosBisection.flux)
+- [x] [False Position](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosFalsePosition.flux)
+- [x] [Illinois Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosIllinoisMethod.flux)
+- [x] [Newton-Raphson](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosNewtonRaphson.flux)
+- [x] [Secant Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosSecantMethod.flux)
+- [x] [Ridder Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosRidderMethod.flux)
+- [x] [Muller's Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosMullersMethod.flux)
+- [x] [Halley's Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosHalleysMethod.flux)
+- [x] [ITP Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosITPMethod.flux)
+- [x] [Golden-Section Search](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosGoldenSectionSearch.flux)
+- [x] [Trapezoidal Rule](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosTrapezoidalRule.flux)
+- [x] [Simpson's Rule](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosSimpsonsRule.flux)
+- [x] [Romberg Integration](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosRombergIntegration.flux)
+- [x] [Gaussian Quadrature](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosGaussianQuadrature.flux)
+- [x] [Monte Carlo Integration](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosMonteCarloIntegration.flux)
+- [x] [Euler Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosEulerMethod.flux)
+- [x] [Backward Euler](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosBackwardEuler.flux)
+- [x] [Runge-Kutta](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosRungeKutta.flux)
+- [x] [Verlet Integration](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosVerletIntegration.flux)
+- [x] [Velocity Verlet](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosVelocityVerlet.flux)
+- [x] [Leapfrog Integration](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosLeapfrogIntegration.flux)
+- [x] [Crank-Nicolson](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosCrankNicolson.flux)
+- [x] [Finite Difference Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosFiniteDifference.flux)
+- [x] [Finite Element Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosFiniteElement.flux)
+- [x] [Finite Volume Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosFiniteVolume.flux)
+- [x] [Lax-Friedrichs](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosLaxFriedrichs.flux)
+- [x] [Lax-Wendroff](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosLaxWendroff.flux)
+- [x] [Upwind Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosUpwindMethod.flux)
+- [x] [Runge-Kutta-Fehlberg](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosRungeKuttaFehlberg.flux)
+- [x] [Multigrid](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosMultigrid.flux)
+- [x] [Fast Marching Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosFastMarchingMethod.flux)
+- [x] [Level Set Method](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosLevelSetMethod.flux)
+- [x] [Kahan Summation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosKahanSummation.flux)
+- [x] [Pairwise Summation](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosPairwiseSummation.flux)
+- [x] [Binary Splitting](file:///D:/Projetos/TheFlux/examples/algorithms/06_numerical_physics/numerical_methods/ExampleOfNumericoMetodosNumericosBinarySplitting.flux)
 
 
-### Domínio VII: Otimização & Estatística Científica (84 algoritmos)
 
-#### Estatística e inferência (23 algoritmos)
+### Domínio VII: Otimização & Estatística Científica (120 algoritmos)
 
-- [ ] Expectation-Maximization
-- [ ] Expectation Propagation
-- [ ] Kalman Filter
-- [ ] Extended Kalman Filter
-- [ ] Unscented Kalman Filter
-- [ ] Particle Filter
-- [ ] Hidden Markov Model
-- [ ] Baum-Welch
-- [ ] Viterbi
-- [ ] Forward-Backward
-- [ ] RANSAC
-- [ ] Kolmogorov-Smirnov
-- [ ] Kruskal-Wallis
-- [ ] Fisher Exact Test
-- [ ] Fisher Linear Discriminant
-- [ ] Partial Least Squares
-- [ ] PCA
-- [ ] ICA
-- [ ] Regression Algorithms
-- [ ] Bootstrap
-- [ ] Jackknife
-- [ ] Cross-Validation
-- [ ] Bayesian Inference
+| Nome do Algoritmo                                            | Local em Disco                                                                                                 |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **ADMM (Alternating Direction Multipliers)**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoADMM.flux) |
+| **AdaGrad (Adaptive Gradient)**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAdaGrad.flux) |
+| **Adam (Adaptive Moment Estimation)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAdam.flux) |
+| **AdamW (Decoupled Weight Decay)**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAdamW.flux) |
+| **Adan (Adaptive Nesterov Momentum)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAdan.flux) |
+| **Acceptance-Rejection Sampling**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemAcceptanceRejection.flux) |
+| **Alias Method (Walker Discrete O(1))**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemAliasMethod.flux) |
+| **Box-Muller Transform**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemBoxMuller.flux) |
+| **Gibbs Sampling**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemGibbsSampling.flux) |
+| **Hamiltonian Monte Carlo (HMC)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemHamiltonianMonteCarlo.flux) |
+| **Importance Sampling**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemImportanceSampling.flux) |
+| **Inverse Transform Sampling**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemInverseTransformSampling.flux) |
+| **Markov Chain Monte Carlo (MCMC)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemMCMC.flux) |
+| **Marsaglia Polar Method**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemMarsagliaPolarMethod.flux) |
+| **Metropolis-Hastings Algorithm**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemMetropolisHastings.flux) |
+| **Monte Carlo Integration & Estimation**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemMonteCarlo.flux) |
+| **No-U-Turn Sampler (NUTS)**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemNUTS.flux) |
+| **Quasi-Monte Carlo (Halton Sequence)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemQuasiMonteCarlo.flux) |
+| **Rejection Sampling**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemRejectionSampling.flux) |
+| **Reservoir Sampling**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemReservoirSampling.flux) |
+| **Slice Sampling (Radford Neal)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemSliceSampling.flux) |
+| **Stratified Sampling**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemStratifiedSampling.flux) |
+| **VEGAS Adaptive Monte Carlo**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemVEGAS.flux) |
+| **Ziggurat Algorithm (Marsaglia-Tsang)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAmostragemZigguratAlgorithm.flux) |
+| **Ant Colony Optimization (ACO)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAntColony.flux) |
+| **Artificial Bee Colony (ABC)**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoArtificialBeeColony.flux) |
+| **Augmented Lagrangian Method (ALM)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoAugmentedLagrangian.flux) |
+| **BFGS (Quasi-Newton Method)**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoBFGS.flux) |
+| **Bat Algorithm (Echolocation Search)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoBatAlgorithm.flux) |
+| **Bayesian Optimization (Expected Improvement)**             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoBayesianOptimization.flux) |
+| **Benders Decomposition**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoBendersDecomposition.flux) |
+| **Branch and Cut (MIP Optimizer)**                           | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoBranchAndCut.flux) |
+| **CMA-ES (Covariance Matrix Adaptation)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoCMAES.flux) |
+| **Conjugate Gradient (Nonlinear / Linear)**                  | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoConjugateGradient.flux) |
+| **Coordinate Descent**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoCoordinateDescent.flux) |
+| **Cross-Entropy Method (CEM)**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoCrossEntropyMethod.flux) |
+| **Cuckoo Search (Lévy Flights)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoCuckooSearch.flux) |
+| **Cutting Plane (Gomory Cuts)**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoCuttingPlane.flux) |
+| **Differential Evolution (DE)**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoDifferentialEvolution.flux) |
+| **ARIMA (Box-Jenkins Time Series)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaARIMA.flux) |
+| **Anderson-Darling Goodness-of-Fit Test**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaAndersonDarling.flux) |
+| **Baum-Welch (HMM Expectation-Maximization)**                | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaBaumWelch.flux) |
+| **Bayesian Inference (Beta-Binomial Conjugate)**             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaBayesianInference.flux) |
+| **Bootstrap Resampling**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaBootstrap.flux) |
+| **Cross-Validation (K-Fold)**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaCrossValidation.flux) |
+| **Ensemble Kalman Filter (EnKF)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaEnsembleKalmanFilter.flux) |
+| **Expectation-Maximization (EM)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaExpectationMaximization.flux) |
+| **Expectation Propagation (EP)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaExpectationPropagation.flux) |
+| **Extended Kalman Filter (EKF)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaExtendedKalmanFilter.flux) |
+| **Fisher Exact Test (2x2 Contingency)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaFisherExactTest.flux) |
+| **Fisher Linear Discriminant (LDA)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaFisherLinearDiscriminant.flux) |
+| **Forward-Backward Algorithm (HMM Smoothing)**               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaForwardBackward.flux) |
+| **Hidden Markov Model (HMM Evaluation)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaHiddenMarkovModel.flux) |
+| **Independent Component Analysis (FastICA)**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaICA.flux) |
+| **Information Criteria (AIC & BIC)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaInformationCriteria.flux) |
+| **Jackknife Estimator**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaJackknife.flux) |
+| **Kernel Density Estimation (KDE)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaKDE.flux) |
+| **Kalman Filter (Linear 1D/ND)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaKalmanFilter.flux) |
+| **Kolmogorov-Smirnov Test (KS Test)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaKolmogorovSmirnov.flux) |
+| **Kruskal-Wallis Nonparametric ANOVA**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaKruskalWallis.flux) |
+| **Mann-Whitney U Test (Wilcoxon Rank-Sum)**                  | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaMannWhitneyU.flux) |
+| **Principal Component Analysis (PCA)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaPCA.flux) |
+| **Partial Least Squares (PLS / NIPALS)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaPartialLeastSquares.flux) |
+| **Particle Filter (Sequential Monte Carlo / SMC)**           | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaParticleFilter.flux) |
+| **RANSAC (Random Sample Consensus)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaRANSAC.flux) |
+| **Rank Correlation (Spearman & Kendall)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaRankCorrelation.flux) |
+| **Regression Algorithms (OLS & Ridge)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaRegressionAlgorithms.flux) |
+| **Shapiro-Wilk Normality Test**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaShapiroWilk.flux) |
+| **Unscented Kalman Filter (UKF)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaUnscentedKalmanFilter.flux) |
+| **Viterbi Algorithm (HMM Optimal Decoding)**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaViterbi.flux) |
+| **Wilcoxon Signed-Rank Test**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEstatisticaWilcoxonSignedRank.flux) |
+| **Evolution Strategy ((1+1)-ES Rechenberg)**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoEvolutionStrategy.flux) |
+| **FISTA (Accelerated Proximal Gradient)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoFISTA.flux) |
+| **Firefly Algorithm**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoFireflyAlgorithm.flux) |
+| **Frank-Wolfe (Conditional Gradient)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoFrankWolfe.flux) |
+| **GRASP (Greedy Randomized Adaptive Search)**                | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGRASP.flux) |
+| **Gauss-Newton Nonlinear Least Squares**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGaussNewton.flux) |
+| **Genetic Algorithm (Canonical GA)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGeneticAlgorithm.flux) |
+| **Genetic Programming (Expression Trees)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGeneticProgramming.flux) |
+| **Gradient Descent (Standard Batch GD)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGradientDescent.flux) |
+| **Gravitational Search Algorithm (GSA)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGravitationalSearch.flux) |
+| **Grey Wolf Optimizer (GWO)**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoGreyWolf.flux) |
+| **Harmony Search**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoHarmonySearch.flux) |
+| **Harris Hawks Optimization (HHO)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoHarrisHawks.flux) |
+| **Hill Climbing (Greedy Local Search)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoHillClimbing.flux) |
+| **Interior Point Method (Primal-Dual Barrier)**              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoInteriorPoint.flux) |
+| **Karmarkar Algorithm (Projective Method)**                  | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoKarmarkar.flux) |
+| **L-BFGS (Limited-Memory BFGS)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoLBFGS.flux) |
+| **Lagrangian Relaxation & Subgradient**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoLagrangianRelaxation.flux) |
+| **Levenberg-Marquardt Damped Least Squares**                 | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoLevenbergMarquardt.flux) |
+| **Line Search (Backtracking Armijo Condition)**              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoLineSearch.flux) |
+| **Lion Optimizer (EvoLved Sign Momentum)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoLion.flux) |
+| **Lookahead Optimizer**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoLookahead.flux) |
+| **Mini-Batch Stochastic Gradient Descent**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoMiniBatchSGD.flux) |
+| **Mirror Descent (Bregman Divergence)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoMirrorDescent.flux) |
+| **Momentum (Polyak Classical Momentum)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoMomentum.flux) |
+| **Moth-Flame Optimization (MFO)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoMothFlame.flux) |
+| **Nadam (Nesterov-Accelerated Adaptive Moments)**            | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoNadam.flux) |
+| **Nelder-Mead Downhill Simplex**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoNelderMead.flux) |
+| **Nesterov Accelerated Gradient (NAG)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoNesterovMomentum.flux) |
+| **Newton Optimization (Second-Order Hessian)**               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoNewton.flux) |
+| **Particle Swarm Optimization (PSO)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoParticleSwarm.flux) |
+| **Powell Method (Conjugate Directions)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoPowellMethod.flux) |
+| **RAdam (Rectified Adaptive Moments)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoRAdam.flux) |
+| **RMSProp (Root Mean Square Propagation)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoRMSProp.flux) |
+| **Random-Restart Hill Climbing**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoRandomRestartHillClimbing.flux) |
+| **SAM (Sharpness-Aware Minimization)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSAM.flux) |
+| **Stochastic Gradient Descent (SGD)**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSGD.flux) |
+| **SPSA (Simultaneous Perturbation)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSPSA.flux) |
+| **Salp Swarm Algorithm (SSA)**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSalpSwarm.flux) |
+| **Sequential Quadratic Programming (SQP)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSequentialQuadraticProgramming.flux) |
+| **Shampoo (Tensor Preconditioned)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoShampoo.flux) |
+| **Simplex Algorithm (Dantzig Linear Program)**               | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSimplex.flux) |
+| **Simulated Annealing**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSimulatedAnnealing.flux) |
+| **Subgradient Method (Polyak Step Size)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoSubgradientPolyak.flux) |
+| **Tabu Search (Short-Term Memory)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoTabuSearch.flux) |
+| **Trust-Region Dogleg (Powell Method)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoTrustRegionDogleg.flux) |
+| **VFSR (Very Fast Simulated Reannealing)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoVFSR.flux) |
+| **Water Cycle Algorithm (WCA)**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoWaterCycle.flux) |
+| **Whale Optimization Algorithm (WOA)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/07_optimization_stat/ExampleOfOtimizacaoWhale.flux) |
 
-#### Otimização (45 algoritmos)
-
-- [ ] Gradient Descent
-- [ ] Stochastic Gradient Descent
-- [ ] Mini-Batch Gradient Descent
-- [ ] Momentum
-- [ ] Nesterov Momentum
-- [ ] AdaGrad
-- [ ] RMSProp
-- [ ] Adam
-- [ ] AdamW
-- [ ] Nadam
-- [ ] BFGS
-- [ ] L-BFGS
-- [ ] Gauss-Newton
-- [ ] Levenberg-Marquardt
-- [ ] Newton Optimization
-- [ ] Coordinate Descent
-- [ ] Conjugate Gradient
-- [ ] Nelder-Mead
-- [ ] Powell Method
-- [ ] Simplex Algorithm
-- [ ] Karmarkar Algorithm
-- [ ] Interior Point
-- [ ] Frank-Wolfe
-- [ ] Line Search
-- [ ] Differential Evolution
-- [ ] Genetic Algorithm
-- [ ] Genetic Programming
-- [ ] Evolution Strategy
-- [ ] CMA-ES
-- [ ] Particle Swarm Optimization
-- [ ] Ant Colony Optimization
-- [ ] Artificial Bee Colony
-- [ ] Firefly Algorithm
-- [ ] Cuckoo Search
-- [ ] Simulated Annealing
-- [ ] Tabu Search
-- [ ] Hill Climbing
-- [ ] Random-Restart Hill Climbing
-- [ ] Harmony Search
-- [ ] Bayesian Optimization
-- [ ] Cross-Entropy Method
-- [ ] GRASP
-- [ ] Branch and Cut
-- [ ] Cutting Plane
-- [ ] Lagrangian Relaxation
-
-#### Probabilidade e amostragem (16 algoritmos)
-
-- [ ] Monte Carlo
-- [ ] Markov Chain Monte Carlo
-- [ ] Metropolis-Hastings
-- [ ] Gibbs Sampling
-- [ ] Hamiltonian Monte Carlo
-- [ ] Rejection Sampling
-- [ ] Importance Sampling
-- [ ] Stratified Sampling
-- [ ] Reservoir Sampling
-- [ ] Alias Method
-- [ ] Ziggurat Algorithm
-- [ ] Box-Muller Transform
-- [ ] Marsaglia Polar Method
-- [ ] Inverse Transform Sampling
-- [ ] Acceptance-Rejection Sampling
-- [ ] VEGAS
 
 
 ### Domínio VIII: Inteligência Artificial, ML & Deep Learning (261 algoritmos)
 
 #### Algoritmos de grafos para IA (16 algoritmos)
 
-- [ ] PageRank
-- [ ] HITS
-- [ ] TrustRank
-- [ ] Girvan-Newman
-- [ ] Label Propagation
-- [ ] Louvain
-- [ ] Leiden
-- [ ] Random Walk
-- [ ] DeepWalk
-- [ ] Node2Vec
-- [ ] Graph Embedding
-- [ ] GraphSAGE
-- [ ] Graph Convolutional Network
-- [ ] Graph Attention Network
-- [ ] Graph Isomorphism Network
-- [ ] Heterogeneous Graph Neural Network
-
+- [x] [PageRank](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosPageRank.flux)
+- [x] [HITS](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosHITS.flux)
+- [x] [TrustRank](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosTrustRank.flux)
+- [x] [Girvan-Newman](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosGirvanNewman.flux)
+- [x] [Label Propagation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosLabelPropagation.flux)
+- [x] [Louvain](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosLouvain.flux)
+- [x] [Leiden](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosLeiden.flux)
+- [x] [Random Walk](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosRandomWalk.flux)
+- [x] [DeepWalk](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosDeepWalk.flux)
+- [x] [Node2Vec](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosNode2Vec.flux)
+- [x] [Graph Embedding](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosGraphEmbedding.flux)
+- [x] [GraphSAGE](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosGraphSAGE.flux)
+- [x] [Graph Convolutional Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosGraphConvolutionalNetwork.flux)
+- [x] [Graph Attention Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosGraphAttentionNetwork.flux)
+- [x] [Graph Isomorphism Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosGraphIsomorphismNetwork.flux)
+- [x] [Heterogeneous Graph Neural Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/graph_ai/ExampleOfIAGrafosHeterogeneousGraphNeuralNetwork.flux)
 #### Busca vetorial, RAG e adaptação de modelos (31 algoritmos)
 
-> Especialmente HNSW, Product Quantization e RAG são importantes para sistemas modernos de busca semântica e IA generativa.
-
-- [ ] Beam Search with Diverse Decoding
-- [ ] Speculative Decoding
-- [ ] Contrastive Search
-- [ ] Best-of-N Sampling
-- [ ] Monte Carlo Dropout
-- [ ] Retrieval-Augmented Generation — RAG
-- [ ] Maximal Marginal Relevance — MMR
-- [x] **HNSW** — Hierarchical Navigable Small World — *(Implementado em [`examples/algorithms/08_artificial_intel/machine_learning/ExampleOfHNSWVectorSearch.flux`](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/machine_learning/ExampleOfHNSWVectorSearch.flux))*
-- [ ] Product Quantization
-- [ ] IVF-Flat
-- [ ] IVF-PQ
-- [ ] LoRA
-- [ ] QLoRA
-- [ ] Knowledge Distillation
-- [ ] Neural Architecture Search
-
+- [x] [Beam Search with Diverse Decoding](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialBeamSearchDiverse.flux)
+- [x] [Speculative Decoding](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialSpeculativeDecoding.flux)
+- [x] [Contrastive Search](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialContrastiveSearch.flux)
+- [x] [Best-of-N Sampling](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialBestOfNSampling.flux)
+- [x] [Monte Carlo Dropout](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialMonteCarloDropout.flux)
+- [x] [Retrieval-Augmented Generation — RAG](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialRAG.flux)
+- [x] [Maximal Marginal Relevance — MMR](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialMMR.flux)
+- [x] [HNSW — Hierarchical Navigable Small World](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialHNSW.flux)
+- [x] [Product Quantization](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialProductQuantization.flux)
+- [x] [IVF-Flat](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialIVFFlat.flux)
+- [x] [IVF-PQ](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialIVFPQ.flux)
+- [x] [LoRA](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialLoRA.flux)
+- [x] [QLoRA](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialQLoRA.flux)
+- [x] [Knowledge Distillation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialKnowledgeDistillation.flux)
+- [x] [Neural Architecture Search](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/vector_search_rag/ExampleOfIABuscaVetorialNeuralArchitectureSearch.flux)
 #### Deep Learning e visão computacional (49 algoritmos)
 
-- [ ] LeNet
-- [ ] AlexNet
-- [ ] VGG
-- [ ] GoogLeNet
-- [ ] Inception
-- [ ] ResNet
-- [ ] DenseNet
-- [ ] EfficientNet
-- [ ] MobileNet
-- [ ] U-Net
-- [ ] FCN
-- [ ] SegNet
-- [ ] Mask R-CNN
-- [ ] R-CNN
-- [ ] Fast R-CNN
-- [ ] Faster R-CNN
-- [ ] YOLO
-- [ ] SSD
-- [ ] RetinaNet
-- [ ] DETR
-- [ ] Vision Transformer
-- [ ] Swin Transformer
-- [ ] Capsule Network
-- [ ] Canny
-- [ ] Sobel
-- [ ] Prewitt
-- [ ] Scharr
-- [ ] Laplacian Edge Detection
-- [ ] Hough Transform
-- [ ] Generalized Hough
-- [ ] SIFT
-- [ ] SURF
-- [ ] HOG
-- [ ] Optical Flow
-- [ ] Lucas-Kanade
-- [ ] Farneback Optical Flow
-- [ ] GrabCut
-- [ ] Watershed
-- [ ] Region Growing
-- [ ] Connected Component Labeling
-- [ ] Flood Fill
-- [ ] Histogram Equalization
-- [ ] Adaptive Histogram Equalization
-- [ ] Median Filter
-- [ ] Gaussian Filter
-- [ ] Richardson-Lucy Deconvolution
-- [ ] Blind Deconvolution
-- [ ] Seam Carving
-- [ ] Floyd-Steinberg Dithering
-
+- [x] [LeNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVLeNet.flux)
+- [x] [AlexNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVAlexNet.flux)
+- [x] [VGG](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVVGG.flux)
+- [x] [GoogLeNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVGoogLeNet.flux)
+- [x] [Inception](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVInception.flux)
+- [x] [ResNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVResNet.flux)
+- [x] [DenseNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVDenseNet.flux)
+- [x] [EfficientNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVEfficientNet.flux)
+- [x] [MobileNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVMobileNet.flux)
+- [x] [U-Net](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVUNet.flux)
+- [x] [FCN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVFCN.flux)
+- [x] [SegNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSegNet.flux)
+- [x] [Mask R-CNN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVMaskRCNN.flux)
+- [x] [R-CNN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVRCNN.flux)
+- [x] [Fast R-CNN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVFastRCNN.flux)
+- [x] [Faster R-CNN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVFasterRCNN.flux)
+- [x] [YOLO](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVYOLO.flux)
+- [x] [SSD](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSSD.flux)
+- [x] [RetinaNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVRetinaNet.flux)
+- [x] [DETR](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVDETR.flux)
+- [x] [Vision Transformer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVVisionTransformer.flux)
+- [x] [Swin Transformer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSwinTransformer.flux)
+- [x] [Capsule Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVCapsuleNetwork.flux)
+- [x] [Canny](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVCanny.flux)
+- [x] [Sobel](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSobel.flux)
+- [x] [Prewitt](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVPrewitt.flux)
+- [x] [Scharr](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVScharr.flux)
+- [x] [Laplacian Edge Detection](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVLaplacianEdgeDetection.flux)
+- [x] [Hough Transform](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVHoughTransform.flux)
+- [x] [Generalized Hough](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVGeneralizedHough.flux)
+- [x] [SIFT](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSIFT.flux)
+- [x] [SURF](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSURF.flux)
+- [x] [HOG](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVHOG.flux)
+- [x] [Optical Flow](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVOpticalFlow.flux)
+- [x] [Lucas-Kanade](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVLucasKanade.flux)
+- [x] [Farneback Optical Flow](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVFarnebackOpticalFlow.flux)
+- [x] [GrabCut](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVGrabCut.flux)
+- [x] [Watershed](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVWatershed.flux)
+- [x] [Region Growing](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVRegionGrowing.flux)
+- [x] [Connected Component Labeling](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVConnectedComponentLabeling.flux)
+- [x] [Flood Fill](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVFloodFill.flux)
+- [x] [Histogram Equalization](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVHistogramEqualization.flux)
+- [x] [Adaptive Histogram Equalization](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVAdaptiveHistogramEqualization.flux)
+- [x] [Median Filter](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVMedianFilter.flux)
+- [x] [Gaussian Filter](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVGaussianFilter.flux)
+- [x] [Richardson-Lucy Deconvolution](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVRichardsonLucyDeconvolution.flux)
+- [x] [Blind Deconvolution](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVBlindDeconvolution.flux)
+- [x] [Seam Carving](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVSeamCarving.flux)
+- [x] [Floyd-Steinberg Dithering](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/deep_learning_cv/ExampleOfIADeepLearningCVFloydSteinbergDithering.flux)
 #### Ensemble Learning (21 algoritmos)
 
-- [ ] Bagging
-- [ ] Boosting
-- [ ] AdaBoost
-- [ ] BrownBoost
-- [ ] LogitBoost
-- [ ] LPBoost
-- [ ] Gradient Boosting
-- [ ] XGBoost
-- [ ] LightGBM
-- [ ] CatBoost
-- [ ] Random Subspace
-- [ ] Rotation Forest
-- [ ] Stacking
-- [ ] Blending
-- [ ] Voting Classifier
-- [ ] MultiBoosting
-- [ ] RUSBoost
-- [ ] SMOTEBoost
-- [ ] Balanced Random Forest
-- [ ] Easy Ensemble
-- [ ] Feature Space Ensemble
-
+- [x] [Bagging](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleBagging.flux)
+- [x] [Boosting](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleBoosting.flux)
+- [x] [AdaBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleAdaBoost.flux)
+- [x] [BrownBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleBrownBoost.flux)
+- [x] [LogitBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleLogitBoost.flux)
+- [x] [LPBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleLPBoost.flux)
+- [x] [Gradient Boosting](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleGradientBoosting.flux)
+- [x] [XGBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleXGBoost.flux)
+- [x] [LightGBM](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleLightGBM.flux)
+- [x] [CatBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleCatBoost.flux)
+- [x] [Random Subspace](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleRandomSubspace.flux)
+- [x] [Rotation Forest](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleRotationForest.flux)
+- [x] [Stacking](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleStacking.flux)
+- [x] [Blending](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleBlending.flux)
+- [x] [Voting Classifier](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleVotingClassifier.flux)
+- [x] [MultiBoosting](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleMultiBoosting.flux)
+- [x] [RUSBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleRUSBoost.flux)
+- [x] [SMOTEBoost](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleSMOTEBoost.flux)
+- [x] [Balanced Random Forest](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleBalancedRandomForest.flux)
+- [x] [Easy Ensemble](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleEasyEnsemble.flux)
+- [x] [Feature Space Ensemble](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/ensemble/ExampleOfIAEnsembleFeatureSpaceEnsemble.flux)
 #### IA generativa (24 algoritmos)
 
-- [ ] Variational Autoencoder
-- [ ] GAN
-- [ ] DCGAN
-- [ ] WGAN
-- [ ] WGAN-GP
-- [ ] StyleGAN
-- [ ] Pix2Pix
-- [ ] CycleGAN
-- [ ] Diffusion Models
-- [ ] DDPM
-- [ ] DDIM
-- [ ] Score-Based Diffusion
-- [ ] Normalizing Flows
-- [ ] Autoregressive Models
-- [ ] Transformer
-- [ ] Mixture of Experts
-- [ ] Beam Search
-- [ ] Top-k Sampling
-- [ ] Nucleus Sampling
-- [ ] Temperature Sampling
-- [ ] Contrastive Learning
-- [ ] SimCLR
-- [ ] CLIP
-- [ ] Masked Autoencoder
-
+- [x] [Variational Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaVariationalAutoencoder.flux)
+- [x] [GAN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaGAN.flux)
+- [x] [DCGAN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaDCGAN.flux)
+- [x] [WGAN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaWGAN.flux)
+- [x] [WGAN-GP](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaWGANGP.flux)
+- [x] [StyleGAN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaStyleGAN.flux)
+- [x] [Pix2Pix](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaPix2Pix.flux)
+- [x] [CycleGAN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaCycleGAN.flux)
+- [x] [Diffusion Models](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaDiffusionModels.flux)
+- [x] [DDPM](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaDDPM.flux)
+- [x] [DDIM](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaDDIM.flux)
+- [x] [Score-Based Diffusion](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaScoreBasedDiffusion.flux)
+- [x] [Normalizing Flows](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaNormalizingFlows.flux)
+- [x] [Autoregressive Models](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaAutoregressiveModels.flux)
+- [x] [Transformer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaTransformer.flux)
+- [x] [Mixture of Experts](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaMixtureOfExperts.flux)
+- [x] [Beam Search](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaBeamSearch.flux)
+- [x] [Top-k Sampling](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaTopKSampling.flux)
+- [x] [Nucleus Sampling](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaNucleusSampling.flux)
+- [x] [Temperature Sampling](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaTemperatureSampling.flux)
+- [x] [Contrastive Learning](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaContrastiveLearning.flux)
+- [x] [SimCLR](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaSimCLR.flux)
+- [x] [CLIP](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaCLIP.flux)
+- [x] [Masked Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/generative_ai/ExampleOfIAGenerativaMaskedAutoencoder.flux)
 #### Machine Learning clássico (38 algoritmos)
 
-- [ ] Linear Regression
-- [ ] Logistic Regression
-- [ ] Ridge Regression
-- [ ] Lasso
-- [ ] Elastic Net
-- [ ] Polynomial Regression
-- [ ] Perceptron
-- [ ] K-Nearest Neighbors
-- [ ] Naive Bayes
-- [ ] Decision Tree
-- [ ] ID3
-- [ ] C4.5
-- [ ] CART
-- [ ] Random Forest
-- [ ] Extra Trees
-- [ ] Support Vector Machine
-- [ ] One-Class SVM
-- [ ] Kernel Methods
-- [ ] Gaussian Process
-- [ ] K-Means
-- [ ] K-Means++
-- [ ] K-Medoids
-- [ ] Mean Shift
-- [ ] DBSCAN
-- [ ] OPTICS
-- [ ] Spectral Clustering
-- [ ] Fuzzy C-Means
-- [ ] Hierarchical Clustering
-- [ ] Single-Linkage
-- [ ] Complete-Linkage
-- [ ] Average-Linkage
-- [ ] Ward's Method
-- [ ] Gaussian Mixture Model
-- [ ] Isolation Forest
-- [ ] Local Outlier Factor
-- [ ] Elliptic Envelope
-- [ ] RANSAC
-- [ ] Locality-Sensitive Hashing
-
+- [x] [Linear Regression](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoLinearRegression.flux)
+- [x] [Logistic Regression](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoLogisticRegression.flux)
+- [x] [Ridge Regression](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoRidgeRegression.flux)
+- [x] [Lasso](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoLasso.flux)
+- [x] [Elastic Net](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoElasticNet.flux)
+- [x] [Polynomial Regression](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoPolynomialRegression.flux)
+- [x] [Perceptron](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoPerceptron.flux)
+- [x] [K-Nearest Neighbors](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoKNearestNeighbors.flux)
+- [x] [Naive Bayes](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoNaiveBayes.flux)
+- [x] [Decision Tree](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoDecisionTree.flux)
+- [x] [ID3](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoID3.flux)
+- [x] [C4.5](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoC45.flux)
+- [x] [CART](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoCART.flux)
+- [x] [Random Forest](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoRandomForest.flux)
+- [x] [Extra Trees](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoExtraTrees.flux)
+- [x] [Support Vector Machine](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoSupportVectorMachine.flux)
+- [x] [One-Class SVM](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoOneClassSVM.flux)
+- [x] [Kernel Methods](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoKernelMethods.flux)
+- [x] [Gaussian Process](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoGaussianProcess.flux)
+- [x] [K-Means](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoKMeans.flux)
+- [x] [K-Means++](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoKMeansPlusPlus.flux)
+- [x] [K-Medoids](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoKMedoids.flux)
+- [x] [Mean Shift](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoMeanShift.flux)
+- [x] [DBSCAN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoDBSCAN.flux)
+- [x] [OPTICS](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoOPTICS.flux)
+- [x] [Spectral Clustering](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoSpectralClustering.flux)
+- [x] [Fuzzy C-Means](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoFuzzyCMeans.flux)
+- [x] [Hierarchical Clustering](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoHierarchicalClustering.flux)
+- [x] [Single-Linkage](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoSingleLinkage.flux)
+- [x] [Complete-Linkage](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoCompleteLinkage.flux)
+- [x] [Average-Linkage](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoAverageLinkage.flux)
+- [x] [Ward's Method](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoWardsMethod.flux)
+- [x] [Gaussian Mixture Model](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoGaussianMixtureModel.flux)
+- [x] [Isolation Forest](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoIsolationForest.flux)
+- [x] [Local Outlier Factor](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoLocalOutlierFactor.flux)
+- [x] [Elliptic Envelope](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoEllipticEnvelope.flux)
+- [x] [RANSAC](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoRANSAC.flux)
+- [x] [Locality-Sensitive Hashing](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/classical_ml/ExampleOfIAMLClassicoLocalitySensitiveHashing.flux)
 #### NLP — Processamento de linguagem natural (23 algoritmos)
 
-- [ ] Bag of Words
-- [ ] TF-IDF
-- [ ] Word2Vec
-- [ ] GloVe
-- [ ] ELMo
-- [ ] BERT
-- [ ] RoBERTa
-- [ ] GPT
-- [ ] T5
-- [ ] XLNet
-- [ ] Seq2Seq
-- [ ] Attention Mechanism
-- [ ] Transformer
-- [ ] Masked Language Modeling
-- [ ] Conditional Random Fields
-- [ ] Hidden Markov Model
-- [ ] Latent Dirichlet Allocation
-- [ ] Lesk Algorithm
-- [ ] Stemming
-- [ ] Porter Stemmer
-- [ ] Snowball Stemmer
-- [ ] Lovins Stemmer
-- [ ] Sukhotin Algorithm
-
+- [x] [Bag of Words](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPBagOfWords.flux)
+- [x] [TF-IDF](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPTFIDF.flux)
+- [x] [Word2Vec](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPWord2Vec.flux)
+- [x] [GloVe](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPGloVe.flux)
+- [x] [ELMo](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPELMo.flux)
+- [x] [BERT](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPBERT.flux)
+- [x] [RoBERTa](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPRoBERTa.flux)
+- [x] [GPT](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPGPT.flux)
+- [x] [T5](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPT5.flux)
+- [x] [XLNet](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPXLNet.flux)
+- [x] [Seq2Seq](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPSeq2Seq.flux)
+- [x] [Attention Mechanism](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPAttentionMechanism.flux)
+- [x] [Transformer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPTransformer.flux)
+- [x] [Masked Language Modeling](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPMaskedLanguageModeling.flux)
+- [x] [Conditional Random Fields](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPConditionalRandomFields.flux)
+- [x] [Hidden Markov Model](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPHiddenMarkovModel.flux)
+- [x] [Latent Dirichlet Allocation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPLatentDirichletAllocation.flux)
+- [x] [Lesk Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPLeskAlgorithm.flux)
+- [x] [Stemming](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPStemming.flux)
+- [x] [Porter Stemmer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPPorterStemmer.flux)
+- [x] [Snowball Stemmer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPSnowballStemmer.flux)
+- [x] [Lovins Stemmer](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPLovinsStemmer.flux)
+- [x] [Sukhotin Algorithm](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/nlp/ExampleOfIANLPSukhotinAlgorithm.flux)
 #### Redes neurais (20 algoritmos)
 
-- [ ] Perceptron
-- [ ] Backpropagation
-- [ ] Multilayer Perceptron
-- [ ] Hopfield Network
-- [ ] Boltzmann Machine
-- [ ] Restricted Boltzmann Machine
-- [ ] Deep Belief Network
-- [ ] Radial Basis Function Network
-- [ ] Self-Organizing Map
-- [ ] Kohonen Network
-- [ ] Recurrent Neural Network
-- [ ] LSTM
-- [ ] GRU
-- [ ] Bidirectional RNN
-- [ ] Convolutional Neural Network
-- [ ] Autoencoder
-- [ ] Variational Autoencoder
-- [ ] Denoising Autoencoder
-- [ ] Sparse Autoencoder
-- [ ] Contractive Autoencoder
-
+- [x] [Perceptron](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisPerceptron.flux)
+- [x] [Backpropagation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisBackpropagation.flux)
+- [x] [Multilayer Perceptron](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisMultilayerPerceptron.flux)
+- [x] [Hopfield Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisHopfieldNetwork.flux)
+- [x] [Boltzmann Machine](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisBoltzmannMachine.flux)
+- [x] [Restricted Boltzmann Machine](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisRestrictedBoltzmannMachine.flux)
+- [x] [Deep Belief Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisDeepBeliefNetwork.flux)
+- [x] [Radial Basis Function Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisRadialBasisFunctionNetwork.flux)
+- [x] [Self-Organizing Map](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisSelfOrganizingMap.flux)
+- [x] [Kohonen Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisKohonenNetwork.flux)
+- [x] [Recurrent Neural Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisRecurrentNeuralNetwork.flux)
+- [x] [LSTM](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisLSTM.flux)
+- [x] [GRU](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisGRU.flux)
+- [x] [Bidirectional RNN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisBidirectionalRNN.flux)
+- [x] [Convolutional Neural Network](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisConvolutionalNeuralNetwork.flux)
+- [x] [Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisAutoencoder.flux)
+- [x] [Variational Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisVariationalAutoencoder.flux)
+- [x] [Denoising Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisDenoisingAutoencoder.flux)
+- [x] [Sparse Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisSparseAutoencoder.flux)
+- [x] [Contractive Autoencoder](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/neural_networks/ExampleOfIARedesNeuraisContractiveAutoencoder.flux)
 #### Reinforcement Learning (25 algoritmos)
 
-- [ ] Dynamic Programming for MDP
-- [ ] Value Iteration
-- [ ] Policy Iteration
-- [ ] Monte Carlo RL
-- [ ] Temporal Difference Learning
-- [ ] TD(λ)
-- [ ] Q-Learning
-- [ ] SARSA
-- [ ] Expected SARSA
-- [ ] Double Q-Learning
-- [ ] DQN
-- [ ] Double DQN
-- [ ] Dueling DQN
-- [ ] Rainbow DQN
-- [ ] Policy Gradient
-- [ ] REINFORCE
-- [ ] Actor-Critic
-- [ ] A2C
-- [ ] A3C
-- [ ] PPO
-- [ ] TRPO
-- [ ] SAC
-- [ ] DDPG
-- [ ] TD3
-- [ ] Monte Carlo Tree Search
-
+- [x] [Dynamic Programming for MDP](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningDynamicProgrammingMDP.flux)
+- [x] [Value Iteration](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningValueIteration.flux)
+- [x] [Policy Iteration](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningPolicyIteration.flux)
+- [x] [Monte Carlo RL](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningMonteCarloRL.flux)
+- [x] [Temporal Difference Learning](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningTemporalDifferenceLearning.flux)
+- [x] [TD(λ)](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningTDLambda.flux)
+- [x] [Q-Learning](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningQLearning.flux)
+- [x] [SARSA](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningSARSA.flux)
+- [x] [Expected SARSA](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningExpectedSARSA.flux)
+- [x] [Double Q-Learning](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningDoubleQLearning.flux)
+- [x] [DQN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningDQN.flux)
+- [x] [Double DQN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningDoubleDQN.flux)
+- [x] [Dueling DQN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningDuelingDQN.flux)
+- [x] [Rainbow DQN](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningRainbowDQN.flux)
+- [x] [Policy Gradient](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningPolicyGradient.flux)
+- [x] [REINFORCE](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningREINFORCE.flux)
+- [x] [Actor-Critic](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningActorCritic.flux)
+- [x] [A2C](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningA2C.flux)
+- [x] [A3C](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningA3C.flux)
+- [x] [PPO](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningPPO.flux)
+- [x] [TRPO](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningTRPO.flux)
+- [x] [SAC](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningSAC.flux)
+- [x] [DDPG](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningDDPG.flux)
+- [x] [TD3](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningTD3.flux)
+- [x] [Monte Carlo Tree Search](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/reinforcement_learning/ExampleOfIAReinforcementLearningMonteCarloTreeSearch.flux)
 #### Sistemas de recomendação (14 algoritmos)
 
-- [ ] Collaborative Filtering
-- [ ] Content-Based Filtering
-- [ ] Matrix Factorization
-- [ ] SVD Recommendation
-- [ ] ALS
-- [ ] Apriori Recommendation
-- [ ] Eclat
-- [ ] Neural Collaborative Filtering
-- [ ] Hybrid Recommendation
-- [ ] Context-Aware Recommendation
-- [ ] DeepFM
-- [ ] Wide & Deep
-- [ ] Knowledge Graph Recommendation
-- [ ] Reinforcement Learning Recommendation
-
+- [x] [Collaborative Filtering](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoCollaborativeFiltering.flux)
+- [x] [Content-Based Filtering](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoContentBasedFiltering.flux)
+- [x] [Matrix Factorization](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoMatrixFactorization.flux)
+- [x] [SVD Recommendation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoSVDRecommendation.flux)
+- [x] [ALS](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoALS.flux)
+- [x] [Apriori Recommendation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoAprioriRecommendation.flux)
+- [x] [Eclat](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoEclat.flux)
+- [x] [Neural Collaborative Filtering](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoNeuralCollaborativeFiltering.flux)
+- [x] [Hybrid Recommendation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoHybridRecommendation.flux)
+- [x] [Context-Aware Recommendation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoContextAwareRecommendation.flux)
+- [x] [DeepFM](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoDeepFM.flux)
+- [x] [Wide & Deep](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoWideAndDeep.flux)
+- [x] [Knowledge Graph Recommendation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoKnowledgeGraphRecommendation.flux)
+- [x] [Reinforcement Learning Recommendation](file:///D:/Projetos/TheFlux/examples/algorithms/08_artificial_intel/recommender_systems/ExampleOfIARecomendacaoReinforcementLearningRecommendation.flux)
 
 ### Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura (185 algoritmos)
 
@@ -1553,84 +1622,105 @@ program (ExampleOfCooleyTukeyFFT) {
 - [x] [Shortest Seek Time First](file:///D:/Projetos/TheFlux/examples/algorithms/09_systems_infra/operating_systems/ExampleOfSistemasOperacionaisShortestSeekTimeFirst.flux)
 
 
-### Domínio X: Bioinformática, Computação Quântica & Criptografia Pós-Quântica (71 algoritmos)
 
-#### Algoritmos pós-quânticos e Criptografia Quântico-Resistente (30 algoritmos)
+### Domínio X: Bioinformática, Computação Quântica & Criptografia Pós-Quântica (96 algoritmos)
 
-- [ ] ML-KEM (CRYSTALS-Kyber) — FIPS 203 Key Encapsulation Mechanism baseado em Module-LWE
-- [ ] ML-DSA (CRYSTALS-Dilithium) — FIPS 204 Digital Signature Algorithm baseado em Module-LWE/SIS
-- [ ] FN-DSA (Falcon) — assinatura digital compacta baseada em NTRU e Fast Fourier Sampling
-- [ ] NTRU (NTRUEncrypt) — criptossistema clássico de reticulados sobre anéis polinomiais
-- [ ] FrodoKEM — KEM conservador baseado em Learning with Errors (LWE) não estruturado
-- [ ] LLL (Lenstra–Lenstra–Lovász) — algoritmo polinomial de redução de base de reticulados
-- [ ] BKZ (Block Korkine-Zolotarev) — algoritmo avançado de redução de reticulados por blocos
-- [ ] Babai’s Nearest Plane — algoritmo de aproximação para o Closest Vector Problem (CVP)
-- [ ] Learning With Errors (LWE / Ring-LWE) — primitiva e gerador de erros gaussianos discretos
-- [ ] Short Integer Solution (SIS / Module-SIS) — problema médio de reticulados para funções hash e assinaturas
-- [ ] SLH-DSA (SPHINCS+) — FIPS 205 assinatura digital stateless baseada em árvores hiperbólicas de hash
-- [ ] XMSS (eXtended Merkle Signature Scheme) — assinatura stateful padronizada na RFC 8391
-- [ ] LMS (Leighton-Micali Signatures) — assinatura stateful hierárquica (RFC 8554 / NIST SP 800-208)
-- [ ] Lamport One-Time Signature (OTS) — esquema pioneiro de assinatura de uso único via hash unidirecional
-- [ ] Winternitz One-Time Signature (WOTS+) — assinatura em cadeia de hashes com tamanho de chave reduzido
-- [ ] FORS (Forest of Random Subsets) — primitiva Few-Time Signature utilizada no SPHINCS+
-- [ ] Classic McEliece — KEM pós-quântico de alta segurança baseado em códigos de Goppa lineares
-- [ ] Niederreiter Cryptosystem — variante dual do McEliece baseada em decodificação de síndromes
-- [ ] BIKE (Bit Flipping Key Encapsulation) — KEM baseado em códigos QC-MDPC com decodificação por inversão de bits
-- [ ] HQC (Hamming Quasi-Cyclic) — KEM baseado em códigos quase-cíclicos com decodificação concatenada
-- [ ] Information Set Decoding (ISD / Algoritmo de Prange) — algoritmo canônico para decodificação genérica de códigos
-- [ ] Decodificador de Códigos de Goppa (Berlekamp-Massey / Patterson) — algoritmo de decodificação e localização de erros
-- [ ] CSIDH — troca de chaves não interativa pós-quântica baseada em ação de grupo em curvas supersingulares
-- [ ] SQISign — assinatura digital pós-quântica com chaves e assinaturas ultracompactas via quatérnios e isogenias
-- [ ] Fórmulas de Vélu — cálculo e avaliação eficiente de isogenias explícitas entre curvas elípticas
-- [ ] Rainbow — assinatura digital multivariada baseada em camadas invertíveis de Oil and Vinegar
-- [ ] UOV (Unbalanced Oil and Vinegar) — esquema multivariado clássico com equações quadráticas em corpos finitos
-- [ ] MAYO — variante compacta moderna do esquema UOV
-- [ ] Transformada de Fujisaki-Okamoto (FO Transform) — conversão genérica de PKE CPA para KEM CCA com oráculo aleatório
-- [ ] KEM Híbrido Pós-Quântico (X25519 + ML-KEM-768) — combinação paralela de chave clássica e quântico-resistente para TLS 1.3
+| Nome do Algoritmo                                            | Local em Disco                                                                                                 |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **BLAST**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaBLAST.flux) |
+| **Genome Breakpoint Distance**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaBreakpointDistance.flux) |
+| **Burrows-Wheeler Genome Alignment**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaBurrowsWheelerGenomeAlignment.flux) |
+| **CRISPR Protospacer & PAM Search**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaCRISPRProtospacerSearch.flux) |
+| **DALI Protein Structural Alignment**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaDALIProteinAlignment.flux) |
+| **de Bruijn Graph Assembly**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaDeBruijnGraphAssembly.flux) |
+| **Distance Geometry Protein Folding**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaDistanceGeometryFolding.flux) |
+| **Felsenstein's Tree Pruning**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaFelsensteinPruning.flux) |
+| **Fitch's Small Parsimony Algorithm**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaFitchSmallParsimony.flux) |
+| **Hirschberg**                                               | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaHirschberg.flux) |
+| **Kabsch Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaKabschAlgorithm.flux) |
+| **Maximum Parsimony**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaMaximumParsimony.flux) |
+| **Needleman-Wunsch**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaNeedlemanWunsch.flux) |
+| **Neighbor-Joining**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaNeighborJoining.flux) |
+| **Zuker RNA Minimum Free Energy (MFE)**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaRNAZukerMFE.flux) |
+| **Ramachandran Plot Dihedral Validation**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaRamachandranPlot.flux) |
+| **Sankoff's Generalized Parsimony**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaSankoffParsimony.flux) |
+| **MEM Seed-and-Extend (BWA-MEM)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaSeedAndExtendMEM.flux) |
+| **Smith-Waterman**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaSmithWaterman.flux) |
+| **Sorting by Signed Reversals**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaSortingBySignedReversals.flux) |
+| **UPGMA**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaUPGMA.flux) |
+| **Velvet Assembly**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaVelvetAssembly.flux) |
+| **Viterbi**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfBioInformaticaViterbi.flux) |
+| **Amplitude Amplification**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaAmplitudeAmplification.flux) |
+| **Amplitude Estimation**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaAmplitudeEstimation.flux) |
+| **Bacon-Shor Subsystem Quantum Code**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaBaconShorCode.flux) |
+| **Bernstein-Vazirani**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaBernsteinVazirani.flux) |
+| **Boson Sampling**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaBosonSampling.flux) |
+| **Deutsch Algorithm**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaDeutschAlgorithm.flux) |
+| **Deutsch-Jozsa**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaDeutschJozsa.flux) |
+| **Fixed-Point Grover Search**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaFixedPointGrover.flux) |
+| **Grover's Algorithm**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaGroversAlgorithm.flux) |
+| **HHL**                                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaHHL.flux) |
+| **Hadamard Test**                                            | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaHadamardTest.flux) |
+| **Hamiltonian Simulation**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaHamiltonianSimulation.flux) |
+| **Hidden Shift Algorithm**                                   | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaHiddenShift.flux) |
+| **Hidden Subgroup Algorithm**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaHiddenSubgroup.flux) |
+| **Quantum Phase Estimation (Iterative)**                     | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaIterativePhaseEstimation.flux) |
+| **Iterative Quantum Phase Estimation (IQPE)**                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaIterativeQPE.flux) |
+| **Knill-Laflamme QEC Verification**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaKnillLaflammeVerification.flux) |
+| **MWPM Surface Code Syndrome Decoder**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaMWPMSyndromeDecoder.flux) |
+| **Magic State Distillation (15-to-1)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaMagicStateDistillation.flux) |
+| **QAOA**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQAOA.flux) |
+| **Quantum RAM (Bucket-Brigade Architecture)**                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQRAMBucketBrigade.flux) |
+| **Quantum Singular Value Transformation (QSVT)**             | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQSVT.flux) |
+| **Quantum Annealing**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumAnnealing.flux) |
+| **Quantum Counting**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumCounting.flux) |
+| **Quantum Dense Coding**                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumDenseCoding.flux) |
+| **Quantum Fourier Transform**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumFourierTransform.flux) |
+| **Quantum Kernel Estimation (QSVM)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumKernelSVM.flux) |
+| **Quantum Phase Estimation**                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumPhaseEstimation.flux) |
+| **Quantum Search**                                           | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumSearch.flux) |
+| **Quantum Teleportation**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumTeleportation.flux) |
+| **Quantum Walk**                                             | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumWalk.flux) |
+| **Quantum Walk Search**                                      | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaQuantumWalkSearch.flux) |
+| **Shor's Algorithm**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaShorsAlgorithm.flux) |
+| **Simon's Algorithm**                                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaSimonsAlgorithm.flux) |
+| **Swap Test**                                                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaSwapTest.flux) |
+| **Kitaev Toric Code (Topological Memory)**                   | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaToricCodeKitaev.flux) |
+| **Variational Quantum Eigensolver**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaVQE.flux) |
+| **Quantum Principal Component Analysis (qPCA)**              | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfComputacaoQuanticaqPCA.flux) |
+| **BIKE (Bit Flipping Key Encapsulation)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaBIKE.flux) |
+| **BKZ (Block Korkine-Zolotarev)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaBKZ.flux) |
+| **Babai’s Nearest Plane**                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaBabaiNearestPlane.flux) |
+| **Bimodal Continuous LWE (CLWE)**                            | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaBimodalCLWE.flux) |
+| **CSIDH**                                                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaCSIDH.flux) |
+| **Classic McEliece**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaClassicMcEliece.flux) |
+| **FORS (Forest of Random Subsets)**                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaFORS.flux) |
+| **FN-DSA (Falcon)**                                          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaFalcon.flux) |
+| **FrodoKEM**                                                 | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaFrodoKEM.flux) |
+| **Transformada de Fujisaki-Okamoto (FO Transform)**          | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaFujisakiOkamoto.flux) |
+| **Decodificador de Goppa (Patterson)**                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaGoppaDecoder.flux) |
+| **HQC (Hamming Quasi-Cyclic)**                               | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaHQC.flux) |
+| **KEM Híbrido Pós-Quântico (X25519 + ML-KEM-768)**           | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaHybridKEM.flux) |
+| **Information Set Decoding (ISD / Algoritmo de Prange)**     | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaInformationSetDecoding.flux) |
+| **LLL (Lenstra–Lenstra–Lovász)**                             | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaLLL.flux) |
+| **LMS (Leighton-Micali Signatures)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaLMS.flux) |
+| **Learning With Errors (LWE / Ring-LWE)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaLWE.flux) |
+| **Lamport One-Time Signature (OTS)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaLamportOTS.flux) |
+| **Dual-LWE Lattice Attack Estimator**                        | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaLatticeDualAttackEstimator.flux) |
+| **MAYO**                                                     | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaMAYO.flux) |
+| **MAYO Folded UOV Signature Scheme**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaMAYOSignature.flux) |
+| **ML-DSA (CRYSTALS-Dilithium)**                              | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaMLDSA.flux) |
+| **ML-KEM (CRYSTALS-Kyber)**                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaMLKEM.flux) |
+| **Montgomery Curve Isogeny Point Arithmetic**                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaMontgomeryCurveIsogeny.flux) |
+| **NTRU (NTRUEncrypt)**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaNTRUEncrypt.flux) |
+| **Niederreiter Cryptosystem**                                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaNiederreiter.flux) |
+| **Rainbow**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaRainbow.flux) |
+| **Short Integer Solution (SIS / Module-SIS)**                | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaSIS.flux) |
+| **SLH-DSA (SPHINCS+)**                                       | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaSLHDSA.flux) |
+| **SNOVA Multivariate Signature Scheme**                      | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaSNOVASignature.flux) |
+| **SQISign**                                                  | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaSQISign.flux) |
+| **UOV (Unbalanced Oil and Vinegar)**                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaUOV.flux) |
+| **Fórmulas de Vélu**                                         | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaVeluFormulas.flux) |
+| **Winternitz One-Time Signature (WOTS+)**                    | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaWOTSPlus.flux) |
+| **XMSS (eXtended Merkle Signature Scheme)**                  | (file:///D:/Projetos/TheFlux/examples/algorithms/10_bio_quantum/ExampleOfCriptografiaPosQuanticaXMSS.flux) |
 
-#### Algoritmos quânticos (28 algoritmos)
-
-- [ ] Deutsch Algorithm
-- [ ] Deutsch-Jozsa
-- [ ] Bernstein-Vazirani
-- [ ] Simon's Algorithm
-- [ ] Grover's Algorithm
-- [ ] Shor's Algorithm
-- [ ] Quantum Fourier Transform
-- [ ] Quantum Phase Estimation
-- [ ] Quantum Counting
-- [ ] Amplitude Amplification
-- [ ] Amplitude Estimation
-- [ ] Quantum Walk
-- [ ] Quantum Walk Search
-- [ ] HHL
-- [ ] Hadamard Test
-- [ ] Swap Test
-- [ ] Quantum Teleportation
-- [ ] Quantum Dense Coding
-- [ ] Quantum Singular Value Transformation
-- [ ] Variational Quantum Eigensolver
-- [ ] QAOA
-- [ ] Quantum Annealing
-- [ ] Hamiltonian Simulation
-- [ ] Hidden Subgroup Algorithm
-- [ ] Hidden Shift Algorithm
-- [ ] Quantum Phase Estimation
-- [ ] Quantum Search
-- [ ] Boson Sampling
-
-#### Bioinformática (13 algoritmos)
-
-- [ ] BLAST
-- [ ] Needleman-Wunsch
-- [ ] Smith-Waterman
-- [ ] Hirschberg
-- [ ] Viterbi
-- [ ] Kabsch Algorithm
-- [ ] UPGMA
-- [ ] Neighbor-Joining
-- [ ] Maximum Parsimony
-- [ ] de Bruijn Graph Assembly
-- [ ] Burrows-Wheeler Genome Alignment
-- [ ] Sorting by Signed Reversals
-- [ ] Velvet Assembly
