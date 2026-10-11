@@ -32,7 +32,7 @@ if str(RAIZ) not in sys.path:
 
 import backend_compliance as bc
 
-ALGO_DIR = RAIZ / "examples" / "algorithms"
+ALGO_DIR = RAIZ / "examples" / "SciAlgo"
 COMPLIANCE_MD = RAIZ / "SciAlgo_compliance.md"
 COMPLIANCE_OLD_MD = RAIZ / "SciAlgo_compliance_OLD.md"
 COMPLIANCE_EXAMPLES_MD = RAIZ / "examples" / "SciAlgo_compliance.md"
@@ -50,6 +50,9 @@ DOMAIN_TITLES = {
     "08_artificial_intel": "Domínio VIII: Inteligência Artificial, ML & Deep Learning (08_artificial_intel)",
     "09_systems_infra": "Domínio IX: Sistemas Computacionais, Compiladores & Infraestrutura (09_systems_infra)",
     "10_bio_quantum": "Domínio X: Bioinformática, Computação Quântica & Criptografia Pós-Quântica (10_bio_quantum)",
+    "11_dsp_multimedia": "Domínio XI: Processamento Digital de Sinais (DSP), Áudio & Multimídia (11_dsp_multimedia)",
+    "12_robotics_control": "Domínio XII: Robótica, Cinemática, Controle & Navegação (12_robotics_control)",
+    "13_classical_crypto": "Domínio XIII: Criptografia Fundamental Clássica & Segurança (13_classical_crypto)",
 }
 
 
@@ -82,7 +85,7 @@ def obter_ordem_listagem() -> dict[str, int]:
         return {}
     import re
     text = TODO_MD.read_text(encoding="utf-8")
-    marker = "## 📚 6. Catálogo Completo"
+    marker = "Catálogo Completo"
     idx_marker = text.find(marker)
     if idx_marker != -1:
         text = text[idx_marker:]
@@ -234,11 +237,11 @@ def sincronizar_metricas_todo(todo_path: Path = TODO_MD) -> bool:
             "status": status,
         })
 
-    sec6_start = content.find("## 📚 6. Catálogo Completo")
-    sec6_text = content[sec6_start:] if sec6_start != -1 else content
-    chk_all = re.findall(r"- \[x\][^\n]+", sec6_text)
-    table_flux_matches = re.findall(r"\((file:///[^\)]+/(ExampleOf[A-Za-z0-9_]+\.flux))\)", sec6_text)
-    chk_examples = sum(1 for l in chk_all if "examples/algorithms" in l) + sum(1 for u, _ in table_flux_matches if "examples/algorithms" in u)
+    sec_start = content.find("Catálogo Completo")
+    sec_text = content[sec_start:] if sec_start != -1 else content
+    chk_all = re.findall(r"- \[x\][^\n]+", sec_text)
+    table_flux_matches = re.findall(r"\((file:///[^\)]+/(ExampleOf[A-Za-z0-9_]+\.flux))\)", sec_text)
+    chk_examples = sum(1 for l in chk_all if "examples/SciAlgo" in l) + sum(1 for u, _ in table_flux_matches if "examples/SciAlgo" in u)
     chk_flux = sum(1 for l in chk_all if "flux/" in l) + sum(1 for u, _ in table_flux_matches if "flux/" in u)
 
     total_declared = sum(r["declared"] for r in rows)
@@ -258,11 +261,11 @@ def sincronizar_metricas_todo(todo_path: Path = TODO_MD) -> bool:
         "## 📊 1. Resumo Executivo & Métricas do Catálogo",
         "",
         f"- **Total de Entradas Catalogadas**: {tot_cat_s} algoritmos ({tot_dec_s} nos títulos temáticos)",
-        f"- **Algoritmos Já Implementados**: **{tot_imp_s}** ({chk_examples} na suíte [`examples/algorithms/`](file:///D:/Projetos/TheFlux/examples/algorithms) + {chk_flux} em [`flux/`](file:///D:/Projetos/TheFlux/flux))",
+        f"- **Algoritmos Já Implementados**: **{tot_imp_s}** ({chk_examples} na suíte [`examples/SciAlgo/`](file:///D:/Projetos/TheFlux/examples/SciAlgo) + {chk_flux} em [`flux/`](file:///D:/Projetos/TheFlux/flux))",
         f"- **Algoritmos a Implementar**: **{tot_res_s}** algoritmos restantes",
         f"- **Taxa de Conclusão Global**: **{pct_glob_s}**",
-        f"- **Suíte Ativa (`examples/algorithms/`)**: **{total_exemplos_suite}** arquivos `.flux` com 100% de paridade nos 6 backends",
-        "- **Divisão Estrutural**: **10 Grandes Domínios Científicos** e **49 Categorias Temáticas**",
+        f"- **Suíte Ativa (`examples/SciAlgo/`)**: **{total_exemplos_suite}** arquivos `.flux` com 100% de paridade nos 6 backends",
+        f"- **Divisão Estrutural**: **{len(rows)} Grandes Domínios Científicos** e **Subcategorias Especializadas**",
         "",
         "### Tabela de Domínios e Volumes",
         "",
@@ -277,9 +280,14 @@ def sincronizar_metricas_todo(todo_path: Path = TODO_MD) -> bool:
     tot_cat_str = f"{total_catalogados:,}".replace(",", ".")
     tot_imp_str = f"{total_implementados:,}".replace(",", ".")
     pct_tot_str = f"{pct_global:.1f}%".replace(".", ",")
-    lines.append(f"| **Total Geral** | **10 Grandes Domínios** | **{tot_cat_str}** | **{tot_imp_str}** | **{pct_tot_str}** | 🚀 **Suíte Ativa** |")
+    lines.append(f"| **Total Geral** | **{len(rows)} Grandes Domínios** | **{tot_cat_str}** | **{tot_imp_str}** | **{pct_tot_str}** | 🚀 **Suíte Ativa** |")
+    lines.append("")
+    lines.append("")
     lines.append("")
     lines.append("---")
+    lines.append("")
+    lines.append("")
+    lines.append("")
     lines.append("")
 
     new_sec1 = "\n".join(lines)
