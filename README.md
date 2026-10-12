@@ -1,5 +1,6 @@
 # TheFlux Programming Language
 
+[![Version](https://img.shields.io/badge/Release-v0.5.0-blue)](RELEASE_NOTES_0.5.0.md)
 [![Compliance](https://img.shields.io/badge/Compliance-360%2F360%20(100%25)-brightgreen)](#)
 [![Backends](https://img.shields.io/badge/Backends-6%20Alvos%20Parit%C3%A1rios-blue)](#)
 [![Encoding](https://img.shields.io/badge/Encoding-UTF--8%20Strict-orange)](#)
@@ -178,6 +179,9 @@ O compilador TheFlux suporta resolução modular recursiva em subpastas dentro d
 ```text
 TheFlux/
 ├── docs/                        # Especificação EBNF, gramática, manuais de DB e documentação técnica
+├── examples/                    # Suítes canônicas científicas (SciAlgo e NumericalRecipes)
+│   ├── NumericalRecipes/        # 205 algoritmos dos 22 capítulos da 3ª edição com 100% de paridade
+│   └── SciAlgo/                 # 1.741 algoritmos científicos em 13 domínios com 100% de paridade
 ├── fdsl/                        # Agentes de exemplo e DSLs modulares em subpastas
 │   ├── asm_dsl/                 # DSL de Assembly Inline (Lexer, Semantic, AST, Executor)
 │   ├── calc_dsl/                # DSL de Cálculo Aritmético (Lexer, Semantic, AST, Executor)
@@ -247,6 +251,7 @@ TheFlux/
 │   ├── SymbolicStdLib.fdsl      # Computação algébrica simbólica e cálculo analítico
 │   └── ThreadStdLib.fdsl        # Concorrência preemptiva multi-threading e sincronização
 ├── web_wasm/                    # Frontend web e playground interativo WebAssembly
+├── RELEASE_NOTES_0.5.0.md       # Notas oficiais de lançamento da versão 0.5.0
 ├── backend_compliance.py        # Harness oficial de testes de conformidade dos 6 backends
 ├── backend_compliance.md        # Relatório de conformidade dos 360 testes (100% PASS)
 ├── backend_compliance_OLD.md    # Baseline de regressão dos testes anteriores
