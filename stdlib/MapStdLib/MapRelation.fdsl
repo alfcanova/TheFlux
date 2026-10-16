@@ -1,0 +1,116 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapRelation
+#L ==============================================================================
+
+contract (MapRelationContract) {
+      op mapIsSubmap (as map: sub, as map: sup) as bool
+      op mapIsSupermap (as map: sup, as map: sub) as bool
+      op mapHasSameKeys (as map: lhs, as map: rhs) as bool
+      op mapDisjointKeys (as map: lhs, as map: rhs) as bool
+      op mapDiffKeys (as map: lhs, as map: rhs) as list of data
+}
+
+agent (MapStdLib) impl MapRelationContract {
+      #L 4. MapRelationContract (4 operacoes)
+      #L ==============================================================================
+      op mapIsSubmap (as map: sub, as map: sup) as bool ==> {
+            mut as bool: sub_ok = true
+            infinite (k in sub) {
+                  route {
+                        sub[k] != sup[k] ==> {
+                              sub_ok = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = sub_ok
+            emit(nice, res, "ok")
+      }
+
+      op mapIsSupermap (as map: sup, as map: sub) as bool ==> {
+            emit(nice, mapIsSubmap(sub, sup), "ok")
+      }
+
+      op mapHasSameKeys (as map: lhs, as map: rhs) as bool ==> {
+            mut as int64: n_lhs = 0
+            infinite (k in lhs) {
+                  n_lhs = n_lhs + 1
+            }
+            mut as int64: n_rhs = 0
+            infinite (k in rhs) {
+                  n_rhs = n_rhs + 1
+            }
+            mut as bool: same = n_lhs == n_rhs
+            route {
+                  same ==> {
+                        infinite (k in lhs) {
+                              mut as bool: in_rhs = false
+                              infinite (rk in rhs) {
+                                    route {
+                                          k == rk ==> {
+                                                in_rhs = true
+                                                break
+                                          }
+                                    }
+                              }
+                              route {
+                                    not in_rhs ==> {
+                                          same = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            imut as bool: res = same
+            emit(nice, res, "ok")
+      }
+
+      op mapDisjointKeys (as map: lhs, as map: rhs) as bool ==> {
+            mut as bool: disjoint = true
+            infinite (k in lhs) {
+                  infinite (rk in rhs) {
+                        route {
+                              k == rk ==> {
+                                    disjoint = false
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not disjoint ==> {
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = disjoint
+            emit(nice, res, "ok")
+      }
+
+      op mapDiffKeys (as map: lhs, as map: rhs) as list of data ==> {
+            mut as list of data: diff = []
+            mut as int64: dlen = 0
+            infinite (k in lhs) {
+                  mut as bool: in_rhs = false
+                  infinite (rk in rhs) {
+                        route {
+                              k == rk ==> {
+                                    in_rhs = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not in_rhs ==> {
+                              dlen = dlen + 1
+                              diff[dlen] = k
+                        }
+                  }
+            }
+            imut as list of data: res = diff
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

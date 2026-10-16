@@ -1,0 +1,90 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotSurfaceField
+#L ==============================================================================
+
+contract (PlotSurfaceFieldContract) {
+      op plotSurface3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map
+      op plotMesh3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map
+      op plotContour (as map: ctx, as list of data: grid_z, as int64: n_levels) as map
+      op plotQuiver2D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: us, as list of float64: vs) as map
+      op plotStreamlines (as map: ctx, as list of data: grid_u, as list of data: grid_v) as map
+      op plotScatter3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map
+      op plotTrajectory3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map
+}
+
+agent (GraphPlotStdLib) impl PlotSurfaceFieldContract {
+      #L 5. PlotSurfaceFieldContract (Família 3)
+      #L =====================================================================
+
+      op plotSurface3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "surface3d"
+            layer["gx"] = grid_x
+            layer["gy"] = grid_y
+            layer["gz"] = grid_z
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotMesh3D (as map: ctx, as list of data: grid_x, as list of data: grid_y, as list of data: grid_z) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "mesh3d"
+            layer["gx"] = grid_x
+            layer["gy"] = grid_y
+            layer["gz"] = grid_z
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotContour (as map: ctx, as list of data: grid_z, as int64: n_levels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "contour"
+            layer["gz"] = grid_z
+            layer["levels"] = n_levels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotQuiver2D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: us, as list of float64: vs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "quiver"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["us"] = us
+            layer["vs"] = vs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStreamlines (as map: ctx, as list of data: grid_u, as list of data: grid_v) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "streamlines"
+            layer["gu"] = grid_u
+            layer["gv"] = grid_v
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotScatter3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "scatter3d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["zs"] = zs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotTrajectory3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "trajectory3d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["zs"] = zs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

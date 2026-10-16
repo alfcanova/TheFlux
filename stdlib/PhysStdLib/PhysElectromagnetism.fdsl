@@ -1,0 +1,69 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysElectromagnetism
+#L ==============================================================================
+
+contract (PhysElectromagnetismContract) {
+      op physCoulombForce (as float64: q1, as float64: q2, as float64: distance) as float64
+      op physElectricField (as float64: charge, as float64: distance) as float64
+      op physElectricPotential (as float64: charge, as float64: distance) as float64
+      op physOhmCurrent (as float64: voltage, as float64: resistance) as float64
+      op physOhmVoltage (as float64: current, as float64: resistance) as float64
+      op physElectricPower (as float64: voltage, as float64: current) as float64
+      op physCapacitorEnergy (as float64: capacitance, as float64: voltage) as float64
+}
+
+agent (PhysStdLib) impl PhysElectromagnetismContract {
+      #L PhysElectromagnetismContract (Eletromagnetismo)
+      #L =====================================================================
+      op physCoulombForce (as float64: q1, as float64: q2, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em Coulomb")
+                  }
+            }
+            mut as float64: f = (C_COULOMB_CONST * q1 * q2) /f (distance * distance)
+            emit(nice, f, "ok")
+      }
+      op physElectricField (as float64: charge, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em campo eletrico")
+                  }
+            }
+            mut as float64: e = (C_COULOMB_CONST * charge) /f (distance * distance)
+            emit(nice, e, "ok")
+      }
+      op physElectricPotential (as float64: charge, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em potencial eletrico")
+                  }
+            }
+            mut as float64: v = (C_COULOMB_CONST * charge) /f distance
+            emit(nice, v, "ok")
+      }
+      op physOhmCurrent (as float64: voltage, as float64: resistance) as float64 ==> {
+            route {
+                  resistance == 0.0 ==> {
+                        emit(fail, 0.0, "resistencia zero em Ohm")
+                  }
+            }
+            mut as float64: i = voltage /f resistance
+            emit(nice, i, "ok")
+      }
+      op physOhmVoltage (as float64: current, as float64: resistance) as float64 ==> {
+            mut as float64: v = current * resistance
+            emit(nice, v, "ok")
+      }
+      op physElectricPower (as float64: voltage, as float64: current) as float64 ==> {
+            mut as float64: p = voltage * current
+            emit(nice, p, "ok")
+      }
+      op physCapacitorEnergy (as float64: capacitance, as float64: voltage) as float64 ==> {
+            mut as float64: u = 0.5 * capacitance * (voltage * voltage)
+            emit(nice, u, "ok")
+      }
+
+      #L =====================================================================
+}

@@ -435,6 +435,9 @@ class VM:
 
     def _op_div(self) -> None:
         b, a = _unwrap_val(self._pop()), _unwrap_val(self._pop())
+        if b == 0 or b == 0.0:
+            self._push({"sta": "fail", "val": b, "msg": "divisao por zero"})
+            return
         self._push(a / b)
 
     def _op_idiv(self) -> None:

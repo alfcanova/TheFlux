@@ -1,0 +1,18 @@
+#L ==============================================================================
+#L MathStdLib - Biblioteca Padrao Matematica 100% Nativa em TheFlux
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use MathConstants
+use BasicArithmetic
+use FloatElementary
+use RootsAndRounding
+use ExponentialLog
+use Trigonometry
+use Hyperbolic
+use AngleConversion
+use Combinatorics
+use SpecialFunctions
+
+agent (MathStdLib) {
+}

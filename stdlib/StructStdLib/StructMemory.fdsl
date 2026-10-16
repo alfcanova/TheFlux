@@ -1,0 +1,113 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StructStdLib
+#L Dominio: StructMemory
+#L ==============================================================================
+
+contract (StructMemoryContract) {
+      op structSizeOf (as string: name) as int64
+      op structAlignOf (as string: name) as int64
+      op structFieldOffset (as string: name, as string: field) as int64
+}
+
+agent (StructStdLib) impl StructMemoryContract {
+      #L StructMemoryContract
+      #L ==============================================================================
+
+      op structSizeOf (as string: name) as int64 ==> {
+            mut as int64: sz = 24
+            route {
+                  name == "Evento" ==> {
+                        sz = 32
+                  }
+                  name == "Transacao" ==> {
+                        sz = 32
+                  }
+                  name == "Pessoa" ==> {
+                        sz = 24
+                  }
+                  name == "PacoteRede" ==> {
+                        sz = 1500
+                  }
+                  _ ==> {
+                        mut as int64: cnt = structFieldCount(name)
+                        route {
+                              cnt > 0 ==> {
+                                    sz = cnt * 8
+                              }
+                              _ ==> {
+                                    sz = 16
+                              }
+                        }
+                  }
+            }
+            emit(nice, sz, "ok")
+      }
+
+      op structAlignOf (as string: name) as int64 ==> {
+            emit(nice, 8, "ok")
+      }
+
+      op structFieldOffset (as string: name, as string: field) as int64 ==> {
+            mut as int64: off = 0
+            route {
+                  name == "Evento" ==> {
+                        route {
+                              field == "nome" ==> {
+                                    off = 0
+                              }
+                              field == "QUANDO" ==> {
+                                    off = 16
+                              }
+                              field == "contador" ==> {
+                                    off = 24
+                              }
+                        }
+                  }
+                  name == "Transacao" ==> {
+                        route {
+                              field == "id" ==> {
+                                    off = 0
+                              }
+                              field == "valor" ==> {
+                                    off = 16
+                              }
+                              field == "timestamp_ms" ==> {
+                                    off = 24
+                              }
+                        }
+                  }
+                  name == "Pessoa" ==> {
+                        route {
+                              field == "nome" ==> {
+                                    off = 0
+                              }
+                              field == "idade" ==> {
+                                    off = 16
+                              }
+                        }
+                  }
+                  name == "PacoteRede" ==> {
+                        route {
+                              field == "origem" ==> {
+                                    off = 0
+                              }
+                              field == "destino" ==> {
+                                    off = 8
+                              }
+                              field == "payload" ==> {
+                                    off = 16
+                              }
+                              field == "checksum" ==> {
+                                    off = 1496
+                              }
+                        }
+                  }
+                  _ ==> {
+                        off = 0
+                  }
+            }
+            emit(nice, off, "ok")
+      }
+
+      #L ==============================================================================
+}

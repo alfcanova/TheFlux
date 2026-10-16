@@ -1,0 +1,303 @@
+contract (HyperbolicContract) {
+      op sinh64 (as float64: value) as float64
+      op sinh32 (as float32: value) as float32
+      op sinh16 (as float16: value) as float16
+      op cosh64 (as float64: value) as float64
+      op cosh32 (as float32: value) as float32
+      op cosh16 (as float16: value) as float16
+      op tanh64 (as float64: value) as float64
+      op tanh32 (as float32: value) as float32
+      op tanh16 (as float16: value) as float16
+      op arcSinh64 (as float64: value) as float64
+      op arcSinh32 (as float32: value) as float32
+      op arcSinh16 (as float16: value) as float16
+      op arcCosh64 (as float64: value) as float64
+      op arcCosh32 (as float32: value) as float32
+      op arcCosh16 (as float16: value) as float16
+      op arcTanh64 (as float64: value) as float64
+      op arcTanh32 (as float32: value) as float32
+      op arcTanh16 (as float16: value) as float16
+      op sech64 (as float64: value) as float64
+      op sech32 (as float32: value) as float32
+      op sech16 (as float16: value) as float16
+      op csch64 (as float64: value) as float64
+      op csch32 (as float32: value) as float32
+      op csch16 (as float16: value) as float16
+      op coth64 (as float64: value) as float64
+      op coth32 (as float32: value) as float32
+      op coth16 (as float16: value) as float16
+      op arcSech64 (as float64: value) as float64
+      op arcSech32 (as float32: value) as float32
+      op arcSech16 (as float16: value) as float16
+      op arcCsch64 (as float64: value) as float64
+      op arcCsch32 (as float32: value) as float32
+      op arcCsch16 (as float16: value) as float16
+      op arcCoth64 (as float64: value) as float64
+      op arcCoth32 (as float32: value) as float32
+      op arcCoth16 (as float16: value) as float16
+      op arcTanh2_64 (as float64: y, as float64: x) as float64
+      op arcTanh2_32 (as float32: y, as float32: x) as float32
+      op arcTanh2_16 (as float16: y, as float16: x) as float16
+}
+
+agent (MathStdLib) impl HyperbolicContract {
+      op sinh64 (as float64: value) as float64 ==> {
+            mut as float64: ep = (exp64(value)).val
+            mut as float64: en = (exp64(0.0 - value)).val
+            mut as float64: res = (ep - en) /f 2.0
+            emit(nice, res, "ok")
+      }
+
+      op sinh32 (as float32: value) as float32 ==> {
+            mut as float32: res = (sinh64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sinh16 (as float16: value) as float16 ==> {
+            mut as float16: res = (sinh64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op cosh64 (as float64: value) as float64 ==> {
+            mut as float64: ep = (exp64(value)).val
+            mut as float64: en = (exp64(0.0 - value)).val
+            mut as float64: res = (ep + en) /f 2.0
+            emit(nice, res, "ok")
+      }
+
+      op cosh32 (as float32: value) as float32 ==> {
+            mut as float32: res = (cosh64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op cosh16 (as float16: value) as float16 ==> {
+            mut as float16: res = (cosh64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op tanh64 (as float64: value) as float64 ==> {
+            mut as float64: ep = (exp64(value)).val
+            mut as float64: en = (exp64(0.0 - value)).val
+            mut as float64: res = (ep - en) /f (ep + en)
+            emit(nice, res, "ok")
+      }
+
+      op tanh32 (as float32: value) as float32 ==> {
+            mut as float32: res = (tanh64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op tanh16 (as float16: value) as float16 ==> {
+            mut as float16: res = (tanh64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcSinh64 (as float64: value) as float64 ==> {
+            mut as float64: res = (log64(value + (squareRoot64(value * value + 1.0)).val)).val
+            emit(nice, res, "ok")
+      }
+      op arcSinh32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcSinh64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcSinh16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcSinh64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcCosh64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value < 1.0 ==> {
+                        emit(fail, zero_val, "dominio de arcCosh: [1, inf)")
+                  }
+            }
+            mut as float64: res = (log64(value + (squareRoot64(value * value - 1.0)).val)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcCosh32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  value < (1.0 as float32) ==> {
+                        emit(fail, zero_val, "dominio de arcCosh: [1, inf)")
+                  }
+            }
+            mut as float32: res = (arcCosh64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op arcCosh16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  value < (1.0 as float16) ==> {
+                        emit(fail, zero_val, "dominio de arcCosh: [1, inf)")
+                  }
+            }
+            mut as float16: res = (arcCosh64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcTanh64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value <= -1.0) or (value >= 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcTanh: (-1, 1)")
+                  }
+            }
+            mut as float64: res = 0.5 * (log64((1.0 + value) /f (1.0 - value))).val
+            emit(nice, res, "ok")
+      }
+
+      op arcTanh32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  (value <= (-1.0 as float32)) or (value >= (1.0 as float32)) ==> {
+                        emit(fail, zero_val, "dominio de arcTanh: (-1, 1)")
+                  }
+            }
+            mut as float32: res = (arcTanh64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op arcTanh16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  (value <= (-1.0 as float16)) or (value >= (1.0 as float16)) ==> {
+                        emit(fail, zero_val, "dominio de arcTanh: (-1, 1)")
+                  }
+            }
+            mut as float16: res = (arcTanh64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcTanh2_64 (as float64: y, as float64: x) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  x == 0.0 ==> {
+                        emit(fail, zero_val, "arcTanh2 indefinido para x zero")
+                  }
+            }
+            mut as float64: res = (arcTanh64(y /f x)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcTanh2_32 (as float32: y, as float32: x) as float32 ==> {
+            mut as float32: res = (arcTanh2_64(y as float64, x as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcTanh2_16 (as float16: y, as float16: x) as float16 ==> {
+            mut as float16: res = (arcTanh2_64(y as float64, x as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op sech64 (as float64: value) as float64 ==> {
+            mut as float64: res = 1.0 /f (cosh64(value)).val
+            emit(nice, res, "ok")
+      }
+      op sech32 (as float32: value) as float32 ==> {
+            mut as float32: res = (sech64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sech16 (as float16: value) as float16 ==> {
+            mut as float16: res = (sech64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op csch64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value == 0.0 ==> {
+                        emit(fail, zero_val, "cossecante hiperbolica indefinida para zero")
+                  }
+            }
+            mut as float64: res = 1.0 /f (sinh64(value)).val
+            emit(nice, res, "ok")
+      }
+
+      op csch32 (as float32: value) as float32 ==> {
+            mut as float32: res = (csch64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op csch16 (as float16: value) as float16 ==> {
+            mut as float16: res = (csch64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op coth64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value == 0.0 ==> {
+                        emit(fail, zero_val, "cotangente hiperbolica indefinida para zero")
+                  }
+            }
+            mut as float64: res = (cosh64(value)).val /f (sinh64(value)).val
+            emit(nice, res, "ok")
+      }
+
+      op coth32 (as float32: value) as float32 ==> {
+            mut as float32: res = (coth64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op coth16 (as float16: value) as float16 ==> {
+            mut as float16: res = (coth64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcSech64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value <= 0.0) or (value > 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcSech: (0, 1]")
+                  }
+            }
+            mut as float64: res = (arcCosh64(1.0 /f value)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcSech32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcSech64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcSech16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcSech64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcCsch64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value == 0.0 ==> {
+                        emit(fail, zero_val, "dominio de arcCsch: (-inf, 0) U (0, inf)")
+                  }
+            }
+            mut as float64: res = (arcSinh64(1.0 /f value)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcCsch32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcCsch64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcCsch16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcCsch64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcCoth64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value >= -1.0) and (value <= 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcCoth: (-inf, -1) U (1, inf)")
+                  }
+            }
+            mut as float64: res = (arcTanh64(1.0 /f value)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcCoth32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcCoth64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcCoth16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcCoth64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+}

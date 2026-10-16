@@ -1,0 +1,223 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Dominio: FormatCsv
+#L ==============================================================================
+
+contract (FormatCsvContract) {
+      op formatParseCsvRows (as string: csv_text, as string: delimiter) as list of data
+      op formatParseCsvTable (as string: csv_text, as string: delimiter) as list of data
+      op formatStringifyCsvRows (as list of data: rows, as string: delimiter) as string
+      op formatStringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string
+      op formatIsValidCsv (as string: csv_text, as string: delimiter) as bool
+
+      #L Aliases
+      op parseCsvRows (as string: csv_text, as string: delimiter) as list of data
+      op parseCsvTable (as string: csv_text, as string: delimiter) as list of data
+      op stringifyCsvRows (as list of data: rows, as string: delimiter) as string
+      op stringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string
+      op isValidCsv (as string: csv_text, as string: delimiter) as bool
+}
+
+agent (FormatStdLib) impl FormatCsvContract {
+      #L 2. FormatCsvContract (RFC 4180)
+      #L ==============================================================================
+
+      op formatParseCsvRows (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: rows = []
+            mut as int64: len = _fmtStrLen(csv_text)
+            route {
+                  len == 0 ==> { emit(nice, rows, "ok") }
+            }
+            mut as list of data: curr_row = []
+            mut as string: curr_cell = ""
+            mut as bool: in_quotes = false
+            mut as int64: row_count = 0
+            mut as int64: col_count = 0
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(csv_text, i)
+                  route {
+                        c == "\"" ==> {
+                              route {
+                                    in_quotes and i + 1 <= len and _fmtCharAt(csv_text, i + 1) == "\"" ==> {
+                                          curr_cell = curr_cell + "\""
+                                          i = i + 1
+                                    }
+                                    _ ==> {
+                                          in_quotes = not in_quotes
+                                    }
+                              }
+                        }
+                        c == delimiter and not in_quotes ==> {
+                              col_count = col_count + 1
+                              curr_row[col_count] = curr_cell
+                              curr_cell = ""
+                        }
+                        (c == "\n" or c == "\r") and not in_quotes ==> {
+                              route {
+                                    c == "\r" and i + 1 <= len and _fmtCharAt(csv_text, i + 1) == "\n" ==> {
+                                          i = i + 1
+                                    }
+                              }
+                              col_count = col_count + 1
+                              curr_row[col_count] = curr_cell
+                              curr_cell = ""
+                              row_count = row_count + 1
+                              rows[row_count] = curr_row
+                              curr_row = []
+                              col_count = 0
+                        }
+                        c != "\"" and (c != delimiter or in_quotes) and (c != "\n" or in_quotes) and (c != "\r" or in_quotes) ==> {
+                              curr_cell = curr_cell + c
+                        }
+                  }
+                  i = i + 1
+            }
+            route {
+                  col_count > 0 or _fmtStrLen(curr_cell) > 0 or _fmtStrLen("" + curr_row) > 2 ==> {
+                        col_count = col_count + 1
+                        curr_row[col_count] = curr_cell
+                        row_count = row_count + 1
+                        rows[row_count] = curr_row
+                  }
+            }
+            emit(nice, rows, "ok")
+      }
+
+      op formatParseCsvTable (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: all_rows = formatParseCsvRows(csv_text, delimiter)
+            mut as int64: total_rows = 0
+            mut as list of data: empty_list = []
+            infinite (r in all_rows) { total_rows = total_rows + 1 }
+            route {
+                  total_rows <= 1 ==> { emit(nice, empty_list, "ok") }
+            }
+            mut as list of data: headers = all_rows[1] as list of data
+            mut as int64: num_cols = 0
+            infinite (h in headers) { num_cols = num_cols + 1 }
+
+            mut as list of data: table = []
+            mut as int64: t_idx = 0
+            infinite (r_idx in 2 .. total_rows) {
+                  mut as list of data: row = all_rows[r_idx] as list of data
+                  mut as map: record = map{}
+                  infinite (c_idx in 1 .. num_cols) {
+                        mut as string: col_name = "" + headers[c_idx]
+                        mut as string: cell_val = ""
+                        route {
+                              c_idx <= num_cols ==> { cell_val = "" + row[c_idx] }
+                        }
+                        record[col_name] = cell_val
+                  }
+                  t_idx = t_idx + 1
+                  table[t_idx] = record
+            }
+            emit(nice, table, "ok")
+      }
+
+      op formatStringifyCsvRows (as list of data: rows, as string: delimiter) as string ==> {
+            mut as string: res = ""
+            mut as bool: first_row = true
+            infinite (r in rows) {
+                  route {
+                        not first_row ==> { res = res + "\n" }
+                        first_row ==> { first_row = false }
+                  }
+                  mut as list of data: cols = r as list of data
+                  mut as bool: first_col = true
+                  infinite (c in cols) {
+                        route {
+                              not first_col ==> { res = res + delimiter }
+                              first_col ==> { first_col = false }
+                        }
+                        mut as string: cell = "" + c
+                        mut as bool: needs_quote = _fmtContains(cell, delimiter) or _fmtContains(cell, "\"") or _fmtContains(cell, "\n")
+                        route {
+                              needs_quote ==> {
+                                    mut as string: esc_cell = ""
+                                    infinite (ch in cell) {
+                                          route {
+                                                ch == "\"" ==> { esc_cell = esc_cell + "\"\"" }
+                                                ch != "\"" ==> { esc_cell = esc_cell + ch }
+                                          }
+                                    }
+                                    res = res + "\"" + esc_cell + "\""
+                              }
+                              not needs_quote ==> {
+                                    res = res + cell
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatStringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string ==> {
+            mut as list of data: rows = []
+            mut as int64: r_count = 1
+            rows[1] = headers
+            infinite (rec in records) {
+                  mut as map: m = rec as map
+                  mut as list of data: row = []
+                  mut as int64: c_idx = 0
+                  infinite (h in headers) {
+                        c_idx = c_idx + 1
+                        row[c_idx] = "" + m["" + h]
+                  }
+                  r_count = r_count + 1
+                  rows[r_count] = row
+            }
+            mut as string: res = formatStringifyCsvRows(rows, delimiter)
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidCsv (as string: csv_text, as string: delimiter) as bool ==> {
+            mut as list of data: rows = formatParseCsvRows(csv_text, delimiter)
+            mut as int64: row_len = 0
+            mut as bool: b_false = false
+            infinite (r in rows) { row_len = row_len + 1 }
+            route {
+                  row_len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as list of data: r1 = rows[1] as list of data
+            mut as int64: cols1 = 0
+            infinite (c in r1) { cols1 = cols1 + 1 }
+            mut as bool: valid = true
+            infinite (r in rows) {
+                  mut as list of data: curr = r as list of data
+                  mut as int64: c_count = 0
+                  infinite (c in curr) { c_count = c_count + 1 }
+                  route {
+                        c_count != cols1 ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      #L Aliases CSV
+      op parseCsvRows (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: r = formatParseCsvRows(csv_text, delimiter)
+            emit(nice, r, "ok")
+      }
+      op parseCsvTable (as string: csv_text, as string: delimiter) as list of data ==> {
+            mut as list of data: r = formatParseCsvTable(csv_text, delimiter)
+            emit(nice, r, "ok")
+      }
+      op stringifyCsvRows (as list of data: rows, as string: delimiter) as string ==> {
+            mut as string: r = formatStringifyCsvRows(rows, delimiter)
+            emit(nice, r, "ok")
+      }
+      op stringifyCsvTable (as list of data: records, as list of data: headers, as string: delimiter) as string ==> {
+            mut as string: r = formatStringifyCsvTable(records, headers, delimiter)
+            emit(nice, r, "ok")
+      }
+      op isValidCsv (as string: csv_text, as string: delimiter) as bool ==> {
+            mut as bool: r = formatIsValidCsv(csv_text, delimiter)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+}

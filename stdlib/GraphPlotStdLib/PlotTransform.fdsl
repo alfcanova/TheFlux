@@ -1,0 +1,219 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotTransform
+#L ==============================================================================
+
+contract (PlotTransformContract) {
+      op plotTransformToCartesian (as int64: coord_sys, as float64: u, as float64: v, as float64: w) as list of float64
+      op plotTransformFromCartesian (as int64: coord_sys, as float64: x, as float64: y, as float64: z) as list of float64
+      op plotProjectToScreen (as map: ctx, as float64: x, as float64: y, as float64: z) as list of int64
+}
+
+agent (GraphPlotStdLib) impl PlotTransformContract {
+      #L 2. PlotTransformContract (20+ Sistemas de Coordenadas)
+      #L =====================================================================
+
+      op plotTransformToCartesian (as int64: coord_sys, as float64: u, as float64: v, as float64: w) as list of float64 ==> {
+            mut as float64: x = u
+            mut as float64: y = v
+            mut as float64: z = w
+
+            route {
+                  coord_sys == 3 ==> { #L POLAR (r, theta)
+                        x = u * cos64(v)
+                        y = u * sin64(v)
+                        z = 0.0
+                  }
+                  coord_sys == 4 ==> { #L CYLINDRICAL (r, theta, z)
+                        x = u * cos64(v)
+                        y = u * sin64(v)
+                        z = w
+                  }
+                  coord_sys == 5 ==> { #L SPHERICAL (r, theta, phi)
+                        x = u * sin64(v) * cos64(w)
+                        y = u * sin64(v) * sin64(w)
+                        z = u * cos64(v)
+                  }
+                  coord_sys == 6 ==> { #L LOG_X (log_b(u), v)
+                        x = u
+                        route { u > 0.0 ==> { x = log10_64(u) } }
+                        y = v
+                        z = w
+                  }
+                  coord_sys == 7 ==> { #L LOG_Y (u, log_b(v))
+                        x = u
+                        y = v
+                        route { v > 0.0 ==> { y = log10_64(v) } }
+                        z = w
+                  }
+                  coord_sys == 8 ==> { #L LOG_LOG (log_b(u), log_b(v))
+                        x = u
+                        y = v
+                        route { u > 0.0 ==> { x = log10_64(u) } }
+                        route { v > 0.0 ==> { y = log10_64(v) } }
+                        z = w
+                  }
+                  coord_sys == 9 ==> { #L TERNARY (a, b, c) -> 2D Triangulo
+                        mut as float64: sum_abc = u + v + w
+                        route { sum_abc <= 0.0 ==> { sum_abc = 1.0 } }
+                        x = 0.5 * (2.0 * v + w) /f sum_abc
+                        y = (1.7320508075688772 /f 2.0) * w /f sum_abc
+                        z = 0.0
+                  }
+                  coord_sys == 10 ==> { #L BARYCENTRIC (u, v, w)
+                        x = u
+                        y = v
+                        z = w
+                  }
+                  coord_sys == 12 ==> { #L ELLIPTIC_2D (mu, nu, focal_a=1.0)
+                        mut as float64: a = 1.0
+                        x = a * cosh64(u) * cos64(v)
+                        y = a * sinh64(u) * sin64(v)
+                        z = 0.0
+                  }
+                  coord_sys == 13 ==> { #L ELLIPTIC_CYLINDRICAL
+                        mut as float64: a = 1.0
+                        x = a * cosh64(u) * cos64(v)
+                        y = a * sinh64(u) * sin64(v)
+                        z = w
+                  }
+                  coord_sys == 14 ==> { #L PARABOLIC_2D (sigma, tau)
+                        x = 0.5 * (u * u - v * v)
+                        y = u * v
+                        z = 0.0
+                  }
+                  coord_sys == 15 ==> { #L PARABOLIC_CYLINDRICAL
+                        x = 0.5 * (u * u - v * v)
+                        y = u * v
+                        z = w
+                  }
+                  coord_sys == 16 ==> { #L PARABOLIC_3D
+                        x = u * v * cos64(w)
+                        y = u * v * sin64(w)
+                        z = 0.5 * (u * u - v * v)
+                  }
+                  coord_sys == 17 ==> { #L BIPOLAR (tau, sigma, a=1.0)
+                        mut as float64: a = 1.0
+                        mut as float64: denom = cosh64(u) - cos64(v)
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = a * sinh64(u) /f denom
+                        y = a * sin64(v) /f denom
+                        z = 0.0
+                  }
+                  coord_sys == 18 ==> { #L BISPHERICAL
+                        mut as float64: a = 1.0
+                        mut as float64: denom = cosh64(u) - cos64(v)
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = a * sin64(v) * cos64(w) /f denom
+                        y = a * sin64(v) * sin64(w) /f denom
+                        z = a * sinh64(u) /f denom
+                  }
+                  coord_sys == 19 ==> { #L TOROIDAL
+                        mut as float64: a = 1.0
+                        mut as float64: denom = cosh64(u) - cos64(v)
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = a * sinh64(u) * cos64(w) /f denom
+                        y = a * sinh64(u) * sin64(w) /f denom
+                        z = a * sin64(v) /f denom
+                  }
+                  coord_sys == 20 ==> { #L PROLATE_SPHEROIDAL
+                        mut as float64: a = 1.0
+                        x = a * sinh64(u) * sin64(v) * cos64(w)
+                        y = a * sinh64(u) * sin64(v) * sin64(w)
+                        z = a * cosh64(u) * cos64(v)
+                  }
+                  coord_sys == 21 ==> { #L OBLATE_SPHEROIDAL
+                        mut as float64: a = 1.0
+                        x = a * cosh64(u) * cos64(v) * cos64(w)
+                        y = a * cosh64(u) * cos64(v) * sin64(w)
+                        z = a * sinh64(u) * sin64(v)
+                  }
+                  coord_sys == 22 ==> { #L STEREOGRAPHIC
+                        mut as float64: denom = 1.0 - w
+                        route { denom == 0.0 ==> { denom = 0.00001 } }
+                        x = u /f denom
+                        y = v /f denom
+                        z = 0.0
+                  }
+                  coord_sys == 24 ==> { #L PHASE_SPACE (q, p, dot_p)
+                        x = u
+                        y = v
+                        z = w
+                  }
+            }
+
+            mut as list of float64: res = [x, y, z]
+            emit(nice, res, "ok")
+      }
+
+      op plotTransformFromCartesian (as int64: coord_sys, as float64: x, as float64: y, as float64: z) as list of float64 ==> {
+            mut as float64: u = x
+            mut as float64: v = y
+            mut as float64: w = z
+
+            route {
+                  coord_sys == 3 ==> { #L POLAR
+                        u = (x * x + y * y) ^e 0.5
+                        v = arcTan2_64(y, x)
+                        w = 0.0
+                  }
+                  coord_sys == 4 ==> { #L CYLINDRICAL
+                        u = (x * x + y * y) ^e 0.5
+                        v = arcTan2_64(y, x)
+                        w = z
+                  }
+                  coord_sys == 5 ==> { #L SPHERICAL
+                        u = (x * x + y * y + z * z) ^e 0.5
+                        route {
+                              u > 0.0 ==> {
+                                    v = arcCos64(z /f u)
+                                    w = arcTan2_64(y, x)
+                              }
+                        }
+                  }
+            }
+
+            mut as list of float64: res = [u, v, w]
+            emit(nice, res, "ok")
+      }
+
+      op plotProjectToScreen (as map: ctx, as float64: x, as float64: y, as float64: z) as list of int64 ==> {
+            mut as int64: vp_x = ctx["vp_x"] as int64
+            mut as int64: vp_y = ctx["vp_y"] as int64
+            mut as int64: vp_w = ctx["vp_w"] as int64
+            mut as int64: vp_h = ctx["vp_h"] as int64
+            mut as int64: m_t = ctx["margin_top"] as int64
+            mut as int64: m_r = ctx["margin_right"] as int64
+            mut as int64: m_b = ctx["margin_bottom"] as int64
+            mut as int64: m_l = ctx["margin_left"] as int64
+
+            mut as float64: plot_w = (vp_w - m_l - m_r) as float64
+            mut as float64: plot_h = (vp_h - m_t - m_b) as float64
+            mut as float64: center_x = (vp_x + m_l) as float64 + plot_w * 0.5
+            mut as float64: center_y = (vp_y + m_t) as float64 + plot_h * 0.5
+
+            mut as int64: cam = ctx["cam_type"] as int64
+            mut as float64: scr_x = center_x + x * (plot_w * 0.45)
+            mut as float64: scr_y = center_y - y * (plot_h * 0.45)
+
+            route {
+                  cam == 3 ==> { #L ISOMETRIC 3D
+                        mut as float64: iso_x = (x - y) * 0.8660254037844386
+                        mut as float64: iso_y = (x + y) * 0.5 - z
+                        scr_x = center_x + iso_x * (plot_w * 0.3)
+                        scr_y = center_y - iso_y * (plot_h * 0.3)
+                  }
+                  cam == 5 ==> { #L CABINET OBLIQUE
+                        mut as float64: cab_x = x + 0.35355339 * z
+                        mut as float64: cab_y = y + 0.35355339 * z
+                        scr_x = center_x + cab_x * (plot_w * 0.35)
+                        scr_y = center_y - cab_y * (plot_h * 0.35)
+                  }
+            }
+
+            mut as list of int64: pt = [scr_x as int64, scr_y as int64]
+            emit(nice, pt, "ok")
+      }
+
+      #L =====================================================================
+}

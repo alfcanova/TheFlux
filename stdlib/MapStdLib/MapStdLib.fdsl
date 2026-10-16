@@ -1,0 +1,18 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use MapBasic.fdsl
+use MapAccess.fdsl
+use MapMutation.fdsl
+use MapTransform.fdsl
+use MapSearch.fdsl
+use MapSelection.fdsl
+use MapUtility.fdsl
+use MapAggregate.fdsl
+use MapRelation.fdsl
+use MapEntry.fdsl
+
+agent (MapStdLib) {
+}

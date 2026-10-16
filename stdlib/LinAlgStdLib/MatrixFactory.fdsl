@@ -1,0 +1,141 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: MatrixFactory
+#L ==============================================================================
+
+contract (MatrixFactoryContract) {
+      op matrixIdentity (as int64: n) as map
+      op matrixZeros (as list of data: shape) as map
+      op matrixOnes (as list of data: shape) as map
+      op matrixDiagonal (as list of data: values) as map
+      op matrixExtractDiagonal (as map: matrix) as list of data
+      op matrixTrace (as map: matrix) as float64
+      op matrixTriu (as map: matrix, as int64: k) as map
+      op matrixTril (as map: matrix, as int64: k) as map
+}
+
+agent (LinAlgStdLib) impl MatrixFactoryContract {
+      #L 8. MatrixFactoryContract - Fabricas e Construtores de Matrizes
+      #L ==============================================================================
+
+      op matrixIdentity (as int64: n) as map ==> {
+            mut as map: out = tensorNew([n, n])
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  out = tensorSetAt(out, [i, i], 1.0)
+                  i = i + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op matrixZeros (as list of data: shape) as map ==> {
+            mut as map: out = tensorNew(shape)
+            emit(nice, out, "ok")
+      }
+
+      op matrixOnes (as list of data: shape) as map ==> {
+            mut as map: out = tensorNew(shape)
+            mut as list of data: buf = _listClone(out["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  buf[i] = 1.0
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      op matrixDiagonal (as list of data: values) as map ==> {
+            mut as int64: n = 0
+            infinite (x in values) { n = n + 1 }
+            mut as map: out = tensorNew([n, n])
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  out = tensorSetAt(out, [i, i], values[i] as float64)
+                  i = i + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op matrixExtractDiagonal (as map: matrix) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            route {
+                  (sh[2] as int64) < n ==> {
+                        n = sh[2] as int64
+                  }
+            }
+            mut as list of data: diag = []
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  diag[i] = tensorGetAt(matrix, [i, i])
+                  i = i + 1
+            }
+            emit(nice, diag, "ok")
+      }
+
+      op matrixTrace (as map: matrix) as float64 ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            route {
+                  (sh[2] as int64) < n ==> {
+                        n = sh[2] as int64
+                  }
+            }
+            mut as float64: tr = 0.0
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  tr = tr + tensorGetAt(matrix, [i, i])
+                  i = i + 1
+            }
+            emit(nice, tr, "ok")
+      }
+
+      op matrixTriu (as map: matrix, as int64: k) as map ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+            mut as map: out = tensorNew([m, n])
+
+            mut as int64: r = 1
+            infinite (r <= m) {
+                  mut as int64: c = 1
+                  infinite (c <= n) {
+                        route {
+                              c >= (r + k) ==> {
+                                    out = tensorSetAt(out, [r, c], tensorGetAt(matrix, [r, c]))
+                              }
+                        }
+                        c = c + 1
+                  }
+                  r = r + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op matrixTril (as map: matrix, as int64: k) as map ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+            mut as map: out = tensorNew([m, n])
+
+            mut as int64: r = 1
+            infinite (r <= m) {
+                  mut as int64: c = 1
+                  infinite (c <= n) {
+                        route {
+                              c <= (r + k) ==> {
+                                    out = tensorSetAt(out, [r, c], tensorGetAt(matrix, [r, c]))
+                              }
+                        }
+                        c = c + 1
+                  }
+                  r = r + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

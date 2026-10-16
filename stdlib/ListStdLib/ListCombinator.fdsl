@@ -1,0 +1,171 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListCombinator
+#L ==============================================================================
+
+contract (ListCombinatorContract) {
+      op listChunk (as list of data: items, as int64: size) as list of data
+      op listWindow (as list of data: items, as int64: size) as list of data
+      op listFrequencies (as list of data: items) as map
+      op listCartesian (as list of data: lhs, as list of data: rhs) as list of data
+      op listCombinations (as list of data: items, as int64: k) as list of data
+}
+
+agent (ListStdLib) impl ListCombinatorContract {
+      #L -- ListCombinatorContract ------------------------------------
+      op listChunk (as list of data: items, as int64: size) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total = listLength(items)
+            route {
+                  size <= 0 or total == 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: num_chunks = 0
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > total ==> {
+                              break
+                        }
+                  }
+                  mut as int64: end_i = i + size - 1
+                  route {
+                        end_i > total ==> {
+                              end_i = total
+                        }
+                  }
+                  mut as list of data: chunk = []
+                  mut as int64: c_idx = 1
+                  infinite (j in i .. end_i) {
+                        chunk[c_idx] = items[j]
+                        c_idx = c_idx + 1
+                  }
+                  num_chunks = num_chunks + 1
+                  res[num_chunks] = chunk
+                  i = i + size
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listWindow (as list of data: items, as int64: size) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total = listLength(items)
+            route {
+                  size <= 0 or size > total or total == 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: max_start = total - size + 1
+            mut as int64: w_count = 0
+            infinite (i in 1 .. max_start) {
+                  mut as int64: end_i = i + size - 1
+                  mut as list of data: win = []
+                  mut as int64: c_idx = 1
+                  infinite (j in i .. end_i) {
+                        win[c_idx] = items[j]
+                        c_idx = c_idx + 1
+                  }
+                  w_count = w_count + 1
+                  res[w_count] = win
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFrequencies (as list of data: items) as map ==> {
+            mut as map: m = map{}
+            infinite (x in items) {
+                  mut as string: k = "" + x
+                  mut as bool: exists = false
+                  infinite (ek in m) {
+                        route {
+                              ek == k ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        exists ==> {
+                              mut as int64: curr_cnt = m[k] as int64
+                              m[k] = curr_cnt + 1
+                        }
+                        not exists ==> {
+                              m[k] = 1
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op listCartesian (as list of data: lhs, as list of data: rhs) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in lhs) {
+                  infinite (y in rhs) {
+                        count = count + 1
+                        res[count] = [x, y]
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listCombinations (as list of data: items, as int64: k) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n = listLength(items)
+            route {
+                  k <= 0 ==> {
+                        res[1] = []
+                        emit(nice, res, "ok")
+                  }
+                  k > n ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as list of int64: idxs = []
+            infinite (i in 1 .. k) {
+                  idxs[i] = i
+            }
+            mut as int64: count = 0
+            infinite {
+                  count = count + 1
+                  mut as list of data: combo = []
+                  infinite (c in 1 .. k) {
+                        mut as int64: pos = idxs[c]
+                        combo[c] = items[pos]
+                  }
+                  res[count] = combo
+
+                  mut as int64: p = k
+                  infinite {
+                        route {
+                              p < 1 ==> {
+                                    break
+                              }
+                              idxs[p] < n - k + p ==> {
+                                    break
+                              }
+                        }
+                        p = p - 1
+                  }
+                  route {
+                        p < 1 ==> {
+                              break
+                        }
+                  }
+                  idxs[p] = idxs[p] + 1
+                  mut as int64: next_val = idxs[p]
+                  mut as int64: start_q = p + 1
+                  route {
+                        start_q <= k ==> {
+                              infinite (q in start_q .. k) {
+                                    next_val = next_val + 1
+                                    idxs[q] = next_val
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

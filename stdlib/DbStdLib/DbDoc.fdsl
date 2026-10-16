@@ -1,0 +1,45 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Dominio: DbDoc
+#L ==============================================================================
+
+contract (DbDocContract) {
+      op dbDocOpen (as string: path) as data
+      op dbDocStore (as data: connection, as string: collection, as map: doc) as string
+      op dbDocFetch (as data: connection, as string: collection, as string: doc_id) as map
+      op dbDocDelete (as data: connection, as string: collection, as string: doc_id) as bool
+      op dbDocQuery (as data: connection, as string: collection, as string: key, as string: val) as list of data
+      op dbDocCount (as data: connection, as string: collection) as int64
+      op dbDocClose (as data: connection) as bool
+}
+
+agent (DbStdLib) impl DbDocContract {
+      #L -- DbDocContract ---------------------------------------------
+      op dbDocOpen (as string: path) as data ==> {
+            emit(nice, stdDbDocOpen(path), "ok")
+      }
+
+      op dbDocStore (as data: connection, as string: collection, as map: doc) as string ==> {
+            emit(nice, stdDbDocStore(connection, collection, doc), "ok")
+      }
+
+      op dbDocFetch (as data: connection, as string: collection, as string: doc_id) as map ==> {
+            emit(nice, stdDbDocFetch(connection, collection, doc_id), "ok")
+      }
+
+      op dbDocDelete (as data: connection, as string: collection, as string: doc_id) as bool ==> {
+            emit(nice, stdDbDocDelete(connection, collection, doc_id), "ok")
+      }
+
+      op dbDocQuery (as data: connection, as string: collection, as string: key, as string: val) as list of data ==> {
+            emit(nice, stdDbDocQuery(connection, collection, key, val), "ok")
+      }
+
+      op dbDocCount (as data: connection, as string: collection) as int64 ==> {
+            emit(nice, stdDbDocCount(connection, collection), "ok")
+      }
+
+      op dbDocClose (as data: connection) as bool ==> {
+            emit(nice, stdDbDocClose(connection), "ok")
+      }
+}

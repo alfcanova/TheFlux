@@ -1,0 +1,43 @@
+keyword: route
+category: Conditional Flow Control
+description: Evaluates conditions em ordem e executes o block correspondente ao primeiro branch cuja condition seja verdadeira.
+  O branch wildcard (`_`) captura qualquer value não coberto pelos branches anteriores. Pode substituir strings de if/else
+  if/else.
+syntax: "route {\n      <condição> ==> <ação>\n      <condição> ==> <ação>\n      _          ==> <fallback>\n}"
+pseudocode: "ROTA:\n    CASO cond1: bloco1\n    CASO cond2: bloco2\n    PADRAO: bloco_fallback\n// equivalente a cadeias de\
+  \ se/ entao / senao"
+usages:
+- name: Rota com condition verdadeira
+  description: Executes o branch cuja condition é verdadeira.
+  examples:
+  - code: "route {\n      true  ==> { print(\"Verdadeiro\") }\n      false ==> { print(\"Falso\") }\n}"
+- name: Rota com wildcard
+  description: O branch wildcard (`_`) executes quando nenhuma condition anterior é verdadeira.
+  examples:
+  - code: "route {\n      false ==> { print(\"Nao Executa\") }\n      _     ==> { print(\"Fallback\") }\n}"
+- name: Rota com múltiplos branches
+  description: Apenas o primeiro branch verdadeiro é executesdo.
+  examples:
+  - code: "route {\n      1 == 1 ==> { print(\"um\") }\n      2 == 2 ==> { print(\"dois\") }\n      _      ==> { print(\"\
+      nenhum\") }\n}"
+restrictions:
+- Branches são evaluatesdos de cima para baixo; o primeiro verdadeiro é executesdo.
+- O wildcard (`_`) must be o último branch, se usado.
+- Se nenhum branch for verdadeiro e não houver wildcard, nada é executesdo.
+errors:
+- code: SEM320
+  mnemonic: ROUTE_WILDCARD_NOT_LAST
+  severity: Error
+  trigger: Wildcard pattern '_' in route statement positioned before other specific condition branches
+  message: Wildcard branch '_' must be the last branch in a route statement
+  hint: Move the wildcard fallback branch '_ ==> { ... }' to the very end of the route block
+  example_bad: "route {\n  _ ==> { print(\"fallback\") }\n  x == 1 ==> { print(\"um\") }\n}\n"
+  example_good: "route {\n  x == 1 ==> { print(\"um\") }\n  _ ==> { print(\"fallback\") }\n}\n"
+- code: SYN120
+  mnemonic: ROUTE_EXPECTED_DOUBLE_ARROW
+  severity: Error
+  trigger: Branch condition in route statement missing the double arrow '==>' connector
+  message: Expected '==>' after condition in route branch
+  hint: Add the '==>' connector between the condition and the execution block in the route branch
+  example_bad: "route {\n  x > 0 { print(\"positivo\") }\n}\n"
+  example_good: "route {\n  x > 0 ==> { print(\"positivo\") }\n}\n"

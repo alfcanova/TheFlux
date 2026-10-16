@@ -1,0 +1,12 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NetStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use NetUrl.fdsl
+use NetIp.fdsl
+use NetHttp.fdsl
+use NetSocket.fdsl
+
+agent (NetStdLib) {
+}

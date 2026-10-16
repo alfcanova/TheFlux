@@ -1,0 +1,95 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiLayout
+#L ==============================================================================
+
+contract (GuiLayoutContract) {
+      op guiLayoutBeginRow (as map: ctx) as map
+      op guiLayoutEndRow (as map: ctx) as map
+      op guiLayoutBeginColumn (as map: ctx) as map
+      op guiLayoutEndColumn (as map: ctx) as map
+      op guiSpacing (as map: ctx, as int64: pixels) as map
+      op guiSameLine (as map: ctx) as map
+      op guiGetCursorX (as map: ctx) as int64
+      op guiGetCursorY (as map: ctx) as int64
+      op guiSetCursor (as map: ctx, as int64: x, as int64: y) as map
+}
+
+agent (GuiStdLib) impl GuiLayoutContract {
+      #L 4. GuiLayoutContract
+      #L =====================================================================
+
+      op guiLayoutBeginRow (as map: ctx) as map ==> {
+            ctx["in_row"] = true
+            ctx["row_start_x"] = ctx["cursor_x"] as int64
+            ctx["row_start_y"] = ctx["cursor_y"] as int64
+            ctx["row_max_h"] = 0
+            emit(nice, ctx, "ok")
+      }
+
+      op guiLayoutEndRow (as map: ctx) as map ==> {
+            ctx["in_row"] = false
+            ctx["cursor_x"] = ctx["row_start_x"] as int64
+            mut as int64: sy = ctx["row_start_y"] as int64
+            mut as int64: mh = ctx["row_max_h"] as int64
+            ctx["cursor_y"] = sy + mh + 6
+            ctx["row_max_h"] = 0
+            emit(nice, ctx, "ok")
+      }
+
+      op guiLayoutBeginColumn (as map: ctx) as map ==> {
+            emit(nice, ctx, "ok")
+      }
+
+      op guiLayoutEndColumn (as map: ctx) as map ==> {
+            emit(nice, ctx, "ok")
+      }
+
+      op guiSpacing (as map: ctx, as int64: pixels) as map ==> {
+            mut as bool: in_row = ctx["in_row"] == true
+            route {
+                  in_row ==> {
+                        mut as int64: cx = ctx["cursor_x"] as int64
+                        ctx["cursor_x"] = cx + pixels
+                  }
+                  _ ==> {
+                        mut as int64: cy = ctx["cursor_y"] as int64
+                        ctx["cursor_y"] = cy + pixels
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      op guiSameLine (as map: ctx) as map ==> {
+            ctx["in_row"] = true
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetCursorX (as map: ctx) as int64 ==> {
+            mut as int64: cx = 8
+            route {
+                  _mapHasKey(ctx, "cursor_x") ==> {
+                        cx = ctx["cursor_x"] as int64
+                  }
+            }
+            emit(nice, cx, "ok")
+      }
+
+      op guiGetCursorY (as map: ctx) as int64 ==> {
+            mut as int64: cy = 8
+            route {
+                  _mapHasKey(ctx, "cursor_y") ==> {
+                        cy = ctx["cursor_y"] as int64
+                  }
+            }
+            emit(nice, cy, "ok")
+      }
+
+      op guiSetCursor (as map: ctx, as int64: x, as int64: y) as map ==> {
+            ctx["cursor_x"] = x
+            ctx["cursor_y"] = y
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+}

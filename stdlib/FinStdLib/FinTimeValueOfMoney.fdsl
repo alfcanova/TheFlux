@@ -1,0 +1,217 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinTimeValueOfMoney
+#L ==============================================================================
+
+contract (FinTimeValueOfMoneyContract) {
+      op finSimpleInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal
+      op finCompoundInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal
+      op finPresentValue (as FinDecimal: future_value, as float64: rate, as int64: periods) as FinDecimal
+      op finFutureValue (as FinDecimal: present_value, as float64: rate, as int64: periods) as FinDecimal
+      op finAnnuityPayment (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal
+      op finFutureValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal
+      op finPresentValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal
+      op finNetPresentValue (as float64: discount_rate, as list of data: cash_flows) as float64
+      op finInternalRateOfReturn (as list of data: cash_flows) as float64
+      op finPaybackPeriod (as FinDecimal: initial_investment, as list of data: cash_flows) as float64
+      op finDiscountedPayback (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64
+      op finProfitabilityIndex (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64
+}
+
+#L ==============================================================================
+#L 4. FinRateContract
+#L ==============================================================================
+
+agent (FinStdLib) impl FinTimeValueOfMoneyContract {
+      #L 3. FinTimeValueOfMoneyContract
+      #L ==============================================================================
+
+      op finSimpleInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: juros = p_float * rate * (periods as float64)
+            mut as FinDecimal: res = FinDecimal(.raw: (juros * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finCompoundInterest (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: montante = p_float * factor
+            mut as FinDecimal: res = FinDecimal(.raw: (montante * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finPresentValue (as FinDecimal: future_value, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: fv_float = (future_value.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: pv_float = fv_float /f factor
+            mut as FinDecimal: res = FinDecimal(.raw: (pv_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finFutureValue (as FinDecimal: present_value, as float64: rate, as int64: periods) as FinDecimal ==> {
+            mut as float64: pv_float = (present_value.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: fv_float = pv_float * factor
+            mut as FinDecimal: res = FinDecimal(.raw: (fv_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finAnnuityPayment (as FinDecimal: principal, as float64: rate, as int64: periods) as FinDecimal ==> {
+            route {
+                  periods <= 0 or rate <= 0.0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: pmt_float = p_float * ((rate * factor) /f (factor - 1.0))
+            mut as FinDecimal: res = FinDecimal(.raw: (pmt_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finFutureValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal ==> {
+            route {
+                  periods <= 0 or rate <= 0.0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: pmt_float = (payment.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: fva_float = pmt_float * ((factor - 1.0) /f rate)
+            mut as FinDecimal: res = FinDecimal(.raw: (fva_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finPresentValueOfAnnuity (as FinDecimal: payment, as float64: rate, as int64: periods) as FinDecimal ==> {
+            route {
+                  periods <= 0 or rate <= 0.0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: pmt_float = (payment.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + rate) ^e (periods as float64)
+            mut as float64: pva_float = pmt_float * ((factor - 1.0) /f (rate * factor))
+            mut as FinDecimal: res = FinDecimal(.raw: (pva_float * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finNetPresentValue (as float64: discount_rate, as list of data: cash_flows) as float64 ==> {
+            mut as float64: npv = 0.0
+            mut as int64: t = 1
+            infinite (cf in cash_flows) {
+                  mut as float64: cf_val = cf as float64
+                  mut as float64: factor = (1.0 + discount_rate) ^e (t as float64)
+                  npv = npv + (cf_val /f factor)
+                  t = t + 1
+            }
+            emit(nice, npv, "ok")
+      }
+
+      op finInternalRateOfReturn (as list of data: cash_flows) as float64 ==> {
+            mut as float64: r = 0.1
+            mut as int64: iter = 0
+            infinite (iter < 100) {
+                  mut as float64: npv = 0.0
+                  mut as float64: dnpv = 0.0
+                  mut as int64: t = 0
+                  infinite (cf in cash_flows) {
+                        mut as float64: c = cf as float64
+                        mut as float64: factor = (1.0 + r) ^e (t as float64)
+                        npv = npv + (c /f factor)
+                        route {
+                              t > 0 ==> {
+                                    mut as float64: d_factor = (1.0 + r) ^e ((t + 1) as float64)
+                                    dnpv = dnpv - ((c * (t as float64)) /f d_factor)
+                              }
+                        }
+                        t = t + 1
+                  }
+                  mut as float64: abs_npv = npv
+                  route {
+                        abs_npv < 0.0 ==> { abs_npv = -abs_npv }
+                  }
+                  route {
+                        abs_npv < 0.000001 or dnpv == 0.0 ==> {
+                              break
+                        }
+                  }
+                  r = r - (npv /f dnpv)
+                  iter = iter + 1
+            }
+            emit(nice, r, "ok")
+      }
+
+      op finPaybackPeriod (as FinDecimal: initial_investment, as list of data: cash_flows) as float64 ==> {
+            mut as float64: target = (initial_investment.raw as float64) /f 100000000.0
+            route {
+                  target < 0.0 ==> { target = -target }
+            }
+            mut as float64: accum = 0.0
+            mut as float64: periods = 0.0
+            infinite (cf in cash_flows) {
+                  mut as float64: val = cf as float64
+                  route {
+                        (accum + val) >= target ==> {
+                              mut as float64: needed = target - accum
+                              mut as float64: fraction = needed /f val
+                              emit(nice, periods + fraction, "ok")
+                        }
+                  }
+                  accum = accum + val
+                  periods = periods + 1.0
+            }
+            emit(nice, periods, "ok")
+      }
+
+      op finDiscountedPayback (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64 ==> {
+            mut as float64: target = (initial_investment.raw as float64) /f 100000000.0
+            route {
+                  target < 0.0 ==> { target = -target }
+            }
+            mut as float64: accum = 0.0
+            mut as float64: periods = 0.0
+            mut as int64: t = 1
+            infinite (cf in cash_flows) {
+                  mut as float64: val = cf as float64
+                  mut as float64: factor = (1.0 + discount_rate) ^e (t as float64)
+                  mut as float64: disc_val = val /f factor
+                  route {
+                        (accum + disc_val) >= target ==> {
+                              mut as float64: needed = target - accum
+                              mut as float64: fraction = needed /f disc_val
+                              emit(nice, periods + fraction, "ok")
+                        }
+                  }
+                  accum = accum + disc_val
+                  periods = periods + 1.0
+                  t = t + 1
+            }
+            emit(nice, periods, "ok")
+      }
+
+      op finProfitabilityIndex (as FinDecimal: initial_investment, as float64: discount_rate, as list of data: cash_flows) as float64 ==> {
+            mut as float64: pv_flows = 0.0
+            mut as int64: t = 1
+            infinite (cf in cash_flows) {
+                  mut as float64: val = cf as float64
+                  mut as float64: factor = (1.0 + discount_rate) ^e (t as float64)
+                  pv_flows = pv_flows + (val /f factor)
+                  t = t + 1
+            }
+            mut as float64: inv_f = (initial_investment.raw as float64) /f 100000000.0
+            route {
+                  inv_f < 0.0 ==> { inv_f = -inv_f }
+            }
+            route {
+                  inv_f == 0.0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: pi = pv_flows /f inv_f
+            emit(nice, pi, "ok")
+      }
+
+      #L ==============================================================================
+}

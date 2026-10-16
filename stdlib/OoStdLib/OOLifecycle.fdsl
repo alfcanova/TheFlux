@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OoStdLib
+#L Dominio: OOLifecycle
+#L ==============================================================================
+
+contract (OOLifecycleContract) {
+      op ooClone (as data: interface_object) as data
+      op ooDispose (as data: interface_object) as bool
+      op ooIsDisposed (as data: interface_object) as bool
+      op ooToString (as data: interface_object) as string
+}
+
+agent (OoStdLib) impl OOLifecycleContract {
+      #L OOLifecycleContract
+      #L ==============================================================================
+
+      op ooClone (as data: interface_object) as data ==> {
+            mut as map: cloned = map{}
+            cloned["__contract__"] = interface_object["__contract__"]
+            cloned["__type__"] = interface_object["__type__"]
+            cloned["__data__"] = interface_object["__data__"]
+            cloned["__valid__"] = interface_object["__valid__"]
+            emit(nice, cloned, "ok")
+      }
+
+      op ooDispose (as data: interface_object) as bool ==> {
+            interface_object["__valid__"] = false
+            emit(nice, true, "Objeto descartado com sucesso")
+      }
+
+      op ooIsDisposed (as data: interface_object) as bool ==> {
+            mut as bool: disp = (interface_object["__valid__"] != true)
+            emit(nice, disp, "ok")
+      }
+
+      op ooToString (as data: interface_object) as string ==> {
+            mut as string: repr = "Contract[" + interface_object["__contract__"] + " -> " + interface_object["__type__"] + "]"
+            emit(nice, repr, "ok")
+      }
+}

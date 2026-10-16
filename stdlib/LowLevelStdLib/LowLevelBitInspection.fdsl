@@ -1,0 +1,175 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelBitInspection
+#L ==============================================================================
+
+contract (LowLevelBitInspectionContract) {
+      op lowBitCheck (as int64: value, as int64: bit_index) as bool
+      op lowBitSet (as int64: value, as int64: bit_index) as int64
+      op lowBitClear (as int64: value, as int64: bit_index) as int64
+      op lowBitToggle (as int64: value, as int64: bit_index) as int64
+      op lowBitWrite (as int64: value, as int64: bit_index, as bool: state) as int64
+      op lowPopCount (as int64: value) as int64
+      op lowCountLeadingZeros (as int64: value, as int64: width) as int64
+      op lowCountTrailingZeros (as int64: value) as int64
+      op lowParity (as int64: value) as int64
+      op lowReverseBits (as int64: value, as int64: width) as int64
+      op lowBitExtract (as int64: value, as int64: start_bit, as int64: num_bits) as int64
+      op lowBitInsert (as int64: target, as int64: source, as int64: start_bit, as int64: num_bits) as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelBitInspectionContract {
+      #L LowLevelBitInspectionContract
+      #L =====================================================================
+
+      op lowBitCheck (as int64: value, as int64: bit_index) as bool ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, false, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: bit = (value >>> shift) & 1
+            emit(nice, bit == 1, "ok")
+      }
+
+      op lowBitSet (as int64: value, as int64: bit_index) as int64 ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: mask = 1 << shift
+            emit(nice, value | mask, "ok")
+      }
+
+      op lowBitClear (as int64: value, as int64: bit_index) as int64 ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: mask = 1 << shift
+            emit(nice, value & (~mask), "ok")
+      }
+
+      op lowBitToggle (as int64: value, as int64: bit_index) as int64 ==> {
+            route {
+                  bit_index < 1 or bit_index > 64 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = bit_index - 1
+            mut as int64: mask = 1 << shift
+            emit(nice, value ^ mask, "ok")
+      }
+
+      op lowBitWrite (as int64: value, as int64: bit_index, as bool: state) as int64 ==> {
+            route {
+                  state ==> { emit(nice, lowBitSet(value, bit_index), "ok") }
+                  _ ==> { emit(nice, lowBitClear(value, bit_index), "ok") }
+            }
+      }
+
+      op lowPopCount (as int64: value) as int64 ==> {
+            mut as int64: count = 0
+            mut as int64: v = value
+            infinite (i in 1 .. 64) {
+                  route {
+                        (v & 1) == 1 ==> {
+                              count = count + 1
+                        }
+                  }
+                  v = v >>> 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op lowCountLeadingZeros (as int64: value, as int64: width) as int64 ==> {
+            mut as int64: w = width
+            route {
+                  w < 1 ==> { w = 64 }
+                  w > 64 ==> { w = 64 }
+            }
+            mut as int64: zeros = 0
+            infinite (i in w .. 1) {
+                  mut as int64: bit = (value >>> (i - 1)) & 1
+                  route {
+                        bit == 1 ==> { break }
+                        _ ==> { zeros = zeros + 1 }
+                  }
+            }
+            emit(nice, zeros, "ok")
+      }
+
+      op lowCountTrailingZeros (as int64: value) as int64 ==> {
+            route {
+                  value == 0 ==> { emit(nice, 64, "ok") }
+            }
+            mut as int64: zeros = 0
+            infinite (i in 1 .. 64) {
+                  mut as int64: bit = (value >>> (i - 1)) & 1
+                  route {
+                        bit == 1 ==> { break }
+                        _ ==> { zeros = zeros + 1 }
+                  }
+            }
+            emit(nice, zeros, "ok")
+      }
+
+      op lowParity (as int64: value) as int64 ==> {
+            mut as int64: pop = lowPopCount(value)
+            emit(nice, pop /r 2, "ok")
+      }
+
+      op lowReverseBits (as int64: value, as int64: width) as int64 ==> {
+            mut as int64: w = width
+            route {
+                  w < 1 ==> { w = 64 }
+                  w > 64 ==> { w = 64 }
+            }
+            mut as int64: res = 0
+            infinite (i in 1 .. w) {
+                  mut as int64: bit = (value >>> (i - 1)) & 1
+                  route {
+                        bit == 1 ==> {
+                              mut as int64: dst_shift = w - i
+                              res = res | (1 << dst_shift)
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op lowBitExtract (as int64: value, as int64: start_bit, as int64: num_bits) as int64 ==> {
+            route {
+                  num_bits <= 0 or start_bit < 1 or start_bit > 64 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = start_bit - 1
+            mut as int64: n = num_bits
+            route {
+                  n > 64 ==> { n = 64 }
+            }
+            mut as int64: mask = -1
+            route {
+                  n < 64 ==> { mask = (1 << n) - 1 }
+            }
+            mut as int64: res = (value >>> shift) & mask
+            emit(nice, res, "ok")
+      }
+
+      op lowBitInsert (as int64: target, as int64: source, as int64: start_bit, as int64: num_bits) as int64 ==> {
+            route {
+                  num_bits <= 0 or start_bit < 1 or start_bit > 64 ==> { emit(nice, target, "ok") }
+            }
+            mut as int64: shift = start_bit - 1
+            mut as int64: n = num_bits
+            route {
+                  n > 64 ==> { n = 64 }
+            }
+            mut as int64: mask = -1
+            route {
+                  n < 64 ==> { mask = (1 << n) - 1 }
+            }
+            mut as int64: clear_mask = ~(mask << shift)
+            mut as int64: clean_target = target & clear_mask
+            mut as int64: ins_val = (source & mask) << shift
+            emit(nice, clean_target | ins_val, "ok")
+      }
+
+      #L =====================================================================
+}

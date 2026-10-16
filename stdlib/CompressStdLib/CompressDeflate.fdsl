@@ -1,0 +1,52 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressDeflate
+#L ==============================================================================
+
+contract (CompressDeflateContract) {
+      op compressDeflate (as string: input_data) as string
+      op compressDeflateLevel (as string: input_data, as int64: level) as string
+      op decompressDeflate (as string: compressed_data) as string
+      op decompressDeflateSafe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsDeflate (as string: compressed_data) as bool
+}
+
+agent (CompressStdLib) impl CompressDeflateContract {
+
+      #L -- CompressDeflateContract ------------------------------------
+      op compressDeflate (as string: input_data) as string ==> {
+            emit(nice, stdCompressDeflate(input_data), "ok")
+      }
+
+      op compressDeflateLevel (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressDeflateLevel(input_data, level), "ok")
+      }
+
+      op decompressDeflate (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressDeflate(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao deflate")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressDeflateSafe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressDeflateSafe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao deflate")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsDeflate (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsDeflate(compressed_data), "ok")
+      }
+}

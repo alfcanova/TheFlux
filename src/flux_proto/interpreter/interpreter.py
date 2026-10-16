@@ -1343,7 +1343,7 @@ class Interpreter:
         try:
             result = op_fn(left.data, right.data)
         except ZeroDivisionError:
-            if node.op in ("/i", "/r"):
+            if node.op in ("/i", "/r", "/f"):
                 return Value(
                     type_name="fail", data=right.data,
                     message="divisao por zero", value_type=left.type_name,

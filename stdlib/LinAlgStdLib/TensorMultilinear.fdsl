@@ -1,0 +1,328 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorMultilinear
+#L ==============================================================================
+
+contract (TensorMultilinearContract) {
+      op tensorExtractSlice (as map: tensor, as int64: axis, as int64: index) as map
+      op tensorInsertSlice (as map: tensor, as map: slice_tensor, as int64: axis, as int64: index) as map
+      op tensorDiagonal3D (as map: tensor) as list of data
+      op tensorTrace3D (as map: tensor) as float64
+      op tensorSwapAxes (as map: tensor, as int64: axis1, as int64: axis2) as map
+      op tensorContract (as map: lhs, as map: rhs, as int64: axis_lhs, as int64: axis_rhs) as map
+      op tensorFrobeniusNormND (as map: tensor) as float64
+}
+
+agent (LinAlgStdLib) impl TensorMultilinearContract {
+      #L 15. TensorMultilinearContract - Operacoes Tensoriais 3D / Multilineares
+      #L ==============================================================================
+
+      op tensorExtractSlice (as map: tensor, as int64: axis, as int64: index) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as int64: old_ndim = tensor["ndim"] as int64
+
+            mut as list of data: new_sh = []
+            mut as int64: new_idx = 1
+            mut as int64: i = 1
+            infinite (i <= old_ndim) {
+                  route {
+                        i != axis ==> {
+                              new_sh[new_idx] = old_sh[i]
+                              new_idx = new_idx + 1
+                        }
+                  }
+                  i = i + 1
+            }
+
+            route {
+                  new_idx == 1 ==> {
+                        new_sh[1] = 1
+                  }
+            }
+
+            mut as map: out = tensorNew(new_sh)
+            mut as int64: new_ndim = out["ndim"] as int64
+
+            mut as int64: total = 1
+            i = 1
+            infinite (i <= new_ndim) {
+                  total = total * (new_sh[i] as int64)
+                  i = i + 1
+            }
+
+            mut as list of data: slice_coords = []
+            i = 1
+            infinite (i <= new_ndim) {
+                  slice_coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: count = 1
+            infinite (count <= total) {
+                  mut as list of data: full_coords = []
+                  mut as int64: src_dim = 1
+                  mut as int64: tgt_dim = 1
+                  infinite (tgt_dim <= old_ndim) {
+                        route {
+                              tgt_dim == axis ==> {
+                                    full_coords[tgt_dim] = index
+                              }
+                              tgt_dim != axis ==> {
+                                    full_coords[tgt_dim] = slice_coords[src_dim]
+                                    src_dim = src_dim + 1
+                              }
+                        }
+                        tgt_dim = tgt_dim + 1
+                  }
+
+                  mut as float64: val = tensorGetAt(tensor, full_coords)
+                  out = tensorSetAt(out, slice_coords, val)
+
+                  mut as int64: dim = new_ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        slice_coords[dim] = (slice_coords[dim] as int64) + 1
+                        route {
+                              (slice_coords[dim] as int64) <= (new_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (slice_coords[dim] as int64) > (new_sh[dim] as int64) ==> {
+                                    slice_coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  count = count + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorInsertSlice (as map: tensor, as map: slice_tensor, as int64: axis, as int64: index) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            out["data"] = _listClone(tensor["data"] as list of data)
+
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as int64: old_ndim = tensor["ndim"] as int64
+            mut as list of data: sl_sh = slice_tensor["shape"] as list of data
+            mut as int64: sl_ndim = slice_tensor["ndim"] as int64
+
+            mut as int64: total = 1
+            mut as int64: i = 1
+            infinite (i <= sl_ndim) {
+                  total = total * (sl_sh[i] as int64)
+                  i = i + 1
+            }
+
+            mut as list of data: slice_coords = []
+            i = 1
+            infinite (i <= sl_ndim) {
+                  slice_coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: count = 1
+            infinite (count <= total) {
+                  mut as list of data: full_coords = []
+                  mut as int64: src_dim = 1
+                  mut as int64: tgt_dim = 1
+                  infinite (tgt_dim <= old_ndim) {
+                        route {
+                              tgt_dim == axis ==> {
+                                    full_coords[tgt_dim] = index
+                              }
+                              tgt_dim != axis ==> {
+                                    full_coords[tgt_dim] = slice_coords[src_dim]
+                                    src_dim = src_dim + 1
+                              }
+                        }
+                        tgt_dim = tgt_dim + 1
+                  }
+
+                  mut as float64: val = tensorGetAt(slice_tensor, slice_coords)
+                  out = tensorSetAt(out, full_coords, val)
+
+                  mut as int64: dim = sl_ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        slice_coords[dim] = (slice_coords[dim] as int64) + 1
+                        route {
+                              (slice_coords[dim] as int64) <= (sl_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (slice_coords[dim] as int64) > (sl_sh[dim] as int64) ==> {
+                                    slice_coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  count = count + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorDiagonal3D (as map: tensor) as list of data ==> {
+            mut as list of data: sh = tensor["shape"] as list of data
+            mut as int64: min_dim = sh[1] as int64
+            route { (sh[2] as int64) < min_dim ==> { min_dim = sh[2] as int64 } }
+            route { (sh[3] as int64) < min_dim ==> { min_dim = sh[3] as int64 } }
+
+            mut as list of data: diag = []
+            mut as int64: i = 1
+            infinite (i <= min_dim) {
+                  diag[i] = tensorGetAt(tensor, [i, i, i])
+                  i = i + 1
+            }
+            emit(nice, diag, "ok")
+      }
+
+      op tensorTrace3D (as map: tensor) as float64 ==> {
+            mut as list of data: diag = tensorDiagonal3D(tensor)
+            mut as float64: tr = 0.0
+            infinite (x in diag) {
+                  tr = tr + (x as float64)
+            }
+            emit(nice, tr, "ok")
+      }
+
+      op tensorSwapAxes (as map: tensor, as int64: axis1, as int64: axis2) as map ==> {
+            mut as int64: ndim = tensor["ndim"] as int64
+            mut as list of data: perm = []
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  route {
+                        i == axis1 ==> { perm[i] = axis2 }
+                        i == axis2 ==> { perm[i] = axis1 }
+                        _ ==> { perm[i] = i }
+                  }
+                  i = i + 1
+            }
+            mut as map: res = tensorPermute(tensor, perm)
+            emit(nice, res, "ok")
+      }
+
+      op tensorContract (as map: lhs, as map: rhs, as int64: axis_lhs, as int64: axis_rhs) as map ==> {
+            mut as list of data: sh_l = lhs["shape"] as list of data
+            mut as list of data: sh_r = rhs["shape"] as list of data
+            mut as int64: ndim_l = lhs["ndim"] as int64
+            mut as int64: ndim_r = rhs["ndim"] as int64
+
+            mut as int64: contract_k = sh_l[axis_lhs] as int64
+
+            mut as list of data: out_sh = []
+            mut as int64: out_idx = 1
+            mut as int64: i = 1
+            infinite (i <= ndim_l) {
+                  route {
+                        i != axis_lhs ==> {
+                              out_sh[out_idx] = sh_l[i]
+                              out_idx = out_idx + 1
+                        }
+                  }
+                  i = i + 1
+            }
+            i = 1
+            infinite (i <= ndim_r) {
+                  route {
+                        i != axis_rhs ==> {
+                              out_sh[out_idx] = sh_r[i]
+                              out_idx = out_idx + 1
+                        }
+                  }
+                  i = i + 1
+            }
+
+            route {
+                  out_idx == 1 ==> {
+                        out_sh[1] = 1
+                  }
+            }
+
+            mut as map: out = tensorNew(out_sh)
+            mut as int64: out_ndim = out["ndim"] as int64
+
+            mut as int64: total_out = 1
+            i = 1
+            infinite (i <= out_ndim) {
+                  total_out = total_out * (out_sh[i] as int64)
+                  i = i + 1
+            }
+
+            mut as list of data: out_coords = []
+            i = 1
+            infinite (i <= out_ndim) {
+                  out_coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: count = 1
+            infinite (count <= total_out) {
+                  mut as float64: sum_k = 0.0
+                  mut as int64: k = 1
+                  infinite (k <= contract_k) {
+                        mut as list of data: c_l = []
+                        mut as int64: l_idx = 1
+                        mut as int64: d_l = 1
+                        infinite (d_l <= ndim_l) {
+                              route {
+                                    d_l == axis_lhs ==> { c_l[d_l] = k }
+                                    d_l != axis_lhs ==> {
+                                          c_l[d_l] = out_coords[l_idx]
+                                          l_idx = l_idx + 1
+                                    }
+                              }
+                              d_l = d_l + 1
+                        }
+
+                        mut as list of data: c_r = []
+                        mut as int64: d_r = 1
+                        infinite (d_r <= ndim_r) {
+                              route {
+                                    d_r == axis_rhs ==> { c_r[d_r] = k }
+                                    d_r != axis_rhs ==> {
+                                          c_r[d_r] = out_coords[l_idx]
+                                          l_idx = l_idx + 1
+                                    }
+                              }
+                              d_r = d_r + 1
+                        }
+
+                        mut as float64: vl = tensorGetAt(lhs, c_l)
+                        mut as float64: vr = tensorGetAt(rhs, c_r)
+                        sum_k = sum_k + vl * vr
+                        k = k + 1
+                  }
+
+                  out = tensorSetAt(out, out_coords, sum_k)
+
+                  mut as int64: dim = out_ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        out_coords[dim] = (out_coords[dim] as int64) + 1
+                        route {
+                              (out_coords[dim] as int64) <= (out_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (out_coords[dim] as int64) > (out_sh[dim] as int64) ==> {
+                                    out_coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  count = count + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorFrobeniusNormND (as map: tensor) as float64 ==> {
+            mut as list of data: buf = tensor["data"] as list of data
+            mut as float64: sum_sq = 0.0
+            infinite (x in buf) {
+                  mut as float64: val = x as float64
+                  sum_sq = sum_sq + val * val
+            }
+            mut as float64: res = _sqrt(sum_sq)
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

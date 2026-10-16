@@ -1,0 +1,150 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RandomStdLib
+#L Dominio: RandomUtility
+#L ==============================================================================
+
+contract (RandomUtilityContract) {
+      op randomString (as int64: state, as int64: length, as string: alphabet) as list of data
+      op randomAlphaNumeric (as int64: state, as int64: length) as list of data
+      op randomHex (as int64: state, as int64: length) as list of data
+      op randomUuidV4 (as int64: state) as list of data
+      op randomIntList (as int64: state, as int64: count, as int64: min, as int64: max) as list of data
+      op randomFloatList (as int64: state, as int64: count) as list of data
+}
+
+agent (RandomStdLib) impl RandomUtilityContract {
+      #L 4. RandomUtilityContract
+      #L ==============================================================================
+      op randomString (as int64: state, as int64: length, as string: alphabet) as list of data ==> {
+            mut as int64: alpha_len = 0
+            infinite (c in alphabet) { alpha_len = alpha_len + 1 }
+            route {
+                  length <= 0 or alpha_len == 0 ==> {
+                        mut as list of data: empty_res = [state, ""]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as int64: cur_st = state
+            mut as string: res_str = ""
+            infinite (i in 1 .. length) {
+                  mut as list of data: pair = randomNextIntRange(cur_st, 1, alpha_len)
+                  cur_st = pair[1] as int64
+                  mut as int64: idx = pair[2] as int64
+                  res_str = res_str + alphabet[idx]
+            }
+            mut as list of data: res = [cur_st, res_str]
+            emit(nice, res, "ok")
+      }
+
+      op randomAlphaNumeric (as int64: state, as int64: length) as list of data ==> {
+            mut as string: alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            mut as list of data: pair = randomString(state, length, alpha)
+            emit(nice, pair, "ok")
+      }
+
+      op randomHex (as int64: state, as int64: length) as list of data ==> {
+            mut as string: hex_chars = "0123456789abcdef"
+            mut as list of data: pair = randomString(state, length, hex_chars)
+            emit(nice, pair, "ok")
+      }
+
+      op randomUuidV4 (as int64: state) as list of data ==> {
+            mut as int64: cur_st = state
+            mut as list of data: p1 = randomHex(cur_st, 8)
+            cur_st = p1[1] as int64
+            mut as string: s1 = p1[2] as string
+
+            mut as list of data: p2 = randomHex(cur_st, 4)
+            cur_st = p2[1] as int64
+            mut as string: s2 = p2[2] as string
+
+            mut as list of data: p3 = randomHex(cur_st, 3)
+            cur_st = p3[1] as int64
+            mut as string: s3 = "4" + (p3[2] as string)
+
+            mut as list of data: p4 = randomString(cur_st, 1, "89ab")
+            cur_st = p4[1] as int64
+            mut as list of data: p4_rest = randomHex(cur_st, 3)
+            cur_st = p4_rest[1] as int64
+            mut as string: s4 = (p4[2] as string) + (p4_rest[2] as string)
+
+            mut as list of data: p5 = randomHex(cur_st, 12)
+            cur_st = p5[1] as int64
+            mut as string: s5 = p5[2] as string
+
+            mut as string: uuid = s1 + "-" + s2 + "-" + s3 + "-" + s4 + "-" + s5
+            mut as list of data: res = [cur_st, uuid]
+            emit(nice, res, "ok")
+      }
+
+      op randomIntList (as int64: state, as int64: count, as int64: min, as int64: max) as list of data ==> {
+            mut as int64: cur_st = state
+            mut as list of data: res_list = []
+            infinite (i in 1 .. count) {
+                  mut as list of data: pair = randomNextIntRange(cur_st, min, max)
+                  cur_st = pair[1] as int64
+                  res_list[i] = pair[2]
+            }
+            mut as list of data: res = [cur_st, res_list]
+            emit(nice, res, "ok")
+      }
+
+      op randomFloatList (as int64: state, as int64: count) as list of data ==> {
+            mut as int64: cur_st = state
+            mut as list of data: res_list = []
+            infinite (i in 1 .. count) {
+                  mut as list of data: pair = randomNextFloat(cur_st)
+                  cur_st = pair[1] as int64
+                  res_list[i] = pair[2]
+            }
+            mut as list of data: res = [cur_st, res_list]
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. Aliases Retrocompativeis
+      #L ==============================================================================
+      op lcgNew (as int64: seed) as data ==> {
+            emit(nice, randomLcgNew(seed), "ok")
+      }
+
+      op lcgNext (as data: state) as data ==> {
+            emit(nice, randomLcgNext(state as int64), "ok")
+      }
+
+      op xoNew (as int64: seed) as data ==> {
+            emit(nice, randomXorNew(seed), "ok")
+      }
+
+      op xoNext (as data: state) as data ==> {
+            emit(nice, randomXorNext(state as int64), "ok")
+      }
+
+      op pcgNew (as int64: seed) as data ==> {
+            emit(nice, randomPcgNew(seed), "ok")
+      }
+
+      op pcgNext (as data: state) as data ==> {
+            emit(nice, randomPcgNext(state as int64), "ok")
+      }
+
+      op nextIntRange (as data: state, as int64: min, as int64: max) as data ==> {
+            emit(nice, randomNextIntRange(state as int64, min, max), "ok")
+      }
+
+      op nextFloat (as data: state) as data ==> {
+            emit(nice, randomNextFloat(state as int64), "ok")
+      }
+
+      op shuffle (as data: state, as list of data: items) as data ==> {
+            emit(nice, randomShuffle(state as int64, items), "ok")
+      }
+
+      op pickIndex (as data: state, as list of data: items) as data ==> {
+            emit(nice, randomPickIndex(state as int64, items), "ok")
+      }
+
+      op seed () as int64 ==> {
+            emit(fail, 0, "Nao implementada")
+      }
+}

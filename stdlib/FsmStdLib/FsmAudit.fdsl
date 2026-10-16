@@ -1,0 +1,75 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FsmStdLib
+#L Dominio: FsmAudit
+#L ==============================================================================
+
+contract (FsmAuditContract) {
+      op fsmAuditTrail (as list of data: history, as string: new_state) as list of data
+      op fsmHistoryValidate (as map: fsm_instance, as list of data: history) as bool
+      op fsmHistoryLength (as list of data: history) as int64
+      op fsmHistoryLast (as list of data: history) as string
+}
+
+agent (FsmStdLib) impl FsmAuditContract {
+      #L 4. FsmAuditContract
+      #L ==============================================================================
+
+      op fsmAuditTrail (as list of data: history, as string: new_state) as list of data ==> {
+            mut as list of data: res = _listPushBack(history, new_state)
+            emit(nice, res, "ok")
+      }
+
+      op fsmHistoryValidate (as map: fsm_instance, as list of data: history) as bool ==> {
+            mut as int64: hlen = _listLength(history)
+            route {
+                  hlen <= 1 ==> {
+                        mut as bool: ok_single = true
+                        route {
+                              hlen == 1 ==> {
+                                    ok_single = fsmHasState(fsm_instance, "" + history[1])
+                              }
+                        }
+                        emit(nice, ok_single, "ok")
+                  }
+            }
+            mut as bool: valid_path = true
+            mut as int64: idx = 1
+            infinite (item in history) {
+                  route {
+                        idx >= hlen ==> {
+                              break
+                        }
+                  }
+                  mut as string: st_from = "" + history[idx]
+                  mut as string: st_to = "" + history[idx + 1]
+                  mut as list of data: next_allowed = fsmNextStates(fsm_instance, st_from)
+                  mut as bool: step_ok = _listContains(next_allowed, st_to)
+                  route {
+                        not step_ok ==> {
+                              valid_path = false
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, valid_path, "ok")
+      }
+
+      op fsmHistoryLength (as list of data: history) as int64 ==> {
+            mut as int64: res = _listLength(history)
+            emit(nice, res, "ok")
+      }
+
+      op fsmHistoryLast (as list of data: history) as string ==> {
+            mut as int64: hlen = _listLength(history)
+            mut as string: last_st = ""
+            route {
+                  hlen > 0 ==> {
+                        last_st = "" + history[hlen]
+                  }
+            }
+            emit(nice, last_st, "ok")
+      }
+
+      #L ==============================================================================
+}

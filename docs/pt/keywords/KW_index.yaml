@@ -1,0 +1,574 @@
+title: Índice de Palavras-Chave e Operadores da Linguagem TheFlux
+language: pt
+total_categories: 54
+total_keywords: 74
+description: Índice estruturado de todas as palavras-chave, operadores e tokens especiais da linguagem TheFlux, agrupados
+  por categoria funcional.
+categories:
+- name: Ponto de Entrada
+  keywords:
+  - name: program
+    file: KW_program.yaml
+    description: Declara o ponto de entrada obrigatório de um arquivo .flux.  O  programa deve ser a última declaração no
+      arquivo e é o bloco principal executado. O nome do programa deve estar em PascalCase. Essa keyword é proibida  em arquivos
+      .fdsl.
+    syntax_summary: program (<nome_PascalCase>) {
+- name: Declaração de Variável
+  keywords:
+  - name: mut
+    file: KW_mut.yaml
+    description: 'Declara uma variável mutável, com valor inicial explícito opcional. Sem valor inicial, a variável recebe
+      o valor padrão do tipo (0, 0.0, false, string vazia etc.). Múltiplas variáveis podem ser declaradas com vírgulas na
+      forma principal (`mut as <tipo>: a, b = 42`).'
+    syntax_summary: 'mut as <tipo>: <identificador> [, <identificador> ...] [= <expressão>]'
+- name: Declaração de Variável Imutável
+  keywords:
+  - name: imut
+    file: KW_imut.yaml
+    description: Declara uma constante imutável com valor inicial obrigatório. Uma vez atribuída, não pode ser reatribuída;
+      a reatribuição gera erro semântico (SEM001). Múltiplas constantes podem ser declaradas na forma principal com vírgulas,
+      desde que compartilhem o mesmo valor inicial.
+    syntax_summary: 'imut as <tipo>: <identificador> [, <identificador> ...] = <expressão>'
+- name: Declaração de Tipo
+  keywords:
+  - name: enum
+    file: KW_enum.yaml
+    description: Declara um tipo enum (união discriminada) inspirado em Rust. Um enum representa um conjunto fechado de variantes,
+      onde cada variante pode ser unitária (sem payload) ou conter campos nomeados (payload). Variantes com payload utilizam
+      a mesma sintaxe de campos nomeados das structs (ponto obrigatório, campos em linhas separadas), permitindo construção
+      e desestruturação simétricas através do pattern matching. O discriminante (identificador numérico interno da variante)
+      é sempre gerado automaticamente pelo compilador, na ordem de declaração, e não pode ser controlado pelo programador.
+    syntax_summary: enum (<NomePascalCase>) {
+  - name: struct
+    file: KW_struct.yaml
+    description: Declara um tipo struct (registro) composto por um conjunto fixo de campos nomeados. Cada campo pode ser mutável
+      (mut) ou imutável (imut). Uma struct representa um único formato de dados e possui exatamente um construtor nominal.
+      A mesma sintaxe utilizada para construir uma struct é reutilizada pelo pattern matching para desestruturá-la, tornando
+      construção e desconstrução operações simétricas. O nome da struct deve estar em PascalCase.
+    syntax_summary: struct (<NomePascalCase>) {
+- name: Declaração de Função
+  keywords:
+  - name: function
+    file: KW_function.yaml
+    description: 'Declara uma função nomeada e reutilizável com parâmetros tipados e retorno opcional (via `as <tipo_retorno>`).
+      Parâmetros são imutáveis (`imut`) por padrão quando o modificador de mutabilidade for omitido (ex: `as <tipo>: <identificador>`);
+      para permitir reatribuição ao parâmetro no escopo local, declare-o explicitamente como `mut as <tipo>: <identificador>`.
+      Parâmetros do mesmo tipo e mutabilidade podem ser agrupados em uma única declaração (`[mut | imut | as] <tipo>: <id1>,
+      <id2>, ..., <idN>`); grupos com tipagens distintas são separados por `;`. O corpo da função deve terminar com um `emit`
+      terminal que devolve um struct implícito de resultado de três campos (`.sta`, `.val`, `.msg`). Se o campo de retorno
+      não for explicitado no chamador, o campo padrão de avaliação é o `.val`. Funções são declaradas no topo do arquivo (.flux)
+      ou no corpo de agentes/impl (.fdsl), antes do `program`, e podem ser chamadas por `nome(args)`; o resultado inteiro
+      fica disponível via variável (`r = calc(5)`) e cada campo é lido com acesso nomeado.'
+    syntax_summary: 'function (<nome_camelCase>) ([mut | imut | as] <tipo>: <identificador1>, ..., <identificadorN> [; [mut
+      | imut | as] <tipo>: <identificador1>, ..., <identificadorN>]) [as <tipo_retorno>] {'
+- name: Declaração de Operação
+  keywords:
+  - name: op
+    file: KW_op.yaml
+    description: 'Declara uma operação dentro de um agente (agent) em arquivos .fdsl ou uma assinatura de operação dentro
+      de um contrato (contract). Operações são funções encapsuladas no agente com retorno opcional (via `as <tipo_retorno>`).
+      Parâmetros são imutáveis (`imut`) por padrão quando o modificador de mutabilidade for omitido (ex: `as <tipo>: <identificador>`);
+      para permitir reatribuição ao parâmetro no escopo local, declare-o explicitamente como `mut as <tipo>: <identificador>`.
+      O corpo da operação deve terminar com um `emit` terminal que devolve um struct implícito de resultado (.sta, .val, .msg).
+      O nome da operação deve estar em camelCase.'
+    syntax_summary: '# Op com corpo — dentro de agent; parâmetros no formato ([mut | imut | as] <tipo>: <identificador>, ...);'
+- name: Declaração de Agente
+  keywords:
+  - name: agent
+    file: KW_agent.yaml
+    description: Declara um agente em arquivos .fdsl. Agentes são unidades modulares que encapsulam operações (op). O nome
+      do agente deve estar em PascalCase. Agentes são proibidos em arquivos .flux.
+    syntax_summary: agent (<nome_PascalCase>) {
+- name: Declaração de Contrato
+  keywords:
+  - name: contract
+    file: KW_contract.yaml
+    description: 'Declara um contrato que define um conjunto de assinaturas de operações (op) que um agente (agent) pode implementar.
+      O contrato é uma interface que especifica nomes, parâmetros e tipos de retorno sem implementação.
+
+      Contratos são válidos apenas em arquivos .fdsl. O nome do contrato deve estar em PascalCase. '
+    syntax_summary: contract (<Nome_PascalCase>) {
+- name: Implementação de Contrato
+  keywords:
+  - name: impl
+    file: KW_impl.yaml
+    description: 'Cláusula usada na declaração de um agente (agent) para indicar que ele implementa um ou mais contratos (contract).
+      O agente deve fornecer uma operação (op) para cada assinatura definida nos contratos, com aridade, parâmetros e tipo
+      de retorno correspondentes.
+
+      Suporta múltiplos contratos separados por vírgula. Válido apenas em arquivos .fdsl. '
+    syntax_summary: agent (<Nome_PascalCase>) impl <Contrato1>, <Contrato2>, ... {
+- name: Declaração de Importação
+  keywords:
+  - name: use
+    file: KW_use.yaml
+    description: Importa agentes ou operações de agentes de outros módulos. Pode importar um agente inteiro com alias, uma
+      operação específica com alias, ou um grupo de operações de um agente.
+    syntax_summary: use <AgentePascalCase> as <AliasPascalCase>
+- name: Composição de Tipo
+  keywords:
+  - name: of
+    file: KW_of.yaml
+    description: Operador de composição de tipo para coleções e tensores (`list of <tipo>`, `set of <tipo>`, `tensor[...]
+      of <tipo>`). Especifica o tipo dos elementos contidos na estrutura.
+    syntax_summary: list of <tipo_elemento>
+- name: Estrutura de Loop
+  keywords:
+  - name: infinite
+    file: KW_infinite.yaml
+    description: Cria um laço de repetição infinito. O loop executa o corpo repetidamente até que uma instrução `break` interrompa
+      a execução. Opcionalmente pode receber uma condição booleana que, quando falsa, encerra o loop.
+    syntax_summary: infinite {
+- name: Controle de Loop
+  keywords:
+  - name: break
+    file: KW_break.yaml
+    description: Interrompe imediatamente o loop `infinite` mais interno, transferindo o controle para a instrução seguinte
+      ao bloco do loop.
+    syntax_summary: break
+  - name: continue
+    file: KW_continue.yaml
+    description: Pula o restante da iteração atual do loop `infinite` mais interno e continua na próxima iteração (reavaliando
+      a condição, se houver).
+    syntax_summary: continue
+- name: Controle de Fluxo Condicional
+  keywords:
+  - name: route
+    file: KW_route.yaml
+    description: Avalia condições em ordem e executa o bloco correspondente ao primeiro braço cuja condição seja verdadeira.
+      O braço wildcard (`_`) captura qualquer valor não coberto pelos braços anteriores. Pode substituir cadeias de if/else
+      if/else.
+    syntax_summary: route {
+- name: Pattern Matching
+  keywords:
+  - name: match
+    file: KW_match.yaml
+    description: Realiza casamento de padrões (pattern matching) sobre uma expressão. O match é uma expressão e retorna o
+      valor produzido pelo primeiro braço cujo padrão corresponda ao valor analisado e cuja guarda (guard), quando presente,
+      seja verdadeira. A sintaxe de desestruturação reutiliza exatamente a mesma forma utilizada na construção de structs
+      e variantes de enum, tornando construção e desconstrução operações simétricas. Para enums, o compilador verifica exaustividade
+      e detecta braços inalcançáveis.
+    syntax_summary: match (<expressao>) {
+  - name: _
+    file: KW_underscore.yaml
+    description: O caractere underscore (`_`) atua como curinga (wildcard) universal e padrão de descarte na linguagem TheFlux.
+      É utilizado como braço catch-all em estruturas `route`, como padrão universal em expressões `match` (garantindo exaustividade
+      em enums e tipos literais), e como descarte de campos na desestruturação de structs, registros e variantes de enums.
+    syntax_summary: route {
+- name: Tratamento Condicional Estatal
+  keywords:
+  - name: '?'
+    file: KW_short_circuit.yaml
+    description: 'Bloco short-circuit que avalia uma expressão. O retorno dessa expressão é um struct transparente gerado
+      e enviado internamente pelo comando `emit`. O operador `?` intercepta esse struct e despacha o fluxo para um dos dois
+      braços obrigatórios: executa o primeiro braço quando o struct transparente possui `.sta == "fail"`, e o segundo braço
+      quando `.sta == "nice"`. O struct retornado é ligado diretamente  na variável resultante (permitindo ler `.sta`, `.val`
+      e `.msg`) sem reavaliar a chamada.'
+    syntax_summary: <expressão> ?
+- name: Iteração
+  keywords:
+  - name: in
+    file: KW_in.yaml
+    description: 'O operador `in` é usado em loops `infinite (variável in coleção)` para iterar sobre os elementos de uma
+      coleção: range numérico, lista, set ou string. O argumento da esquerda declara a variável iteradora (snake_case); o
+      da direita é a coleção percorrida. Ao iterar sobre map/data, a iteração percorre as chaves.'
+    syntax_summary: infinite (<variável_snake_case> in <coleção>) { <corpo> }
+- name: Execução Garantida
+  keywords:
+  - name: ensure
+    file: KW_ensure.yaml
+    description: Operador de cleanup que garante que um bloco de código sempre execute, independentemente de sucesso ou falha
+      da expressão alvo. Preserva o valor original ou re-lança a falha após a execução do bloco.
+    syntax_summary: '''<expressão> ensure { <bloco_cleanup> }'
+- name: Instrução de Retorno
+  keywords:
+  - name: emit
+    file: KW_emit.yaml
+    description: 'Encerra a função atual devolvendo um struct implícito de resultado com três campos sempre definidos: `.sta`
+      ("nice" | "fail"), `.val` (valor do identificador emitido, tipado pelo `as <tipo>` da função) e `.msg` (mensagem string
+      ou interpolada). `emit` é o statement terminal obrigatório do corpo de uma função. O struct inteiro fica disponível
+      via variável (`r = calc(5)`); depois leia cada campo com acesso nomeado.'
+    syntax_summary: emit(nice, <identificador>, "<mensagem>")
+- name: Status de Retorno
+  keywords:
+  - name: fail
+    file: KW_fail.yaml
+    description: Status de falha usado na instrução `emit(fail, ...)`. Indica que a função encontrou um erro ou condição excepcional
+      e devolve um struct de resultado com `.sta == "fail"`. O chamador captura o resultado pelos campos `.sta`, `.val` e
+      `.msg`, ou despacha o fluxo com o operador `?`. O runtime também gera o status `fail` automaticamente quando ocorre
+      divisão por zero (mensagem "divisao por zero").
+    syntax_summary: emit(fail, <identificador>, "<mensagem>")
+  - name: nice
+    file: KW_nice.yaml
+    description: Status de sucesso usado na instrução `emit(nice, ...)`. Indica que a função completou sua execução com sucesso
+      e devolve um struct de resultado com `.sta == "nice"`. É a contraparte positiva de `fail`. O chamador captura o resultado
+      pelos campos `.sta`, `.val` e `.msg`, ou despacha o fluxo com o operador `?`.
+    syntax_summary: emit(nice, <identificador>, "<mensagem>")
+- name: Instrução de Saída
+  keywords:
+  - name: print
+    file: KW_print.yaml
+    description: Imprime o valor de uma expressão na saída padrão. Pode ser usado como instrução (`print(...)`) ou como sink
+      em um pipeline de dataflow (`--> print`), onde encerra a cadeia.
+    syntax_summary: print(<expressão>)
+- name: Operador Aritmético
+  keywords:
+  - name: +, -, *, /f, /i, /r, ^e, ^r
+    file: KW_OP_arithmetic.yaml
+    description: Operadores aritméticos da linguagem TheFlux. Diferencia divisão decimal (/f), divisão inteira (/i) e resto
+      de divisão (/r), assim como exponenciação (^e) e radiciação (^r). Os operadores seguem a precedência matemática padrão.
+    syntax_summary: '<expr> + <expr>    # Adição'
+- name: Operador de Atribuição Aritmética
+  keywords:
+  - name: =, =+, =-, =*, =/f, =/i, =/r, =^e, =^r
+    file: KW_OP_assignment_arithmetic.yaml
+    description: Operadores de atribuição simples e composta aritmética. A atribuição simples (=) suporta identificadores,
+      acesso a campos, índices e multi-índices. Atribuições compostas aritméticas (=+, =-, =*, =/f, =/i, =/r, =^e, =^r) combinam
+      operação aritmética com atribuição, e suportam apenas identificadores simples.
+    syntax_summary: '<alvo> = <expr>              # Atribuição simples'
+- name: Operador de Atribuição Bitwise
+  keywords:
+  - name: =&, =|, =^, =~, =<<, =>>, =>>>
+    file: KW_OP_assignment_bitwise.yaml
+    description: Operadores de atribuição composta bitwise. Combinam operação bitwise (AND, OR, XOR, NOT, shifts) com atribuição,
+      e suportam apenas identificadores simples.
+    syntax_summary: '<alvo> =& <expr>             # Atribuição com AND bitwise'
+- name: Operador Bitwise
+  keywords:
+  - name: '&, |, ^, ~, <<, >>, >>>'
+    file: KW_OP_bitwise.yaml
+    description: Operadores de manipulação bitwise para inteiros. Incluem AND, OR, XOR, NOT bitwise, deslocamento à esquerda
+      (<<), à direita com sinal (>>) e à direita com preenchimento zero (>>>).
+    syntax_summary: '<expr> & <expr>     # AND bitwise'
+- name: Operador de Comparação
+  keywords:
+  - name: ==, !=, <, >, <=, >=
+    file: KW_OP_comparison.yaml
+    description: Operadores relacionais que comparam dois valores e retornam um booleano. Usados em condições de route, expressões
+      booleanas e qualquer contexto que exija avaliação de ordem ou igualdade.
+    syntax_summary: '<expr> == <expr>   # Igual a'
+- name: Operador Lógico
+  keywords:
+  - name: and
+    file: KW_and.yaml
+    description: Operador de conjunção lógica com avaliação de curto-circuito. Retorna true somente se ambos os operandos
+      avaliarem para true.
+    syntax_summary: <expr1> and <expr2>
+  - name: not
+    file: KW_not.yaml
+    description: Operador unário de negação lógica. Inverte o valor booleano de verdade de uma expressão.
+    syntax_summary: not <expressão>
+  - name: and, or, not
+    file: KW_OP_logical.yaml
+    description: Operadores lógicos para composição de expressões booleanas. and e or são operadores infixos binários; not
+      é um operador prefixo unário. A forma ! também é aceita como operador not prefixo.
+    syntax_summary: '<expr> and <expr>   # Conjunção (E lógico) - precedência 30'
+  - name: or
+    file: KW_or.yaml
+    description: Operador de disjunção lógica com avaliação de curto-circuito. Retorna true se qualquer um dos operandos avaliar
+      para true.
+    syntax_summary: <expr1> or <expr2>
+- name: Operador de Dataflow
+  keywords:
+  - name: --> (dataflow), ==> (lambda), split, join
+    file: KW_OP_dataflow.yaml
+    description: Operadores de fluxo de dados para pipelines e transformações. --> (ARROW) direciona um valor para um destino
+      (função, sink, print, spy, cast). ==> (LAMBDA_ARROW) é o separador entre padrão e expressão em match arms e também funciona
+      como transformação lambda com binding it. split bifurca um fluxo em vias paralelas; join consolida fluxos em uma lista.
+    syntax_summary: '<expr> --> <destino>              # Pipeline de dataflow'
+- name: Operador de Range / Slice
+  keywords:
+  - name: ..
+    file: KW_OP_range_slice.yaml
+    description: 'O operador .. (range) tem dois usos: cria intervalos numéricos inclusivos para iteração em infinite (a ..
+      b), e especifica fatias (slices) em coleções e strings [start .. end] ou (start .. end). O range é inclusivo em ambas
+      as extremidades. Veja também KW_slices.yaml para o guia completo de slices.'
+    syntax_summary: '<início> .. <fim>                     # Range numérico para iteração'
+  - name: slices
+    file: KW_slices.yaml
+    description: 'Slices extraem fatias de coleções e strings usando o operador de range .. dentro de delimitadores. O delimitador
+      depende do tipo: colchetes [ ] para list, data e tensor; parênteses ( ) para string. O range é inclusivo em ambas as
+      extremidades e os índices são 1-based.'
+    syntax_summary: 'lista[ .. ]              # Slice completo (cópia)'
+- name: Operador de Cast / Alias de Importação
+  keywords:
+  - name: as
+    file: KW_as.yaml
+    description: Converte (cast) um valor de um tipo para outro. Pode ser usado como operador pós-fixo em expressões ou como
+      sink em pipelines de dataflow ((as <tipo>)). Também define alias ao importar agentes ou operações com use.
+    syntax_summary: <expressão> as <tipo>
+- name: Tipo Escalar Primitivo
+  keywords:
+  - name: char, bool, datetime, string
+    file: KW_TYPE_scalar.yaml
+    description: 'Tipos escalares nativos que não são numéricos: char (code point Unicode UTF-32), bool (booleano), datetime
+      (timestamp ISO 8601), string (cadeia de texto). Esses tipos são reconhecidos pelo lexer como palavras reservadas de
+      tipo.'
+    syntax_summary: 'mut as char: <var> = ''<caractere>'''
+- name: Tipo Caractere
+  keywords:
+  - name: char
+    file: KW_TYPE_char.yaml
+    description: 'Tipo caractere: representa exatamente um code point Unicode (U+0000..U+10FFFF). Internamente, em backends
+      compilados (llvm/wat/wasm), o valor é armazenado como code point de 32 bits (i32); a codificação UTF-8 (1-4 bytes) é
+      produzida apenas na impressão, concatenação com string e operações de texto. No interpretador, o valor é mantido como
+      string Python de 1 code point. O tipo genérico é obrigatório na declaração.'
+    syntax_summary: 'mut as char: <var> = ''<code point>'''
+- name: Tipo String
+  keywords:
+  - name: string, string(N)
+    file: KW_TYPE_string.yaml
+    description: 'Tipos de texto. string é dinâmica (alocação sob demanda); string(N) é estática com capacidade fixa de N
+      bytes UTF-8. O tipo genérico é obrigatório na declaração (mut as string: x = ...). Char tem doc próprio: KW_TYPE_char.yaml.'
+    syntax_summary: 'mut as string: <var> = <valor>        # dinâmica (fat pointer)'
+- name: Tipo Numérico - Inteiro
+  keywords:
+  - name: int8, int16, int32, int64, uint8, uint16, uint32, uint64
+    file: KW_TYPE_int.yaml
+    description: Tipos inteiros de largura fixa com sinal e sem sinal (int8, int16, int32, int64, uint8, uint16, uint32, uint64).
+    syntax_summary: 'mut as <tipo>: <var> = <valor>     # tipo obrigatório na declaração'
+- name: Tipo Numérico - Ponto Flutuante
+  keywords:
+  - name: float16, float32, float64, fp8_e4m3, fp8_e5m2, bf16_e8m7, tf32_e8m10
+    file: KW_TYPE_float.yaml
+    description: Tipos de ponto flutuante com precisão definida e formatos especiais para IA/ML (float16, float32, float64,
+      fp8_e4m3, fp8_e5m2, bf16_e8m7, tf32_e8m10).
+    syntax_summary: 'mut as <tipo>: <var> = <valor>   # tipo obrigatório na declaração'
+- name: Tipo Numérico - Complexo
+  keywords:
+  - name: literal complexo (complex_literal)
+    file: KW_LITERAL_complex.yaml
+    description: Literais complexos representam números complexos. O literal imaginário é formado por um literal inteiro ou
+      float seguido do sufixo i (ou j, aceito como alias do lexer). Para um número complexo completo, combina-se parte real
+      com parte imaginária usando o operador + (ou -). O tipo padrão inferido é complex64; o tipo explícito (complex32/64/128)
+      quantiza cada componente.
+    syntax_summary: '<literal_inteiro>i          # Ex: 2i'
+  - name: complex32, complex64, complex128
+    file: KW_TYPE_complex.yaml
+    description: Tipos numéricos complexos com partes real e imaginária (complex32, complex64, complex128).
+    syntax_summary: 'mut as complex32: <identificador> [, <identificador> ...]  = <real> + <imag>i   # 2 x float16'
+- name: Tipo de Coleção - Data
+  keywords:
+  - name: data
+    file: KW_TYPE_data.yaml
+    description: Lista de elementos heterogêneos acessíveis por indexação (1-based).
+    syntax_summary: 'mut/imut as data: var1, var2, ..., varN [= [<valor>, ...]]'
+- name: Tipo de Coleção - List
+  keywords:
+  - name: list
+    file: KW_TYPE_list.yaml
+    description: Sequência homogênea com índice 1-based e atribuição por índice.
+    syntax_summary: 'mut as list of Type: var1, var2, ..., varN [= [<valor>, ...]]'
+- name: Tipo de Coleção - Map
+  keywords:
+  - name: map
+    file: KW_TYPE_map.yaml
+    description: Dicionário com chaves string e acesso dinâmico; ausente retorna none.
+    syntax_summary: 'mut as map: var1, var2, ..., varN [= map{.<chave> of <tipo>: <valor> [of <tipo>], ...}]'
+- name: Tipo de Coleção - Set
+  keywords:
+  - name: set
+    file: KW_TYPE_set.yaml
+    description: Elementos únicos sem ordem; suporta o operador in.
+    syntax_summary: 'mut as set of Type: var1, var2, ..., varN [= {<valor>, ...}]'
+- name: Tipo Tensor
+  keywords:
+  - name: tensor
+    file: KW_TYPE_tensor.yaml
+    description: 'Tipo multidimensional (vetor, matriz, tensor N-D) com forma estatica, armazenado em buffer plano (flat)
+      e indexado por strides (com offset e strides lineares). Suporta transposição, permutação, sub-visões (slicing) e broadcasting
+      em tempo e memória O(1) através do modelo de strides. Declarado com as dimensões e o tipo dos elementos (ex.: tensor[2,
+      2] of int32) ou operado dinamicamente via LinAlgStdLib.'
+    syntax_summary: 'mut as tensor[<dim1>, <dim2>, ...] of <tipo_elemento>: <var1>, ... [= <valores>]'
+- name: Literal
+  keywords:
+  - name: literal caractere (char_literal)
+    file: KW_LITERAL_char.yaml
+    description: Literais caractere (char) representam um único code point Unicode entre aspas simples. Em UTF-8, um code
+      point ocupa 1 a 4 bytes. Suporta caracteres imprimíveis e sequências de escape, incluindo \u{XXXX}. O tipo é char.
+    syntax_summary: '''<caractere>''                   # Ex: ''A'', '' '', ''3'', ''é'''
+  - name: none (valor nulo)
+    file: KW_LITERAL_none.yaml
+    description: Representa a ausência de valor (nulo/nil/None). É retornado por operações que não produzem um valor útil,
+      como acesso a chave ausente em map/data. É exibido como "None" na saída padrão em todos os backends (interpreter, vm,
+      llvm, wasm, wat). Não há uma keyword explícita para criar none; ele surge implicitamente em operações sem valor de retorno.
+    syntax_summary: '# none não tem sintaxe literal explícita; surge implicitamente:'
+  - name: literal string (string_literal)
+    file: KW_LITERAL_string.yaml
+    description: 'Literais string representam cadeias de texto entre aspas duplas. Codificadas em UTF-8; caracteres não-ASCII
+      são aceitos diretamente no literal. Suportam sequências de escape, incluindo \u{XXXX} para code points Unicode. Podem
+      conter interpolação de expressões com #{ }. O tipo é string (dinâmica) ou string(N) (capacidade fixa). len() conta bytes
+      UTF-8.'
+    syntax_summary: '"<texto_utf8>"                      # String simples'
+- name: Literal Booleano
+  keywords:
+  - name: True, False
+    file: KW_LITERAL_bool.yaml
+    description: 'Literais booleanos. A forma canônica é PascalCase: True e False. Apenas essas duas formas são aceitas como
+      literais; qualquer outra capitalização (true, false, TRUE, FALSE) não é alias e lexa como identificador, causando erro
+      de variável indefinida.'
+    syntax_summary: True | False
+- name: Literal de Data/Hora
+  keywords:
+  - name: datetime (literal ISO 8601)
+    file: KW_LITERAL_datetime.yaml
+    description: Literais de data e hora no formato ISO 8601. Precisão de nanossegundos; fração pode ter 1-9 dígitos. Sufixo
+      Z (UTC) ou offset ±HH, ±HHMM, ±HH:MM. Internamente é um inteiro de nanossegundos desde a época (1970-01-01T00:00:00Z).
+      O tipo é datetime.
+    syntax_summary: <AAAA>-<MM>-<DD>T<HH>:<MM>:<SS>[.<fração>][Z | ±<offset>]
+- name: Literal Numérico
+  keywords:
+  - name: literal float (float_literal)
+    file: KW_LITERAL_float.yaml
+    description: Literais de ponto flutuante representam números reais com precisão definida e formatos especiais (float16,
+      float32, float64, fp8, bf16, tf32).
+    syntax_summary: '<dígitos>.<dígitos> [e<expoente>]    # Ex: 3.14, 2.5e3'
+  - name: literal imaginário puro (imaginary_literal)
+    file: KW_LITERAL_imaginary.yaml
+    description: Literais imaginários representam a componente imaginária pura de um número complexo (ou seja, a forma bi
+      onde a parte real a = 0). São formados por um literal numérico inteiro ou de ponto flutuante imediatamente seguido pelo
+      sufixo i (ou j, aceito como alias pelo lexer). Sem uma parte real combinada, o valor representa um ponto puramente sobre
+      o eixo imaginário (0.0 + bi).
+    syntax_summary: '<literal_inteiro>i          # Ex: 2i'
+  - name: literal inteiro (integer_literal)
+    file: KW_LITERAL_integer.yaml
+    description: Literais numéricos inteiros na base decimal. São formados por sequências de dígitos de 0 a 9. O sinal negativo
+      é um operador unário de prefixo, não fazendo parte do literal. O tipo padrão inferido é int64, a menos que a declaração
+      especifique outro tipo inteiro.
+    syntax_summary: '<dígitos>         # Ex: 42'
+- name: Interpolação de String
+  keywords:
+  - name: '#{ }'
+    file: KW_string_interpolation.yaml
+    description: 'Interpolação de expressões dentro de strings delimitadas por aspas duplas. A sintaxe #{expressão} avalia
+      a expressão e converte o resultado para string no local. Expressões podem conter operações, chamadas de função, e qualquer
+      expressão válida.'
+    syntax_summary: '"texto #{<expressão>} mais texto"'
+- name: Comentário / Documentação
+  keywords:
+  - name: '#L, #B ... B#, #D ... D#'
+    file: KW_comments.yaml
+    description: 'Três formas de comentário na linguagem TheFlux: `#L` para comentários de linha, `#B ... B#` para comentários
+      em bloco multi-linha, e `#D ... D#` para docstrings estruturadas associadas a declarações. Docstrings suportam campos
+      no formato bullet (- chave: valor) extraídos pelo lexer.'
+    syntax_summary: '#L <texto>                            # Comentário de linha (até quebra de linha)'
+- name: Metaprogramação
+  keywords:
+  - name: comptime
+    file: KW_comptime.yaml
+    description: Avalia uma expressão ou bloco de código em tempo de compilação. O resultado é resolvido ou dobrado antes
+      da execução em runtime. Útil para pré-computação de expressões constantes e geração estática de dados.
+    syntax_summary: comptime <expressão>
+  - name: lift
+    file: KW_lift.yaml
+    description: Cria uma representação de código (árvore sintática / AST) sem avaliá-la imediatamente em tempo de execução
+      (estágio de elevação / lifting). Utilizado dentro de definições `meta` para encapsular blocos de código gerados. O código
+      contido dentro de `lift` pode receber injeções dinâmicas de nós sintáticos ou expressões por meio de `lower()`.
+    syntax_summary: lift {
+  - name: lower
+    file: KW_lower.yaml
+    description: Rebaixa (desempacota/injeta) o nó ou expressão correspondente dentro de um bloco `lift { ... }`. Avalia o
+      parâmetro da meta e insere o nó de código resultante na árvore gerada.
+    syntax_summary: lower(<expressão>)
+  - name: meta
+    file: KW_meta.yaml
+    description: Declara uma meta-função de metaprogramação (`meta`) que gera e transforma código em tempo de compilação.
+      O corpo de uma definição `meta` retorna uma árvore sintática encapsulada em um bloco `lift { ... }`. Parâmetros passados
+      para a meta-função são injetados no código gerado através da expressão `lower(param)`. A expansão de metas é realizada
+      estaticamente pelo compilador antes da análise semântica e da geração de código.
+    syntax_summary: meta (<nomeCamelCase>) (<params>) {
+- name: Bloco Inseguro
+  keywords:
+  - name: unsafe
+    file: KW_unsafe.yaml
+    description: Desativa as proteções de memória do Kernel para manipulação de ponteiros e chamadas C-ABI, APIs, ler e gravar
+      Raw Pointers, acessar ou modificar variáveis globais, implementar contratos não checados, bounds checking e equivalentes.
+    syntax_summary: unsafe {
+- name: Instrução de Entrada
+  keywords:
+  - name: input
+    file: KW_input.yaml
+    description: 'Lê uma linha da entrada padrão (stdin) e atribui à variável declarada. Exibe um prompt opcional antes da
+      leitura. A declaração de tipo é obrigatória em TheFlux; o tipo declarado na variável define o tipo esperado do valor
+      digitado.
+
+      A verificação de tipagem ocorre depois de pressionar Enter. Se o valor digitado for incompatível com o tipo declarado,
+      o prompt volta e escreve em cinza "Digite um <tipo>, como: <exemplo>".
+
+      '
+    syntax_summary: input()
+- name: Operadores de Acesso
+  keywords:
+  - name: ., ::, [], ..
+    file: KW_accessors.yaml
+    description: 'Operadores fundamentais para acesso a membros, resolução de escopo, indexação e fatiamento em TheFlux:
+
+      - `.` (ponto): Acesso a campos de instâncias de `struct` e `data`, propriedades de retorno de operações (`res.sta`,
+      `res.val`, `res.msg`) e chamadas de métodos.
+
+      - `::` (dois-pontos duplo): Resolução estática de escopo para variantes de enum (`Enum::Variante`), operações de agentes
+      (`Agente::operacao`) e símbolos de módulos.
+
+      - `[ ]` (colchetes): Acesso por índice posicional em `list` (1-based), acesso associativo por chave em `map` (`mapa["chave"]`),
+      e acesso multidimensional em `tensor` (`tensor[i, j]`).
+
+      - `..` (range/slice): Fatiamento contíguo dentro de colchetes (`[ini..fim]`, `[..fim]`, `[ini..]`, `[..]`) para listas,
+      strings e tensores, além de iteração em faixas.'
+    syntax_summary: '<expr>.<campo>                      # Acesso a campo de struct ou data'
+- name: Posse
+  keywords:
+  - name: borrow
+    file: KW_borrow.yaml
+    description: Empréstimo dos valores de um identificador sem transferir a sua posse (ownership). borrow() é imutável —
+      múltiplos empréstimos simultâneos são permitidos. borrow_mut() é exclusivo — bloqueia outros borrows, moves e escritas
+      por referência externa.
+    syntax_summary: borrow(<identificador>)
+  - name: keep
+    file: KW_keep.yaml
+    description: Inibe a liberação automática do Eager Flow Disposal, estendendo o tempo de vida do dado. Sem keep(), o compilador
+      determina o ponto de última uso de cada variável e a libera automaticamente. keep(x) mantém x válido até o final do
+      bloco léxico.
+    syntax_summary: keep(<identificador>)
+  - name: move
+    file: KW_move.yaml
+    description: 'Transfere explicitamente a posse (ownership) de um identificador para outro. Após move(x), a variável x
+      é invalidada e não pode mais ser usada até receber um novo valor. Revivificação: basta atribuir um novo valor a x para
+      torná-lo válido novamente.'
+    syntax_summary: move(<identificador>)
+- name: Tarefas Assíncronas (Future / Green Thread)
+  keywords:
+  - name: async
+    file: KW_async.yaml
+    description: 'Modificador que transforma uma função em uma operação não-bloqueante que retorna um Future. A função marcada
+      com async não bloqueia a pipeline síncrona que a invoca; seu corpo é avaliado sob demanda e o resultado é resolvido
+      quando a pipeline consome o Future com await.
+
+      '
+    syntax_summary: async function <nome_camelCase> (<parâmetros>) [as <tipo_retorno>] {
+  - name: await
+    file: KW_await.yaml
+    description: 'Ponto de sincronização linear que suspende a pipeline síncrona até a resolução de um Future. Ao encontrar
+      await, a esteira de execução bloqueia de forma determinística até que o Future associado (gerado por uma função async
+      ou despachado por spawn) esteja resolvido, e então retorna o seu valor.
+
+      '
+    syntax_summary: await <expressão_future>
+  - name: spawn
+    file: KW_spawn.yaml
+    description: 'Gatilho de execução assíncrona: autoriza e despacha um nó ou o caminho do dataflow para o runtime, que o
+      executa como uma green thread cooperativa. Diferente de async (que apenas marca a função como não-bloqueante), o spawn
+      já inicia a execução no runtime, e o await coleta o resultado posteriormente.
+
+      '
+    syntax_summary: spawn <expressão>
+- name: Telemetria/Depuração
+  keywords:
+  - name: spy
+    file: KW_spy.yaml
+    description: 'Emite telemetria diagnóstica detalhada do valor de uma expressão para fins de depuração e inspeção em tempo
+      de execução sem alterar o fluxo de dados. Preserva o valor original como um tap/tee transparente, permitindo que spy
+      seja usado em operandos, expressões intermediárias e em pipelines de dataflow.
+
+      A saída estruturada de telemetria detalha a origem do nó AST, amostra/rank dos dados, tipagem e coerção, despacho de
+      hardware, tempo de vida (liveness) e reciclagem de memória.'
+    syntax_summary: spy(<expressão>)

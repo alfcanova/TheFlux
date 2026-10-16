@@ -1,0 +1,114 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorReduction
+#L ==============================================================================
+
+contract (TensorReductionContract) {
+      op tensorSumAxis (as map: tensor, as int64: axis) as map
+      op tensorNormL2Axis (as map: tensor, as int64: axis) as map
+}
+
+agent (LinAlgStdLib) impl TensorReductionContract {
+      #L 6. TensorReductionContract - Reducoes por Eixo (Soma e Norma L2)
+      #L ==============================================================================
+
+      op tensorSumAxis (as map: tensor, as int64: axis) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+
+            mut as list of data: out_sh = []
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  route {
+                        i == axis ==> { out_sh[i] = 1 }
+                        i != axis ==> { out_sh[i] = old_sh[i] }
+                  }
+                  i = i + 1
+            }
+
+            mut as map: out = tensorNew(out_sh)
+
+            mut as list of data: old_buf = tensor["data"] as list of data
+            mut as int64: total_elements = 1
+            i = 1
+            infinite (i <= ndim) {
+                  total_elements = total_elements * (old_sh[i] as int64)
+                  i = i + 1
+            }
+
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total_elements) {
+                  mut as float64: current_val = old_buf[idx] as float64
+
+                  mut as list of data: out_coords = []
+                  i = 1
+                  infinite (i <= ndim) {
+                        route {
+                              i == axis ==> { out_coords[i] = 1 }
+                              i != axis ==> { out_coords[i] = coords[i] }
+                        }
+                        i = i + 1
+                  }
+
+                  mut as float64: existing_sum = tensorGetAt(out, out_coords)
+                  out = tensorSetAt(out, out_coords, existing_sum + current_val)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (old_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (old_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorNormL2Axis (as map: tensor, as int64: axis) as map ==> {
+            mut as map: squared_tensor = _mapClone(tensor)
+            mut as list of data: sq_buf = _listClone(tensor["data"] as list of data)
+            mut as int64: i = 1
+            mut as int64: buf_len = 0
+            infinite (x in sq_buf) { buf_len = buf_len + 1 }
+            infinite (i <= buf_len) {
+                  mut as float64: v = sq_buf[i] as float64
+                  sq_buf[i] = v * v
+                  i = i + 1
+            }
+            squared_tensor["data"] = sq_buf
+
+            mut as map: sum_tensor = tensorSumAxis(squared_tensor, axis)
+
+            mut as map: out = _mapClone(sum_tensor)
+            mut as list of data: out_buf = _listClone(sum_tensor["data"] as list of data)
+            mut as int64: out_len = 0
+            infinite (x in out_buf) { out_len = out_len + 1 }
+
+            i = 1
+            infinite (i <= out_len) {
+                  mut as float64: accumulated_sq = out_buf[i] as float64
+                  out_buf[i] = _sqrt(accumulated_sq)
+                  i = i + 1
+            }
+            out["data"] = out_buf
+
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

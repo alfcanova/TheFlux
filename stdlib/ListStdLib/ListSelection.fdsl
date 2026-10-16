@@ -1,0 +1,184 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListSelection
+#L ==============================================================================
+
+contract (ListSelectionContract) {
+      op listTake (as list of data: items, as int64: n) as list of data
+      op listDrop (as list of data: items, as int64: n) as list of data
+      op listTakeLast (as list of data: items, as int64: n) as list of data
+      op listDropLast (as list of data: items, as int64: n) as list of data
+      op listFilter (as list of data: items, as list of data: allowed_items) as list of data
+      op listOmit (as list of data: items, as list of data: omitted_items) as list of data
+      op listDistinct (as list of data: items) as list of data
+}
+
+agent (ListStdLib) impl ListSelectionContract {
+      #L -- ListSelectionContract -------------------------------------
+      op listTake (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  n <= 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr <= n ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                        curr > n ==> {
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listDrop (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr > n ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listTakeLast (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  n <= 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            mut as int64: start_idx = total - n + 1
+            route {
+                  start_idx < 1 ==> {
+                        start_idx = 1
+                  }
+            }
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr >= start_idx ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listDropLast (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  n <= 0 ==> {
+                        mut as int64: rlen0 = 0
+                        infinite (x in items) {
+                              rlen0 = rlen0 + 1
+                              res[rlen0] = x
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            mut as int64: keep_count = total - n
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr <= keep_count ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFilter (as list of data: items, as list of data: allowed_items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  mut as bool: should_keep = false
+                  infinite (item_allowed in allowed_items) {
+                        route {
+                              x == item_allowed ==> {
+                                    should_keep = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        should_keep ==> {
+                              rlen = rlen + 1
+                              res[rlen] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listOmit (as list of data: items, as list of data: omitted_items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  mut as bool: should_omit = false
+                  infinite (item_omitted in omitted_items) {
+                        route {
+                              x == item_omitted ==> {
+                                    should_omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not should_omit ==> {
+                              rlen = rlen + 1
+                              res[rlen] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listDistinct (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  mut as bool: exists = false
+                  infinite (r in res) {
+                        route {
+                              r == x ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not exists ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

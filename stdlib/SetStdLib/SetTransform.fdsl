@@ -1,0 +1,72 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetTransform
+#L ==============================================================================
+
+contract (SetTransformContract) {
+      op setUnionAll (as list of data: sets) as set of data
+      op setIntersectAll (as list of data: sets) as set of data
+      op setCartesianProduct (as set of data: lhs, as set of data: rhs) as list of data
+      op setPowerSet (as set of data: items) as list of data
+}
+
+agent (SetStdLib) impl SetTransformContract {
+      #L -- SetTransformContract --------------------------------------
+      op setUnionAll (as list of data: sets) as set of data ==> {
+            mut as set of data: res = stdSetToSet([])
+            infinite (set_item in sets) {
+                  res = stdSetUnion(res, set_item as set of data)
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setIntersectAll (as list of data: sets) as set of data ==> {
+            mut as set of data: res = stdSetToSet([])
+            mut as bool: first = true
+            infinite (set_item in sets) {
+                  route {
+                        first ==> {
+                              res = set_item as set of data
+                              first = false
+                        }
+                        not first ==> {
+                              res = stdSetIntersect(res, set_item as set of data)
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setCartesianProduct (as set of data: lhs, as set of data: rhs) as list of data ==> {
+            mut as list of data: l1 = stdSetToList(lhs)
+            mut as list of data: l2 = stdSetToList(rhs)
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (el1 in l1) {
+                  infinite (el2 in l2) {
+                        count = count + 1
+                        res[count] = [el1, el2]
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setPowerSet (as set of data: items) as list of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: current_powerset = [stdSetToSet([])]
+            infinite (el in l) {
+                  mut as list of data: new_sets = []
+                  mut as int64: new_len = 0
+                  infinite (curr_s in current_powerset) {
+                        new_len = new_len + 1
+                        new_sets[new_len] = stdSetInclude(curr_s, el)
+                  }
+                  infinite (ns in new_sets) {
+                        mut as int64: clen = 0
+                        infinite (k in current_powerset) { clen = clen + 1 }
+                        current_powerset[clen + 1] = ns
+                  }
+            }
+            emit(nice, current_powerset, "ok")
+      }
+}

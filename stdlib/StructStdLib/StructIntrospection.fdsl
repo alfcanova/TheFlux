@@ -1,0 +1,193 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StructStdLib
+#L Dominio: StructIntrospection
+#L ==============================================================================
+
+contract (StructIntrospectionContract) {
+      op structIsStruct (as data: instance) as bool
+      op structIsInstance (as data: instance, as string: name) as bool
+      op structHasField (as data: instance, as string: field) as bool
+      op structFields (as string: name) as list of data
+      op structFieldCount (as string: name) as int64
+      op structFieldType (as string: name, as string: field) as string
+      op structIsFieldMutable (as string: name, as string: field) as bool
+      op structMutableFields (as string: name) as list of data
+      op structImmutableFields (as string: name) as list of data
+}
+
+agent (StructStdLib) impl StructIntrospectionContract {
+      #L StructIntrospectionContract
+      #L ==============================================================================
+
+      op structIsStruct (as data: instance) as bool ==> {
+            mut as string: tname = _extractStructType(instance)
+            mut as bool: is_s = false
+            route {
+                  tname != "" and tname != "map" and tname != "list" and tname != "set" and tname != "int64" and tname != "float64" and tname != "string" and tname != "bool" and tname != "datetime" ==> {
+                        is_s = true
+                  }
+            }
+            emit(nice, is_s, "ok")
+      }
+
+      op structIsInstance (as data: instance, as string: name) as bool ==> {
+            mut as string: actual = _extractStructType(instance)
+            mut as bool: is_match = (actual == name and name != "")
+            emit(nice, is_match, "ok")
+      }
+
+      op structHasField (as data: instance, as string: field) as bool ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as bool: has = false
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  route {
+                        sk == field ==> {
+                              has = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, has, "ok")
+      }
+
+      op structFields (as string: name) as list of data ==> {
+            mut as list of data: fields = []
+            route {
+                  name == "Evento" ==> {
+                        fields = ["nome", "QUANDO", "contador"]
+                  }
+                  name == "Transacao" ==> {
+                        fields = ["id", "valor", "timestamp_ms"]
+                  }
+                  name == "Pessoa" ==> {
+                        fields = ["nome", "idade"]
+                  }
+                  name == "PacoteRede" ==> {
+                        fields = ["origem", "destino", "payload", "checksum"]
+                  }
+                  _ ==> {
+                        route {
+                              name != "" ==> {
+                                    mut as map: m = _extractStructMap(name)
+                                    infinite (k in m) {
+                                          fields = fields + ["" + k]
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, fields, "ok")
+      }
+
+      op structFieldCount (as string: name) as int64 ==> {
+            mut as list of data: fields = structFields(name)
+            mut as int64: count = 0
+            infinite (f in fields) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op structFieldType (as string: name, as string: field) as string ==> {
+            mut as string: t = "string"
+            route {
+                  name == "Evento" ==> {
+                        route {
+                              field == "QUANDO" ==> {
+                                    t = "datetime"
+                              }
+                              field == "contador" ==> {
+                                    t = "int64"
+                              }
+                              _ ==> {
+                                    t = "string"
+                              }
+                        }
+                  }
+                  name == "Transacao" ==> {
+                        route {
+                              field == "valor" ==> {
+                                    t = "float64"
+                              }
+                              field == "timestamp_ms" ==> {
+                                    t = "int64"
+                              }
+                              _ ==> {
+                                    t = "string"
+                              }
+                        }
+                  }
+                  name == "Pessoa" ==> {
+                        route {
+                              field == "idade" ==> {
+                                    t = "int64"
+                              }
+                              _ ==> {
+                                    t = "string"
+                              }
+                        }
+                  }
+                  name == "PacoteRede" ==> {
+                        route {
+                              field == "payload" ==> {
+                                    t = "string"
+                              }
+                              _ ==> {
+                                    t = "int64"
+                              }
+                        }
+                  }
+                  _ ==> {
+                        route {
+                              _isFieldMutable(field) ==> {
+                                    t = "string"
+                              }
+                              _ ==> {
+                                    t = "int64"
+                              }
+                        }
+                  }
+            }
+            emit(nice, t, "ok")
+      }
+
+      op structIsFieldMutable (as string: name, as string: field) as bool ==> {
+            mut as bool: m = _isFieldMutable(field)
+            emit(nice, m, "ok")
+      }
+
+      op structMutableFields (as string: name) as list of data ==> {
+            mut as list of data: all_f = structFields(name)
+            mut as list of data: muts = []
+            mut as int64: sz = 0
+            infinite (f in all_f) {
+                  mut as string: sf = "" + f
+                  route {
+                        _isFieldMutable(sf) ==> {
+                              sz = sz + 1
+                              muts[sz] = sf
+                        }
+                  }
+            }
+            emit(nice, muts, "ok")
+      }
+
+      op structImmutableFields (as string: name) as list of data ==> {
+            mut as list of data: all_f = structFields(name)
+            mut as list of data: imuts = []
+            mut as int64: sz = 0
+            infinite (f in all_f) {
+                  mut as string: sf = "" + f
+                  route {
+                        not _isFieldMutable(sf) ==> {
+                              sz = sz + 1
+                              imuts[sz] = sf
+                        }
+                  }
+            }
+            emit(nice, imuts, "ok")
+      }
+
+      #L ==============================================================================
+}

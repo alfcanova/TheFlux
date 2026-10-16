@@ -1,0 +1,283 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Dominio: ConvertBase
+#L ==============================================================================
+
+contract (ConvertBaseContract) {
+      op convertIntToHex (as int64: value) as string
+      op convertIntToHexPadded (as int64: value, as int64: width) as string
+      op convertIntToBinary (as int64: value) as string
+      op convertIntToBinaryPadded (as int64: value, as int64: width) as string
+      op convertIntToOctal (as int64: value) as string
+      op convertIntToOctalPadded (as int64: value, as int64: width) as string
+      op convertIntToRadix (as int64: value, as int64: base) as string
+      op convertParseRadix (as string: text, as int64: base) as int64
+      op convertParseRadixOrDefault (as string: text, as int64: base, as int64: default) as int64
+}
+
+agent (ConvertStdLib) impl ConvertBaseContract {
+      #L 2. ConvertBaseContract
+      #L ==============================================================================
+      op convertIntToHex (as int64: value) as string ==> {
+            route {
+                  value == 0 ==> { emit(nice, "0x0", "ok") }
+            }
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: hex_digits = "0123456789ABCDEF"
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+            }
+            route {
+                  negative ==> { res = "-0x" + res }
+                  not negative ==> { res = "0x" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertIntToHexPadded (as int64: value, as int64: width) as string ==> {
+            mut as string: raw = ""
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            route {
+                  v == 0 ==> { raw = "0" }
+            }
+            mut as string: hex_digits = "0123456789ABCDEF"
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 16
+                  raw = hex_digits[rem + 1] + raw
+                  v = v /i 16
+            }
+            mut as int64: len = 0
+            infinite (c in raw) { len = len + 1 }
+            mut as string: padded = raw
+            infinite (len < width) {
+                  padded = "0" + padded
+                  len = len + 1
+            }
+            route {
+                  negative ==> { emit(nice, "-0x" + padded, "ok") }
+                  not negative ==> { emit(nice, "0x" + padded, "ok") }
+            }
+            emit(nice, "0x" + padded, "ok")
+      }
+
+      op convertIntToBinary (as int64: value) as string ==> {
+            route {
+                  value == 0 ==> { emit(nice, "0b0", "ok") }
+            }
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 2
+                  route {
+                        rem == 0 ==> { res = "0" + res }
+                        rem == 1 ==> { res = "1" + res }
+                  }
+                  v = v /i 2
+            }
+            route {
+                  negative ==> { res = "-0b" + res }
+                  not negative ==> { res = "0b" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertIntToBinaryPadded (as int64: value, as int64: width) as string ==> {
+            mut as string: raw = ""
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            route {
+                  v == 0 ==> { raw = "0" }
+            }
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 2
+                  route {
+                        rem == 0 ==> { raw = "0" + raw }
+                        rem == 1 ==> { raw = "1" + raw }
+                  }
+                  v = v /i 2
+            }
+            mut as int64: len = 0
+            infinite (c in raw) { len = len + 1 }
+            mut as string: padded = raw
+            infinite (len < width) {
+                  padded = "0" + padded
+                  len = len + 1
+            }
+            route {
+                  negative ==> { emit(nice, "-0b" + padded, "ok") }
+                  not negative ==> { emit(nice, "0b" + padded, "ok") }
+            }
+            emit(nice, "0b" + padded, "ok")
+      }
+
+      op convertIntToOctal (as int64: value) as string ==> {
+            route {
+                  value == 0 ==> { emit(nice, "0o0", "ok") }
+            }
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 8
+                  res = ("" + rem) + res
+                  v = v /i 8
+            }
+            route {
+                  negative ==> { res = "-0o" + res }
+                  not negative ==> { res = "0o" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertIntToOctalPadded (as int64: value, as int64: width) as string ==> {
+            mut as string: raw = ""
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            route {
+                  v == 0 ==> { raw = "0" }
+            }
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 8
+                  raw = ("" + rem) + raw
+                  v = v /i 8
+            }
+            mut as int64: len = 0
+            infinite (c in raw) { len = len + 1 }
+            mut as string: padded = raw
+            infinite (len < width) {
+                  padded = "0" + padded
+                  len = len + 1
+            }
+            route {
+                  negative ==> { emit(nice, "-0o" + padded, "ok") }
+                  not negative ==> { emit(nice, "0o" + padded, "ok") }
+            }
+            emit(nice, "0o" + padded, "ok")
+      }
+
+      op convertIntToRadix (as int64: value, as int64: base) as string ==> {
+            route {
+                  base < 2 or base > 36 ==> { emit(nice, "", "ok") }
+                  value == 0 ==> { emit(nice, "0", "ok") }
+            }
+            mut as string: alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as int64: v = value
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            mut as string: res = ""
+            infinite (v > 0) {
+                  mut as int64: rem = v /r base
+                  res = alphabet[rem + 1] + res
+                  v = v /i base
+            }
+            route {
+                  negative ==> { res = "-" + res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseRadixOrDefault (as string: text, as int64: base, as int64: default) as int64 ==> {
+            route {
+                  base < 2 or base > 36 ==> { emit(nice, default, "ok") }
+            }
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, default, "ok") }
+            }
+            mut as string: alphabet_upper = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as string: alphabet_lower = "0123456789abcdefghijklmnopqrstuvwxyz"
+            mut as bool: negative = false
+            mut as int64: start_idx = 1
+            route {
+                  text[1] == "-" ==> {
+                        negative = true
+                        start_idx = 2
+                  }
+                  text[1] == "+" ==> {
+                        start_idx = 2
+                  }
+            }
+            mut as int64: res = 0
+            mut as bool: valid = true
+            infinite (i in start_idx .. len) {
+                  route {
+                        valid ==> {
+                              mut as string: ch = text[i]
+                              mut as int64: d = -1
+                              mut as int64: pos = 1
+                              infinite (pos <= base) {
+                                    route {
+                                          ch == alphabet_upper[pos] or ch == alphabet_lower[pos] ==> {
+                                                d = pos - 1
+                                          }
+                                    }
+                                    pos = pos + 1
+                              }
+                              route {
+                                    d < 0 ==> { valid = false }
+                                    d >= 0 ==> { res = res * base + d }
+                              }
+                        }
+                  }
+            }
+            route {
+                  not valid ==> { emit(nice, default, "ok") }
+                  valid and negative ==> { emit(nice, 0 - res, "ok") }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseRadix (as string: text, as int64: base) as int64 ==> {
+            emit(nice, convertParseRadixOrDefault(text, base, 0), "ok")
+      }
+
+      #L ==============================================================================
+}

@@ -1,0 +1,114 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatShape
+#L ==============================================================================
+
+contract (StatShapeContract) {
+      op statSkewnessPopulation (as list of data: data_points) as float64
+      op statSkewnessSample (as list of data: data_points) as float64
+      op statKurtosisPopulation (as list of data: data_points) as float64
+      op statKurtosisSample (as list of data: data_points) as float64
+      op statRawMoment (as list of data: data_points, as int64: order) as float64
+      op statCentralMoment (as list of data: data_points, as int64: order) as float64
+}
+
+agent (StatStdLib) impl StatShapeContract {
+      #L 4. StatShapeContract
+      #L ==============================================================================
+
+      op statRawMoment (as list of data: data_points, as int64: order) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: sum = 0.0
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  mut as float64: p = v ^e order
+                  sum = sum + p
+            }
+            emit(nice, sum /f (n as float64), "ok")
+      }
+
+      op statCentralMoment (as list of data: data_points, as int64: order) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mu = statMean(data_points)
+            mut as float64: sum = 0.0
+            infinite (x in data_points) {
+                  mut as float64: diff = (x as float64) - mu
+                  mut as float64: p = diff ^e order
+                  sum = sum + p
+            }
+            emit(nice, sum /f (n as float64), "ok")
+      }
+
+      op statSkewnessPopulation (as list of data: data_points) as float64 ==> {
+            mut as float64: m2 = statCentralMoment(data_points, 2)
+            mut as float64: m3 = statCentralMoment(data_points, 3)
+            route {
+                  m2 <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: s = m2 ^r 2
+            mut as float64: s3 = s * s * s
+            emit(nice, m3 /f s3, "ok")
+      }
+
+      op statSkewnessSample (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n <= 2 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: g1 = statSkewnessPopulation(data_points)
+            mut as float64: n_flt = n as float64
+            mut as float64: factor_prod = (n_flt * (n_flt - 1.0))
+            mut as float64: factor_sqrt = factor_prod ^r 2
+            mut as float64: adj = factor_sqrt /f (n_flt - 2.0)
+            emit(nice, adj * g1, "ok")
+      }
+
+      op statKurtosisPopulation (as list of data: data_points) as float64 ==> {
+            mut as float64: m2 = statCentralMoment(data_points, 2)
+            mut as float64: m4 = statCentralMoment(data_points, 4)
+            route {
+                  m2 <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: m2_sq = m2 * m2
+            emit(nice, (m4 /f m2_sq) - 3.0, "ok")
+      }
+
+      op statKurtosisSample (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n <= 3 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: m2 = statCentralMoment(data_points, 2)
+            mut as float64: m4 = statCentralMoment(data_points, 4)
+            route {
+                  m2 <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: n_flt = n as float64
+            mut as float64: ratio = m4 /f (m2 * m2)
+            mut as float64: c1 = (n_flt - 1.0) /f ((n_flt - 2.0) * (n_flt - 3.0))
+            mut as float64: term = ((n_flt + 1.0) * ratio) - (3.0 * (n_flt - 1.0))
+            emit(nice, c1 * term, "ok")
+      }
+
+      #L ==============================================================================
+}

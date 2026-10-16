@@ -1,0 +1,135 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicCalculus
+#L ==============================================================================
+
+contract (SymbolicCalculusContract) {
+      op symbolicDifferentiate (as string: expression, as string: variable) as string
+      op symbolicDiffN (as string: expression, as string: variable, as int64: order) as string
+      op symbolicIntegrate (as string: expression, as string: variable) as string
+      op symbolicDefiniteIntegrate (as string: expression, as string: variable, as float64: lower_bound, as float64: upper_bound) as float64
+      op symbolicTaylorSeries (as string: expression, as string: variable, as float64: point, as int64: order) as string
+      op symbolicLimit (as string: expression, as string: variable, as float64: target, as string: direction) as string
+}
+
+agent (SymbolicStdLib) impl SymbolicCalculusContract {
+      op symbolicDifferentiate (as string: expression, as string: variable) as string ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            toks = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(toks)
+            mut as list of data: poly = _symEvalRpnToPoly(rpn)
+            mut as list of data: d_poly = _symPolyDifferentiate(poly, variable)
+            mut as string: res = _symFormatPoly(d_poly)
+            emit(nice, res, "ok")
+      }
+
+      op symbolicDiffN (as string: expression, as string: variable, as int64: order) as string ==> {
+            mut as string: cur = expression
+            route {
+                  order <= 0 ==> {
+                        emit(nice, cur, "ok")
+                  }
+            }
+            mut as int64: i = 1
+            infinite (i <= order) {
+                  cur = symbolicDifferentiate(cur, variable)
+                  i = i + 1
+            }
+            emit(nice, cur, "ok")
+      }
+
+      op symbolicIntegrate (as string: expression, as string: variable) as string ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            toks = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(toks)
+            mut as list of data: poly = _symEvalRpnToPoly(rpn)
+            mut as list of data: int_poly = _symPolyIntegrate(poly, variable)
+            mut as string: res = _symFormatPoly(int_poly)
+            emit(nice, res, "ok")
+      }
+
+      op symbolicDefiniteIntegrate (as string: expression, as string: variable, as float64: lower_bound, as float64: upper_bound) as float64 ==> {
+            mut as string: antideriv = symbolicIntegrate(expression, variable)
+            mut as map: map_u = map{}
+            map_u[variable] = upper_bound
+            mut as map: map_l = map{}
+            map_l[variable] = lower_bound
+            mut as float64: vu = symbolicEvaluate(antideriv, map_u)
+            mut as float64: vl = symbolicEvaluate(antideriv, map_l)
+            emit(nice, vu - vl, "ok")
+      }
+
+      op symbolicTaylorSeries (as string: expression, as string: variable, as float64: point, as int64: order) as string ==> {
+            mut as float64: fact = 1.0
+            mut as string: cur_d = expression
+            mut as list of data: poly_res = []
+
+            mut as int64: k = 0
+            infinite (k <= order) {
+                  route {
+                        k > 0 ==> {
+                              cur_d = symbolicDifferentiate(cur_d, variable)
+                              fact = fact * (k as float64)
+                        }
+                  }
+                  mut as map: eval_m = map{}
+                  eval_m[variable] = point
+                  mut as float64: vk = symbolicEvaluate(cur_d, eval_m)
+                  mut as float64: coeff = vk /f fact
+                  route {
+                        _symAbsFloat(coeff) > 0.000000001 ==> {
+                              mut as map: pows = map{}
+                              route {
+                                    k > 0 ==> {
+                                          pows[variable] = k
+                                    }
+                              }
+                              mut as list of data: single_term = [_symMakeMono(coeff, pows)]
+                              poly_res = _symPolyAdd(poly_res, single_term)
+                        }
+                  }
+                  k = k + 1
+            }
+
+            mut as string: res_str = _symFormatPoly(poly_res)
+            emit(nice, res_str, "ok")
+      }
+
+      op symbolicLimit (as string: expression, as string: variable, as float64: target, as string: direction) as string ==> {
+            mut as float64: eps = 0.0001
+            mut as float64: val = 0.0
+            route {
+                  direction == "left" ==> {
+                        mut as map: ml = map{}
+                        ml[variable] = target - eps
+                        val = symbolicEvaluate(expression, ml)
+                  }
+                  direction == "right" ==> {
+                        mut as map: mr = map{}
+                        mr[variable] = target + eps
+                        val = symbolicEvaluate(expression, mr)
+                  }
+                  _ ==> {
+                        mut as map: ml2 = map{}
+                        ml2[variable] = target - eps
+                        mut as map: mr2 = map{}
+                        mr2[variable] = target + eps
+                        mut as float64: vl = symbolicEvaluate(expression, ml2)
+                        mut as float64: vr = symbolicEvaluate(expression, mr2)
+                        val = (vl + vr) /f 2.0
+                  }
+            }
+            mut as int64: whole = val as int64
+            route {
+                  _symAbsFloat(val - (whole as float64)) < 0.0005 ==> {
+                        emit(nice, "" + whole + ".0", "ok")
+                  }
+            }
+            emit(nice, _symFormatFloat1Dec(val), "ok")
+      }
+
+      #L ==============================================================================
+      #L 8. SymbolicMatrixContract (Fase 2)
+      #L ==============================================================================
+
+}

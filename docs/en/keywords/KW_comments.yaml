@@ -1,0 +1,110 @@
+keyword: '#L, #B ... B#, #D ... D#'
+category: Comment / Documentation
+description: 'Três formas de comentário na linguagem TheFlux: `#L` para comentários de linha, `#B ... B#` para comentários
+  em block multi-linha, e `#D ... D#` para docstrings estruturadas associadas a declarations. Docstrings suportam fields no
+  formato bullet (- chave: value) extraídos pelo lexer.'
+syntax: '#L <texto>                            # Comentário de linha (até quebra de linha)
+
+  #B <texto> B#                         # Comentário em bloco multi-linha
+
+  #D                                    # Início da docstring
+
+  - <chave>: <valor>                    # Campo estruturado
+
+  - <chave>: <valor>
+
+  D#                                    # Fim da docstring'
+pseudocode: "#L comentario de linha\n#B\n   bloco comentado\nB#\n#D documentacao usada por ferramentas\nD#"
+usages:
+- name: Comentário de linha (#L)
+  description: Comentário de linha única estendendo-se até a quebra de linha.
+  examples:
+  - code: '#L Este é um comentário de linha única'
+  - code: '#L Rota condicional com padrão wildcard'
+- name: Comentário em block (#B ... B#)
+  description: Comentário que pode abranger múltiplas linhas sem afetar a indentação.
+  examples:
+  - code: '#B
+
+      Este é um comentário
+
+      em bloco com múltiplas linhas
+
+      B#'
+- name: Docstring estruturada (#D ... D#)
+  description: Documentação automática estruturada associada ao program ou declarations.
+  examples:
+  - code: "#D\n- Programa: DocumentacaoExemplo\n- Descricao: Exemplo de documentacao gerada automaticamente.\n- Autor: TheFlux\n\
+      - Versao: 0.5\nD#\nprogram (ExemploDocumentacao) {\n      print(\"Exemplo\")\n}"
+restrictions:
+- '#B ... B# e #D ... D# cannot be aninhados.'
+- Docstrings são associadas à próxima declaration ou statement.
+- 'Fields de docstring começam com -, * ou + e contêm o pattern chave: value.'
+- Comentários e docstrings são tratados at compile time e não geram overhead em runtime nos backends.
+errors:
+- code: LEX001
+  mnemonic: INVALID_HASH_COMMENT
+  severity: Error
+  trigger: Use of '#' character without a valid qualifier ('#L', '#B', or '#D')
+  message: 'Invalid ''#'' character: expected ''#L'' for line comment, ''#B...B#'' for block or ''#D...D#'' for docstring'
+  hint: Use '#L' for single-line comments or '#B ... B#' for block comments
+  example_bad: '# comentario errado
+
+    '
+  example_good: '#L comentario correto
+
+    '
+- code: LEX003
+  mnemonic: TABULATION_ERROR
+  severity: Error
+  trigger: Use of tabulation character ('\t') in source code
+  message: Tabulation character '\t' is prohibited in TheFlux source code; use multiples of 6 spaces
+  hint: Replace tabulation characters '\t' with multiples of 6 spaces
+  example_bad: 'program (Main) {
+
+    \tprint("ola")
+
+    }
+
+    '
+  example_good: "program (Main) {\n      print(\"ola\")\n}\n"
+- code: LEX005
+  mnemonic: UNTERMINATED_DOCSTRING
+  severity: Error
+  trigger: Block comment '#B' opened without corresponding closing delimiter 'B#' before end of file
+  message: Block comment opened with '#B' was not closed before end of file
+  hint: Add 'B#' at the end of the block comment to close it properly
+  example_bad: '#D
+
+    - Titulo: Exemplo
+
+    program (Main) { }
+
+    '
+  example_good: '#D
+
+    - Titulo: Exemplo
+
+    D#
+
+    program (Main) { }
+
+    '
+- code: LEX006
+  mnemonic: UNTERMINATED_BLOCK_COMMENT
+  severity: Error
+  trigger: Docstring '#D' opened without corresponding closing delimiter 'D#' before end of file
+  message: Docstring opened with '#D' was not closed before end of file
+  hint: Add 'D#' at the end of the docstring to close it properly
+  example_bad: '#B
+
+    Comentário sem fechar
+
+    '
+  example_good: '#B
+
+    Comentário fechado
+
+    B#
+
+    '

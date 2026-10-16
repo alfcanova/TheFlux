@@ -1,0 +1,172 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: MatrixAdvancedDecomposition
+#L ==============================================================================
+
+contract (MatrixAdvancedDecompositionContract) {
+      op matrixCholesky (as map: matrix) as map
+      op matrixSolveCholesky (as map: L, as list of data: b) as list of data
+      op matrixPowerIteration (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data
+      op matrixRank (as map: matrix, as float64: tolerance) as int64
+      op matrixFrobeniusNorm (as map: matrix) as float64
+}
+
+agent (LinAlgStdLib) impl MatrixAdvancedDecompositionContract {
+      #L 10. MatrixAdvancedDecompositionContract - Cholesky, Autovalores, Posto
+      #L ==============================================================================
+
+      op matrixCholesky (as map: matrix) as map ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as map: L = tensorNew([n, n])
+
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  mut as int64: j = 1
+                  infinite (j <= i) {
+                        mut as float64: sum = 0.0
+                        mut as int64: k = 1
+                        infinite (k < j) {
+                              sum = sum + tensorGetAt(L, [i, k]) * tensorGetAt(L, [j, k])
+                              k = k + 1
+                        }
+
+                        route {
+                              i == j ==> {
+                                    mut as float64: diag_val = tensorGetAt(matrix, [i, i]) - sum
+                                    L = tensorSetAt(L, [i, j], _sqrt(diag_val))
+                              }
+                              i != j ==> {
+                                    mut as float64: l_jj = tensorGetAt(L, [j, j])
+                                    mut as float64: off_val = (tensorGetAt(matrix, [i, j]) - sum) /f l_jj
+                                    L = tensorSetAt(L, [i, j], off_val)
+                              }
+                        }
+                        j = j + 1
+                  }
+                  i = i + 1
+            }
+            emit(nice, L, "ok")
+      }
+
+      op matrixSolveCholesky (as map: L, as list of data: b) as list of data ==> {
+            mut as list of data: sh = L["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+
+            #L 1. Substituicao Progressiva Ly = b
+            mut as list of data: y = []
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  mut as float64: sum = 0.0
+                  mut as int64: j = 1
+                  infinite (j < i) {
+                        sum = sum + tensorGetAt(L, [i, j]) * (y[j] as float64)
+                        j = j + 1
+                  }
+                  y[i] = ((b[i] as float64) - sum) /f tensorGetAt(L, [i, i])
+                  i = i + 1
+            }
+
+            #L 2. Substituicao Regressiva L^T x = y
+            mut as list of data: x = []
+            mut as int64: k_init = 1
+            infinite (k_init <= n) {
+                  x[k_init] = 0.0
+                  k_init = k_init + 1
+            }
+
+            i = n
+            infinite {
+                  route { i < 1 ==> { break } }
+                  mut as float64: sum = 0.0
+                  mut as int64: j = i + 1
+                  infinite (j <= n) {
+                        sum = sum + tensorGetAt(L, [j, i]) * (x[j] as float64)
+                        j = j + 1
+                  }
+                  x[i] = ((y[i] as float64) - sum) /f tensorGetAt(L, [i, i])
+                  i = i - 1
+            }
+            emit(nice, x, "ok")
+      }
+
+      op matrixPowerIteration (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as list of data: v = []
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  v[i] = 1.0
+                  i = i + 1
+            }
+            v = vectorNormalize(v)
+
+            mut as float64: lambda_old = 0.0
+            mut as float64: lambda_new = 0.0
+            mut as int64: iter = 1
+
+            infinite (iter <= max_iters) {
+                  mut as list of data: w = []
+                  mut as int64: r = 1
+                  infinite (r <= n) {
+                        mut as float64: acc = 0.0
+                        mut as int64: c = 1
+                        infinite (c <= n) {
+                              acc = acc + tensorGetAt(matrix, [r, c]) * (v[c] as float64)
+                              c = c + 1
+                        }
+                        w[r] = acc
+                        r = r + 1
+                  }
+
+                  lambda_new = vectorDotProduct(v, w)
+                  v = vectorNormalize(w)
+
+                  mut as float64: diff = lambda_new - lambda_old
+                  route { diff < 0.0 ==> { diff = 0.0 - diff } }
+                  route {
+                        diff < tolerance and iter > 1 ==> {
+                              break
+                        }
+                  }
+                  lambda_old = lambda_new
+                  iter = iter + 1
+            }
+            emit(nice, [lambda_new, v], "ok")
+      }
+
+      op matrixRank (as map: matrix, as float64: tolerance) as int64 ==> {
+            mut as list of data: qr_res = matrixQR(matrix)
+            mut as map: R = qr_res[2] as map
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: min_dim = sh[1] as int64
+            route {
+                  (sh[2] as int64) < min_dim ==> {
+                        min_dim = sh[2] as int64
+                  }
+            }
+
+            mut as int64: rank = 0
+            mut as int64: i = 1
+            infinite (i <= min_dim) {
+                  mut as float64: diag = tensorGetAt(R, [i, i])
+                  route { diag < 0.0 ==> { diag = 0.0 - diag } }
+                  route { diag > tolerance ==> { rank = rank + 1 } }
+                  i = i + 1
+            }
+            emit(nice, rank, "ok")
+      }
+
+      op matrixFrobeniusNorm (as map: matrix) as float64 ==> {
+            mut as list of data: buf = matrix["data"] as list of data
+            mut as float64: sum = 0.0
+            infinite (x in buf) {
+                  mut as float64: val = x as float64
+                  sum = sum + val * val
+            }
+            mut as float64: res = _sqrt(sum)
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

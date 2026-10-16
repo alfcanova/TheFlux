@@ -1,0 +1,116 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotEngineeringControl
+#L ==============================================================================
+
+contract (PlotEngineeringControlContract) {
+      op plotBode (as map: ctx, as list of float64: omegas, as list of float64: mag_db, as list of float64: phase_deg) as map
+      op plotNyquist (as map: ctx, as list of float64: real_parts, as list of float64: imag_parts) as map
+      op plotNichols (as map: ctx, as list of float64: phase_deg, as list of float64: mag_db) as map
+      op plotSmithChart (as map: ctx, as list of float64: gamma_re, as list of float64: gamma_im) as map
+      op plotKaplanMeier (as map: ctx, as list of float64: times, as list of int64: events) as map
+      op plotRocCurve (as map: ctx, as list of float64: fpr, as list of float64: tpr) as map
+      op plotPareto (as map: ctx, as list of float64: frequencies, as list of string: categories) as map
+      op plotRadar (as map: ctx, as list of float64: values, as list of string: axes_labels) as map
+      op plotCoxcomb (as map: ctx, as list of float64: values, as list of string: sector_labels) as map
+      op plotUxHeatmap (as map: ctx, as list of float64: click_xs, as list of float64: click_ys, as list of float64: weights) as map
+}
+
+agent (GraphPlotStdLib) impl PlotEngineeringControlContract {
+      #L 9. PlotEngineeringControlContract (Família 7)
+      #L =====================================================================
+
+      op plotBode (as map: ctx, as list of float64: omegas, as list of float64: mag_db, as list of float64: phase_deg) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "bode"
+            layer["omegas"] = omegas
+            layer["mag"] = mag_db
+            layer["phase"] = phase_deg
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotNyquist (as map: ctx, as list of float64: real_parts, as list of float64: imag_parts) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "nyquist"
+            layer["re"] = real_parts
+            layer["im"] = imag_parts
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotNichols (as map: ctx, as list of float64: phase_deg, as list of float64: mag_db) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "nichols"
+            layer["phase"] = phase_deg
+            layer["mag"] = mag_db
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotSmithChart (as map: ctx, as list of float64: gamma_re, as list of float64: gamma_im) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "smith"
+            layer["gre"] = gamma_re
+            layer["gim"] = gamma_im
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotKaplanMeier (as map: ctx, as list of float64: times, as list of int64: events) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "kaplan_meier"
+            layer["times"] = times
+            layer["events"] = events
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotRocCurve (as map: ctx, as list of float64: fpr, as list of float64: tpr) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "roc"
+            layer["fpr"] = fpr
+            layer["tpr"] = tpr
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotPareto (as map: ctx, as list of float64: frequencies, as list of string: categories) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "pareto"
+            layer["freqs"] = frequencies
+            layer["cats"] = categories
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotRadar (as map: ctx, as list of float64: values, as list of string: axes_labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "radar"
+            layer["values"] = values
+            layer["labels"] = axes_labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotCoxcomb (as map: ctx, as list of float64: values, as list of string: sector_labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "coxcomb"
+            layer["values"] = values
+            layer["labels"] = sector_labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotUxHeatmap (as map: ctx, as list of float64: click_xs, as list of float64: click_ys, as list of float64: weights) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "ux_heatmap"
+            layer["cxs"] = click_xs
+            layer["cys"] = click_ys
+            layer["weights"] = weights
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

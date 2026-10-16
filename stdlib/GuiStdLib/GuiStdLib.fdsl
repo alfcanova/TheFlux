@@ -1,0 +1,17 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use GuiConstants.fdsl
+use GuiState.fdsl
+use GuiTheme.fdsl
+use GuiLayout.fdsl
+use GuiWidgetBasic.fdsl
+use GuiWidgetButton.fdsl
+use GuiWidgetInput.fdsl
+use GuiWidgetSlider.fdsl
+use GuiScrollArea.fdsl
+
+agent (GuiStdLib) {
+}

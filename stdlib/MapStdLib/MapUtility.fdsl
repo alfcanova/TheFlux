@@ -1,0 +1,94 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapUtility
+#L ==============================================================================
+
+contract (MapUtilityContract) {
+      op mapEquals (as map: lhs, as map: rhs) as bool
+      op mapSwapKeys (as map: record, as string: key1, as string: key2) as map
+      op mapJoin (as map: record, as string: entry_sep, as string: kv_sep) as string
+      op mapCount (as map: record, as string: key) as int64
+}
+
+agent (MapStdLib) impl MapUtilityContract {
+      #L 8. MapUtilityContract (4 operacoes)
+      #L ==============================================================================
+      op mapEquals (as map: lhs, as map: rhs) as bool ==> {
+            mut as int64: n_lhs = 0
+            infinite (k in lhs) {
+                  n_lhs = n_lhs + 1
+            }
+            mut as int64: n_rhs = 0
+            infinite (k in rhs) {
+                  n_rhs = n_rhs + 1
+            }
+            mut as bool: eq = n_lhs == n_rhs
+            route {
+                  eq ==> {
+                        infinite (k in lhs) {
+                              route {
+                                    lhs[k] != rhs[k] ==> {
+                                          eq = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            imut as bool: res = eq
+            emit(nice, res, "ok")
+      }
+
+      op mapJoin (as map: record, as string: entry_sep, as string: kv_sep) as string ==> {
+            mut as string: result = ""
+            mut as bool: first = true
+            infinite (k in record) {
+                  route {
+                        first ==> {
+                              result = "" + k + kv_sep + record[k]
+                              first = false
+                        }
+                        not first ==> {
+                              result = result + entry_sep + k + kv_sep + record[k]
+                        }
+                  }
+            }
+            imut as string: res = result
+            emit(nice, res, "ok")
+      }
+
+      op mapSwapKeys (as map: record, as string: key1, as string: key2) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  route {
+                        k == key1 ==> {
+                              m[key1] = record[key2]
+                        }
+                        k == key2 ==> {
+                              m[key2] = record[key1]
+                        }
+                        k != key1 and k != key2 ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapCount (as map: record, as string: key) as int64 ==> {
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        k == key ==> {
+                              count = 1
+                              break
+                        }
+                  }
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

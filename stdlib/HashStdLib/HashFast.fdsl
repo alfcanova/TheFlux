@@ -1,0 +1,152 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Dominio: HashFast
+#L ==============================================================================
+
+contract (HashFastContract) {
+      op hashDjb2 (as string: text) as int64
+      op hashDjb2a (as string: text) as int64
+      op hashSdbm (as string: text) as int64
+      op hashFnv1a32 (as string: text) as int64
+      op hashFnv1a64 (as string: text) as int64
+      op hashMurmur3 (as string: text) as int64
+      op hashXxHash64 (as string: text) as int64
+      op hashXxh3 (as string: text) as int64
+      op hashCombine (as int64: h1, as int64: h2) as int64
+      op hashRolling (as string: text) as int64
+      op hashRollingUpdate (as int64: old_hash, as string: old_char, as string: new_char, as int64: len) as int64
+}
+
+agent (HashStdLib) impl HashFastContract {
+      #L 2. HashFastContract
+      #L ==============================================================================
+      op hashDjb2 (as string: text) as int64 ==> {
+            mut as int64: h = 5381
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h * 33 + code) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashDjb2a (as string: text) as int64 ==> {
+            mut as int64: h = 5381
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = ((h * 33) ^ code) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashSdbm (as string: text) as int64 ==> {
+            mut as int64: h = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (code + h * 65599) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashFnv1a32 (as string: text) as int64 ==> {
+            mut as int64: h = 2166136261
+            mut as int64: prime = 16777619
+            mut as int64: mask32 = 4294967296
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h ^ code)
+                  h = (h * prime) /r mask32
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashFnv1a64 (as string: text) as int64 ==> {
+            mut as int64: h = 14695981039346656037 /r 9223372036854775807
+            mut as int64: prime = 1099511628211
+            mut as int64: mask64 = 9223372036854775807
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h ^ code)
+                  h = (h * prime) /r mask64
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashMurmur3 (as string: text) as int64 ==> {
+            mut as int64: h = 0
+            mut as int64: c1 = 3432918353
+            mut as int64: c2 = 461845907
+            mut as int64: mask32 = 4294967296
+            infinite (c in text) {
+                  mut as int64: k = _ord(c)
+                  k = (k * c1) /r mask32
+                  k = ((k * 32768) + (k /i 131072)) /r mask32
+                  k = (k * c2) /r mask32
+                  h = (h ^ k)
+                  h = ((h * 16) + (h /i 268435456)) /r mask32
+                  h = (h * 5 + 3864292196) /r mask32
+            }
+            h = (h ^ (h /i 65536))
+            h = (h * 2246822507) /r mask32
+            h = (h ^ (h /i 32768))
+            emit(nice, h, "ok")
+      }
+
+      op hashXxHash64 (as string: text) as int64 ==> {
+            mut as int64: h = 11400714819323198485 /r 9223372036854775807
+            mut as int64: p1 = 11400714819323198485 /r 9223372036854775807
+            mut as int64: p2 = 14029467366897019727 /r 9223372036854775807
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h + code * p2) /r 9223372036854775807
+                  h = ((h * 64) + (h /i 134217728)) /r 9223372036854775807
+                  h = (h * p1) /r 9223372036854775807
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashXxh3 (as string: text) as int64 ==> {
+            emit(nice, hashXxHash64(text), "ok")
+      }
+
+      op hashCombine (as int64: h1, as int64: h2) as int64 ==> {
+            mut as int64: golden = 2654435769
+            mut as int64: term = (h2 + golden + ((h1 * 64) /r 4294967296) + (h1 /i 4)) /r 4294967296
+            mut as int64: res = (h1 ^ term) /r 4294967296
+            emit(nice, res, "ok")
+      }
+
+      op hashRolling (as string: text) as int64 ==> {
+            mut as int64: h = 0
+            mut as int64: p = 31
+            mut as int64: m = 1000000007
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h = (h * p + code) /r m
+            }
+            emit(nice, h, "ok")
+      }
+
+      op hashRollingUpdate (as int64: old_hash, as string: old_char, as string: new_char, as int64: len) as int64 ==> {
+            #L Atualizacao O(1) de janela deslizante Rabin-Karp
+            mut as int64: p = 31
+            mut as int64: m = 1000000007
+            mut as int64: old_code = _ord(old_char)
+            mut as int64: new_code = _ord(new_char)
+            #L Calcula p^(len - 1) % m
+            mut as int64: p_pow = 1
+            mut as int64: step = 1
+            infinite (step < len) {
+                  p_pow = (p_pow * p) /r m
+                  step = step + 1
+            }
+            mut as int64: term = (old_code * p_pow) /r m
+            mut as int64: h = old_hash - term
+            route {
+                  h < 0 ==> { h = h + m }
+            }
+            h = (h * p + new_code) /r m
+            emit(nice, h, "ok")
+      }
+
+      #L ==============================================================================
+}

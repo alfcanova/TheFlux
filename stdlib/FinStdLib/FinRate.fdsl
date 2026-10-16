@@ -1,0 +1,140 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinRate
+#L ==============================================================================
+
+contract (FinRateContract) {
+      op finEffectiveRate (as float64: nominal_rate, as int64: compounding_periods) as float64
+      op finNominalRate (as float64: effective_rate, as int64: compounding_periods) as float64
+      op finConvertRate (as float64: rate, as int64: from_periods, as int64: to_periods) as float64
+      op finRateEquivalent (as float64: rate, as float64: target_period, as float64: base_period) as float64
+      op finMonthlyToDailyRate (as float64: monthly_rate, as int64: days_in_month) as float64
+      op finMonthlyToAnnualRate (as float64: monthly_rate) as float64
+      op finAnnualToDailyRate (as float64: annual_rate, as int64: days_in_year) as float64
+      op finAnnualToMonthlyRate (as float64: annual_rate) as float64
+      op finDailyToMonthlyRate (as float64: daily_rate, as int64: days_in_month) as float64
+      op finDailyToAnnualRate (as float64: daily_rate, as int64: days_in_year) as float64
+      op finRealRate (as float64: nominal_rate, as float64: inflation_rate) as float64
+      op finContinuousCompounding (as FinDecimal: principal, as float64: rate, as float64: periods) as FinDecimal
+}
+
+#L ==============================================================================
+#L 5. FinAmortizationContract
+#L ==============================================================================
+
+agent (FinStdLib) impl FinRateContract {
+      #L 4. FinRateContract
+      #L ==============================================================================
+
+      op finEffectiveRate (as float64: nominal_rate, as int64: compounding_periods) as float64 ==> {
+            route {
+                  compounding_periods <= 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: m = compounding_periods as float64
+            mut as float64: base = 1.0 + (nominal_rate /f m)
+            mut as float64: eff = (base ^e m) - 1.0
+            emit(nice, eff, "ok")
+      }
+
+      op finNominalRate (as float64: effective_rate, as int64: compounding_periods) as float64 ==> {
+            route {
+                  compounding_periods <= 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: m = compounding_periods as float64
+            mut as float64: exp = 1.0 /f m
+            mut as float64: base = (1.0 + effective_rate) ^e exp
+            mut as float64: nom = m * (base - 1.0)
+            emit(nice, nom, "ok")
+      }
+
+      op finConvertRate (as float64: rate, as int64: from_periods, as int64: to_periods) as float64 ==> {
+            route {
+                  from_periods <= 0 or to_periods <= 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: m1 = from_periods as float64
+            mut as float64: m2 = to_periods as float64
+            mut as float64: eff = ((1.0 + (rate /f m1)) ^e m1) - 1.0
+            mut as float64: exp = 1.0 /f m2
+            mut as float64: new_rate = m2 * (((1.0 + eff) ^e exp) - 1.0)
+            emit(nice, new_rate, "ok")
+      }
+
+      op finRateEquivalent (as float64: rate, as float64: target_period, as float64: base_period) as float64 ==> {
+            route {
+                  base_period <= 0.0 or (1.0 + rate) <= 0.0 ==> {
+                        emit(fail, 0.0, "Periodo base invalido ou taxa menor que -100%")
+                  }
+                  _ ==> {
+                        mut as float64: exp = target_period /f base_period
+                        mut as float64: eq_rate = ((1.0 + rate) ^e exp) - 1.0
+                        emit(nice, eq_rate, "ok")
+                  }
+            }
+      }
+
+      op finMonthlyToDailyRate (as float64: monthly_rate, as int64: days_in_month) as float64 ==> {
+            mut as float64: days = days_in_month as float64
+            route {
+                  days <= 0.0 ==> { days = 30.0 }
+            }
+            mut as float64: exp = 1.0 /f days
+            mut as float64: daily_rate = ((1.0 + monthly_rate) ^e exp) - 1.0
+            emit(nice, daily_rate, "ok")
+      }
+
+      op finMonthlyToAnnualRate (as float64: monthly_rate) as float64 ==> {
+            mut as float64: annual_rate = ((1.0 + monthly_rate) ^e 12.0) - 1.0
+            emit(nice, annual_rate, "ok")
+      }
+
+      op finAnnualToDailyRate (as float64: annual_rate, as int64: days_in_year) as float64 ==> {
+            mut as float64: days = days_in_year as float64
+            route {
+                  days <= 0.0 ==> { days = 360.0 }
+            }
+            mut as float64: exp = 1.0 /f days
+            mut as float64: daily_rate = ((1.0 + annual_rate) ^e exp) - 1.0
+            emit(nice, daily_rate, "ok")
+      }
+
+      op finAnnualToMonthlyRate (as float64: annual_rate) as float64 ==> {
+            mut as float64: exp = 1.0 /f 12.0
+            mut as float64: monthly_rate = ((1.0 + annual_rate) ^e exp) - 1.0
+            emit(nice, monthly_rate, "ok")
+      }
+
+      op finDailyToMonthlyRate (as float64: daily_rate, as int64: days_in_month) as float64 ==> {
+            mut as float64: days = days_in_month as float64
+            route {
+                  days <= 0.0 ==> { days = 30.0 }
+            }
+            mut as float64: monthly_rate = ((1.0 + daily_rate) ^e days) - 1.0
+            emit(nice, monthly_rate, "ok")
+      }
+
+      op finDailyToAnnualRate (as float64: daily_rate, as int64: days_in_year) as float64 ==> {
+            mut as float64: days = days_in_year as float64
+            route {
+                  days <= 0.0 ==> { days = 360.0 }
+            }
+            mut as float64: annual_rate = ((1.0 + daily_rate) ^e days) - 1.0
+            emit(nice, annual_rate, "ok")
+      }
+
+      op finRealRate (as float64: nominal_rate, as float64: inflation_rate) as float64 ==> {
+            mut as float64: real_rate = ((1.0 + nominal_rate) /f (1.0 + inflation_rate)) - 1.0
+            emit(nice, real_rate, "ok")
+      }
+
+      op finContinuousCompounding (as FinDecimal: principal, as float64: rate, as float64: periods) as FinDecimal ==> {
+            mut as float64: p_f = (principal.raw as float64) /f 100000000.0
+            mut as float64: e_const = 2.718281828459045
+            mut as float64: exp_val = rate * periods
+            mut as float64: factor = e_const ^e exp_val
+            mut as float64: fv_f = p_f * factor
+            mut as FinDecimal: res = FinDecimal(.raw: (fv_f * 100000000.0) as int64, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

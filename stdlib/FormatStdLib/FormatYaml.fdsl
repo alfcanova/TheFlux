@@ -1,0 +1,608 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Dominio: FormatYaml
+#L ==============================================================================
+
+contract (FormatYamlContract) {
+      op formatParseYaml (as string: yaml_text) as data
+      op formatParseYamlAll (as string: yaml_text) as list of data
+      op formatStringifyYaml (as data: val) as string
+      op formatStringifyYamlAll (as list of data: docs) as string
+      op formatIsValidYaml (as string: yaml_text) as bool
+
+      #L Aliases
+      op parseYaml (as string: yaml_text) as data
+      op parseYamlAll (as string: yaml_text) as list of data
+      op stringifyYaml (as data: val) as string
+      op stringifyYamlAll (as list of data: docs) as string
+      op isValidYaml (as string: yaml_text) as bool
+}
+
+agent (FormatStdLib) impl FormatYamlContract {
+      #L 3. FormatYamlContract (YAML 1.2 Completo)
+      #L ==============================================================================
+
+      op _fmtCharToHexDigit (as string: c) as int64 ==> {
+            mut as int64: hd = -1
+            route {
+                  c >= "0" and c <= "9" ==> { hd = _fmtCharToDigit(c) }
+                  c == "a" or c == "A" ==> { hd = 10 }
+                  c == "b" or c == "B" ==> { hd = 11 }
+                  c == "c" or c == "C" ==> { hd = 12 }
+                  c == "d" or c == "D" ==> { hd = 13 }
+                  c == "e" or c == "E" ==> { hd = 14 }
+                  c == "f" or c == "F" ==> { hd = 15 }
+            }
+            emit(nice, hd, "ok")
+      }
+
+      op _fmtSplitLines (as string: text) as list of string ==> {
+            mut as list of string: lines = []
+            mut as int64: len = _fmtStrLen(text)
+            route {
+                  len == 0 ==> { emit(nice, lines, "ok") }
+            }
+            mut as string: curr = ""
+            mut as int64: line_count = 0
+            infinite (i in 1 .. len) {
+                  mut as string: c = _fmtCharAt(text, i)
+                  route {
+                        c == "\r" ==> {
+                              #L Ignora carriage return
+                        }
+                        c == "\n" ==> {
+                              line_count = line_count + 1
+                              lines[line_count] = curr
+                              curr = ""
+                        }
+                        c != "\r" and c != "\n" ==> {
+                              curr = curr + c
+                        }
+                  }
+            }
+            line_count = line_count + 1
+            lines[line_count] = curr
+            emit(nice, lines, "ok")
+      }
+
+      op _yamlStripComments (as string: line) as string ==> {
+            mut as int64: len = _fmtStrLen(line)
+            mut as string: res = ""
+            mut as bool: in_single = false
+            mut as bool: in_double = false
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(line, i)
+                  route {
+                        c == "'" and not in_double ==> { in_single = not in_single }
+                        c == "\"" and not in_single ==> { in_double = not in_double }
+                        c == "#" and not in_single and not in_double ==> {
+                              break
+                        }
+                  }
+                  res = res + c
+                  i = i + 1
+            }
+            mut as string: clean = _fmtTrimEnd(res)
+            emit(nice, clean, "ok")
+      }
+
+      op _yamlMeasureIndent (as string: line) as int64 ==> {
+            mut as int64: count = 0
+            infinite (c in line) {
+                  route {
+                        c == " " ==> { count = count + 1 }
+                        _ ==> { break }
+                  }
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _yamlParseBlockScalar (as list of data: lines, as int64: start_line, as int64: base_indent, as string: header) as list of data ==> {
+            mut as bool: is_literal = _fmtContains(header, "|")
+            mut as bool: chomp_strip = _fmtContains(header, "-")
+            mut as bool: chomp_keep = _fmtContains(header, "+")
+            mut as string: text_acc = ""
+            mut as int64: curr_line = start_line
+            mut as int64: total_lines = 0
+            infinite (l in lines) { total_lines = total_lines + 1 }
+
+            mut as bool: first = true
+            infinite (curr_line <= total_lines) {
+                  mut as string: line = "" + lines[curr_line]
+                  mut as int64: ind = _yamlMeasureIndent(line)
+                  mut as string: trimmed = _fmtTrim(line)
+                  route {
+                        _fmtStrLen(trimmed) == 0 ==> {
+                              text_acc = text_acc + "\n"
+                              curr_line = curr_line + 1
+                        }
+                        ind <= base_indent ==> {
+                              break
+                        }
+                        ind > base_indent ==> {
+                              mut as string: content = line[base_indent + 3 .. _fmtStrLen(line)]
+                              route {
+                                    is_literal ==> {
+                                          route {
+                                                not first ==> { text_acc = text_acc + "\n" }
+                                                first ==> { first = false }
+                                          }
+                                          text_acc = text_acc + content
+                                    }
+                                    not is_literal ==> {
+                                          route {
+                                                not first ==> { text_acc = text_acc + " " }
+                                                first ==> { first = false }
+                                          }
+                                          text_acc = text_acc + content
+                                    }
+                              }
+                              curr_line = curr_line + 1
+                        }
+                  }
+            }
+            route {
+                  chomp_strip ==> { text_acc = _fmtTrimEnd(text_acc) }
+                  chomp_keep ==> { text_acc = text_acc + "\n" }
+                  not chomp_strip and not chomp_keep ==> {
+                        text_acc = _fmtTrimEnd(text_acc) + "\n"
+                  }
+            }
+            mut as list of data: ret = [text_acc, curr_line]
+            emit(nice, ret, "ok")
+      }
+
+      op _yamlParseFlow (as string: text) as data ==> {
+            mut as string: trimmed = _fmtTrim(text)
+            mut as int64: len = _fmtStrLen(trimmed)
+            route {
+                  len >= 2 and _fmtCharAt(trimmed, 1) == "{" and _fmtCharAt(trimmed, len) == "}" ==> {
+                        mut as data: ret_obj = formatParseJson(trimmed)
+                        emit(nice, ret_obj, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(trimmed, 1) == "[" and _fmtCharAt(trimmed, len) == "]" ==> {
+                        mut as data: ret_arr = formatParseJson(trimmed)
+                        emit(nice, ret_arr, "ok")
+                  }
+            }
+            emit(nice, trimmed, "ok")
+      }
+
+      op _yamlResolveCoreSchema (as string: raw_val) as data ==> {
+            mut as string: val = _fmtTrim(raw_val)
+            mut as int64: len = _fmtStrLen(val)
+            mut as string: empty = ""
+            mut as bool: b_true = true
+            mut as bool: b_false = false
+            route {
+                  len == 0 or val == "~" or val == "null" or val == "Null" or val == "NULL" ==> {
+                        emit(nice, empty, "ok")
+                  }
+                  val == "true" or val == "True" or val == "TRUE" ==> {
+                        emit(nice, b_true, "ok")
+                  }
+                  val == "false" or val == "False" or val == "FALSE" ==> {
+                        emit(nice, b_false, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "'" and _fmtCharAt(val, len) == "'" ==> {
+                        mut as string: s_single = val[2 .. len - 1]
+                        emit(nice, s_single, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "\"" and _fmtCharAt(val, len) == "\"" ==> {
+                        mut as list of data: s_res = _jsonParseString(val, 1, len)
+                        mut as data: s_double = s_res[1]
+                        emit(nice, s_double, "ok")
+                  }
+                  len >= 2 and (_fmtCharAt(val, 1) == "{" or _fmtCharAt(val, 1) == "[") ==> {
+                        mut as data: ret_flow = _yamlParseFlow(val)
+                        emit(nice, ret_flow, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "0" and (_fmtCharAt(val, 2) == "x" or _fmtCharAt(val, 2) == "X") ==> {
+                        mut as int64: hex_res = 0
+                        infinite (i in 3 .. len) {
+                              mut as int64: hd = _fmtCharToHexDigit(_fmtCharAt(val, i))
+                              route {
+                                    hd >= 0 ==> { hex_res = hex_res * 16 + hd }
+                              }
+                        }
+                        emit(nice, hex_res, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "0" and (_fmtCharAt(val, 2) == "o" or _fmtCharAt(val, 2) == "O") ==> {
+                        mut as int64: oct_res = 0
+                        infinite (i in 3 .. len) {
+                              mut as int64: od = _fmtCharToDigit(_fmtCharAt(val, i))
+                              route {
+                                    od >= 0 and od <= 7 ==> { oct_res = oct_res * 8 + od }
+                              }
+                        }
+                        emit(nice, oct_res, "ok")
+                  }
+                  len >= 2 and _fmtCharAt(val, 1) == "0" and (_fmtCharAt(val, 2) == "b" or _fmtCharAt(val, 2) == "B") ==> {
+                        mut as int64: bin_res = 0
+                        infinite (i in 3 .. len) {
+                              mut as int64: bd = _fmtCharToDigit(_fmtCharAt(val, i))
+                              route {
+                                    bd == 0 or bd == 1 ==> { bin_res = bin_res * 2 + bd }
+                              }
+                        }
+                        emit(nice, bin_res, "ok")
+                  }
+            }
+            mut as bool: is_num = true
+            mut as bool: has_dot = false
+            mut as int64: dot_count = 0
+            mut as int64: idx = 1
+            route {
+                  len > 0 and (_fmtCharAt(val, 1) == "-" or _fmtCharAt(val, 1) == "+") ==> { idx = 2 }
+            }
+            infinite (idx <= len) {
+                  mut as string: ch = _fmtCharAt(val, idx)
+                  route {
+                        ch == "." ==> {
+                              has_dot = true
+                              dot_count = dot_count + 1
+                        }
+                        (ch < "0" or ch > "9") and ch != "." ==> {
+                              is_num = false
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  dot_count > 1 ==> {
+                        is_num = false
+                  }
+            }
+            route {
+                  is_num and len > 0 and has_dot ==> {
+                        mut as float64: fv = _fmtParseFloat(val)
+                        emit(nice, fv, "ok")
+                  }
+                  is_num and len > 0 and not has_dot ==> {
+                        mut as int64: iv = _fmtParseInt(val)
+                        emit(nice, iv, "ok")
+                  }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op formatParseYaml (as string: yaml_text) as data ==> {
+            mut as list of string: all_lines = _fmtSplitLines(yaml_text)
+            mut as map: root_map = map{}
+            mut as list of data: root_list = []
+            mut as map: anchors = map{}
+            mut as bool: is_list_root = false
+
+            mut as int64: total_lines = 0
+            infinite (l in all_lines) { total_lines = total_lines + 1 }
+            route {
+                  total_lines == 0 ==> { emit(nice, root_map, "ok") }
+            }
+
+            mut as int64: line_idx = 1
+            mut as string: current_parent_key = ""
+            mut as map: current_submap = map{}
+            mut as list of data: current_sublist = []
+            mut as bool: in_submap = false
+            mut as bool: in_sublist = false
+
+            infinite (line_idx <= total_lines) {
+                  mut as string: raw_line = all_lines[line_idx]
+                  mut as string: clean_line = _yamlStripComments(raw_line)
+                  mut as string: trimmed = _fmtTrim(clean_line)
+                  mut as int64: indent = _yamlMeasureIndent(clean_line)
+                  mut as int64: t_len = _fmtStrLen(trimmed)
+
+                  route {
+                        t_len == 0 or trimmed == "---" or trimmed == "..." ==> {
+                              line_idx = line_idx + 1
+                        }
+                        t_len > 0 and trimmed != "---" and trimmed != "..." ==> {
+                              route {
+                                    indent == 0 and t_len >= 2 and _fmtCharAt(trimmed, 1) == "-" and _fmtCharAt(trimmed, 2) == " " ==> {
+                                          is_list_root = true
+                                          mut as string: item_val = _fmtTrim(trimmed[3 .. t_len])
+                                          mut as data: resolved_val = _yamlResolveCoreSchema(item_val)
+                                          mut as int64: len_l = 0
+                                          infinite (x in root_list) { len_l = len_l + 1 }
+                                          root_list[len_l + 1] = resolved_val
+                                          line_idx = line_idx + 1
+                                    }
+                                    indent > 0 and in_sublist and t_len >= 2 and _fmtCharAt(trimmed, 1) == "-" and _fmtCharAt(trimmed, 2) == " " ==> {
+                                          mut as string: item_val = _fmtTrim(trimmed[3 .. t_len])
+                                          mut as data: resolved_val = _yamlResolveCoreSchema(item_val)
+                                          mut as int64: len_sl = 0
+                                          infinite (x in current_sublist) { len_sl = len_sl + 1 }
+                                          current_sublist[len_sl + 1] = resolved_val
+                                          root_map[current_parent_key] = current_sublist
+                                          line_idx = line_idx + 1
+                                    }
+                                    indent > 0 and in_submap and _fmtContains(trimmed, ":") ==> {
+                                          mut as int64: colon_pos = 0
+                                          infinite (ci in 1 .. t_len) {
+                                                route {
+                                                      _fmtCharAt(trimmed, ci) == ":" and colon_pos == 0 ==> {
+                                                            colon_pos = ci
+                                                      }
+                                                }
+                                          }
+                                          mut as string: skey = _fmtTrim(trimmed[1 .. colon_pos - 1])
+                                          mut as string: sval = ""
+                                          route {
+                                                colon_pos < t_len ==> { sval = _fmtTrim(trimmed[colon_pos + 1 .. t_len]) }
+                                          }
+                                          mut as data: resolved_sval = _yamlResolveCoreSchema(sval)
+                                          current_submap[skey] = resolved_sval
+                                          root_map[current_parent_key] = current_submap
+                                          line_idx = line_idx + 1
+                                    }
+                                    indent == 0 and _fmtContains(trimmed, ":") ==> {
+                                          in_submap = false
+                                          in_sublist = false
+
+                                          mut as int64: colon_pos = 0
+                                          infinite (ci in 1 .. t_len) {
+                                                route {
+                                                      _fmtCharAt(trimmed, ci) == ":" and colon_pos == 0 ==> {
+                                                            colon_pos = ci
+                                                      }
+                                                }
+                                          }
+                                          mut as string: key = _fmtTrim(trimmed[1 .. colon_pos - 1])
+                                          mut as string: val = ""
+                                          route {
+                                                colon_pos < t_len ==> { val = _fmtTrim(trimmed[colon_pos + 1 .. t_len]) }
+                                          }
+
+                                          route {
+                                                key == "<<" and _fmtCharAt(val, 1) == "*" ==> {
+                                                      mut as string: alias_name = val[2 .. _fmtStrLen(val)]
+                                                      mut as map: target_anchor = anchors[alias_name] as map
+                                                      infinite (ak in target_anchor) {
+                                                            route {
+                                                                  root_map[ak] == "" ==> {
+                                                                        root_map[ak] = target_anchor[ak]
+                                                                  }
+                                                            }
+                                                      }
+                                                      line_idx = line_idx + 1
+                                                }
+                                                key != "<<" ==> {
+                                                      route {
+                                                            _fmtCharAt(val, 1) == "&" ==> {
+                                                                  mut as int64: space_pos = 0
+                                                                  mut as int64: v_len = _fmtStrLen(val)
+                                                                  infinite (vi in 1 .. v_len) {
+                                                                        route {
+                                                                              _fmtCharAt(val, vi) == " " and space_pos == 0 ==> { space_pos = vi }
+                                                                        }
+                                                                  }
+                                                                  route {
+                                                                        space_pos > 0 ==> {
+                                                                              mut as string: aname = val[2 .. space_pos - 1]
+                                                                              mut as string: real_v = _fmtTrim(val[space_pos + 1 .. v_len])
+                                                                              mut as data: res_v = _yamlResolveCoreSchema(real_v)
+                                                                              anchors[aname] = res_v
+                                                                              root_map[key] = res_v
+                                                                        }
+                                                                        space_pos == 0 ==> {
+                                                                              mut as string: aname = val[2 .. v_len]
+                                                                              current_parent_key = key
+                                                                              current_submap = map{}
+                                                                              in_submap = true
+                                                                              anchors[aname] = current_submap
+                                                                              root_map[key] = current_submap
+                                                                        }
+                                                                  }
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                            _fmtCharAt(val, 1) == "*" ==> {
+                                                                  mut as string: aname = val[2 .. _fmtStrLen(val)]
+                                                                  root_map[key] = anchors[aname]
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                            val == "|" or val == "|-" or val == "|+" or val == ">" or val == ">-" or val == ">+" ==> {
+                                                                  mut as list of data: blk_res = _yamlParseBlockScalar(all_lines, line_idx + 1, indent, val)
+                                                                  root_map[key] = blk_res[1]
+                                                                  line_idx = blk_res[2] as int64
+                                                            }
+                                                            _fmtStrLen(val) == 0 ==> {
+                                                                  current_parent_key = key
+                                                                  mut as bool: next_is_list = false
+                                                                  route {
+                                                                        line_idx + 1 <= total_lines ==> {
+                                                                              mut as string: next_line = _fmtTrim(_yamlStripComments(all_lines[line_idx + 1]))
+                                                                              route {
+                                                                                    _fmtCharAt(next_line, 1) == "-" and _fmtCharAt(next_line, 2) == " " ==> {
+                                                                                          next_is_list = true
+                                                                                    }
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  route {
+                                                                        next_is_list ==> {
+                                                                              current_sublist = []
+                                                                              in_sublist = true
+                                                                              root_map[key] = current_sublist
+                                                                        }
+                                                                        not next_is_list ==> {
+                                                                              current_submap = map{}
+                                                                              in_submap = true
+                                                                              root_map[key] = current_submap
+                                                                        }
+                                                                  }
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                            _fmtStrLen(val) > 0 and val != "|" and val != "|-" and val != "|+" and val != ">" and val != ">-" and val != ">+" and _fmtCharAt(val, 1) != "&" and _fmtCharAt(val, 1) != "*" ==> {
+                                                                  root_map[key] = _yamlResolveCoreSchema(val)
+                                                                  line_idx = line_idx + 1
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          line_idx = line_idx + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  is_list_root ==> { emit(nice, root_list, "ok") }
+            }
+            emit(nice, root_map, "ok")
+      }
+
+      op formatParseYamlAll (as string: yaml_text) as list of data ==> {
+            mut as list of data: docs = []
+            mut as list of string: lines = _fmtSplitLines(yaml_text)
+            mut as string: curr_doc = ""
+            mut as int64: doc_count = 0
+            infinite (l in lines) {
+                  mut as string: line = l
+                  mut as string: trimmed = _fmtTrim(line)
+                  route {
+                        trimmed == "---" ==> {
+                              route {
+                                    _fmtStrLen(_fmtTrim(curr_doc)) > 0 ==> {
+                                          doc_count = doc_count + 1
+                                          mut as data: p_doc = formatParseYaml(curr_doc)
+                                          docs[doc_count] = p_doc
+                                          curr_doc = ""
+                                    }
+                              }
+                        }
+                        trimmed != "---" ==> {
+                              curr_doc = curr_doc + line + "\n"
+                        }
+                  }
+            }
+            route {
+                  _fmtStrLen(_fmtTrim(curr_doc)) > 0 ==> {
+                        doc_count = doc_count + 1
+                        mut as data: p_doc2 = formatParseYaml(curr_doc)
+                        docs[doc_count] = p_doc2
+                  }
+            }
+            emit(nice, docs, "ok")
+      }
+
+      op formatStringifyYaml (as data: val) as string ==> {
+            mut as string: s = "" + val
+            mut as int64: len_s = _fmtStrLen(s)
+            route {
+                  len_s >= 2 and _fmtCharAt(s, 1) == "{" and _fmtCharAt(s, len_s) == "}" ==> {
+                        mut as map: m = val as map
+                        mut as string: res = ""
+                        mut as bool: first = true
+                        infinite (k in m) {
+                              route {
+                                    not first ==> { res = res + "\n" }
+                                    first ==> { first = false }
+                              }
+                              mut as string: item_s = "" + m[k]
+                              mut as int64: item_len = _fmtStrLen(item_s)
+                              route {
+                                    item_len >= 2 and _fmtCharAt(item_s, 1) == "{" and _fmtCharAt(item_s, item_len) == "}" ==> {
+                                          res = res + k + ":\n"
+                                          mut as map: subm = m[k] as map
+                                          infinite (sk in subm) {
+                                                res = res + "  " + sk + ": " + subm[sk] + "\n"
+                                          }
+                                          res = _fmtTrimEnd(res)
+                                    }
+                                    item_len >= 2 and _fmtCharAt(item_s, 1) == "[" and _fmtCharAt(item_s, item_len) == "]" ==> {
+                                          res = res + k + ":\n"
+                                          mut as list of data: subl = m[k] as list of data
+                                          infinite (si in subl) {
+                                                res = res + "  - " + si + "\n"
+                                          }
+                                          res = _fmtTrimEnd(res)
+                                    }
+                                    _ ==> {
+                                          res = res + k + ": " + m[k]
+                                    }
+                              }
+                        }
+                        emit(nice, res, "ok")
+                  }
+                  len_s >= 2 and _fmtCharAt(s, 1) == "[" and _fmtCharAt(s, len_s) == "]" ==> {
+                        mut as list of data: l = val as list of data
+                        mut as string: res = ""
+                        mut as bool: first = true
+                        infinite (item in l) {
+                              route {
+                                    not first ==> { res = res + "\n" }
+                                    first ==> { first = false }
+                              }
+                              res = res + "- " + item
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, s, "ok")
+      }
+
+      op formatStringifyYamlAll (as list of data: docs) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (d in docs) {
+                  route {
+                        not first ==> { res = res + "\n---\n" }
+                        first ==> {
+                              first = false
+                              res = "---\n"
+                        }
+                  }
+                  res = res + formatStringifyYaml(d)
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidYaml (as string: yaml_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(yaml_text)
+            mut as bool: b_false = false
+            route {
+                  len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as list of string: lines = _fmtSplitLines(yaml_text)
+            mut as bool: valid = true
+            infinite (l in lines) {
+                  mut as string: line = l
+                  route {
+                        _fmtContains(line, "\t") ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      #L Aliases YAML
+      op parseYaml (as string: yaml_text) as data ==> {
+            mut as data: r = formatParseYaml(yaml_text)
+            emit(nice, r, "ok")
+      }
+      op parseYamlAll (as string: yaml_text) as list of data ==> {
+            mut as list of data: r = formatParseYamlAll(yaml_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyYaml (as data: val) as string ==> {
+            mut as string: r = formatStringifyYaml(val)
+            emit(nice, r, "ok")
+      }
+      op stringifyYamlAll (as list of data: docs) as string ==> {
+            mut as string: r = formatStringifyYamlAll(docs)
+            emit(nice, r, "ok")
+      }
+      op isValidYaml (as string: yaml_text) as bool ==> {
+            mut as bool: r = formatIsValidYaml(yaml_text)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+}

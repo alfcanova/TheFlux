@@ -1,0 +1,190 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxConstants
+#L ==============================================================================
+
+contract (GfxConstantsContract) {
+      #L Resolucoes Padrao
+      op res720pW () as int64
+      op res720pH () as int64
+      op res1080pW () as int64
+      op res1080pH () as int64
+      op res4kW () as int64
+      op res4kH () as int64
+
+      #L Proporcoes de Tela (Aspect Ratios)
+      op aspect16x9 () as float64
+      op aspect4x3 () as float64
+      op aspect21x9 () as float64
+
+      #L Cores Padrao Canônicas (RGBA)
+      op colorWhite () as list of int64
+      op colorBlack () as list of int64
+      op colorRed () as list of int64
+      op colorGreen () as list of int64
+      op colorBlue () as list of int64
+      op colorYellow () as list of int64
+      op colorMagenta () as list of int64
+      op colorCyan () as list of int64
+      op colorTransparent () as list of int64
+
+      #L Constantes Fisicas: Indice de Refracao (IOR)
+      op gfxIorAir () as float64
+      op gfxIorWater () as float64
+      op gfxIorGlass () as float64
+      op gfxIorDiamond () as float64
+      op gfxIorPolycarbonate () as float64
+
+      #L Constantes Fisicas: Fotometria e Iluminancia (Lux)
+      op gfxLuxDirectSun () as float64
+      op gfxLuxOvercastDay () as float64
+      op gfxLuxOffice () as float64
+      op gfxLuxFullMoon () as float64
+
+      #L Constantes Fisicas: Temperatura de Cor da Luz (Kelvin)
+      op gfxKelvinDaylightD65 () as float64
+      op gfxKelvinTungsten () as float64
+      op gfxKelvinCandle () as float64
+}
+
+agent (GfxStdLib) impl GfxConstantsContract {
+
+
+      #L =====================================================================
+      #L Helpers Internos
+      #L =====================================================================
+
+      op _clampInt (as int64: val, as int64: min_val, as int64: max_val) as int64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      op _clampFloat (as float64: val, as float64: min_val, as float64: max_val) as float64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      op _hexDigit (as int64: v) as string ==> {
+            route {
+                  v == 0 ==> { emit(nice, "0", "ok") }
+                  v == 1 ==> { emit(nice, "1", "ok") }
+                  v == 2 ==> { emit(nice, "2", "ok") }
+                  v == 3 ==> { emit(nice, "3", "ok") }
+                  v == 4 ==> { emit(nice, "4", "ok") }
+                  v == 5 ==> { emit(nice, "5", "ok") }
+                  v == 6 ==> { emit(nice, "6", "ok") }
+                  v == 7 ==> { emit(nice, "7", "ok") }
+                  v == 8 ==> { emit(nice, "8", "ok") }
+                  v == 9 ==> { emit(nice, "9", "ok") }
+                  v == 10 ==> { emit(nice, "A", "ok") }
+                  v == 11 ==> { emit(nice, "B", "ok") }
+                  v == 12 ==> { emit(nice, "C", "ok") }
+                  v == 13 ==> { emit(nice, "D", "ok") }
+                  v == 14 ==> { emit(nice, "E", "ok") }
+                  v == 15 ==> { emit(nice, "F", "ok") }
+                  _ ==> { emit(nice, "0", "ok") }
+            }
+      }
+
+      op _byteToHex (as int64: b) as string ==> {
+            mut as int64: val = b & 255
+            mut as int64: hi = (val >>> 4) & 15
+            mut as int64: lo = val & 15
+            mut as string: res = _hexDigit(hi) + _hexDigit(lo)
+            emit(nice, res, "ok")
+      }
+
+      op _hexCharVal (as string: ch) as int64 ==> {
+            route {
+                  ch == "0" ==> { emit(nice, 0, "ok") }
+                  ch == "1" ==> { emit(nice, 1, "ok") }
+                  ch == "2" ==> { emit(nice, 2, "ok") }
+                  ch == "3" ==> { emit(nice, 3, "ok") }
+                  ch == "4" ==> { emit(nice, 4, "ok") }
+                  ch == "5" ==> { emit(nice, 5, "ok") }
+                  ch == "6" ==> { emit(nice, 6, "ok") }
+                  ch == "7" ==> { emit(nice, 7, "ok") }
+                  ch == "8" ==> { emit(nice, 8, "ok") }
+                  ch == "9" ==> { emit(nice, 9, "ok") }
+                  ch == "A" or ch == "a" ==> { emit(nice, 10, "ok") }
+                  ch == "B" or ch == "b" ==> { emit(nice, 11, "ok") }
+                  ch == "C" or ch == "c" ==> { emit(nice, 12, "ok") }
+                  ch == "D" or ch == "d" ==> { emit(nice, 13, "ok") }
+                  ch == "E" or ch == "e" ==> { emit(nice, 14, "ok") }
+                  ch == "F" or ch == "f" ==> { emit(nice, 15, "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op _mapHasKey (as map: m, as string: target_key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in m) {
+                  route {
+                        k == target_key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      op _incDrawCalls (as map: ctx) as map ==> {
+            mut as int64: dc = 0
+            route {
+                  _mapHasKey(ctx, "draw_calls") ==> {
+                        dc = ctx["draw_calls"] as int64
+                  }
+            }
+            ctx["draw_calls"] = dc + 1
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+      #L 1. GfxConstantsContract
+      #L =====================================================================
+
+      op res720pW () as int64 ==> { emit(nice, 1280, "ok") }
+      op res720pH () as int64 ==> { emit(nice, 720, "ok") }
+      op res1080pW () as int64 ==> { emit(nice, 1920, "ok") }
+      op res1080pH () as int64 ==> { emit(nice, 1080, "ok") }
+      op res4kW () as int64 ==> { emit(nice, 3840, "ok") }
+      op res4kH () as int64 ==> { emit(nice, 2160, "ok") }
+
+      op aspect16x9 () as float64 ==> { emit(nice, 1.7777777777777777, "ok") }
+      op aspect4x3 () as float64 ==> { emit(nice, 1.3333333333333333, "ok") }
+      op aspect21x9 () as float64 ==> { emit(nice, 2.3333333333333335, "ok") }
+
+      op colorWhite () as list of int64 ==> { emit(nice, [255, 255, 255, 255], "ok") }
+      op colorBlack () as list of int64 ==> { emit(nice, [0, 0, 0, 255], "ok") }
+      op colorRed () as list of int64 ==> { emit(nice, [255, 0, 0, 255], "ok") }
+      op colorGreen () as list of int64 ==> { emit(nice, [0, 255, 0, 255], "ok") }
+      op colorBlue () as list of int64 ==> { emit(nice, [0, 0, 255, 255], "ok") }
+      op colorYellow () as list of int64 ==> { emit(nice, [255, 255, 0, 255], "ok") }
+      op colorMagenta () as list of int64 ==> { emit(nice, [255, 0, 255, 255], "ok") }
+      op colorCyan () as list of int64 ==> { emit(nice, [0, 255, 255, 255], "ok") }
+      op colorTransparent () as list of int64 ==> { emit(nice, [0, 0, 0, 0], "ok") }
+
+      op gfxIorAir () as float64 ==> { emit(nice, 1.000293, "ok") }
+      op gfxIorWater () as float64 ==> { emit(nice, 1.333, "ok") }
+      op gfxIorGlass () as float64 ==> { emit(nice, 1.52, "ok") }
+      op gfxIorDiamond () as float64 ==> { emit(nice, 2.417, "ok") }
+      op gfxIorPolycarbonate () as float64 ==> { emit(nice, 1.586, "ok") }
+
+      op gfxLuxDirectSun () as float64 ==> { emit(nice, 100000.0, "ok") }
+      op gfxLuxOvercastDay () as float64 ==> { emit(nice, 1000.0, "ok") }
+      op gfxLuxOffice () as float64 ==> { emit(nice, 500.0, "ok") }
+      op gfxLuxFullMoon () as float64 ==> { emit(nice, 0.25, "ok") }
+
+      op gfxKelvinDaylightD65 () as float64 ==> { emit(nice, 6504.0, "ok") }
+      op gfxKelvinTungsten () as float64 ==> { emit(nice, 2800.0, "ok") }
+      op gfxKelvinCandle () as float64 ==> { emit(nice, 1850.0, "ok") }
+
+      #L =====================================================================
+}

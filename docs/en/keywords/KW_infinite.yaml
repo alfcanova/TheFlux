@@ -1,0 +1,32 @@
+keyword: infinite
+category: Loop Structure
+description: Cria um loop de repetição infinito. O loop executes o body repetidamente até que uma instrução `break` interrormpa
+  a execução. Opcionalmente pode receivesr uma condition booleana que, quando falsa, encerra o loop.
+syntax: "infinite {\n      <instruções>\n}\n\ninfinite (<condição>) {\n      <instruções>\n}"
+pseudocode: "REPETIR PARA SEMPRE:\n    corpo...\n    SE condicao_saida: INTERROMPER"
+usages:
+- name: Loop infinito com break
+  description: Executes o body até encontrar `break`.
+  examples:
+  - code: "infinite {\n      print(\"executou\")\n      break\n}"
+- name: Loop com condition
+  description: Executes enquanto a condition for verdadeira.
+  examples:
+  - code: "mut as bool: flag = true\ninfinite (flag) {\n      print(\"rodando\")\n      flag = false\n}"
+- name: Loop com break após ação
+  description: Break sai do loop após uma ação.
+  examples:
+  - code: "infinite {\n      print(\"Uma vez\")\n      break\n}\nprint(\"Depois do loop\")"
+restrictions:
+- Sem `break`, o loop nunca termina.
+- A condition é optional; sem ela, o loop é infinito.
+- '`break` e `continue` só can be usados dentro de `infinite`.'
+errors:
+- code: RT704
+  mnemonic: STACK_OVERFLOW
+  severity: Error
+  trigger: Excessive call stack depth from recursive functions without base case
+  message: 'Execution stack overflow (Stack Overflow): excessive recursion without termination condition'
+  hint: Add a base case to terminate recursion or rewrite using iterative loops ('infinite')
+  example_bad: "function recursaoInfinita() {\n  recursaoInfinita()\n}\n"
+  example_good: "infinite {\n  # Loop iterativo sem consumir pilha de chamadas\n  break\n}\n"

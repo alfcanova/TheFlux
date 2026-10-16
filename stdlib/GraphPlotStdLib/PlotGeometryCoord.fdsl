@@ -1,0 +1,37 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotGeometryCoord
+#L ==============================================================================
+
+contract (PlotGeometryCoordContract) {
+      op plotCurvilinearGrid (as map: ctx, as int64: coord_sys, as int64: divisions) as map
+      op plotCurvilinearCurve (as map: ctx, as int64: coord_sys, as list of float64: us, as list of float64: vs, as list of float64: ws, as list of int64: color) as map
+}
+
+agent (GraphPlotStdLib) impl PlotGeometryCoordContract {
+      #L 7. PlotGeometryCoordContract (Família 5)
+      #L =====================================================================
+
+      op plotCurvilinearGrid (as map: ctx, as int64: coord_sys, as int64: divisions) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "curvilinear_grid"
+            layer["coord_sys"] = coord_sys
+            layer["divisions"] = divisions
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotCurvilinearCurve (as map: ctx, as int64: coord_sys, as list of float64: us, as list of float64: vs, as list of float64: ws, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "curvilinear_curve"
+            layer["coord_sys"] = coord_sys
+            layer["us"] = us
+            layer["vs"] = vs
+            layer["ws"] = ws
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

@@ -1,0 +1,120 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapEntry
+#L ==============================================================================
+
+contract (MapEntryContract) {
+      op mapFromEntries (as list of data: entries) as map
+      op mapToEntries (as map: record) as list of data
+      op mapInvertMulti (as map: record) as map
+      op mapGroupListBy (as list of data: items, as string: key_field) as map
+      op mapSelectEntries (as map: record, as list of data: keys) as list of data
+}
+
+agent (MapStdLib) impl MapEntryContract {
+      #L 10. MapEntryContract (5 operacoes)
+      #L ==============================================================================
+      op mapFromEntries (as list of data: entries) as map ==> {
+            mut as map: m = map{}
+            infinite (pair in entries) {
+                  mut as list of data: p = pair as list of data
+                  mut as string: k = "" + p[1]
+                  mut as data: v = p[2]
+                  m[k] = v
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapToEntries (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = [k, record[k]]
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapInvertMulti (as map: record) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as string: val_key = "" + record[k]
+                  mut as bool: exists = false
+                  infinite (ek in m) {
+                        route {
+                              ek == val_key ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        exists ==> {
+                              mut as list of data: existing = m[val_key] as list of data
+                              mut as int64: elen = 0
+                              infinite (x in existing) { elen = elen + 1 }
+                              existing[elen + 1] = k
+                              m[val_key] = existing
+                        }
+                        not exists ==> {
+                              mut as list of data: first_list = [k]
+                              m[val_key] = first_list
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapGroupListBy (as list of data: items, as string: key_field) as map ==> {
+            mut as map: m = map{}
+            infinite (item in items) {
+                  mut as map: item_map = item as map
+                  mut as string: gkey = "" + item_map[key_field]
+                  mut as bool: exists = false
+                  infinite (ek in m) {
+                        route {
+                              ek == gkey ==> {
+                                    exists = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        exists ==> {
+                              mut as list of data: existing = m[gkey] as list of data
+                              mut as int64: elen = 0
+                              infinite (x in existing) { elen = elen + 1 }
+                              existing[elen + 1] = item
+                              m[gkey] = existing
+                        }
+                        not exists ==> {
+                              mut as list of data: first_list = [item]
+                              m[gkey] = first_list
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapSelectEntries (as map: record, as list of data: keys) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (target_k in keys) {
+                  mut as string: tk_str = "" + target_k
+                  infinite (k in record) {
+                        route {
+                              k == tk_str ==> {
+                                    count = count + 1
+                                    res[count] = [k, record[k]]
+                                    break
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,12 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RuntimeStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use RuntimeHost.fdsl
+use RuntimeType.fdsl
+use RuntimeMemory.fdsl
+use RuntimeControl.fdsl
+
+agent (RuntimeStdLib) {
+}

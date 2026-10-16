@@ -1,0 +1,66 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelAlignment
+#L ==============================================================================
+
+contract (LowLevelAlignmentContract) {
+      op lowIsAligned (as int64: address, as int64: alignment) as bool
+      op lowAlignForward (as int64: address, as int64: alignment) as int64
+      op lowAlignBackward (as int64: address, as int64: alignment) as int64
+      op lowAlignmentPadding (as int64: address, as int64: alignment) as int64
+      op lowAddressOffset (as int64: base_address, as int64: offset_bytes) as int64
+      op lowAddressDifference (as int64: addr1, as int64: addr2) as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelAlignmentContract {
+      #L LowLevelAlignmentContract
+      #L =====================================================================
+
+      op lowIsAligned (as int64: address, as int64: alignment) as bool ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, false, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            emit(nice, rem == 0, "ok")
+      }
+
+      op lowAlignForward (as int64: address, as int64: alignment) as int64 ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, address, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            route {
+                  rem == 0 ==> { emit(nice, address, "ok") }
+            }
+            emit(nice, address + (alignment - rem), "ok")
+      }
+
+      op lowAlignBackward (as int64: address, as int64: alignment) as int64 ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, address, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            emit(nice, address - rem, "ok")
+      }
+
+      op lowAlignmentPadding (as int64: address, as int64: alignment) as int64 ==> {
+            route {
+                  alignment <= 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: rem = address /r alignment
+            route {
+                  rem == 0 ==> { emit(nice, 0, "ok") }
+            }
+            emit(nice, alignment - rem, "ok")
+      }
+
+      op lowAddressOffset (as int64: base_address, as int64: offset_bytes) as int64 ==> {
+            emit(nice, base_address + offset_bytes, "ok")
+      }
+
+      op lowAddressDifference (as int64: addr1, as int64: addr2) as int64 ==> {
+            emit(nice, addr1 - addr2, "ok")
+      }
+
+      #L =====================================================================
+}

@@ -1,0 +1,61 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NativeGfxStdLib
+#L Dominio: NativeGfxEvent
+#L ==============================================================================
+
+contract (NativeGfxEventContract) {
+      op gfxEventPoll (as int64: win_id) as int64
+      op gfxEventX () as int64
+      op gfxEventY () as int64
+      op gfxEventKey () as int64
+
+      op nativeGfxEventPoll (as int64: win_id) as int64
+      op nativeGfxEventX () as int64
+      op nativeGfxEventY () as int64
+      op nativeGfxEventKey () as int64
+}
+
+agent (NativeGfxStdLib) impl NativeGfxEventContract {
+      #L 3. NativeGfxEventContract
+      #L =====================================================================
+
+      op gfxEventPoll (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxEventPoll(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxEventX () as int64 ==> {
+            mut as int64: res = stdGfxEventX()
+            emit(nice, res, "ok")
+      }
+
+      op gfxEventY () as int64 ==> {
+            mut as int64: res = stdGfxEventY()
+            emit(nice, res, "ok")
+      }
+
+      op gfxEventKey () as int64 ==> {
+            mut as int64: res = stdGfxEventKey()
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventPoll (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxEventPoll(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventX () as int64 ==> {
+            mut as int64: res = stdGfxEventX()
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventY () as int64 ==> {
+            mut as int64: res = stdGfxEventY()
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxEventKey () as int64 ==> {
+            mut as int64: res = stdGfxEventKey()
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,111 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysVector2D
+#L ==============================================================================
+
+contract (PhysVector2DContract) {
+      op physVec2New (as float64: x, as float64: y) as list of data
+      op physVec2X (as list of data: v) as float64
+      op physVec2Y (as list of data: v) as float64
+      op physVec2Add (as list of data: a, as list of data: b) as list of data
+      op physVec2Sub (as list of data: a, as list of data: b) as list of data
+      op physVec2Scale (as list of data: v, as float64: s) as list of data
+      op physVec2Dot (as list of data: a, as list of data: b) as float64
+      op physVec2LengthSq (as list of data: v) as float64
+      op physVec2Length (as list of data: v) as float64
+      op physVec2Distance (as list of data: a, as list of data: b) as float64
+      op physVec2Normalize (as list of data: v) as list of data
+}
+
+agent (PhysStdLib) impl PhysVector2DContract {
+      #L PhysVector2DContract (Helpers Vetoriais 2D)
+      #L =====================================================================
+      op physVec2New (as float64: x, as float64: y) as list of data ==> {
+            mut as list of data: v = [x, y]
+            emit(nice, v, "ok")
+      }
+      op physVec2X (as list of data: v) as float64 ==> {
+            mut as float64: x = v[1] as float64
+            emit(nice, x, "ok")
+      }
+      op physVec2Y (as list of data: v) as float64 ==> {
+            mut as float64: y = v[2] as float64
+            emit(nice, y, "ok")
+      }
+      op physVec2Add (as list of data: a, as list of data: b) as list of data ==> {
+            mut as float64: ax = a[1] as float64
+            mut as float64: ay = a[2] as float64
+            mut as float64: bx = b[1] as float64
+            mut as float64: by = b[2] as float64
+            mut as list of data: res = [ax + bx, ay + by]
+            emit(nice, res, "ok")
+      }
+      op physVec2Sub (as list of data: a, as list of data: b) as list of data ==> {
+            mut as float64: ax = a[1] as float64
+            mut as float64: ay = a[2] as float64
+            mut as float64: bx = b[1] as float64
+            mut as float64: by = b[2] as float64
+            mut as list of data: res = [ax - bx, ay - by]
+            emit(nice, res, "ok")
+      }
+      op physVec2Scale (as list of data: v, as float64: s) as list of data ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as list of data: res = [x * s, y * s]
+            emit(nice, res, "ok")
+      }
+      op physVec2Dot (as list of data: a, as list of data: b) as float64 ==> {
+            mut as float64: ax = a[1] as float64
+            mut as float64: ay = a[2] as float64
+            mut as float64: bx = b[1] as float64
+            mut as float64: by = b[2] as float64
+            mut as float64: res = (ax * bx) + (ay * by)
+            emit(nice, res, "ok")
+      }
+      op physVec2LengthSq (as list of data: v) as float64 ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as float64: res = (x * x) + (y * y)
+            emit(nice, res, "ok")
+      }
+      op physVec2Length (as list of data: v) as float64 ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as float64: lsq = (x * x) + (y * y)
+            route {
+                  lsq == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = lsq ^e 0.5
+            emit(nice, res, "ok")
+      }
+      op physVec2Distance (as list of data: a, as list of data: b) as float64 ==> {
+            mut as float64: dx = (a[1] as float64) - (b[1] as float64)
+            mut as float64: dy = (a[2] as float64) - (b[2] as float64)
+            mut as float64: dsq = (dx * dx) + (dy * dy)
+            route {
+                  dsq == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = dsq ^e 0.5
+            emit(nice, res, "ok")
+      }
+      op physVec2Normalize (as list of data: v) as list of data ==> {
+            mut as float64: x = v[1] as float64
+            mut as float64: y = v[2] as float64
+            mut as float64: lsq = (x * x) + (y * y)
+            route {
+                  lsq == 0.0 ==> {
+                        mut as list of data: z = [0.0, 0.0]
+                        emit(nice, z, "ok")
+                  }
+            }
+            mut as float64: len = lsq ^e 0.5
+            mut as list of data: res = [x /f len, y /f len]
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

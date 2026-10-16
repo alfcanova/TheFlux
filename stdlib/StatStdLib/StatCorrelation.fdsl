@@ -1,0 +1,156 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatCorrelation
+#L ==============================================================================
+
+contract (StatCorrelationContract) {
+      op statCovariancePopulation (as list of data: x, as list of data: y) as float64
+      op statCovarianceSample (as list of data: x, as list of data: y) as float64
+      op statPearsonCorrelation (as list of data: x, as list of data: y) as float64
+      op statSpearmanCorrelation (as list of data: x, as list of data: y) as float64
+      op statLinearRegression (as list of data: x, as list of data: y) as map
+      op statLinearResiduals (as list of data: x, as list of data: y, as float64: slope, as float64: intercept) as list of data
+}
+
+agent (StatStdLib) impl StatCorrelationContract {
+      #L 5. StatCorrelationContract
+      #L ==============================================================================
+
+      op statCovariancePopulation (as list of data: x, as list of data: y) as float64 ==> {
+            mut as int64: n = _statLen(x)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mx = statMean(x)
+            mut as float64: my = statMean(y)
+            mut as float64: sum = 0.0
+            infinite (i in 1 .. n) {
+                  mut as float64: dx = (x[i] as float64) - mx
+                  mut as float64: dy = (y[i] as float64) - my
+                  sum = sum + (dx * dy)
+            }
+            emit(nice, sum /f (n as float64), "ok")
+      }
+
+      op statCovarianceSample (as list of data: x, as list of data: y) as float64 ==> {
+            mut as int64: n = _statLen(x)
+            route {
+                  n <= 1 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mx = statMean(x)
+            mut as float64: my = statMean(y)
+            mut as float64: sum = 0.0
+            infinite (i in 1 .. n) {
+                  mut as float64: dx = (x[i] as float64) - mx
+                  mut as float64: dy = (y[i] as float64) - my
+                  sum = sum + (dx * dy)
+            }
+            emit(nice, sum /f ((n - 1) as float64), "ok")
+      }
+
+      op statPearsonCorrelation (as list of data: x, as list of data: y) as float64 ==> {
+            mut as float64: cov = statCovarianceSample(x, y)
+            mut as float64: sx = statStdDevSample(x)
+            mut as float64: sy = statStdDevSample(y)
+            mut as float64: denom = sx * sy
+            route {
+                  denom == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: r = cov /f denom
+            route {
+                  r >= 0.99999999999999 ==> {
+                        r = 1.0
+                  }
+                  r <= -0.99999999999999 ==> {
+                        r = -1.0
+                  }
+            }
+            emit(nice, r, "ok")
+      }
+
+      op statSpearmanCorrelation (as list of data: x, as list of data: y) as float64 ==> {
+            mut as list of data: rx = statRanks(x)
+            mut as list of data: ry = statRanks(y)
+            emit(nice, statPearsonCorrelation(rx, ry), "ok")
+      }
+
+      op statLinearRegression (as list of data: x, as list of data: y) as map ==> {
+            mut as int64: n = _statLen(x)
+            mut as map: res = map{}
+            route {
+                  n <= 1 ==> {
+                        res["slope"] = 0.0
+                        res["intercept"] = 0.0
+                        res["r_squared"] = 0.0
+                        res["std_err"] = 0.0
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as float64: mx = statMean(x)
+            mut as float64: my = statMean(y)
+            mut as float64: cov = statCovarianceSample(x, y)
+            mut as float64: var_x = statVarianceSample(x)
+            mut as float64: var_y = statVarianceSample(y)
+
+            mut as float64: slope = 0.0
+            route {
+                  var_x > 0.0 ==> {
+                        slope = cov /f var_x
+                  }
+            }
+            mut as float64: intercept = my - (slope * mx)
+            mut as float64: r = statPearsonCorrelation(x, y)
+            mut as float64: r_sq = r * r
+            route {
+                  r_sq >= 0.99999999999999 ==> {
+                        r_sq = 1.0
+                  }
+            }
+
+            mut as float64: se = 0.0
+            route {
+                  n > 2 and var_x > 0.0 ==> {
+                        mut as float64: num = (1.0 - r_sq) * var_y
+                        mut as float64: den = ((n - 2) as float64) * var_x
+                        route {
+                              den > 0.0 and num >= 0.0 ==> {
+                                    mut as float64: se_var = num /f den
+                                    se = se_var ^r 2
+                                    route {
+                                          se < 0.0000001 ==> {
+                                                se = 0.0
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            res["slope"] = slope
+            res["intercept"] = intercept
+            res["r_squared"] = r_sq
+            res["std_err"] = se
+            emit(nice, res, "ok")
+      }
+
+      op statLinearResiduals (as list of data: x, as list of data: y, as float64: slope, as float64: intercept) as list of data ==> {
+            mut as int64: n = _statLen(x)
+            mut as list of data: residuals = []
+            infinite (i in 1 .. n) {
+                  mut as float64: xi = x[i] as float64
+                  mut as float64: yi = y[i] as float64
+                  mut as float64: y_pred = (slope * xi) + intercept
+                  mut as float64: res = yi - y_pred
+                  residuals[_statLen(residuals) + 1] = res
+            }
+            emit(nice, residuals, "ok")
+      }
+
+      #L ==============================================================================
+}

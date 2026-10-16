@@ -1,0 +1,69 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysAstrophysics
+#L ==============================================================================
+
+contract (PhysAstrophysicsContract) {
+      op physGravitationalForce (as float64: m1, as float64: m2, as float64: distance) as float64
+      op physGravitationalPotentialEnergy (as float64: m1, as float64: m2, as float64: distance) as float64
+      op physEscapeVelocity (as float64: mass, as float64: radius) as float64
+      op physOrbitalVelocity (as float64: mass, as float64: radius) as float64
+      op physKeplerPeriod (as float64: semi_major_axis, as float64: central_mass) as float64
+}
+
+agent (PhysStdLib) impl PhysAstrophysicsContract {
+      #L PhysAstrophysicsContract (Gravitacao e Orbitas)
+      #L =====================================================================
+      op physGravitationalForce (as float64: m1, as float64: m2, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em gravitacao")
+                  }
+            }
+            mut as float64: f = (C_GRAV_CONST * m1 * m2) /f (distance * distance)
+            emit(nice, f, "ok")
+      }
+      op physGravitationalPotentialEnergy (as float64: m1, as float64: m2, as float64: distance) as float64 ==> {
+            route {
+                  distance <= 0.0 ==> {
+                        emit(fail, 0.0, "distancia invalida em potencial gravitacional")
+                  }
+            }
+            mut as float64: u = (0.0 - (C_GRAV_CONST * m1 * m2)) /f distance
+            emit(nice, u, "ok")
+      }
+      op physEscapeVelocity (as float64: mass, as float64: radius) as float64 ==> {
+            route {
+                  radius <= 0.0 or mass <= 0.0 ==> {
+                        emit(fail, 0.0, "massa ou raio invalido em velocidade de escape")
+                  }
+            }
+            mut as float64: v2 = (2.0 * C_GRAV_CONST * mass) /f radius
+            mut as float64: v = v2 ^e 0.5
+            emit(nice, v, "ok")
+      }
+      op physOrbitalVelocity (as float64: mass, as float64: radius) as float64 ==> {
+            route {
+                  radius <= 0.0 or mass <= 0.0 ==> {
+                        emit(fail, 0.0, "massa ou raio invalido em velocidade orbital")
+                  }
+            }
+            mut as float64: v2 = (C_GRAV_CONST * mass) /f radius
+            mut as float64: v = v2 ^e 0.5
+            emit(nice, v, "ok")
+      }
+      op physKeplerPeriod (as float64: semi_major_axis, as float64: central_mass) as float64 ==> {
+            route {
+                  semi_major_axis <= 0.0 or central_mass <= 0.0 ==> {
+                        emit(fail, 0.0, "eixo ou massa invalida em Kepler")
+                  }
+            }
+            mut as float64: a3 = semi_major_axis * semi_major_axis * semi_major_axis
+            mut as float64: gm = C_GRAV_CONST * central_mass
+            mut as float64: ratio = a3 /f gm
+            mut as float64: t = (2.0 * C_PI) * (ratio ^e 0.5)
+            emit(nice, t, "ok")
+      }
+
+      #L =====================================================================
+}

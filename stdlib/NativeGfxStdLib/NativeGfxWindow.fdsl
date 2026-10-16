@@ -1,0 +1,101 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NativeGfxStdLib
+#L Dominio: NativeGfxWindow
+#L ==============================================================================
+
+contract (NativeGfxWindowContract) {
+      op gfxWindowCreate (as int64: w, as int64: h, as string: title) as int64
+      op gfxWindowClose (as int64: win_id) as bool
+      op gfxWindowFlush (as int64: win_id) as bool
+      op gfxWindowClosed (as int64: win_id) as bool
+      op gfxWindowWidth (as int64: win_id) as int64
+      op gfxWindowHeight (as int64: win_id) as int64
+      op gfxWindowWait (as int64: win_id, as int64: ms) as bool
+
+      op nativeGfxWindowCreate (as int64: w, as int64: h, as string: title) as int64
+      op nativeGfxWindowClose (as int64: win_id) as bool
+      op nativeGfxWindowFlush (as int64: win_id) as bool
+      op nativeGfxWindowClosed (as int64: win_id) as bool
+      op nativeGfxWindowWidth (as int64: win_id) as int64
+      op nativeGfxWindowHeight (as int64: win_id) as int64
+      op nativeGfxWindowWait (as int64: win_id, as int64: ms) as bool
+}
+
+agent (NativeGfxStdLib) impl NativeGfxWindowContract {
+
+      #L =====================================================================
+      #L 1. NativeGfxWindowContract
+      #L =====================================================================
+
+      op gfxWindowCreate (as int64: w, as int64: h, as string: title) as int64 ==> {
+            mut as int64: win_id = stdGfxWindowCreate(w, h, title)
+            emit(nice, win_id, "ok")
+      }
+
+      op gfxWindowClose (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClose(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowFlush (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowFlush(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowClosed (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClosed(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowWidth (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowWidth(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowHeight (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowHeight(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op gfxWindowWait (as int64: win_id, as int64: ms) as bool ==> {
+            mut as bool: res = stdGfxWindowWait(win_id, ms)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowCreate (as int64: w, as int64: h, as string: title) as int64 ==> {
+            mut as int64: win_id = stdGfxWindowCreate(w, h, title)
+            emit(nice, win_id, "ok")
+      }
+
+      op nativeGfxWindowClose (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClose(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowFlush (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowFlush(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowClosed (as int64: win_id) as bool ==> {
+            mut as bool: res = stdGfxWindowClosed(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowWidth (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowWidth(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowHeight (as int64: win_id) as int64 ==> {
+            mut as int64: res = stdGfxWindowHeight(win_id)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxWindowWait (as int64: win_id, as int64: ms) as bool ==> {
+            mut as bool: res = stdGfxWindowWait(win_id, ms)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

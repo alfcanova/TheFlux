@@ -1,0 +1,27 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Dominio: DslLexer
+#L ==============================================================================
+
+contract (DslLexerContract) {
+      op dslCreateLexer (as map: tokens_regex) as data
+      op dslTokenize (as data: lexer, as string: dsl_code) as list of data
+      op dslGetLexerTokens (as data: lexer) as list of string
+}
+
+agent (DslStdLib) impl DslLexerContract {
+
+
+      #L -- DslLexerContract -------------------------------------------
+      op dslCreateLexer (as map: tokens_regex) as data ==> {
+            emit(nice, stdDslCreateLexer(tokens_regex), "ok")
+      }
+
+      op dslTokenize (as data: lexer, as string: dsl_code) as list of data ==> {
+            emit(nice, stdDslTokenize(lexer, dsl_code), "ok")
+      }
+
+      op dslGetLexerTokens (as data: lexer) as list of string ==> {
+            emit(nice, stdDslGetLexerTokens(lexer), "ok")
+      }
+}

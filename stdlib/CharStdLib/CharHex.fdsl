@@ -1,0 +1,58 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Dominio: CharHex
+#L ==============================================================================
+
+contract (CharHexContract) {
+      op charToHexValue (as char: c) as int64
+      op charFromHexValue (as int64: value) as char
+      op charToBinaryValue (as char: c) as int64
+      op charFromBinaryValue (as int64: value) as char
+}
+
+agent (CharStdLib) impl CharHexContract {
+      #L -- CharHexContract -------------------------------------------
+      op charToHexValue (as char: c) as int64 ==> {
+            mut as int64: dig = charToDigit(c)
+            route {
+                  dig >= 0 ==> {
+                        emit(nice, dig, "ok")
+                  }
+            }
+            route { c == 'a' or c == 'A' ==> { emit(nice, 10, "ok") } }
+            route { c == 'b' or c == 'B' ==> { emit(nice, 11, "ok") } }
+            route { c == 'c' or c == 'C' ==> { emit(nice, 12, "ok") } }
+            route { c == 'd' or c == 'D' ==> { emit(nice, 13, "ok") } }
+            route { c == 'e' or c == 'E' ==> { emit(nice, 14, "ok") } }
+            route { c == 'f' or c == 'F' ==> { emit(nice, 15, "ok") } }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromHexValue (as int64: value) as char ==> {
+            route {
+                  value >= 0 and value <= 9 ==> {
+                        mut as char: c_d = charFromDigit(value)
+                        emit(nice, c_d, "ok")
+                  }
+            }
+            route { value == 10 ==> { emit(nice, 'A', "ok") } }
+            route { value == 11 ==> { emit(nice, 'B', "ok") } }
+            route { value == 12 ==> { emit(nice, 'C', "ok") } }
+            route { value == 13 ==> { emit(nice, 'D', "ok") } }
+            route { value == 14 ==> { emit(nice, 'E', "ok") } }
+            route { value == 15 ==> { emit(nice, 'F', "ok") } }
+            emit(nice, '?', "ok")
+      }
+
+      op charToBinaryValue (as char: c) as int64 ==> {
+            route { c == '0' ==> { emit(nice, 0, "ok") } }
+            route { c == '1' ==> { emit(nice, 1, "ok") } }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromBinaryValue (as int64: value) as char ==> {
+            route { value == 0 ==> { emit(nice, '0', "ok") } }
+            route { value == 1 ==> { emit(nice, '1', "ok") } }
+            emit(nice, '?', "ok")
+      }
+}

@@ -1,0 +1,11 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NativeGfxStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use NativeGfxWindow.fdsl
+use NativeGfxDraw.fdsl
+use NativeGfxEvent.fdsl
+
+agent (NativeGfxStdLib) {
+}

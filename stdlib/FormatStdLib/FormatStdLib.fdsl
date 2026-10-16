@@ -1,0 +1,226 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Arquivo Agregador Mestre e Operacoes Utilitarias Compartilhadas
+#L ==============================================================================
+
+#L --- Modulos de Dominio ---
+use FormatJson.fdsl
+use FormatCsv.fdsl
+use FormatYaml.fdsl
+use FormatToml.fdsl
+use FormatEncoding.fdsl
+
+agent (FormatStdLib) {
+
+      #L ==============================================================================
+      #L Utilitarios Internos de Apoio Textual Compartilhados (_fmt*)
+      #L ==============================================================================
+
+      op _fmtStrLen (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) {
+                  len = len + 1
+            }
+            emit(nice, len, "ok")
+      }
+
+      op _fmtCharAt (as string: text, as int64: idx) as string ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  idx < 1 or idx > len ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = text[idx]
+            emit(nice, res, "ok")
+      }
+
+      op _fmtIsWs (as string: c) as bool ==> {
+            mut as bool: res = (c == " " or c == "\t" or c == "\n" or c == "\r")
+            emit(nice, res, "ok")
+      }
+
+      op _fmtTrimStart (as string: text) as string ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  len == 0 ==> { emit(nice, empty, "ok") }
+            }
+            mut as int64: start = 1
+            infinite (start <= len) {
+                  mut as string: c = _fmtCharAt(text, start)
+                  route {
+                        _fmtIsWs(c) ==> { start = start + 1 }
+                        _ ==> { break }
+                  }
+            }
+            route {
+                  start > len ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = text[start .. len]
+            emit(nice, res, "ok")
+      }
+
+      op _fmtTrimEnd (as string: text) as string ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  len == 0 ==> { emit(nice, empty, "ok") }
+            }
+            mut as int64: end = len
+            infinite (end >= 1) {
+                  mut as string: c = _fmtCharAt(text, end)
+                  route {
+                        _fmtIsWs(c) ==> { end = end - 1 }
+                        _ ==> { break }
+                  }
+            }
+            route {
+                  end < 1 ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = text[1 .. end]
+            emit(nice, res, "ok")
+      }
+
+      op _fmtTrim (as string: text) as string ==> {
+            mut as string: s1 = _fmtTrimStart(text)
+            mut as string: s2 = _fmtTrimEnd(s1)
+            emit(nice, s2, "ok")
+      }
+
+      op _fmtCharToDigit (as string: c) as int64 ==> {
+            mut as int64: d = -1
+            route {
+                  c == "0" ==> { d = 0 }
+                  c == "1" ==> { d = 1 }
+                  c == "2" ==> { d = 2 }
+                  c == "3" ==> { d = 3 }
+                  c == "4" ==> { d = 4 }
+                  c == "5" ==> { d = 5 }
+                  c == "6" ==> { d = 6 }
+                  c == "7" ==> { d = 7 }
+                  c == "8" ==> { d = 8 }
+                  c == "9" ==> { d = 9 }
+            }
+            emit(nice, d, "ok")
+      }
+
+      op _fmtParseInt (as string: text) as int64 ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as int64: zero = 0
+            route {
+                  len == 0 ==> { emit(nice, zero, "ok") }
+            }
+            mut as bool: neg = false
+            mut as int64: start = 1
+            route {
+                  _fmtCharAt(text, 1) == "-" ==> {
+                        neg = true
+                        start = 2
+                  }
+                  _fmtCharAt(text, 1) == "+" ==> {
+                        start = 2
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start .. len) {
+                  mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                  route {
+                        d >= 0 ==> { res = res * 10 + d }
+                  }
+            }
+            route {
+                  neg ==> {
+                        mut as int64: neg_res = 0 - res
+                        emit(nice, neg_res, "ok")
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _fmtParseFloat (as string: text) as float64 ==> {
+            mut as int64: len = _fmtStrLen(text)
+            mut as float64: zero_f = 0.0
+            route {
+                  len == 0 ==> { emit(nice, zero_f, "ok") }
+            }
+            mut as bool: neg = false
+            mut as int64: start = 1
+            route {
+                  _fmtCharAt(text, 1) == "-" ==> {
+                        neg = true
+                        start = 2
+                  }
+                  _fmtCharAt(text, 1) == "+" ==> {
+                        start = 2
+                  }
+            }
+            mut as int64: dot_idx = -1
+            infinite (i in start .. len) {
+                  route {
+                        _fmtCharAt(text, i) == "." and dot_idx == -1 ==> {
+                              dot_idx = i
+                        }
+                  }
+            }
+            mut as float64: int_part = 0.0
+            mut as float64: frac_part = 0.0
+            route {
+                  dot_idx == -1 ==> {
+                        infinite (i in start .. len) {
+                              mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                              route {
+                                    d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                              }
+                        }
+                  }
+                  dot_idx != -1 ==> {
+                        infinite (i in start .. dot_idx - 1) {
+                              mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                              route {
+                                    d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                              }
+                        }
+                        mut as float64: divisor = 10.0
+                        infinite (i in dot_idx + 1 .. len) {
+                              mut as int64: d = _fmtCharToDigit(_fmtCharAt(text, i))
+                              route {
+                                    d >= 0 ==> {
+                                          frac_part = frac_part + ((d as float64) /f divisor)
+                                          divisor = divisor * 10.0
+                                    }
+                              }
+                        }
+                  }
+            }
+            mut as float64: val = int_part + frac_part
+            route {
+                  neg ==> {
+                        mut as float64: neg_val = 0.0 - val
+                        emit(nice, neg_val, "ok")
+                  }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op _fmtContains (as string: text, as string: needle) as bool ==> {
+            mut as int64: len_t = _fmtStrLen(text)
+            mut as int64: len_n = _fmtStrLen(needle)
+            mut as bool: b_true = true
+            mut as bool: b_false = false
+            route {
+                  len_n == 0 ==> { emit(nice, b_true, "ok") }
+                  len_n > len_t ==> { emit(nice, b_false, "ok") }
+            }
+            mut as int64: limit = len_t - len_n + 1
+            mut as bool: found = false
+            infinite (i in 1 .. limit) {
+                  route {
+                        text[i .. i + len_n - 1] == needle ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+}

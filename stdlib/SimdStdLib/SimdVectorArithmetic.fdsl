@@ -1,0 +1,73 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SimdStdLib
+#L Dominio: SimdVectorArithmetic
+#L ==============================================================================
+
+contract (SimdVectorArithmeticContract) {
+      op simdVectorAddF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorSubF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorMulF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorDivF32 (as list of data: a, as list of data: b) as list of data
+      op simdVectorAddF64 (as list of data: a, as list of data: b) as list of data
+      op simdVectorSubF64 (as list of data: a, as list of data: b) as list of data
+      op simdVectorMulF64 (as list of data: a, as list of data: b) as list of data
+      op simdVectorDivF64 (as list of data: a, as list of data: b) as list of data
+
+      #L Aliases universais
+      op simdVectorAdd (as list of data: a, as list of data: b) as list of data
+      op simdVectorSub (as list of data: a, as list of data: b) as list of data
+      op simdVectorMul (as list of data: a, as list of data: b) as list of data
+      op simdVectorDiv (as list of data: a, as list of data: b) as list of data
+}
+
+agent (SimdStdLib) impl SimdVectorArithmeticContract {
+      #L -- SimdVectorArithmeticContract -------------------------------
+      op simdVectorAddF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorAddF32(a, b), "ok")
+      }
+
+      op simdVectorSubF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorSubF32(a, b), "ok")
+      }
+
+      op simdVectorMulF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorMulF32(a, b), "ok")
+      }
+
+      op simdVectorDivF32 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorDivF32(a, b), "ok")
+      }
+
+      op simdVectorAddF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorAddF64(a, b), "ok")
+      }
+
+      op simdVectorSubF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorSubF64(a, b), "ok")
+      }
+
+      op simdVectorMulF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorMulF64(a, b), "ok")
+      }
+
+      op simdVectorDivF64 (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorDivF64(a, b), "ok")
+      }
+
+      #L Aliases
+      op simdVectorAdd (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorAddF64(a, b), "ok")
+      }
+
+      op simdVectorSub (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorSubF64(a, b), "ok")
+      }
+
+      op simdVectorMul (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorMulF64(a, b), "ok")
+      }
+
+      op simdVectorDiv (as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdVectorDivF64(a, b), "ok")
+      }
+}

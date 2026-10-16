@@ -1,0 +1,203 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Dominio: HashChecksum
+#L ==============================================================================
+
+contract (HashChecksumContract) {
+      op hashCrc16 (as string: text) as int64
+      op hashCrc32 (as string: text) as int64
+      op hashCrc64 (as string: text) as int64
+      op hashAdler32 (as string: text) as int64
+      op hashFletcher16 (as string: text) as int64
+      op hashBsdChecksum (as string: text) as int64
+      op hashSysVChecksum (as string: text) as int64
+      op hashLuhn (as string: digits) as bool
+}
+
+agent (HashStdLib) impl HashChecksumContract {
+      #L ==============================================================================
+      #L Utilitarios Internos
+      #L ==============================================================================
+      op _ord (as string: ch) as int64 ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            route {
+                  ch == "#" ==> { emit(nice, 35, "ok") }
+                  ch == "\n" ==> { emit(nice, 10, "ok") }
+                  ch == "\t" ==> { emit(nice, 9, "ok") }
+                  ch == "\r" ==> { emit(nice, 13, "ok") }
+            }
+            mut as int64: found_code = 0
+            mut as int64: idx = 1
+            infinite (c in ascii_table) {
+                  route {
+                        c == ch and found_code == 0 ==> {
+                              mut as int64: code_val = 31 + idx
+                              route {
+                                    code_val >= 35 ==> { code_val = code_val + 1 }
+                              }
+                              found_code = code_val
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_code, "ok")
+      }
+
+      op _toHex32 (as int64: val) as string ==> {
+            mut as string: hex_digits = "0123456789abcdef"
+            mut as string: res = ""
+            mut as int64: v = val /r 4294967296
+            mut as int64: i = 1
+            infinite (i <= 8) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. HashChecksumContract
+      #L ==============================================================================
+      op hashCrc16 (as string: text) as int64 ==> {
+            mut as int64: crc = 65535
+            mut as int64: poly = 4129
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  crc = crc ^ (code * 256)
+                  mut as int64: bit = 1
+                  infinite (bit <= 8) {
+                        mut as bool: msb = ((crc /i 32768) /r 2 == 1)
+                        crc = (crc * 2) /r 65536
+                        route {
+                              msb ==> { crc = crc ^ poly }
+                        }
+                        bit = bit + 1
+                  }
+            }
+            emit(nice, crc, "ok")
+      }
+
+      op hashCrc32 (as string: text) as int64 ==> {
+            mut as int64: crc = 4294967295
+            mut as int64: poly = 3988292384
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  crc = crc ^ code
+                  mut as int64: bit = 1
+                  infinite (bit <= 8) {
+                        mut as bool: lsb = (crc /r 2 == 1)
+                        crc = crc /i 2
+                        route {
+                              lsb ==> { crc = crc ^ poly }
+                        }
+                        bit = bit + 1
+                  }
+            }
+            crc = crc ^ 4294967295
+            emit(nice, crc, "ok")
+      }
+
+      op hashCrc64 (as string: text) as int64 ==> {
+            mut as int64: crc = 9223372036854775807
+            mut as int64: poly = 482362153549216093
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  crc = (crc ^ code)
+                  mut as int64: bit = 1
+                  infinite (bit <= 8) {
+                        mut as bool: lsb = (crc /r 2 == 1)
+                        crc = crc /i 2
+                        route {
+                              lsb ==> { crc = (crc ^ poly) /r 9223372036854775807 }
+                        }
+                        bit = bit + 1
+                  }
+            }
+            emit(nice, crc, "ok")
+      }
+
+      op hashAdler32 (as string: text) as int64 ==> {
+            mut as int64: a = 1
+            mut as int64: b = 0
+            mut as int64: mod_adler = 65521
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  a = (a + code) /r mod_adler
+                  b = (b + a) /r mod_adler
+            }
+            mut as int64: res = (b * 65536) + a
+            emit(nice, res, "ok")
+      }
+
+      op hashFletcher16 (as string: text) as int64 ==> {
+            mut as int64: sum1 = 0
+            mut as int64: sum2 = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  sum1 = (sum1 + code) /r 255
+                  sum2 = (sum2 + sum1) /r 255
+            }
+            mut as int64: res = (sum2 * 256) + sum1
+            emit(nice, res, "ok")
+      }
+
+      op hashBsdChecksum (as string: text) as int64 ==> {
+            #L BSD 16-bit rotated checksum
+            mut as int64: checksum = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  #L checksum = (checksum >> 1) + ((checksum & 1) << 15)
+                  checksum = (checksum /i 2) + ((checksum /r 2) * 32768)
+                  checksum = (checksum + code) /r 65536
+            }
+            emit(nice, checksum, "ok")
+      }
+
+      op hashSysVChecksum (as string: text) as int64 ==> {
+            #L System V 16-bit checksum
+            mut as int64: s = 0
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  s = s + code
+            }
+            mut as int64: r = (s /r 65536) + (s /i 65536)
+            r = (r /r 65536) + (r /i 65536)
+            emit(nice, r, "ok")
+      }
+
+      op hashLuhn (as string: digits) as bool ==> {
+            #L Algoritmo de Luhn (Mod 10 Check para validacao de cartoes de credito)
+            mut as int64: sum = 0
+            mut as int64: len = 0
+            infinite (c in digits) {
+                  len = len + 1
+            }
+            mut as int64: idx = 1
+            mut as bool: alternate = false
+            infinite (idx <= len) {
+                  mut as int64: pos = len - idx + 1
+                  mut as string: ch = digits[pos]
+                  mut as int64: d = _ord(ch) - 48
+                  route {
+                        d >= 0 and d <= 9 ==> {
+                              route {
+                                    alternate ==> {
+                                          d = d * 2
+                                          route {
+                                                d > 9 ==> { d = d - 9 }
+                                          }
+                                    }
+                              }
+                              sum = sum + d
+                              alternate = not alternate
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, (sum /r 10) == 0, "ok")
+      }
+
+      #L ==============================================================================
+}

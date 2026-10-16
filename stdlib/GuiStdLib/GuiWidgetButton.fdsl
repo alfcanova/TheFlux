@@ -1,0 +1,122 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiWidgetButton
+#L ==============================================================================
+
+contract (GuiWidgetButtonContract) {
+      op guiButton (as map: ctx, as string: label) as list of data
+      op guiButtonEx (as map: ctx, as string: label, as int64: w, as int64: h) as list of data
+      op guiCheckbox (as map: ctx, as string: label, as bool: active) as list of data
+      op guiRadioButton (as map: ctx, as string: label, as bool: active) as list of data
+}
+
+agent (GuiStdLib) impl GuiWidgetButtonContract {
+      #L 6. GuiWidgetButtonContract
+      #L =====================================================================
+
+      op guiButton (as map: ctx, as string: label) as list of data ==> {
+            mut as int64: len = 0
+            infinite (c in label) { len = len + 1 }
+            mut as int64: w = len * 8 + 24
+            mut as int64: bx = ctx["cursor_x"] as int64
+            mut as int64: by = ctx["cursor_y"] as int64
+            mut as bool: clicked = true
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    mut as int64: mx = 0
+                                    mut as int64: my = 0
+                                    mut as bool: mdown = false
+                                    route {
+                                          _mapHasKey(ctx, "mouse_x") ==> {
+                                                mx = ctx["mouse_x"] as int64
+                                                my = ctx["mouse_y"] as int64
+                                                mdown = ctx["mouse_down"] == true
+                                          }
+                                    }
+                                    mut as bool: hover = mx >= bx and mx <= (bx + w) and my >= by and my <= (by + 28)
+                                    clicked = hover and mdown
+                                    route {
+                                          clicked ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, 28, 74, 144, 217)
+                                          }
+                                          hover ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, 28, 55, 90, 130)
+                                          }
+                                          _ ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, 28, 38, 50, 68)
+                                          }
+                                    }
+                                    stdGfxDrawRect(win_id, bx, by, w, 28, 100, 150, 220)
+                                    stdGfxDrawText(win_id, bx + 12, by + 18, label, 255, 255, 255)
+                              }
+                        }
+                  }
+            }
+            mut as map: new_ctx = _advanceWidget(ctx, w, 28)
+            emit(nice, [new_ctx, clicked], "ok")
+      }
+
+      op guiButtonEx (as map: ctx, as string: label, as int64: w, as int64: h) as list of data ==> {
+            mut as int64: bx = ctx["cursor_x"] as int64
+            mut as int64: by = ctx["cursor_y"] as int64
+            mut as bool: clicked = true
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    mut as int64: mx = 0
+                                    mut as int64: my = 0
+                                    mut as bool: mdown = false
+                                    route {
+                                          _mapHasKey(ctx, "mouse_x") ==> {
+                                                mx = ctx["mouse_x"] as int64
+                                                my = ctx["mouse_y"] as int64
+                                                mdown = ctx["mouse_down"] == true
+                                          }
+                                    }
+                                    mut as bool: hover = mx >= bx and mx <= (bx + w) and my >= by and my <= (by + h)
+                                    clicked = hover and mdown
+                                    route {
+                                          clicked ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, h, 74, 144, 217)
+                                          }
+                                          hover ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, h, 55, 90, 130)
+                                          }
+                                          _ ==> {
+                                                stdGfxFillRect(win_id, bx, by, w, h, 38, 50, 68)
+                                          }
+                                    }
+                                    stdGfxDrawRect(win_id, bx, by, w, h, 100, 150, 220)
+                                    mut as int64: ty = by + 18
+                                    stdGfxDrawText(win_id, bx + 12, ty, label, 255, 255, 255)
+                              }
+                        }
+                  }
+            }
+            mut as map: new_ctx = _advanceWidget(ctx, w, h)
+            emit(nice, [new_ctx, clicked], "ok")
+      }
+
+      op guiCheckbox (as map: ctx, as string: label, as bool: active) as list of data ==> {
+            mut as int64: len = 0
+            infinite (c in label) { len = len + 1 }
+            mut as int64: w = len * 8 + 26
+            mut as map: new_ctx = _advanceWidget(ctx, w, 20)
+            emit(nice, [new_ctx, not active], "ok")
+      }
+
+      op guiRadioButton (as map: ctx, as string: label, as bool: active) as list of data ==> {
+            mut as int64: len = 0
+            infinite (c in label) { len = len + 1 }
+            mut as int64: w = len * 8 + 26
+            mut as map: new_ctx = _advanceWidget(ctx, w, 20)
+            emit(nice, [new_ctx, true], "ok")
+      }
+
+      #L =====================================================================
+}

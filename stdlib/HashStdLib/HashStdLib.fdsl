@@ -1,0 +1,14 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use HashChecksum.fdsl
+use HashFast.fdsl
+use HashInteger.fdsl
+use HashDistributed.fdsl
+use HashCrypto.fdsl
+use HashSecurity.fdsl
+
+agent (HashStdLib) {
+}

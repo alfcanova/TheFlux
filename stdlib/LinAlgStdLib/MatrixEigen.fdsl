@@ -1,0 +1,327 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: MatrixEigen
+#L ==============================================================================
+
+contract (MatrixEigenContract) {
+      op matrixEigenvalues2D (as map: matrix) as list of data
+      op matrixEigenvaluesQR (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data
+      op matrixEigenvectorsQR (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data
+      op matrixIsSymmetric (as map: matrix, as float64: tolerance) as bool
+      op matrixEigenvectors2D (as map: matrix) as list of data
+      op matrixEig (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data
+      op matrixEigenvectorInverseIteration (as map: matrix, as float64: lambda, as int64: max_iters) as list of data
+}
+
+agent (LinAlgStdLib) impl MatrixEigenContract {
+      #L 14. MatrixEigenContract - Autovalores (2D Analitico e QR) e Simetria
+      #L ==============================================================================
+
+      op matrixEigenvalues2D (as map: matrix) as list of data ==> {
+            mut as float64: a = tensorGetAt(matrix, [1, 1])
+            mut as float64: b = tensorGetAt(matrix, [1, 2])
+            mut as float64: c = tensorGetAt(matrix, [2, 1])
+            mut as float64: d = tensorGetAt(matrix, [2, 2])
+
+            mut as float64: tr = a + d
+            mut as float64: det = a * d - b * c
+            mut as float64: disc = tr * tr - 4.0 * det
+            mut as float64: sqrt_disc = _sqrt(disc)
+
+            mut as float64: lambda1 = (tr + sqrt_disc) /f 2.0
+            mut as float64: lambda2 = (tr - sqrt_disc) /f 2.0
+            emit(nice, [lambda1, lambda2], "ok")
+      }
+
+      op matrixEigenvaluesQR (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as map: A_k = _mapClone(matrix)
+            A_k["data"] = _listClone(matrix["data"] as list of data)
+
+            mut as int64: iter = 1
+            infinite (iter <= max_iters) {
+                  mut as list of data: qr_res = matrixQR(A_k)
+                  mut as map: Q = qr_res[1] as map
+                  mut as map: R = qr_res[2] as map
+
+                  A_k = tensorMatMul2D(R, Q)
+
+                  mut as float64: off_diag_sum = 0.0
+                  mut as int64: r = 2
+                  infinite (r <= n) {
+                        mut as int64: c = 1
+                        infinite (c < r) {
+                              mut as float64: val = tensorGetAt(A_k, [r, c])
+                              route { val < 0.0 ==> { val = 0.0 - val } }
+                              off_diag_sum = off_diag_sum + val
+                              c = c + 1
+                        }
+                        r = r + 1
+                  }
+
+                  route {
+                        off_diag_sum < tolerance ==> {
+                              break
+                        }
+                  }
+                  iter = iter + 1
+            }
+
+            mut as list of data: lambdas = matrixExtractDiagonal(A_k)
+            emit(nice, lambdas, "ok")
+      }
+
+      op matrixEigenvectorsQR (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as map: A_k = _mapClone(matrix)
+            A_k["data"] = _listClone(matrix["data"] as list of data)
+            mut as map: V = matrixIdentity(n)
+
+            mut as int64: iter = 1
+            infinite (iter <= max_iters) {
+                  mut as list of data: qr_res = matrixQR(A_k)
+                  mut as map: Q = qr_res[1] as map
+                  mut as map: R = qr_res[2] as map
+
+                  A_k = tensorMatMul2D(R, Q)
+                  V = tensorMatMul2D(V, Q)
+
+                  mut as float64: off_diag_sum = 0.0
+                  mut as int64: r = 2
+                  infinite (r <= n) {
+                        mut as int64: c = 1
+                        infinite (c < r) {
+                              mut as float64: val = tensorGetAt(A_k, [r, c])
+                              route { val < 0.0 ==> { val = 0.0 - val } }
+                              off_diag_sum = off_diag_sum + val
+                              c = c + 1
+                        }
+                        r = r + 1
+                  }
+
+                  route {
+                        off_diag_sum < tolerance ==> {
+                              break
+                        }
+                  }
+                  iter = iter + 1
+            }
+
+            mut as list of data: lambdas = matrixExtractDiagonal(A_k)
+
+            mut as int64: col = 1
+            infinite (col <= n) {
+                  mut as list of data: col_vec = []
+                  mut as int64: row = 1
+                  infinite (row <= n) {
+                        col_vec[row] = tensorGetAt(V, [row, col])
+                        row = row + 1
+                  }
+                  col_vec = vectorNormalize(col_vec)
+                  row = 1
+                  infinite (row <= n) {
+                        V = tensorSetAt(V, [row, col], col_vec[row] as float64)
+                        row = row + 1
+                  }
+                  col = col + 1
+            }
+
+            emit(nice, [lambdas, V], "ok")
+      }
+
+      op matrixIsSymmetric (as map: matrix, as float64: tolerance) as bool ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+            route {
+                  m != n ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+
+            mut as bool: is_sym = true
+            mut as int64: r = 1
+            infinite (r <= n) {
+                  mut as int64: c = r + 1
+                  infinite (c <= n) {
+                        mut as float64: diff = tensorGetAt(matrix, [r, c]) - tensorGetAt(matrix, [c, r])
+                        route { diff < 0.0 ==> { diff = 0.0 - diff } }
+                        route {
+                              diff > tolerance ==> {
+                                    is_sym = false
+                                    break
+                              }
+                        }
+                        c = c + 1
+                  }
+                  route { !is_sym ==> { break } }
+                  r = r + 1
+            }
+            emit(nice, is_sym, "ok")
+      }
+
+      op matrixEigenvectors2D (as map: matrix) as list of data ==> {
+            mut as list of data: lambdas = matrixEigenvalues2D(matrix)
+            mut as float64: l1 = lambdas[1] as float64
+            mut as float64: l2 = lambdas[2] as float64
+
+            mut as float64: a = tensorGetAt(matrix, [1, 1])
+            mut as float64: b = tensorGetAt(matrix, [1, 2])
+            mut as float64: c = tensorGetAt(matrix, [2, 1])
+            mut as float64: d = tensorGetAt(matrix, [2, 2])
+
+            mut as float64: b_abs = b
+            route { b_abs < 0.0 ==> { b_abs = 0.0 - b_abs } }
+            mut as float64: c_abs = c
+            route { c_abs < 0.0 ==> { c_abs = 0.0 - c_abs } }
+
+            mut as list of data: v1 = []
+            route {
+                  b_abs >= c_abs and b_abs > 0.000000000001 ==> {
+                        v1 = [b, l1 - a]
+                  }
+                  c_abs > 0.000000000001 ==> {
+                        v1 = [l1 - d, c]
+                  }
+                  _ ==> {
+                        route {
+                              l1 == a ==> { v1 = [1.0, 0.0] }
+                              _ ==> { v1 = [0.0, 1.0] }
+                        }
+                  }
+            }
+            v1 = vectorNormalize(v1)
+
+            mut as list of data: v2 = []
+            route {
+                  b_abs >= c_abs and b_abs > 0.000000000001 ==> {
+                        v2 = [b, l2 - a]
+                  }
+                  c_abs > 0.000000000001 ==> {
+                        v2 = [l2 - d, c]
+                  }
+                  _ ==> {
+                        route {
+                              l2 == d ==> { v2 = [0.0, 1.0] }
+                              _ ==> { v2 = [1.0, 0.0] }
+                        }
+                  }
+            }
+            v2 = vectorNormalize(v2)
+
+            mut as map: V = tensorNew([2, 2])
+            V = tensorSetAt(V, [1, 1], v1[1] as float64)
+            V = tensorSetAt(V, [2, 1], v1[2] as float64)
+            V = tensorSetAt(V, [1, 2], v2[1] as float64)
+            V = tensorSetAt(V, [2, 2], v2[2] as float64)
+
+            emit(nice, [lambdas, V], "ok")
+      }
+
+      op matrixEig (as map: matrix, as int64: max_iters, as float64: tolerance) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+
+            mut as map: A_k = _mapClone(matrix)
+            A_k["data"] = _listClone(matrix["data"] as list of data)
+
+            mut as map: V = matrixIdentity(n)
+
+            mut as int64: iter = 1
+            infinite (iter <= max_iters) {
+                  mut as list of data: qr_res = matrixQR(A_k)
+                  mut as map: Q = qr_res[1] as map
+                  mut as map: R = qr_res[2] as map
+
+                  A_k = tensorMatMul2D(R, Q)
+                  V = tensorMatMul2D(V, Q)
+
+                  mut as float64: off_diag_sum = 0.0
+                  mut as int64: r = 2
+                  infinite (r <= n) {
+                        mut as int64: c = 1
+                        infinite (c < r) {
+                              mut as float64: val = tensorGetAt(A_k, [r, c])
+                              route { val < 0.0 ==> { val = 0.0 - val } }
+                              off_diag_sum = off_diag_sum + val
+                              c = c + 1
+                        }
+                        r = r + 1
+                  }
+
+                  route {
+                        off_diag_sum < tolerance ==> {
+                              break
+                        }
+                  }
+                  iter = iter + 1
+            }
+
+            mut as list of data: lambdas = matrixExtractDiagonal(A_k)
+
+            mut as int64: col = 1
+            infinite (col <= n) {
+                  mut as list of data: col_vec = []
+                  mut as int64: row = 1
+                  infinite (row <= n) {
+                        col_vec[row] = tensorGetAt(V, [row, col])
+                        row = row + 1
+                  }
+                  col_vec = vectorNormalize(col_vec)
+                  row = 1
+                  infinite (row <= n) {
+                        V = tensorSetAt(V, [row, col], col_vec[row] as float64)
+                        row = row + 1
+                  }
+                  col = col + 1
+            }
+
+            emit(nice, [lambdas, V], "ok")
+      }
+
+      op matrixEigenvectorInverseIteration (as map: matrix, as float64: lambda, as int64: max_iters) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+
+            mut as float64: shift = lambda + 0.000001
+            mut as map: M = tensorNew([n, n])
+            mut as int64: r = 1
+            infinite (r <= n) {
+                  mut as int64: c = 1
+                  infinite (c <= n) {
+                        mut as float64: val_m = tensorGetAt(matrix, [r, c])
+                        route {
+                              r == c ==> { val_m = val_m - shift }
+                        }
+                        M = tensorSetAt(M, [r, c], val_m)
+                        c = c + 1
+                  }
+                  r = r + 1
+            }
+
+            mut as list of data: qr_m = matrixQR(M)
+            mut as map: Q_m = qr_m[1] as map
+            mut as map: R_m = qr_m[2] as map
+
+            mut as list of data: v_vec = []
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  v_vec[i] = 1.0
+                  i = i + 1
+            }
+            v_vec = vectorNormalize(v_vec)
+
+            mut as int64: iter = 1
+            infinite (iter <= max_iters) {
+                  mut as list of data: w = matrixSolveQR(Q_m, R_m, v_vec)
+                  v_vec = vectorNormalize(w)
+                  iter = iter + 1
+            }
+
+            emit(nice, v_vec, "ok")
+      }
+
+      #L ==============================================================================
+}

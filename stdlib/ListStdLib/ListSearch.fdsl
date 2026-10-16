@@ -1,0 +1,97 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListSearch
+#L ==============================================================================
+
+contract (ListSearchContract) {
+      op listContains (as list of data: items, as data: item) as bool
+      op listContainsAny (as list of data: items, as list of data: needles) as bool
+      op listContainsAll (as list of data: items, as list of data: subset) as bool
+      op listStartsWith (as list of data: items, as list of data: prefix) as bool
+      op listEndsWith (as list of data: items, as list of data: suffix) as bool
+      op listIndexOf (as list of data: items, as data: item) as int64
+      op listLastIndexOf (as list of data: items, as data: item) as int64
+      op listCount (as list of data: items, as data: item) as int64
+}
+
+agent (ListStdLib) impl ListSearchContract {
+      #L -- ListSearchContract ----------------------------------------
+      op listStartsWith (as list of data: items, as list of data: prefix) as bool ==> {
+            mut as int64: len_p = listLength(prefix)
+            mut as int64: len_i = listLength(items)
+            route {
+                  len_p == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_p > len_i ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as list of data: sub = items[1..len_p]
+            emit(nice, sub == prefix, "ok")
+      }
+
+      op listEndsWith (as list of data: items, as list of data: suffix) as bool ==> {
+            mut as int64: len_s = listLength(suffix)
+            mut as int64: len_i = listLength(items)
+            route {
+                  len_s == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_s > len_i ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as int64: start = len_i - len_s + 1
+            mut as list of data: sub = items[start..len_i]
+            emit(nice, sub == suffix, "ok")
+      }
+
+      op listIndexOf (as list of data: items, as data: item) as int64 ==> {
+            mut as int64: idx = -1
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        x == item ==> {
+                              idx = curr
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            imut as int64: res = idx
+            emit(nice, res, "ok")
+      }
+
+      op listLastIndexOf (as list of data: items, as data: item) as int64 ==> {
+            mut as int64: idx = -1
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        x == item ==> {
+                              idx = curr
+                        }
+                  }
+                  curr = curr + 1
+            }
+            imut as int64: res = idx
+            emit(nice, res, "ok")
+      }
+
+      op listCount (as list of data: items, as data: item) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in items) {
+                  route {
+                        x == item ==> {
+                              count = count + 1
+                        }
+                  }
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+}

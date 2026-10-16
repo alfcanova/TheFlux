@@ -1,0 +1,107 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Dominio: CharTransform
+#L ==============================================================================
+
+contract (CharTransformContract) {
+      op charToUpper (as char: c) as char
+      op charToLower (as char: c) as char
+      op charToggleCase (as char: c) as char
+      op charToDigit (as char: c) as int64
+      op charFromDigit (as int64: digit) as char
+}
+
+agent (CharStdLib) impl CharTransformContract {
+      #L -- CharTransformContract -------------------------------------
+      op charToUpper (as char: c) as char ==> {
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as int64: idx = 1
+            mut as bool: found = false
+            infinite (ch in low) {
+                  route {
+                        ch == (c as string) ==> {
+                              found = true
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  found ==> {
+                        imut as char: res = upp[idx]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, c, "ok")
+      }
+
+      op charToLower (as char: c) as char ==> {
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            mut as int64: idx = 1
+            mut as bool: found = false
+            infinite (ch in upp) {
+                  route {
+                        ch == (c as string) ==> {
+                              found = true
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  found ==> {
+                        imut as char: res = low[idx]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, c, "ok")
+      }
+
+      op charToggleCase (as char: c) as char ==> {
+            mut as bool: is_low = charIsLower(c)
+            route {
+                  is_low ==> {
+                        mut as char: up = charToUpper(c)
+                        emit(nice, up, "ok")
+                  }
+            }
+            mut as bool: is_upp = charIsUpper(c)
+            route {
+                  is_upp ==> {
+                        mut as char: lo = charToLower(c)
+                        emit(nice, lo, "ok")
+                  }
+            }
+            emit(nice, c, "ok")
+      }
+
+      op charToDigit (as char: c) as int64 ==> {
+            route { c == '0' ==> { emit(nice, 0, "ok") } }
+            route { c == '1' ==> { emit(nice, 1, "ok") } }
+            route { c == '2' ==> { emit(nice, 2, "ok") } }
+            route { c == '3' ==> { emit(nice, 3, "ok") } }
+            route { c == '4' ==> { emit(nice, 4, "ok") } }
+            route { c == '5' ==> { emit(nice, 5, "ok") } }
+            route { c == '6' ==> { emit(nice, 6, "ok") } }
+            route { c == '7' ==> { emit(nice, 7, "ok") } }
+            route { c == '8' ==> { emit(nice, 8, "ok") } }
+            route { c == '9' ==> { emit(nice, 9, "ok") } }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromDigit (as int64: digit) as char ==> {
+            route { digit == 0 ==> { emit(nice, '0', "ok") } }
+            route { digit == 1 ==> { emit(nice, '1', "ok") } }
+            route { digit == 2 ==> { emit(nice, '2', "ok") } }
+            route { digit == 3 ==> { emit(nice, '3', "ok") } }
+            route { digit == 4 ==> { emit(nice, '4', "ok") } }
+            route { digit == 5 ==> { emit(nice, '5', "ok") } }
+            route { digit == 6 ==> { emit(nice, '6', "ok") } }
+            route { digit == 7 ==> { emit(nice, '7', "ok") } }
+            route { digit == 8 ==> { emit(nice, '8', "ok") } }
+            route { digit == 9 ==> { emit(nice, '9', "ok") } }
+            emit(nice, '?', "ok")
+      }
+}

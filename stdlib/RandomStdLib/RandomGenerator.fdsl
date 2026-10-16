@@ -1,0 +1,137 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RandomStdLib
+#L Dominio: RandomGenerator
+#L ==============================================================================
+
+contract (RandomGeneratorContract) {
+      op randomLcgNew (as int64: seed) as int64
+      op randomLcgNext (as int64: state) as list of data
+      op randomXorNew (as int64: seed) as int64
+      op randomXorNext (as int64: state) as list of data
+      op randomPcgNew (as int64: seed) as int64
+      op randomPcgNext (as int64: state) as list of data
+      op randomSplitMix64 (as int64: seed) as int64
+      op randomSeedSystem () as int64
+}
+
+agent (RandomStdLib) impl RandomGeneratorContract {
+
+      #L ==============================================================================
+      #L 1. RandomGeneratorContract
+      #L ==============================================================================
+      op randomLcgNew (as int64: seed) as int64 ==> {
+            mut as int64: s = seed
+            route {
+                  s == 0 ==> {
+                        s = 123456789
+                  }
+            }
+            emit(nice, s, "ok")
+      }
+
+      op randomLcgNext (as int64: state) as list of data ==> {
+            #L Linear Congruential Generator: (a * state + c) mod m
+            mut as int64: a = 1103515245
+            mut as int64: c = 12345
+            mut as int64: m = 2147483647
+            mut as int64: next_state = (a * state + c)
+            route {
+                  next_state < 0 ==> {
+                        next_state = 0 - next_state
+                  }
+            }
+            next_state = next_state /r m
+            mut as list of data: res = [next_state, next_state]
+            emit(nice, res, "ok")
+      }
+
+      op randomXorNew (as int64: seed) as int64 ==> {
+            mut as int64: s = seed
+            route {
+                  s == 0 ==> {
+                        s = 88172645463325252
+                  }
+            }
+            emit(nice, s, "ok")
+      }
+
+      op randomXorNext (as int64: state) as list of data ==> {
+            #L XorShift64
+            mut as int64: x = state
+            route {
+                  x == 0 ==> {
+                        x = 88172645463325252
+                  }
+            }
+            x = x ^ (x << 13)
+            x = x ^ (x >> 7)
+            x = x ^ (x << 17)
+            route {
+                  x < 0 ==> {
+                        x = 0 - x
+                  }
+            }
+            mut as list of data: res = [x, x]
+            emit(nice, res, "ok")
+      }
+
+      op randomPcgNew (as int64: seed) as int64 ==> {
+            mut as int64: s = seed
+            route {
+                  s == 0 ==> {
+                        s = 42
+                  }
+            }
+            emit(nice, s, "ok")
+      }
+
+      op randomPcgNext (as int64: state) as list of data ==> {
+            #L PCG32 style permutation
+            mut as int64: old_state = state
+            mut as int64: next_state = (old_state * 747796405 + 2891336453)
+            route {
+                  next_state < 0 ==> {
+                        next_state = 0 - next_state
+                  }
+            }
+            mut as int64: word = ((old_state >> 18) ^ old_state) >> 27
+            mut as int64: rot = old_state >> 59
+            route {
+                  rot < 0 ==> {
+                        rot = 0 - rot
+                  }
+            }
+            rot = rot /r 32
+            mut as int64: val = (word >> rot) | (word << (32 - rot))
+            route {
+                  val < 0 ==> {
+                        val = 0 - val
+                  }
+            }
+            mut as list of data: res = [next_state, val]
+            emit(nice, res, "ok")
+      }
+
+      op randomSplitMix64 (as int64: seed) as int64 ==> {
+            mut as int64: mask = 9223372036854775807
+            mut as int64: z = (seed + 7046029254386353131) & mask
+            z = ((z ^ (z >>> 30)) * 4660855237) & mask
+            z = ((z ^ (z >>> 27)) * 2654435761) & mask
+            mut as int64: res = z ^ (z >>> 31)
+            route {
+                  res < 0 ==> {
+                        res = 0 - res
+                  }
+                  res == 0 ==> {
+                        res = 123456789
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op randomSeedSystem () as int64 ==> {
+            emit(fail, 0, "Nao implementada")
+      }
+
+      #L ==============================================================================
+}

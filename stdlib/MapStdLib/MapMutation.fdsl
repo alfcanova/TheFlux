@@ -1,0 +1,106 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapMutation
+#L ==============================================================================
+
+contract (MapMutationContract) {
+      op mapPut (as map: record, as string: key, as data: value) as map
+      op mapPutIfAbsent (as map: record, as string: key, as data: value) as map
+      op mapReplace (as map: record, as string: key, as data: value) as map
+      op mapPutAll (as map: record, as map: other) as map
+      op mapRemove (as map: record, as string: key) as map
+      op mapRemoveAll (as map: record, as list of data: keys) as map
+}
+
+agent (MapStdLib) impl MapMutationContract {
+      #L 3. MapMutationContract (6 operacoes)
+      #L ==============================================================================
+      op mapPut (as map: record, as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            m[key] = value
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapPutIfAbsent (as map: record, as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            mut as bool: exists = false
+            infinite (k in record) {
+                  m[k] = record[k]
+                  route {
+                        k == key ==> {
+                              exists = true
+                        }
+                  }
+            }
+            route {
+                  not exists ==> {
+                        m[key] = value
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapReplace (as map: record, as string: key, as data: value) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            m[key] = value
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapPutAll (as map: record, as map: other) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            infinite (k in other) {
+                  m[k] = other[k]
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapRemove (as map: record, as string: key) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  route {
+                        k != key ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapRemoveAll (as map: record, as list of data: keys) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: to_remove = false
+                  infinite (rk in keys) {
+                        route {
+                              k == rk ==> {
+                                    to_remove = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not to_remove ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

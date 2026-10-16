@@ -1,0 +1,65 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Dominio: HashInteger
+#L ==============================================================================
+
+contract (HashIntegerContract) {
+      op hashInt32 (as int64: val) as int64
+      op hashInt64 (as int64: val) as int64
+      op hashFibonacci (as int64: val, as int64: num_bits) as int64
+      op hashJenkins32 (as int64: val) as int64
+      op hashZobrist (as int64: piece, as int64: square) as int64
+}
+
+agent (HashStdLib) impl HashIntegerContract {
+      #L 3. HashIntegerContract
+      #L ==============================================================================
+      op hashInt32 (as int64: val) as int64 ==> {
+            #L Thomas Wang 32-bit integer hash
+            mut as int64: a = val /r 4294967296
+            a = ((a ^ 61) ^ (a /i 65536)) /r 4294967296
+            a = (a + (a * 4)) /r 4294967296
+            a = (a ^ (a /i 16)) /r 4294967296
+            a = (a * 668265261) /r 4294967296
+            a = (a ^ (a /i 32768)) /r 4294967296
+            emit(nice, a, "ok")
+      }
+
+      op hashInt64 (as int64: val) as int64 ==> {
+            #L SplitMix64 mixing transform
+            mut as int64: z = (val + 11400714819323198485) /r 9223372036854775807
+            z = ((z ^ (z /i 4194304)) * 14029467366897019727) /r 9223372036854775807
+            z = ((z ^ (z /i 8388608)) * 1604811807080503077) /r 9223372036854775807
+            z = (z ^ (z /i 4194304)) /r 9223372036854775807
+            emit(nice, z, "ok")
+      }
+
+      op hashFibonacci (as int64: val, as int64: num_bits) as int64 ==> {
+            #L Fibonacci Hashing usando constante aurea
+            mut as int64: golden = 2654435769
+            mut as int64: prod = (val * golden) /r 4294967296
+            mut as int64: shift = 32 - num_bits
+            mut as int64: div = 1 << shift
+            emit(nice, (prod /i div) + 1, "ok")
+      }
+
+      op hashJenkins32 (as int64: val) as int64 ==> {
+            #L Bob Jenkins 32-bit integer hash
+            mut as int64: a = val /r 4294967296
+            a = (a + 2127912214 + (a << 12)) /r 4294967296
+            a = (a ^ 3345072700 ^ (a >> 19)) /r 4294967296
+            a = (a + 374761393 + (a << 5)) /r 4294967296
+            a = (a + 355007497 ^ (a << 9)) /r 4294967296
+            a = (a + 1626194723 + (a << 3)) /r 4294967296
+            a = (a ^ 2820177708 ^ (a >> 16)) /r 4294967296
+            emit(nice, a, "ok")
+      }
+
+      op hashZobrist (as int64: piece, as int64: square) as int64 ==> {
+            #L Zobrist Hash para jogos de tabuleiro (1-index para peca e casa)
+            mut as int64: key = (piece * 64) + square
+            emit(nice, hashInt64(key), "ok")
+      }
+
+      #L ==============================================================================
+}

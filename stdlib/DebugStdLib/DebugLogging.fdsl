@@ -1,0 +1,53 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugLogging
+#L ==============================================================================
+
+contract (DebugLoggingContract) {
+      op debugLogInfo (as string: tag, as string: message) as string
+      op debugLogWarn (as string: tag, as string: message) as string
+      op debugLogError (as string: tag, as string: message) as string
+      op debugLogDebug (as string: tag, as string: message) as string
+      op debugTrace (as string: context, as string: step) as string
+      op debugBanner (as string: title, as int64: width) as string
+}
+
+agent (DebugStdLib) impl DebugLoggingContract {
+      #L 3. DebugLoggingContract
+      #L ==============================================================================
+      op debugLogInfo (as string: tag, as string: message) as string ==> {
+            emit(nice, "[INFO]  [" + tag + "] " + message, "ok")
+      }
+
+      op debugLogWarn (as string: tag, as string: message) as string ==> {
+            emit(nice, "[WARN]  [" + tag + "] " + message, "ok")
+      }
+
+      op debugLogError (as string: tag, as string: message) as string ==> {
+            emit(nice, "[ERROR] [" + tag + "] " + message, "ok")
+      }
+
+      op debugLogDebug (as string: tag, as string: message) as string ==> {
+            emit(nice, "[DEBUG] [" + tag + "] " + message, "ok")
+      }
+
+      op debugTrace (as string: context, as string: step) as string ==> {
+            emit(nice, "[TRACE] " + context + " -> " + step, "ok")
+      }
+
+      op debugBanner (as string: title, as int64: width) as string ==> {
+            mut as int64: w = width
+            route {
+                  w <= 0 ==> { w = 40 }
+            }
+            mut as string: line = ""
+            mut as int64: i = 1
+            infinite (i <= w) {
+                  line = line + "="
+                  i = i + 1
+            }
+            emit(nice, line + "\n  " + title + "\n" + line, "ok")
+      }
+
+      #L ==============================================================================
+}

@@ -19,9 +19,14 @@ def parse_type_reference(ts: TokenStream) -> ASTNode:
 
     if _peek_type(ts) in (T.LIST, T.SET):
         kw_tok = ts.advance()
-        ts.expect(T.OF)
-        elem = parse_type_reference(ts)
-        return UserType(name=f"{kw_tok.lexeme} of {_type_name(elem)}")
+        if _peek_type(ts) == T.OF:
+            ts.advance()
+            elem = parse_type_reference(ts)
+            return UserType(name=f"{kw_tok.lexeme} of {_type_name(elem)}")
+        code = "SYN160" if kw_tok.type == T.LIST else "SYN161"
+        tok = ts.peek(0)
+        raise ParseError(code, tok.line if tok else kw_tok.line, tok.column if tok else kw_tok.column,
+                         f"Tipo '{kw_tok.lexeme}' requer especificação do tipo de elemento com 'of <tipo>'")
 
     if _peek_type(ts) == T.MAP:
         ts.advance()
@@ -43,21 +48,29 @@ def parse_type_reference(ts: TokenStream) -> ASTNode:
             ts.advance()
             member_tok = ts.expect(T.IDENTIFIER)
             return UserType(name=f"{name}::{member_tok.lexeme}")
-        if name in ("tensor", "Tensor") and _peek_type(ts) == T.LBRACKET:
-            ts.advance()
-            dims: list[str] = []
-            while _peek_type(ts) != T.RBRACKET:
-                dim_tok = ts.expect(T.INT_LIT)
-                dims.append(dim_tok.lexeme)
-                if not ts.match(T.COMMA):
-                    break
-            ts.expect(T.RBRACKET)
-            elem: ASTNode | None = None
-            if _peek_type(ts) == T.OF:
+        if name in ("tensor", "Tensor"):
+            if _peek_type(ts) == T.LBRACKET:
                 ts.advance()
-                elem = parse_type_reference(ts)
-            elem_name = _type_name(elem) if elem is not None else "?"
-            return UserType(name=f"tensor[{','.join(dims)}] of {elem_name}")
+                dims: list[str] = []
+                while _peek_type(ts) != T.RBRACKET:
+                    dim_tok = ts.expect(T.INT_LIT)
+                    dims.append(dim_tok.lexeme)
+                    if not ts.match(T.COMMA):
+                        break
+                ts.expect(T.RBRACKET)
+                if _peek_type(ts) == T.OF:
+                    ts.advance()
+                    elem = parse_type_reference(ts)
+                else:
+                    tok = ts.peek(0)
+                    raise ParseError("SYN151", tok.line if tok else 0, tok.column if tok else 0,
+                                     "Tipo 'tensor' requer especificação do tipo de elemento com 'of <tipo>'")
+                elem_name = _type_name(elem) if elem is not None else "?"
+                return UserType(name=f"tensor[{','.join(dims)}] of {elem_name}")
+            elif _peek_type(ts) == T.OF:
+                tok = ts.peek(0)
+                raise ParseError("SYN150", tok.line if tok else 0, tok.column if tok else 0,
+                                 "Tipo 'tensor' requer especificação das dimensões entre colchetes (ex: 'tensor[3,3] of float64')")
         return UserType(name=name)
 
     if _peek_type(ts) == T.LBRACKET:
@@ -261,7 +274,7 @@ def parse_use_decl(ts: TokenStream) -> UseDecl:
     return UseDecl(target=target)
 
 
-def _parse_use_group(ts: TokenStream, agent: str = "") -> ASTNode:
+def _parse_use_group(ts: TokenStream, agent: str = "", path: list[str] | None = None) -> ASTNode:
     ts.expect(T.LBRACE)
     items: list[ASTNode] = []
     while _peek_type(ts) not in (T.RBRACE, None):
@@ -276,7 +289,7 @@ def _parse_use_group(ts: TokenStream, agent: str = "") -> ASTNode:
         if not ts.match(T.COMMA):
             break
     ts.expect(T.RBRACE)
-    group = UseGroup(agent=agent, items=[_to_group_item(x) for x in items])
+    group = UseGroup(agent=agent, items=[_to_group_item(x) for x in items], path=path or ([agent] if agent else []))
     if agent:
         for it in group.items:
             it.agent = agent
@@ -285,12 +298,22 @@ def _parse_use_group(ts: TokenStream, agent: str = "") -> ASTNode:
 
 def _parse_use_target(ts: TokenStream) -> ASTNode:
     segments: list[str] = []
-    segments.append(ts.expect(T.IDENTIFIER).lexeme)
+    seg = ts.expect(T.IDENTIFIER).lexeme
+    if _peek_type(ts) == T.DOT:
+        ts.advance()
+        ext = ts.expect(T.IDENTIFIER).lexeme
+        seg = f"{seg}.{ext}"
+    segments.append(seg)
     while _peek_type(ts) == T.DOUBLE_COLON:
         ts.advance()
         if _peek_type(ts) == T.LBRACE:
-            return _parse_use_group(ts, agent=segments[0])
-        segments.append(ts.expect(T.IDENTIFIER).lexeme)
+            return _parse_use_group(ts, agent=segments[0], path=segments)
+        seg = ts.expect(T.IDENTIFIER).lexeme
+        if _peek_type(ts) == T.DOT:
+            ts.advance()
+            ext = ts.expect(T.IDENTIFIER).lexeme
+            seg = f"{seg}.{ext}"
+        segments.append(seg)
 
     alias = None
     if _peek_type(ts) == T.AS:
@@ -299,7 +322,7 @@ def _parse_use_target(ts: TokenStream) -> ASTNode:
 
     if len(segments) == 1:
         return UseAgent(name=segments[0], alias=alias)
-    return UseOp(agent=segments[0], op=segments[1], alias=alias or "")
+    return UseOp(agent=segments[0], op=segments[-1], alias=alias or "", path=segments)
 
 
 def _to_group_item(node: ASTNode) -> UseGroupItem:

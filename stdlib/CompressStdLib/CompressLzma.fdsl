@@ -1,0 +1,51 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressLzma
+#L ==============================================================================
+
+contract (CompressLzmaContract) {
+      op compressLzma (as string: input_data) as string
+      op compressLzmaLevel (as string: input_data, as int64: level) as string
+      op decompressLzma (as string: compressed_data) as string
+      op decompressLzmaSafe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsLzma (as string: compressed_data) as bool
+}
+
+agent (CompressStdLib) impl CompressLzmaContract {
+      #L -- CompressLzmaContract ---------------------------------------
+      op compressLzma (as string: input_data) as string ==> {
+            emit(nice, stdCompressLzma(input_data), "ok")
+      }
+
+      op compressLzmaLevel (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressLzmaLevel(input_data, level), "ok")
+      }
+
+      op decompressLzma (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressLzma(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao lzma")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressLzmaSafe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressLzmaSafe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao lzma")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsLzma (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsLzma(compressed_data), "ok")
+      }
+}

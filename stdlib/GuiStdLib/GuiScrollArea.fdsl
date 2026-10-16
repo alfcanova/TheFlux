@@ -1,0 +1,43 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiScrollArea
+#L ==============================================================================
+
+contract (GuiScrollAreaContract) {
+      op guiBeginScrollArea (as map: ctx, as string: area_id, as int64: w, as int64: h) as map
+      op guiEndScrollArea (as map: ctx) as map
+      op guiSetScrollOffsetY (as map: ctx, as string: area_id, as int64: offset_y) as map
+      op guiGetScrollOffsetY (as map: ctx, as string: area_id) as int64
+}
+
+agent (GuiStdLib) impl GuiScrollAreaContract {
+      #L 9. GuiScrollAreaContract
+      #L =====================================================================
+
+      op guiBeginScrollArea (as map: ctx, as string: area_id, as int64: w, as int64: h) as map ==> {
+            ctx["scroll_area_active"] = area_id
+            emit(nice, _advanceWidget(ctx, w, h), "ok")
+      }
+
+      op guiEndScrollArea (as map: ctx) as map ==> {
+            ctx["scroll_area_active"] = ""
+            emit(nice, ctx, "ok")
+      }
+
+      op guiSetScrollOffsetY (as map: ctx, as string: area_id, as int64: offset_y) as map ==> {
+            mut as string: k = "scroll_y_" + area_id
+            ctx[k] = offset_y
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetScrollOffsetY (as map: ctx, as string: area_id) as int64 ==> {
+            mut as string: k = "scroll_y_" + area_id
+            mut as int64: sy = 0
+            route {
+                  _mapHasKey(ctx, k) ==> {
+                        sy = ctx[k] as int64
+                  }
+            }
+            emit(nice, sy, "ok")
+      }
+}

@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoFile
+#L ==============================================================================
+
+contract (IoFileContract) {
+      op readFile (as string: path) as string
+      op writeFile (as string: path, as string: content) as string
+      op appendFile (as string: path, as string: content) as string
+      op deleteFile (as string: path) as bool
+      op copyFile (as string: src, as string: dst) as bool
+      op moveFile (as string: src, as string: dst) as bool
+}
+
+agent (IoStdLib) impl IoFileContract {
+      #L -- IoFileContract --------------------------------------------
+      op readFile (as string: path) as string ==> {
+            emit(nice, stdIoReadFile(path), "ok")
+      }
+
+      op writeFile (as string: path, as string: content) as string ==> {
+            emit(nice, stdIoWriteFile(path, content), "ok")
+      }
+
+      op appendFile (as string: path, as string: content) as string ==> {
+            emit(nice, stdIoAppendFile(path, content), "ok")
+      }
+
+      op deleteFile (as string: path) as bool ==> {
+            emit(nice, stdIoDeleteFile(path), "ok")
+      }
+
+      op copyFile (as string: src, as string: dst) as bool ==> {
+            emit(nice, stdIoCopyFile(src, dst), "ok")
+      }
+
+      op moveFile (as string: src, as string: dst) as bool ==> {
+            emit(nice, stdIoMoveFile(src, dst), "ok")
+      }
+}

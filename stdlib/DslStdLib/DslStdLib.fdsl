@@ -1,0 +1,14 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use DslLexer.fdsl
+use DslParser.fdsl
+use DslAst.fdsl
+use DslExecution.fdsl
+use DslAsm.fdsl
+use DslSandbox.fdsl
+
+agent (DslStdLib) {
+}

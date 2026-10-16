@@ -1,0 +1,18 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use SetBasic.fdsl
+use SetAccess.fdsl
+use SetMutation.fdsl
+use SetTransform.fdsl
+use SetSearch.fdsl
+use SetSelection.fdsl
+use SetUtility.fdsl
+use SetAggregate.fdsl
+use SetRelation.fdsl
+use SetAlgebra.fdsl
+
+agent (SetStdLib) {
+}

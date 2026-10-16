@@ -1,0 +1,12 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SimdStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use SimdVectorArithmetic.fdsl
+use SimdVectorReduction.fdsl
+use SimdMatrix.fdsl
+use SimdMask.fdsl
+
+agent (SimdStdLib) {
+}

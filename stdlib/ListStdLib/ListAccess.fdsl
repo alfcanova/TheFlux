@@ -1,0 +1,92 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListAccess
+#L ==============================================================================
+
+contract (ListAccessContract) {
+      op listGetFirst (as list of data: items) as data
+      op listGetAt (as list of data: items, as int64: index) as data
+      op listGetLast (as list of data: items) as data
+      op listGetLeft (as list of data: items, as int64: n) as list of data
+      op listGetRight (as list of data: items, as int64: n) as list of data
+      op listGetCenter (as list of data: items, as int64: n) as list of data
+      op listSlice (as list of data: items, as int64: start, as int64: end) as list of data
+}
+
+agent (ListStdLib) impl ListAccessContract {
+      #L -- ListAccessContract ----------------------------------------
+      op listGetFirst (as list of data: items) as data ==> {
+            imut as data: res = items[1]
+            emit(nice, res, "ok")
+      }
+
+      op listGetAt (as list of data: items, as int64: index) as data ==> {
+            imut as data: res = items[index]
+            emit(nice, res, "ok")
+      }
+
+      op listGetLast (as list of data: items) as data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            imut as data: res = items[total]
+            emit(nice, res, "ok")
+      }
+
+      op listGetLeft (as list of data: items, as int64: n) as list of data ==> {
+            emit(nice, listTake(items, n), "ok")
+      }
+
+      op listGetRight (as list of data: items, as int64: n) as list of data ==> {
+            emit(nice, listTakeLast(items, n), "ok")
+      }
+
+      op listGetCenter (as list of data: items, as int64: n) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  total == 0 or n < 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> {
+                        start_idx = 1
+                  }
+            }
+            route {
+                  end_idx > total ==> {
+                        end_idx = total
+                  }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, items[start_idx..end_idx], "ok")
+      }
+
+      op listSlice (as list of data: items, as int64: start, as int64: end) as list of data ==> {
+            imut as list of data: res = items[start..end]
+            emit(nice, res, "ok")
+      }
+}

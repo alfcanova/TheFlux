@@ -1,0 +1,18 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use PhysConstants.fdsl
+use PhysVector2D.fdsl
+use PhysKinematics.fdsl
+use PhysDynamics.fdsl
+use PhysEnergy.fdsl
+use PhysAstrophysics.fdsl
+use PhysElectromagnetism.fdsl
+use PhysThermodynamicsAndWaves.fdsl
+use PhysQuantumRelativity.fdsl
+use PhysRigidBody2D.fdsl
+
+agent (PhysStdLib) {
+}

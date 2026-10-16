@@ -1,0 +1,79 @@
+keyword: imut
+category: Immutable Variable Declaration
+description: Declara uma constante immutable com value inicial required. Uma vez atribuída, cannot be reatribuída; a reassignment
+  generates errorr semântico (SEM001). Múltiplas constantes can be declaradas na forma principal com commas, desde que compartilhem
+  o mesmo value inicial.
+syntax: 'imut as <tipo>: <identificador> [, <identificador> ...] = <expressão>'
+pseudocode: CONSTANTE maximo := 100     // valor fixo, nao reatributivel
+usages:
+- name: Declaration de constante
+  description: Declara uma constante immutable com type explícito e value inicial required.
+  examples:
+  - code: 'imut as int64: MAX_TENTATIVAS = 10
+
+      imut as string: NOME_APP = "TheFlux"'
+- name: Declaration múltipla em linha
+  description: Várias constantes na forma principal, separadas por comma; todas receive o mesmo value inicial.
+  examples:
+  - code: 'imut as float64: PI1, PI2 = 3.14159'
+restrictions:
+- Os identifiers devem seguir SCREAMING_SNAKE_CASE; a implementação emite uma sugestão (SUG) quando o nome não segue a convenção
+  (não é error).
+- O value inicial is required; a omissão generates errorr SEM001 (imut não tem value pattern).
+- Cannot be reatribuída após a declaration; reassignment com `=` ou operators compostos generates errorr SEM001.
+- O type is required após `as` (there is no forma sem type).
+- 'Múltiplas constantes em uma única declaration são aceitas apenas na forma principal, com commas entre os identifiers (`imut
+  as <type>: A, B = 42`); todas receive o mesmo value inicial. Values diferentes exigem declarations separadas.'
+errors:
+- code: OWN501
+  mnemonic: CANNOT_MUTATE_IMMUTABLE
+  severity: Error
+  trigger: Attempt to reassign or mutate value of immutable identifier ('imut')
+  message: Cannot mutate immutable variable; variable declared with 'imut' is read-only
+  hint: Declare variable as mutable with 'mut' instead of 'imut' if reassignments are needed
+  example_bad: 'imut as int64: TOTAL = 10
+
+    TOTAL = 20
+
+    '
+  example_good: 'mut as int64: total = 10
+
+    total = 20
+
+    '
+- code: OWN502
+  mnemonic: CANNOT_MUTATE_IMMUT_FIELD
+  severity: Error
+  trigger: Attempt to reassign immutable field of a struct
+  message: Struct field is immutable and cannot be reassigned
+  hint: Declare struct field with 'mut' instead of 'imut' in struct schema
+  example_bad: 'user.ID = 99
+
+    '
+  example_good: 'user.name = "novo_nome"
+
+    '
+- code: SEM305
+  mnemonic: IMMUT_REQUIRES_INITIALIZER
+  severity: Error
+  trigger: Immutable identifier ('imut') declared without initial value
+  message: Immutable variable requires mandatory initial value during declaration
+  hint: 'Provide an initializer expression: ''imut as <type>: NAME = <value>'''
+  example_bad: 'imut as int64: LIMITE
+
+    '
+  example_good: 'imut as int64: LIMITE = 100
+
+    '
+- code: SEM307
+  mnemonic: IMMUT_IDENTIFIER_SCREAMING_SNAKE
+  severity: Warning
+  trigger: Immutable identifier ('imut') not in SCREAMING_SNAKE_CASE
+  message: Immutable variable name must strictly follow SCREAMING_SNAKE_CASE convention
+  hint: 'Rename immutable identifier using uppercase letters and underscores: ''VALOR_CONSTANTE'''
+  example_bad: 'imut as int64: maxValor = 50
+
+    '
+  example_good: 'imut as int64: MAX_VALOR = 50
+
+    '

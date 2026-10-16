@@ -1,0 +1,14 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use CharClassification.fdsl
+use CharTransform.fdsl
+use CharHex.fdsl
+use CharAscii.fdsl
+use CharCompare.fdsl
+use CharUtility.fdsl
+
+agent (CharStdLib) {
+}

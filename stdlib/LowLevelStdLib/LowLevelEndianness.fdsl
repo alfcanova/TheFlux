@@ -1,0 +1,73 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelEndianness
+#L ==============================================================================
+
+contract (LowLevelEndiannessContract) {
+      op lowByteSwap16 (as int64: v) as int64
+      op lowByteSwap32 (as int64: v) as int64
+      op lowByteSwap64 (as int64: v) as int64
+      op lowHostToNetwork16 (as int64: v) as int64
+      op lowNetworkToHost16 (as int64: v) as int64
+      op lowHostToNetwork32 (as int64: v) as int64
+      op lowNetworkToHost32 (as int64: v) as int64
+      op lowHostToNetwork64 (as int64: v) as int64
+      op lowNetworkToHost64 (as int64: v) as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelEndiannessContract {
+      #L LowLevelEndiannessContract
+      #L =====================================================================
+
+      op lowByteSwap16 (as int64: v) as int64 ==> {
+            mut as int64: b0 = v & 255
+            mut as int64: b1 = (v >>> 8) & 255
+            mut as int64: res = (b0 << 8) | b1
+            emit(nice, res, "ok")
+      }
+
+      op lowByteSwap32 (as int64: v) as int64 ==> {
+            mut as int64: b0 = v & 255
+            mut as int64: b1 = (v >>> 8) & 255
+            mut as int64: b2 = (v >>> 16) & 255
+            mut as int64: b3 = (v >>> 24) & 255
+            mut as int64: res = (b0 << 24) | (b1 << 16) | (b2 << 8) | b3
+            emit(nice, res, "ok")
+      }
+
+      op lowByteSwap64 (as int64: v) as int64 ==> {
+            mut as int64: b0 = v & 255
+            mut as int64: b1 = (v >>> 8) & 255
+            mut as int64: b2 = (v >>> 16) & 255
+            mut as int64: b3 = (v >>> 24) & 255
+            mut as int64: b4 = (v >>> 32) & 255
+            mut as int64: b5 = (v >>> 40) & 255
+            mut as int64: b6 = (v >>> 48) & 255
+            mut as int64: b7 = (v >>> 56) & 255
+            mut as int64: res = (b0 << 56) | (b1 << 48) | (b2 << 40) | (b3 << 32) | (b4 << 24) | (b5 << 16) | (b6 << 8) | b7
+            emit(nice, res, "ok")
+      }
+
+      op lowHostToNetwork16 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap16(v), "ok")
+      }
+      op lowNetworkToHost16 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap16(v), "ok")
+      }
+
+      op lowHostToNetwork32 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap32(v), "ok")
+      }
+      op lowNetworkToHost32 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap32(v), "ok")
+      }
+
+      op lowHostToNetwork64 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap64(v), "ok")
+      }
+      op lowNetworkToHost64 (as int64: v) as int64 ==> {
+            emit(nice, lowByteSwap64(v), "ok")
+      }
+
+      #L =====================================================================
+}

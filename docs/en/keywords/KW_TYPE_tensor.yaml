@@ -1,0 +1,93 @@
+keyword: tensor
+category: Tensor Type
+description: Multidimensional type (vector, matrix, N-D tensor) with static shape, stored in a flat buffer and indexed by
+  strides (with linear offset and strides). Supports zero-copy O(1) transposition, permutation, slicing (sub-views), and zero-stride
+  broadcasting through the strided memory model. Declared with static dimensions and element type (e.g., tensor[2, 2] of int32)
+  or operated dynamically via LinAlgStdLib.
+syntax: 'mut as tensor[<dim1>, <dim2>, ...] of <tipo_elemento>: <var1>, ... [= <valores>]'
+pseudocode: 'm : TENSOR[2, 3] DE int32   // forma estatica, mapeamento por strides'
+usages:
+- name: One-dimensional vector
+  description: Vector with explicit element type.
+  examples:
+  - code: 'mut as tensor[3] of float32: t1 = [1.5, 2.5, 3.5]'
+- name: Two-dimensional matrix
+  description: Matrix with 1-based multi-index access.
+  examples:
+  - code: "mut as tensor[2, 2] of int32: t2 = [\n    [10, 20],\n    [30, 40]\n]\nprint(t2[2, 2])   # 40"
+- name: Multi-index assignment (Index-assign)
+  description: Element modification via N-D coordinates.
+  examples:
+  - code: 'mut as tensor[2, 2] of int64: t = [[10, 20], [30, 40]]
+
+      t[2, 1] = 99
+
+      print(t)   # [[10, 20], [99, 40]]'
+- name: Strides operations and manipulation (LinAlgStdLib)
+  description: O(1) zero-copy transposition, slicing, zero-stride broadcasting, and rolling windows via standard library.
+  examples:
+  - code: 'use LinAlgStdLib
+
+      # Column-Major / Fortran matrix with custom strides [1, 2]
+
+      mut as map: mat_f = tensorNewWithStrides([2, 2], [1, 2], 1, [10.0, 20.0, 30.0, 40.0])
+
+      # O(1) rolling window view over 1D buffer (im2col / patches)
+
+      mut as map: win = tensorAsStrided(mat_f, [2, 2], [1, 1], 1)
+
+      # Zero-copy virtual broadcast with stride 0
+
+      mut as map: bcast = tensorBroadcastTo(row_vec, [4, 3])'
+restrictions:
+- Type name must be lowercase (tensor, not Tensor); no capitalized form.
+- Shape must be fully static (e.g. [3, 4]); positive integer dimensions.
+- Element type must be an implemented numerical type.
+- Indices are 1-based in source code; backend automatically converts to 0-based offset (`linear_index = offset + sum((i_k
+  - 1) * stride_k)`).
+- Native runtime layout is a flat buffer with canonical row-major strides (`S_last=8`, `S_k = d_{k+1} * S_{k+1}` bytes); each
+  element occupies 8 bytes (float bitcast, string as FAT `(ptr<<32)|len`).
+- Block header stores `[rank, d0..d{rank-1}]` for generic printing and debugging.
+- Literal initializer must be rectangular and match declared shape (ragged/mismatch is a semantic and runtime error).
+- Element reads preserve declared element type (does not force float64).
+- Write operations validate bounds across all traversed dimensions.
+- Print and string concatenation use nested format `[[10, 20], [99, 40]]`.
+errors:
+- code: SYN150
+  mnemonic: TENSOR_REQUIRES_SHAPE
+  severity: Error
+  trigger: Tensor declaration without canonical shape dimensions syntax 'tensor[dim1, dim2, ...]' or missing 'of <type>'
+  message: 'Tensor requires dimension shape and element type: ''tensor[D1, D2, ...] of <type>'''
+  hint: 'Declare dimensions in brackets and element type with ''of'': ''mut as tensor[3, 3] of float64: m'''
+  example_bad: 'mut as tensor of float64: t = [1.0, 2.0]
+
+    '
+  example_good: 'mut as tensor[2] of float64: t = [1.0, 2.0]
+
+    '
+- code: SYN151
+  mnemonic: TENSOR_REQUIRES_OF_TYPE
+  severity: Error
+  trigger: Tensor literal elements count does not match the dimensions declared in the tensor shape
+  message: Tensor literal dimensions do not match the declared tensor shape
+  hint: Verify the number of elements in each row and column to match the declared shape
+  example_bad: 'mut as tensor[3]: t = [1.0, 2.0, 3.0]
+
+    '
+  example_good: 'mut as tensor[3] of float64: t = [1.0, 2.0, 3.0]
+
+    '
+- code: RT705
+  mnemonic: OUT_OF_MEMORY
+  severity: Error
+  trigger: Heap memory allocation failure for tensors, buffers, or large objects
+  message: 'Out of memory: insufficient memory to allocate object in runtime'
+  hint: Reduce tensor dimensions or process data in streaming chunks
+  example_bad: '# Tentativa de alocar tensor com dimensões astronômicas
+
+    mut as tensor[1000000, 1000000] of float64: t
+
+    '
+  example_good: 'mut as tensor[1000, 1000] of float64: t
+
+    '

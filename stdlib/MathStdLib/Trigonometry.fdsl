@@ -1,0 +1,552 @@
+contract (TrigonometryContract) {
+      op sin64 (as float64: value) as float64
+      op sin32 (as float32: value) as float32
+      op sin16 (as float16: value) as float16
+      op cos64 (as float64: value) as float64
+      op cos32 (as float32: value) as float32
+      op cos16 (as float16: value) as float16
+      op tan64 (as float64: value) as float64
+      op tan32 (as float32: value) as float32
+      op tan16 (as float16: value) as float16
+      op arcTan64 (as float64: value) as float64
+      op arcTan32 (as float32: value) as float32
+      op arcTan16 (as float16: value) as float16
+      op arcSin64 (as float64: value) as float64
+      op arcSin32 (as float32: value) as float32
+      op arcSin16 (as float16: value) as float16
+      op arcCos64 (as float64: value) as float64
+      op arcCos32 (as float32: value) as float32
+      op arcCos16 (as float16: value) as float16
+      op sec64 (as float64: value) as float64
+      op sec32 (as float32: value) as float32
+      op sec16 (as float16: value) as float16
+      op csc64 (as float64: value) as float64
+      op csc32 (as float32: value) as float32
+      op csc16 (as float16: value) as float16
+      op cot64 (as float64: value) as float64
+      op cot32 (as float32: value) as float32
+      op cot16 (as float16: value) as float16
+      op arcSec64 (as float64: value) as float64
+      op arcSec32 (as float32: value) as float32
+      op arcSec16 (as float16: value) as float16
+      op arcCsc64 (as float64: value) as float64
+      op arcCsc32 (as float32: value) as float32
+      op arcCsc16 (as float16: value) as float16
+      op arcCot64 (as float64: value) as float64
+      op arcCot32 (as float32: value) as float32
+      op arcCot16 (as float16: value) as float16
+      op sinc64 (as float64: value) as float64
+      op sinc32 (as float32: value) as float32
+      op sinc16 (as float16: value) as float16
+      op sinpi64 (as float64: value) as float64
+      op sinpi32 (as float32: value) as float32
+      op sinpi16 (as float16: value) as float16
+      op cospi64 (as float64: value) as float64
+      op cospi32 (as float32: value) as float32
+      op cospi16 (as float16: value) as float16
+      op tanpi64 (as float64: value) as float64
+      op tanpi32 (as float32: value) as float32
+      op tanpi16 (as float16: value) as float16
+      op hypotenuse64 (as float64: y, as float64: x) as float64
+      op hypotenuse32 (as float32: y, as float32: x) as float32
+      op hypotenuse16 (as float16: y, as float16: x) as float16
+      op arcTan2_64 (as float64: y, as float64: x) as float64
+      op arcTan2_32 (as float32: y, as float32: x) as float32
+      op arcTan2_16 (as float16: y, as float16: x) as float16
+      op sen64 (as float64: radians) as float64
+      op sen32 (as float32: radians) as float32
+      op sen16 (as float16: radians) as float16
+}
+
+
+agent (MathStdLib) impl TrigonometryContract {
+      op sin64 (as float64: radians) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            mut as float64: pi2_1 = 1.570796326794896557998981734272
+            mut as float64: pi2_2 = 6.123233995736766e-17
+            mut as float64: inv_pi2 = 0.6366197723675814
+            mut as float64: q_raw = radians * inv_pi2
+            mut as int64: q = 0
+            route {
+                  q_raw >= 0.0 ==> {
+                        mut as float64: v2 = q_raw + 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 < 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i - 1
+                              }
+                        }
+                        q = i
+                  }
+                  q_raw < 0.0 ==> {
+                        mut as float64: v2 = q_raw - 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 > 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i + 1
+                              }
+                        }
+                        q = i
+                  }
+            }
+            mut as float64: qd = q as float64
+            mut as float64: r = (radians - qd * pi2_1) - qd * pi2_2
+            mut as float64: r2 = r * r
+            mut as int64: quad = q /r 4
+            route {
+                  quad < 0 ==> {
+                        quad = quad + 4
+                  }
+            }
+            route {
+                  (quad == 0) or (quad == 2) ==> {
+                        mut as float64: s = r * (1.0 - r2 * (0.16666666666666666 - r2 * (0.008333333333333333 - r2 * (0.0001984126984126984 - r2 * (0.000002755731922398589 - r2 * (2.5052108385441719e-8 - r2 * (1.6059043836821614e-10 - r2 * (7.647163731819816e-13 - r2 * (2.8114572543455207e-15 - r2 * 7.647163731819816e-18)))))))))
+                        route {
+                              quad == 2 ==> {
+                                    s = 0.0 - s
+                              }
+                        }
+                        emit(nice, s, "ok")
+                  }
+                  (quad == 1) or (quad == 3) ==> {
+                        mut as float64: c = 1.0 - r2 * (0.5 - r2 * (0.041666666666666664 - r2 * (0.001388888888888889 - r2 * (0.0000248015873015873 - r2 * (2.755731922398589e-7 - r2 * (2.0876756987868099e-9 - r2 * (1.1470745597729724e-11 - r2 * (4.779477332387385e-14 - r2 * 1.5619206968586227e-16))))))))
+                        route {
+                              quad == 3 ==> {
+                                    c = 0.0 - c
+                              }
+                        }
+                        emit(nice, c, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op sin32 (as float32: radians) as float32 ==> {
+            mut as float32: res = (sin64(radians as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sin16 (as float16: radians) as float16 ==> {
+            mut as float16: res = (sin64(radians as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op cos64 (as float64: radians) as float64 ==> {
+            mut as float64: res = (sin64(radians + 1.570796326794896557998981734272)).val
+            emit(nice, res, "ok")
+      }
+      op cos32 (as float32: radians) as float32 ==> {
+            mut as float32: res = (cos64(radians as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op cos16 (as float16: radians) as float16 ==> {
+            mut as float16: res = (cos64(radians as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op tan64 (as float64: radians) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            mut as float64: c = (cos64(radians)).val
+            route {
+                  (c == 0.0) or ((absoluteFloat64(c)).val < 1.0e-15) ==> {
+                        emit(fail, zero_val, "tangente indefinida para multiplos impares de pi/2")
+                  }
+            }
+            mut as float64: res = (sin64(radians)).val /f c
+            emit(nice, res, "ok")
+      }
+
+      op tan32 (as float32: radians) as float32 ==> {
+            mut as float32: res = (tan64(radians as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op tan16 (as float16: radians) as float16 ==> {
+            mut as float16: res = (tan64(radians as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op hypotenuse64 (as float64: left, as float64: right) as float64 ==> {
+            mut as float64: x = (absoluteFloat64(left)).val
+            mut as float64: y = (absoluteFloat64(right)).val
+            mut as float64: max_v = (maximumFloat64(x, y)).val
+            mut as float64: min_v = (minimumFloat64(x, y)).val
+            mut as float64: zero_val = 0.0
+            route {
+                  max_v == 0.0 ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+            }
+            mut as float64: r = min_v /f max_v
+            mut as float64: res = max_v * (squareRoot64(1.0 + r * r)).val
+            emit(nice, res, "ok")
+      }
+
+      op hypotenuse32 (as float32: left, as float32: right) as float32 ==> {
+            mut as float32: res = (hypotenuse64(left as float64, right as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op hypotenuse16 (as float16: left, as float16: right) as float16 ==> {
+            mut as float16: res = (hypotenuse64(left as float64, right as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcTan64 (as float64: value) as float64 ==> {
+            mut as float64: x = value
+            mut as float64: sign = 1.0
+            route {
+                  x < 0.0 ==> {
+                        sign = -1.0
+                        x = 0.0 - x
+                  }
+            }
+            mut as float64: complement = 0.0
+            route {
+                  x > 1.0 ==> {
+                        complement = 1.570796326794896557998981734272
+                        x = 1.0 /f x
+                  }
+            }
+            mut as float64: shift = 0.0
+            route {
+                  x > 0.2679491924311227 ==> {
+                        shift = 0.5235987755982988
+                        mut as float64: sqrt3 = 1.73205080756887719317660412344
+                        x = (x * sqrt3 - 1.0) /f (sqrt3 + x)
+                  }
+            }
+            mut as float64: x2 = x * x
+            mut as float64: poly = x * (1.0 - x2 * (0.3333333333333333 - x2 * (0.2 - x2 * (0.14285714285714285 - x2 * (0.1111111111111111 - x2 * (0.09090909090909091 - x2 * (0.07692307692307693 - x2 * (0.06666666666666667 - x2 * (0.058823529411764705 - x2 * 0.05263157894736842)))))))))
+            mut as float64: res = shift + poly
+            route {
+                  complement != 0.0 ==> {
+                        res = complement - res
+                  }
+            }
+            mut as float64: final_res = sign * res
+            emit(nice, final_res, "ok")
+      }
+
+      op arcTan32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcTan64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcTan16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcTan64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcTan2_64 (as float64: y, as float64: x) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  x > 0.0 ==> {
+                        mut as float64: res = (arcTan64(y /f x)).val
+                        emit(nice, res, "ok")
+                  }
+                  (x < 0.0) and (y >= 0.0) ==> {
+                        mut as float64: res = (arcTan64(y /f x)).val + 3.14159265358979323846264338327
+                        emit(nice, res, "ok")
+                  }
+                  (x < 0.0) and (y < 0.0) ==> {
+                        mut as float64: res = (arcTan64(y /f x)).val - 3.14159265358979323846264338327
+                        emit(nice, res, "ok")
+                  }
+                  (x == 0.0) and (y > 0.0) ==> {
+                        mut as float64: res = 1.570796326794896557998981734272
+                        emit(nice, res, "ok")
+                  }
+                  (x == 0.0) and (y < 0.0) ==> {
+                        mut as float64: res = -1.570796326794896557998981734272
+                        emit(nice, res, "ok")
+                  }
+                  (x == 0.0) and (y == 0.0) ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op arcTan2_32 (as float32: y, as float32: x) as float32 ==> {
+            mut as float32: res = (arcTan2_64(y as float64, x as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcTan2_16 (as float16: y, as float16: x) as float16 ==> {
+            mut as float16: res = (arcTan2_64(y as float64, x as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcSin64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value < -1.0) or (value > 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcSin: [-1, 1]")
+                  }
+                  value == 1.0 ==> {
+                        mut as float64: res = 1.570796326794896557998981734272
+                        emit(nice, res, "ok")
+                  }
+                  value == -1.0 ==> {
+                        mut as float64: res = -1.570796326794896557998981734272
+                        emit(nice, res, "ok")
+                  }
+                  (value > -1.0) and (value < 1.0) ==> {
+                        mut as float64: res = (arcTan64(value /f (squareRoot64(1.0 - value * value)).val)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op arcSin32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  (value < (-1.0 as float32)) or (value > (1.0 as float32)) ==> {
+                        emit(fail, zero_val, "dominio de arcSin: [-1, 1]")
+                  }
+            }
+            mut as float32: res = (arcSin64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op arcSin16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  (value < (-1.0 as float16)) or (value > (1.0 as float16)) ==> {
+                        emit(fail, zero_val, "dominio de arcSin: [-1, 1]")
+                  }
+            }
+            mut as float16: res = (arcSin64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcCos64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value < -1.0) or (value > 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcCos: [-1, 1]")
+                  }
+                  (value >= -1.0) and (value <= 1.0) ==> {
+                        mut as float64: res = 1.570796326794896557998981734272 - (arcSin64(value)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op arcCos32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  (value < (-1.0 as float32)) or (value > (1.0 as float32)) ==> {
+                        emit(fail, zero_val, "dominio de arcCos: [-1, 1]")
+                  }
+            }
+            mut as float32: res = (arcCos64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op arcCos16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  (value < (-1.0 as float16)) or (value > (1.0 as float16)) ==> {
+                        emit(fail, zero_val, "dominio de arcCos: [-1, 1]")
+                  }
+            }
+            mut as float16: res = (arcCos64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op sec64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            mut as float64: c = (cos64(value)).val
+            route {
+                  (c == 0.0) or ((absoluteFloat64(c)).val < 1.0e-15) ==> {
+                        emit(fail, zero_val, "secante indefinida para multiplos impares de pi/2")
+                  }
+            }
+            mut as float64: res = 1.0 /f c
+            emit(nice, res, "ok")
+      }
+
+      op sec32 (as float32: value) as float32 ==> {
+            mut as float32: res = (sec64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sec16 (as float16: value) as float16 ==> {
+            mut as float16: res = (sec64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op csc64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            mut as float64: s = (sin64(value)).val
+            route {
+                  (s == 0.0) or ((absoluteFloat64(s)).val < 1.0e-15) ==> {
+                        emit(fail, zero_val, "cossecante indefinida para multiplos de pi")
+                  }
+            }
+            mut as float64: res = 1.0 /f s
+            emit(nice, res, "ok")
+      }
+
+      op csc32 (as float32: value) as float32 ==> {
+            mut as float32: res = (csc64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op csc16 (as float16: value) as float16 ==> {
+            mut as float16: res = (csc64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op cot64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            mut as float64: s = (sin64(value)).val
+            route {
+                  (s == 0.0) or ((absoluteFloat64(s)).val < 1.0e-15) ==> {
+                        emit(fail, zero_val, "cotangente indefinida para multiplos de pi")
+                  }
+            }
+            mut as float64: res = (cos64(value)).val /f s
+            emit(nice, res, "ok")
+      }
+
+      op cot32 (as float32: value) as float32 ==> {
+            mut as float32: res = (cot64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op cot16 (as float16: value) as float16 ==> {
+            mut as float16: res = (cot64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcSec64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value > -1.0) and (value < 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcSec: (-inf, -1] U [1, inf)")
+                  }
+            }
+            mut as float64: res = (arcCos64(1.0 /f value)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcSec32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcSec64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcSec16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcSec64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcCsc64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value > -1.0) and (value < 1.0) ==> {
+                        emit(fail, zero_val, "dominio de arcCsc: (-inf, -1] U [1, inf)")
+                  }
+            }
+            mut as float64: res = (arcSin64(1.0 /f value)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcCsc32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcCsc64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcCsc16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcCsc64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op arcCot64 (as float64: value) as float64 ==> {
+            route {
+                  value == 0.0 ==> {
+                        mut as float64: res0 = 1.570796326794896557998981734272
+                        emit(nice, res0, "ok")
+                  }
+            }
+            mut as float64: res = (arcTan64(1.0 /f value)).val
+            emit(nice, res, "ok")
+      }
+
+      op arcCot32 (as float32: value) as float32 ==> {
+            mut as float32: res = (arcCot64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op arcCot16 (as float16: value) as float16 ==> {
+            mut as float16: res = (arcCot64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op sinc64 (as float64: value) as float64 ==> {
+            mut as float64: abs_v = (absoluteFloat64(value)).val
+            route {
+                  abs_v < 1.0e-6 ==> {
+                        mut as float64: px = value * 3.14159265358979323846264338327
+                        mut as float64: res = 1.0 - (px * px) /f 6.0
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as float64: pi_x = value * 3.14159265358979323846264338327
+            mut as float64: res = (sin64(pi_x)).val /f pi_x
+            emit(nice, res, "ok")
+      }
+
+      op sinc32 (as float32: value) as float32 ==> {
+            mut as float32: res = (sinc64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sinc16 (as float16: value) as float16 ==> {
+            mut as float16: res = (sinc64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op sinpi64 (as float64: value) as float64 ==> {
+            mut as float64: res = (sin64(value * 3.14159265358979323846264338327)).val
+            emit(nice, res, "ok")
+      }
+      op sinpi32 (as float32: value) as float32 ==> {
+            mut as float32: res = (sinpi64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sinpi16 (as float16: value) as float16 ==> {
+            mut as float16: res = (sinpi64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op cospi64 (as float64: value) as float64 ==> {
+            mut as float64: res = (cos64(value * 3.14159265358979323846264338327)).val
+            emit(nice, res, "ok")
+      }
+      op cospi32 (as float32: value) as float32 ==> {
+            mut as float32: res = (cospi64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op cospi16 (as float16: value) as float16 ==> {
+            mut as float16: res = (cospi64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op tanpi64 (as float64: value) as float64 ==> {
+            mut as float64: res = (tan64(value * 3.14159265358979323846264338327)).val
+            emit(nice, res, "ok")
+      }
+      op tanpi32 (as float32: value) as float32 ==> {
+            mut as float32: res = (tanpi64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op tanpi16 (as float16: value) as float16 ==> {
+            mut as float16: res = (tanpi64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+      op sen64 (as float64: radians) as float64 ==> {
+            mut as float64: res = (sin64(radians)).val
+            emit(nice, res, "ok")
+      }
+      op sen32 (as float32: radians) as float32 ==> {
+            mut as float32: res = (sin32(radians)).val
+            emit(nice, res, "ok")
+      }
+      op sen16 (as float16: radians) as float16 ==> {
+            mut as float16: res = (sin16(radians)).val
+            emit(nice, res, "ok")
+      }
+}

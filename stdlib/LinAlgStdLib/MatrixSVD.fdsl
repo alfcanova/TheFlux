@@ -1,0 +1,273 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: MatrixSVD
+#L ==============================================================================
+
+contract (MatrixSVDContract) {
+      op matrixSVD (as map: matrix) as list of data
+      op matrixPseudoInverse (as map: matrix) as map
+      op matrixLeastSquares (as map: A, as list of data: b) as list of data
+}
+
+agent (LinAlgStdLib) impl MatrixSVDContract {
+      #L 13. MatrixSVDContract - Decomposicao em Valores Singulares (SVD), Pseudo-Inversa e Minimos Quadrados
+      #L ==============================================================================
+
+      op matrixSVD (as map: matrix) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+
+            route {
+                  m < n ==> {
+                        mut as map: at = tensorTranspose2D(matrix)
+                        mut as list of data: svd_at = matrixSVD(at)
+                        mut as map: u_at = svd_at[1] as map
+                        mut as list of data: s_at = svd_at[2] as list of data
+                        mut as map: v_at = svd_at[3] as map
+                        emit(nice, [v_at, s_at, u_at], "ok")
+                  }
+            }
+
+            mut as map: W = tensorNew([m, n])
+            mut as int64: r = 1
+            infinite (r <= m) {
+                  mut as int64: c = 1
+                  infinite (c <= n) {
+                        W = tensorSetAt(W, [r, c], tensorGetAt(matrix, [r, c]))
+                        c = c + 1
+                  }
+                  r = r + 1
+            }
+
+            mut as map: V = matrixIdentity(n)
+
+            mut as int64: max_sweeps = 30
+            mut as float64: eps = 0.000000000001
+            mut as int64: sweep = 1
+
+            infinite (sweep <= max_sweeps) {
+                  mut as bool: converged = true
+                  mut as int64: j = 1
+                  infinite (j < n) {
+                        mut as int64: k = j + 1
+                        infinite (k <= n) {
+                              mut as float64: p = 0.0
+                              mut as float64: q = 0.0
+                              mut as float64: q_k = 0.0
+                              mut as int64: row = 1
+                              infinite (row <= m) {
+                                    mut as float64: w_jr = tensorGetAt(W, [row, j])
+                                    mut as float64: w_kr = tensorGetAt(W, [row, k])
+                                    p = p + w_jr * w_kr
+                                    q = q + w_jr * w_jr
+                                    q_k = q_k + w_kr * w_kr
+                                    row = row + 1
+                              }
+
+                              mut as float64: p_abs = p
+                              route { p_abs < 0.0 ==> { p_abs = 0.0 - p_abs } }
+                              mut as float64: norm_prod = _sqrt(q * q_k)
+
+                              route {
+                                    p_abs > (eps * norm_prod) and norm_prod > 0.0 ==> {
+                                          converged = false
+                                          mut as float64: gamma = (q_k - q) /f (2.0 * p)
+                                          mut as float64: t = 0.0
+                                          mut as float64: sqrt_g = _sqrt(1.0 + gamma * gamma)
+                                          route {
+                                                gamma >= 0.0 ==> {
+                                                      t = 1.0 /f (gamma + sqrt_g)
+                                                }
+                                                gamma < 0.0 ==> {
+                                                      t = -1.0 /f ((0.0 - gamma) + sqrt_g)
+                                                }
+                                          }
+                                          mut as float64: cs = 1.0 /f _sqrt(1.0 + t * t)
+                                          mut as float64: sn = cs * t
+
+                                          row = 1
+                                          infinite (row <= m) {
+                                                mut as float64: val_j = tensorGetAt(W, [row, j])
+                                                mut as float64: val_k = tensorGetAt(W, [row, k])
+                                                W = tensorSetAt(W, [row, j], cs * val_j - sn * val_k)
+                                                W = tensorSetAt(W, [row, k], sn * val_j + cs * val_k)
+                                                row = row + 1
+                                          }
+
+                                          row = 1
+                                          infinite (row <= n) {
+                                                mut as float64: v_j = tensorGetAt(V, [row, j])
+                                                mut as float64: v_k = tensorGetAt(V, [row, k])
+                                                V = tensorSetAt(V, [row, j], cs * v_j - sn * v_k)
+                                                V = tensorSetAt(V, [row, k], sn * v_j + cs * v_k)
+                                                row = row + 1
+                                          }
+                                    }
+                              }
+                              k = k + 1
+                        }
+                        j = j + 1
+                  }
+                  route { converged ==> { break } }
+                  sweep = sweep + 1
+            }
+
+            mut as list of data: S = []
+            mut as map: U = tensorNew([m, n])
+            mut as int64: col = 1
+            infinite (col <= n) {
+                  mut as float64: col_norm_sq = 0.0
+                  mut as int64: row = 1
+                  infinite (row <= m) {
+                        mut as float64: w_val = tensorGetAt(W, [row, col])
+                        col_norm_sq = col_norm_sq + w_val * w_val
+                        row = row + 1
+                  }
+                  mut as float64: sigma = _sqrt(col_norm_sq)
+                  S[col] = sigma
+
+                  row = 1
+                  infinite (row <= m) {
+                        route {
+                              sigma > eps ==> {
+                                    U = tensorSetAt(U, [row, col], tensorGetAt(W, [row, col]) /f sigma)
+                              }
+                              sigma <= eps ==> {
+                                    U = tensorSetAt(U, [row, col], 0.0)
+                              }
+                        }
+                        row = row + 1
+                  }
+                  col = col + 1
+            }
+
+            mut as int64: i_sort = 1
+            infinite (i_sort < n) {
+                  mut as int64: j_sort = i_sort + 1
+                  infinite (j_sort <= n) {
+                        route {
+                              (S[j_sort] as float64) > (S[i_sort] as float64) ==> {
+                                    mut as float64: tmp_s = S[i_sort] as float64
+                                    S[i_sort] = S[j_sort]
+                                    S[j_sort] = tmp_s
+
+                                    mut as int64: r_swap = 1
+                                    infinite (r_swap <= m) {
+                                          mut as float64: tmp_u = tensorGetAt(U, [r_swap, i_sort])
+                                          U = tensorSetAt(U, [r_swap, i_sort], tensorGetAt(U, [r_swap, j_sort]))
+                                          U = tensorSetAt(U, [r_swap, j_sort], tmp_u)
+                                          r_swap = r_swap + 1
+                                    }
+
+                                    r_swap = 1
+                                    infinite (r_swap <= n) {
+                                          mut as float64: tmp_v = tensorGetAt(V, [r_swap, i_sort])
+                                          V = tensorSetAt(V, [r_swap, i_sort], tensorGetAt(V, [r_swap, j_sort]))
+                                          V = tensorSetAt(V, [r_swap, j_sort], tmp_v)
+                                          r_swap = r_swap + 1
+                                    }
+                              }
+                        }
+                        j_sort = j_sort + 1
+                  }
+                  i_sort = i_sort + 1
+            }
+
+            emit(nice, [U, S, V], "ok")
+      }
+
+      op matrixPseudoInverse (as map: matrix) as map ==> {
+            mut as list of data: svd = matrixSVD(matrix)
+            mut as map: U = svd[1] as map
+            mut as list of data: S = svd[2] as list of data
+            mut as map: V = svd[3] as map
+
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+
+            mut as int64: rank_limit = m
+            route { n < m ==> { rank_limit = n } }
+
+            mut as map: pinv = tensorNew([n, m])
+            mut as float64: eps = 0.000000000001
+
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  mut as int64: j = 1
+                  infinite (j <= m) {
+                        mut as float64: acc = 0.0
+                        mut as int64: k = 1
+                        infinite (k <= rank_limit) {
+                              mut as float64: s_k = S[k] as float64
+                              route {
+                                    s_k > eps ==> {
+                                          mut as float64: inv_s = 1.0 /f s_k
+                                          acc = acc + tensorGetAt(V, [i, k]) * inv_s * tensorGetAt(U, [j, k])
+                                    }
+                              }
+                              k = k + 1
+                        }
+                        pinv = tensorSetAt(pinv, [i, j], acc)
+                        j = j + 1
+                  }
+                  i = i + 1
+            }
+            emit(nice, pinv, "ok")
+      }
+
+      op matrixLeastSquares (as map: A, as list of data: b) as list of data ==> {
+            mut as list of data: qr_res = matrixQR(A)
+            mut as map: Q = qr_res[1] as map
+            mut as map: R = qr_res[2] as map
+
+            mut as list of data: sh = A["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+
+            mut as list of data: c = []
+            mut as int64: i = 1
+            infinite (i <= m) {
+                  mut as float64: acc = 0.0
+                  mut as int64: j = 1
+                  infinite (j <= m) {
+                        acc = acc + tensorGetAt(Q, [j, i]) * (b[j] as float64)
+                        j = j + 1
+                  }
+                  c[i] = acc
+                  i = i + 1
+            }
+
+            mut as list of data: x = []
+            mut as int64: k_init = 1
+            infinite (k_init <= n) {
+                  x[k_init] = 0.0
+                  k_init = k_init + 1
+            }
+
+            i = n
+            infinite {
+                  route { i < 1 ==> { break } }
+                  mut as float64: sum = 0.0
+                  mut as int64: j = i + 1
+                  infinite (j <= n) {
+                        sum = sum + tensorGetAt(R, [i, j]) * (x[j] as float64)
+                        j = j + 1
+                  }
+                  mut as float64: r_ii = tensorGetAt(R, [i, i])
+                  route {
+                        r_ii != 0.0 ==> {
+                              x[i] = ((c[i] as float64) - sum) /f r_ii
+                        }
+                        r_ii == 0.0 ==> {
+                              x[i] = 0.0
+                        }
+                  }
+                  i = i - 1
+            }
+            emit(nice, x, "ok")
+      }
+
+      #L ==============================================================================
+}

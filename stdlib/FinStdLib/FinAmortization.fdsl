@@ -1,0 +1,146 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinAmortization
+#L ==============================================================================
+
+contract (FinAmortizationContract) {
+      op finAmortizationPrice (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data
+      op finAmortizationSac (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data
+      op finAmortizationSaa (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data
+      op finAmortizationTotals (as list of data: installments) as map
+}
+
+#L ==============================================================================
+#L 6. FinDepreciationContract
+#L ==============================================================================
+
+agent (FinStdLib) impl FinAmortizationContract {
+      #L 5. FinAmortizationContract
+      #L ==============================================================================
+
+      op finAmortizationPrice (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data ==> {
+            mut as list of data: schedule = []
+            route {
+                  months <= 0 ==> { emit(nice, schedule, "ok") }
+            }
+            mut as float64: i = annual_rate /f 12.0
+            mut as float64: p_float = (principal.raw as float64) /f 100000000.0
+            mut as float64: factor = (1.0 + i) ^e (months as float64)
+            mut as float64: pmt_float = p_float * ((i * factor) /f (factor - 1.0))
+            mut as FinDecimal: pmt = FinDecimal(.raw: (pmt_float * 100000000.0) as int64, .scale: 8)
+            mut as FinDecimal: saldo = principal
+            mut as int64: m = 1
+            infinite (m <= months) {
+                  mut as float64: juros_f = ((saldo.raw as float64) /f 100000000.0) * i
+                  mut as FinDecimal: juros = FinDecimal(.raw: (juros_f * 100000000.0) as int64, .scale: 8)
+                  mut as FinDecimal: amort = FinDecimal(.raw: pmt.raw - juros.raw, .scale: 8)
+                  route {
+                        m == months ==> {
+                              amort = saldo
+                              pmt = FinDecimal(.raw: amort.raw + juros.raw, .scale: 8)
+                              saldo = FinDecimal(.raw: 0, .scale: 8)
+                        }
+                        m < months ==> {
+                              saldo = FinDecimal(.raw: saldo.raw - amort.raw, .scale: 8)
+                        }
+                  }
+                  schedule[m] = AmortizationInstallment(
+                        .month: m
+                        .payment: pmt
+                        .amortization: amort
+                        .interest: juros
+                        .balance: saldo
+                  )
+                  m = m + 1
+            }
+            emit(nice, schedule, "ok")
+      }
+
+      op finAmortizationSac (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data ==> {
+            mut as list of data: schedule = []
+            route {
+                  months <= 0 ==> { emit(nice, schedule, "ok") }
+            }
+            mut as float64: i = annual_rate /f 12.0
+            mut as int64: const_amort_raw = principal.raw /i months
+            mut as FinDecimal: const_amort = FinDecimal(.raw: const_amort_raw, .scale: 8)
+            mut as FinDecimal: saldo = principal
+            mut as int64: m = 1
+            infinite (m <= months) {
+                  mut as float64: juros_f = ((saldo.raw as float64) /f 100000000.0) * i
+                  mut as FinDecimal: juros = FinDecimal(.raw: (juros_f * 100000000.0) as int64, .scale: 8)
+                  mut as FinDecimal: amort = const_amort
+                  route {
+                        m == months ==> {
+                              amort = saldo
+                              saldo = FinDecimal(.raw: 0, .scale: 8)
+                        }
+                        m < months ==> {
+                              saldo = FinDecimal(.raw: saldo.raw - amort.raw, .scale: 8)
+                        }
+                  }
+                  mut as FinDecimal: pmt = FinDecimal(.raw: amort.raw + juros.raw, .scale: 8)
+                  schedule[m] = AmortizationInstallment(
+                        .month: m
+                        .payment: pmt
+                        .amortization: amort
+                        .interest: juros
+                        .balance: saldo
+                  )
+                  m = m + 1
+            }
+            emit(nice, schedule, "ok")
+      }
+
+      op finAmortizationSaa (as FinDecimal: principal, as float64: annual_rate, as int64: months) as list of data ==> {
+            mut as list of data: schedule = []
+            route {
+                  months <= 0 ==> { emit(nice, schedule, "ok") }
+            }
+            mut as float64: i = annual_rate /f 12.0
+            mut as float64: juros_f = ((principal.raw as float64) /f 100000000.0) * i
+            mut as FinDecimal: juros = FinDecimal(.raw: (juros_f * 100000000.0) as int64, .scale: 8)
+            mut as int64: m = 1
+            infinite (m <= months) {
+                  mut as FinDecimal: amort = FinDecimal(.raw: 0, .scale: 8)
+                  mut as FinDecimal: pmt = juros
+                  mut as FinDecimal: bal = principal
+                  route {
+                        m == months ==> {
+                              amort = principal
+                              pmt = FinDecimal(.raw: principal.raw + juros.raw, .scale: 8)
+                              bal = FinDecimal(.raw: 0, .scale: 8)
+                        }
+                  }
+                  schedule[m] = AmortizationInstallment(
+                        .month: m
+                        .payment: pmt
+                        .amortization: amort
+                        .interest: juros
+                        .balance: bal
+                  )
+                  m = m + 1
+            }
+            emit(nice, schedule, "ok")
+      }
+
+      op finAmortizationTotals (as list of data: installments) as map ==> {
+            mut as FinDecimal: total_paid = FinDecimal(.raw: 0, .scale: 8)
+            mut as FinDecimal: total_amort = FinDecimal(.raw: 0, .scale: 8)
+            mut as FinDecimal: total_interest = FinDecimal(.raw: 0, .scale: 8)
+            infinite (inst in installments) {
+                  mut as AmortizationInstallment: item = inst as AmortizationInstallment
+                  total_paid = FinDecimal(.raw: total_paid.raw + item.payment.raw, .scale: 8)
+                  total_amort = FinDecimal(.raw: total_amort.raw + item.amortization.raw, .scale: 8)
+                  total_interest = FinDecimal(.raw: total_interest.raw + item.interest.raw, .scale: 8)
+            }
+            mut as map: res = map{
+                  "total_paid": total_paid,
+                  "total_amortization": total_amort,
+                  "total_interest": total_interest
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

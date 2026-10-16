@@ -1,0 +1,121 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiConstants
+#L ==============================================================================
+
+contract (GuiConstantsContract) {
+      #L Constantes Fisicas de Display e Densidade
+      op guiDpiStandard () as float64
+      op guiDpiMacClassic () as float64
+      op guiDpiRetina () as float64
+      op guiMmPerInch () as float64
+
+      #L Constantes Biofisicas de Percepcao Humana e IHC
+      op guiHumanVisualReactionTimeMs () as float64
+      op guiPersistenceOfVisionHz () as float64
+      op guiLatencyInstantFeedbackMs () as float64
+
+      #L Metricas Fisicas Ergonomicas de Design (ISO 9241-9)
+      op guiTouchTargetMinPx () as int64
+      op guiFontSizeDefault () as int64
+      op guiFontSizeHeading () as int64
+      op guiFontSizeTitle () as int64
+      op guiPaddingDefault () as int64
+      op guiItemSpacingDefault () as int64
+}
+
+agent (GuiStdLib) impl GuiConstantsContract {
+
+
+      #L =====================================================================
+      #L Helpers Internos
+      #L =====================================================================
+
+      op _mapHasKey (as map: m, as string: target_key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in m) {
+                  route {
+                        k == target_key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      op _advanceWidget (as map: ctx, as int64: item_w, as int64: item_h) as map ==> {
+            mut as int64: wc = 0
+            route {
+                  _mapHasKey(ctx, "widget_count") ==> {
+                        wc = ctx["widget_count"] as int64
+                  }
+            }
+            ctx["widget_count"] = wc + 1
+
+            mut as bool: in_row = false
+            route {
+                  _mapHasKey(ctx, "in_row") ==> {
+                        in_row = ctx["in_row"] == true
+                  }
+            }
+
+            mut as int64: cx = ctx["cursor_x"] as int64
+            mut as int64: cy = ctx["cursor_y"] as int64
+            mut as int64: spacing = 6
+
+            route {
+                  in_row ==> {
+                        ctx["cursor_x"] = cx + item_w + spacing
+                        mut as int64: max_h = ctx["row_max_h"] as int64
+                        route {
+                              item_h > max_h ==> {
+                                    ctx["row_max_h"] = item_h
+                              }
+                        }
+                  }
+                  _ ==> {
+                        ctx["cursor_y"] = cy + item_h + spacing
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      op _clampFloat (as float64: val, as float64: min_val, as float64: max_val) as float64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      op _clampInt (as int64: val, as int64: min_val, as int64: max_val) as int64 ==> {
+            route {
+                  val < min_val ==> { emit(nice, min_val, "ok") }
+                  val > max_val ==> { emit(nice, max_val, "ok") }
+                  _ ==> { emit(nice, val, "ok") }
+            }
+      }
+
+      #L =====================================================================
+      #L 1. GuiConstantsContract
+      #L =====================================================================
+
+      op guiDpiStandard () as float64 ==> { emit(nice, 96.0, "ok") }
+      op guiDpiMacClassic () as float64 ==> { emit(nice, 72.0, "ok") }
+      op guiDpiRetina () as float64 ==> { emit(nice, 192.0, "ok") }
+      op guiMmPerInch () as float64 ==> { emit(nice, 25.4, "ok") }
+
+      op guiHumanVisualReactionTimeMs () as float64 ==> { emit(nice, 200.0, "ok") }
+      op guiPersistenceOfVisionHz () as float64 ==> { emit(nice, 60.0, "ok") }
+      op guiLatencyInstantFeedbackMs () as float64 ==> { emit(nice, 100.0, "ok") }
+
+      op guiTouchTargetMinPx () as int64 ==> { emit(nice, 44, "ok") }
+      op guiFontSizeDefault () as int64 ==> { emit(nice, 14, "ok") }
+      op guiFontSizeHeading () as int64 ==> { emit(nice, 20, "ok") }
+      op guiFontSizeTitle () as int64 ==> { emit(nice, 28, "ok") }
+      op guiPaddingDefault () as int64 ==> { emit(nice, 8, "ok") }
+      op guiItemSpacingDefault () as int64 ==> { emit(nice, 6, "ok") }
+
+      #L =====================================================================
+}

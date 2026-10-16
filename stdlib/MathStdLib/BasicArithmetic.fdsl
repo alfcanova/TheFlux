@@ -1,0 +1,256 @@
+contract (BasicArithmeticContract) {
+      op add64 (as int64: left, as int64: right) as int64
+      op add32 (as int32: left, as int32: right) as int32
+      op add16 (as int16: left, as int16: right) as int16
+      op subtract64 (as int64: left, as int64: right) as int64
+      op subtract32 (as int32: left, as int32: right) as int32
+      op subtract16 (as int16: left, as int16: right) as int16
+      op multiply64 (as int64: left, as int64: right) as int64
+      op multiply32 (as int32: left, as int32: right) as int32
+      op multiply16 (as int16: left, as int16: right) as int16
+      op remainder64 (as int64: left, as int64: right) as int64
+      op remainder32 (as int32: left, as int32: right) as int32
+      op remainder16 (as int16: left, as int16: right) as int16
+      op negate64 (as int64: value) as int64
+      op negate32 (as int32: value) as int32
+      op negate16 (as int16: value) as int16
+      op divideInt64 (as int64: left, as int64: right) as int64
+      op divideInt32 (as int32: left, as int32: right) as int32
+      op divideInt16 (as int16: left, as int16: right) as int16
+      op divideFloat64 (as float64: left, as float64: right) as float64
+      op divideFloat32 (as float32: left, as float32: right) as float32
+      op divideFloat16 (as float16: left, as float16: right) as float16
+      op power64 (as float64: left, as float64: right) as float64
+      op power32 (as float32: left, as float32: right) as float32
+      op power16 (as float16: left, as float16: right) as float16
+      op root64 (as float64: degree, as float64: radicand) as float64
+      op root32 (as float32: degree, as float32: radicand) as float32
+      op root16 (as float16: degree, as float16: radicand) as float16
+}
+
+agent (MathStdLib) impl BasicArithmeticContract {
+      op add64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: res = left + right
+            emit(nice, res, "ok")
+      }
+      op add32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: res = (left as int64 + right as int64) as int32
+            emit(nice, res, "ok")
+      }
+      op add16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: res = (left as int64 + right as int64) as int16
+            emit(nice, res, "ok")
+      }
+      op subtract64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: res = left - right
+            emit(nice, res, "ok")
+      }
+      op subtract32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: res = (left as int64 - right as int64) as int32
+            emit(nice, res, "ok")
+      }
+      op subtract16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: res = (left as int64 - right as int64) as int16
+            emit(nice, res, "ok")
+      }
+      op multiply64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: res = left * right
+            emit(nice, res, "ok")
+      }
+      op multiply32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: res = (left as int64 * right as int64) as int32
+            emit(nice, res, "ok")
+      }
+      op multiply16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: res = (left as int64 * right as int64) as int16
+            emit(nice, res, "ok")
+      }
+      op remainder64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: res = left /r right
+            emit(nice, res, "ok")
+      }
+      op remainder32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: res = (left as int64 /r right as int64) as int32
+            emit(nice, res, "ok")
+      }
+      op remainder16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: res = (left as int64 /r right as int64) as int16
+            emit(nice, res, "ok")
+      }
+      op divideInt64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: zero_val = 0
+            route {
+                  right != 0 ==> {
+                        mut as int64: res = left /i right
+                        emit(nice, res, "ok")
+                  }
+                  right == 0 ==> {
+                        emit(fail, zero_val, "divisao inteira por zero")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op divideInt32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  right != (0 as int32) ==> {
+                        mut as int32: res = (left as int64 /i right as int64) as int32
+                        emit(nice, res, "ok")
+                  }
+                  right == (0 as int32) ==> {
+                        emit(fail, zero_val, "divisao inteira por zero")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op divideInt16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  right != (0 as int16) ==> {
+                        mut as int16: res = (left as int64 /i right as int64) as int32 as int16
+                        emit(nice, res, "ok")
+                  }
+                  right == (0 as int16) ==> {
+                        emit(fail, zero_val, "divisao inteira por zero")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op divideFloat64 (as float64: left, as float64: right) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  right != 0.0 ==> {
+                        mut as float64: res = left /f right
+                        emit(nice, res, "ok")
+                  }
+                  right == 0.0 ==> {
+                        emit(fail, zero_val, "divisao decimal por zero")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op divideFloat32 (as float32: left, as float32: right) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  right != (0.0 as float32) ==> {
+                        mut as float32: res = (left as float64 /f right as float64) as float32
+                        emit(nice, res, "ok")
+                  }
+                  right == (0.0 as float32) ==> {
+                        emit(fail, zero_val, "divisao decimal por zero")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op divideFloat16 (as float16: left, as float16: right) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  right != (0.0 as float16) ==> {
+                        mut as float16: res = (left as float64 /f right as float64) as float16
+                        emit(nice, res, "ok")
+                  }
+                  right == (0.0 as float16) ==> {
+                        emit(fail, zero_val, "divisao decimal por zero")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op power64 (as float64: left, as float64: right) as float64 ==> {
+            mut as float64: res = left ^e right
+            emit(nice, res, "ok")
+      }
+      op power32 (as float32: left, as float32: right) as float32 ==> {
+            mut as float32: res = (left as float64 ^e right as float64) as float32
+            emit(nice, res, "ok")
+      }
+      op power16 (as float16: left, as float16: right) as float16 ==> {
+            mut as float16: res = (left as float64 ^e right as float64) as float16
+            emit(nice, res, "ok")
+      }
+
+      op root64 (as float64: degree, as float64: radicand) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  degree == 0.0 ==> {
+                        emit(fail, zero_val, "grau da raiz nao pode ser zero")
+                  }
+                  radicand < 0.0 ==> {
+                        emit(fail, zero_val, "radicando negativo")
+                  }
+                  radicand == 0.0 ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  degree == 2.0 ==> {
+                        mut as float64: x = radicand
+                        mut as float64: y = (x + 1.0) /f 2.0
+                        infinite {
+                              mut as float64: diff = y - x /f y
+                              route {
+                                    diff < 0.0 ==> {
+                                          diff = 0.0 - diff
+                                    }
+                              }
+                              route {
+                                    diff < 1.0e-15 ==> {
+                                          break
+                                    }
+                              }
+                              y = (y + x /f y) /f 2.0
+                        }
+                        emit(nice, y, "ok")
+                  }
+                  (degree != 2.0) and (radicand > 0.0) ==> {
+                        mut as float64: res = radicand ^r degree
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op root32 (as float32: degree, as float32: radicand) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  degree == (0.0 as float32) ==> {
+                        emit(fail, zero_val, "grau da raiz nao pode ser zero")
+                  }
+                  radicand < (0.0 as float32) ==> {
+                        emit(fail, zero_val, "radicando negativo")
+                  }
+            }
+            mut as float32: res = (root64(degree as float64, radicand as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op root16 (as float16: degree, as float16: radicand) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  degree == (0.0 as float16) ==> {
+                        emit(fail, zero_val, "grau da raiz nao pode ser zero")
+                  }
+                  radicand < (0.0 as float16) ==> {
+                        emit(fail, zero_val, "radicando negativo")
+                  }
+            }
+            mut as float16: res = (root64(degree as float64, radicand as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op negate64 (as int64: value) as int64 ==> {
+            mut as int64: res = 0 - value
+            emit(nice, res, "ok")
+      }
+      op negate32 (as int32: value) as int32 ==> {
+            mut as int32: res = (0 as int32) - value
+            emit(nice, res, "ok")
+      }
+      op negate16 (as int16: value) as int16 ==> {
+            mut as int16: res = (0 as int16) - value
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,41 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FsmStdLib
+#L Dominio: FsmExport
+#L ==============================================================================
+
+contract (FsmExportContract) {
+      op fsmToMermaid (as map: fsm_instance) as string
+}
+
+agent (FsmStdLib) impl FsmExportContract {
+      #L 5. FsmExportContract
+      #L ==============================================================================
+
+      op fsmToMermaid (as map: fsm_instance) as string ==> {
+            mut as string: out = "stateDiagram-v2\n"
+            mut as string: init_st = fsmInitialState(fsm_instance)
+            route {
+                  init_st != "" ==> {
+                        out = out + "    [*] --> " + init_st + "\n"
+                  }
+            }
+            mut as map: trans = map{}
+            route {
+                  "transitions" in fsm_instance ==> {
+                        trans = fsm_instance["transitions"] as map
+                  }
+            }
+            infinite (s in trans) {
+                  mut as map: ev_map = trans[s] as map
+                  infinite (ev in ev_map) {
+                        mut as string: tgt = "" + ev_map[ev]
+                        out = out + "    " + s + " --> " + tgt + " : " + ev + "\n"
+                  }
+            }
+            mut as list of data: finals = fsmFinalStates(fsm_instance)
+            infinite (f in finals) {
+                  out = out + "    " + f + " --> [*]\n"
+            }
+            emit(nice, out, "ok")
+      }
+}

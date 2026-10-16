@@ -1,0 +1,64 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Dominio: CharCompare
+#L ==============================================================================
+
+contract (CharCompareContract) {
+      op charEquals (as char: a, as char: b) as bool
+      op charEqualsIgnoreCase (as char: a, as char: b) as bool
+      op charCompare (as char: a, as char: b) as int64
+      op charCompareIgnoreCase (as char: a, as char: b) as int64
+      op charIsBetween (as char: c, as char: start, as char: end) as bool
+}
+
+agent (CharStdLib) impl CharCompareContract {
+      #L -- CharCompareContract ---------------------------------------
+      op charEquals (as char: a, as char: b) as bool ==> {
+            imut as bool: res = (a == b)
+            emit(nice, res, "ok")
+      }
+
+      op charEqualsIgnoreCase (as char: a, as char: b) as bool ==> {
+            mut as char: a_low = charToLower(a)
+            mut as char: b_low = charToLower(b)
+            imut as bool: res = (a_low == b_low)
+            emit(nice, res, "ok")
+      }
+
+      op charCompare (as char: a, as char: b) as int64 ==> {
+            mut as int64: a_code = charToAscii(a)
+            mut as int64: b_code = charToAscii(b)
+            route {
+                  a_code < b_code ==> {
+                        emit(nice, -1, "ok")
+                  }
+            }
+            route {
+                  a_code > b_code ==> {
+                        emit(nice, 1, "ok")
+                  }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op charCompareIgnoreCase (as char: a, as char: b) as int64 ==> {
+            mut as char: a_low = charToLower(a)
+            mut as char: b_low = charToLower(b)
+            mut as int64: res = charCompare(a_low, b_low)
+            emit(nice, res, "ok")
+      }
+
+      op charIsBetween (as char: c, as char: start, as char: end) as bool ==> {
+            mut as int64: val = charToAscii(c)
+            mut as int64: lo = charToAscii(start)
+            mut as int64: hi = charToAscii(end)
+            route {
+                  val >= 0 and lo >= 0 and hi >= 0 ==> {
+                        imut as bool: res = (val >= lo and val <= hi)
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as bool: f = false
+            emit(nice, f, "ok")
+      }
+}

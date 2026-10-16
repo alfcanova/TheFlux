@@ -1,0 +1,98 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotComposition
+#L ==============================================================================
+
+contract (PlotCompositionContract) {
+      op plotPie (as map: ctx, as list of float64: values, as list of string: labels) as map
+      op plotDonut (as map: ctx, as list of float64: values, as list of string: labels, as float64: hole_ratio) as map
+      op plotGauge (as map: ctx, as float64: value, as float64: min_val, as float64: max_val, as string: label) as map
+      op plotTernary (as map: ctx, as list of float64: as_comp, as list of float64: bs_comp, as list of float64: cs_comp) as map
+      op plotStackedBar (as map: ctx, as list of data: series_matrix, as list of string: group_labels) as map
+      op plotStackedArea (as map: ctx, as list of float64: xs, as list of data: series_matrix) as map
+      op plotTreemap (as map: ctx, as list of float64: values, as list of string: labels) as map
+      op plotWaffle (as map: ctx, as list of float64: proportions, as list of string: labels) as map
+}
+
+agent (GraphPlotStdLib) impl PlotCompositionContract {
+      #L 6. PlotCompositionContract (Família 4)
+      #L =====================================================================
+
+      op plotPie (as map: ctx, as list of float64: values, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "pie"
+            layer["values"] = values
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotDonut (as map: ctx, as list of float64: values, as list of string: labels, as float64: hole_ratio) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "donut"
+            layer["values"] = values
+            layer["labels"] = labels
+            layer["hole"] = hole_ratio
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotGauge (as map: ctx, as float64: value, as float64: min_val, as float64: max_val, as string: label) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "gauge"
+            layer["val"] = value
+            layer["min"] = min_val
+            layer["max"] = max_val
+            layer["lbl"] = label
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotTernary (as map: ctx, as list of float64: as_comp, as list of float64: bs_comp, as list of float64: cs_comp) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "ternary"
+            layer["as"] = as_comp
+            layer["bs"] = bs_comp
+            layer["cs"] = cs_comp
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStackedBar (as map: ctx, as list of data: series_matrix, as list of string: group_labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "stacked_bar"
+            layer["matrix"] = series_matrix
+            layer["labels"] = group_labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStackedArea (as map: ctx, as list of float64: xs, as list of data: series_matrix) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "stacked_area"
+            layer["xs"] = xs
+            layer["matrix"] = series_matrix
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotTreemap (as map: ctx, as list of float64: values, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "treemap"
+            layer["values"] = values
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotWaffle (as map: ctx, as list of float64: proportions, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "waffle"
+            layer["proportions"] = proportions
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

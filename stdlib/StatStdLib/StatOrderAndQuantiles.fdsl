@@ -1,0 +1,130 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatOrderAndQuantiles
+#L ==============================================================================
+
+contract (StatOrderAndQuantilesContract) {
+      op statQuantile (as list of data: data_points, as float64: p) as float64
+      op statPercentile (as list of data: data_points, as float64: percent) as float64
+      op statQuartiles (as list of data: data_points) as list of data
+      op statDeciles (as list of data: data_points) as list of data
+      op statRanks (as list of data: data_points) as list of data
+      op statZScores (as list of data: data_points) as list of data
+}
+
+agent (StatStdLib) impl StatOrderAndQuantilesContract {
+      #L 3. StatOrderAndQuantilesContract
+      #L ==============================================================================
+
+      op statQuantile (as list of data: data_points, as float64: p) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as list of data: s = _statSort(data_points)
+            route {
+                  p <= 0.0 ==> {
+                        emit(nice, s[1] as float64, "ok")
+                  }
+                  p >= 1.0 ==> {
+                        emit(nice, s[n] as float64, "ok")
+                  }
+            }
+            #L Hyndman & Fan Tipo 7 (padrao NumPy / R / SciPy)
+            #L h = 1.0 + (n - 1) * p
+            mut as float64: h = 1.0 + (((n - 1) as float64) * p)
+            mut as int64: k = h as int64
+            mut as float64: frac = h - (k as float64)
+            mut as float64: v_k = s[k] as float64
+            route {
+                  k >= n ==> {
+                        emit(nice, v_k, "ok")
+                  }
+            }
+            mut as float64: v_next = s[k + 1] as float64
+            mut as float64: res = v_k + (frac * (v_next - v_k))
+            emit(nice, res, "ok")
+      }
+
+      op statPercentile (as list of data: data_points, as float64: percent) as float64 ==> {
+            emit(nice, statQuantile(data_points, percent /f 100.0), "ok")
+      }
+
+      op statQuartiles (as list of data: data_points) as list of data ==> {
+            mut as float64: q1 = statQuantile(data_points, 0.25)
+            mut as float64: q2 = statQuantile(data_points, 0.50)
+            mut as float64: q3 = statQuantile(data_points, 0.75)
+            mut as list of data: res = [q1, q2, q3]
+            emit(nice, res, "ok")
+      }
+
+      op statDeciles (as list of data: data_points) as list of data ==> {
+            mut as list of data: res = []
+            infinite (i in 1 .. 9) {
+                  mut as float64: p = (i as float64) /f 10.0
+                  mut as float64: q = statQuantile(data_points, p)
+                  res[_statLen(res) + 1] = q
+            }
+            emit(nice, res, "ok")
+      }
+
+      op statRanks (as list of data: data_points) as list of data ==> {
+            mut as int64: n = _statLen(data_points)
+            mut as list of data: ranks = []
+            route {
+                  n == 0 ==> {
+                        emit(nice, ranks, "ok")
+                  }
+            }
+            infinite (i in 1 .. n) {
+                  mut as float64: val = data_points[i] as float64
+                  mut as int64: smaller = 0
+                  mut as int64: equal = 0
+                  infinite (j in 1 .. n) {
+                        mut as float64: other = data_points[j] as float64
+                        route {
+                              other < val ==> {
+                                    smaller = smaller + 1
+                              }
+                              other == val ==> {
+                                    equal = equal + 1
+                              }
+                        }
+                  }
+                  #L Rank medio = 1 + smaller + (equal - 1) / 2.0
+                  mut as float64: r = 1.0 + (smaller as float64) + (((equal - 1) as float64) /f 2.0)
+                  ranks[_statLen(ranks) + 1] = r
+            }
+            emit(nice, ranks, "ok")
+      }
+
+      op statZScores (as list of data: data_points) as list of data ==> {
+            mut as int64: n = _statLen(data_points)
+            mut as list of data: z_scores = []
+            route {
+                  n <= 1 ==> {
+                        emit(nice, z_scores, "ok")
+                  }
+            }
+            mut as float64: mu = statMean(data_points)
+            mut as float64: sd = statStdDevSample(data_points)
+            route {
+                  sd == 0.0 ==> {
+                        infinite (x in data_points) {
+                              z_scores[_statLen(z_scores) + 1] = 0.0
+                        }
+                        emit(nice, z_scores, "ok")
+                  }
+            }
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  mut as float64: z = (v - mu) /f sd
+                  z_scores[_statLen(z_scores) + 1] = z
+            }
+            emit(nice, z_scores, "ok")
+      }
+
+      #L ==============================================================================
+}

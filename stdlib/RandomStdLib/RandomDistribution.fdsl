@@ -1,0 +1,129 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RandomStdLib
+#L Dominio: RandomDistribution
+#L ==============================================================================
+
+contract (RandomDistributionContract) {
+      op randomNextInt (as int64: state) as list of data
+      op randomNextIntRange (as int64: state, as int64: min, as int64: max) as list of data
+      op randomNextFloat (as int64: state) as list of data
+      op randomNextFloatRange (as int64: state, as float64: min, as float64: max) as list of data
+      op randomNextBool (as int64: state) as list of data
+      op randomNextBernoulli (as int64: state, as float64: p) as list of data
+      op randomNextGaussian (as int64: state, as float64: mean, as float64: std_dev) as list of data
+      op randomNextDice (as int64: state, as int64: count, as int64: sides) as list of data
+}
+
+agent (RandomStdLib) impl RandomDistributionContract {
+      #L 2. RandomDistributionContract
+      #L ==============================================================================
+      op randomNextInt (as int64: state) as list of data ==> {
+            mut as list of data: pair = randomLcgNext(state)
+            emit(nice, pair, "ok")
+      }
+
+      op randomNextIntRange (as int64: state, as int64: min, as int64: max) as list of data ==> {
+            mut as list of data: pair = randomLcgNext(state)
+            mut as int64: next_st = pair[1] as int64
+            mut as int64: raw_val = pair[2] as int64
+            route {
+                  raw_val < 0 ==> {
+                        raw_val = 0 - raw_val
+                  }
+            }
+            route {
+                  max <= min ==> {
+                        mut as list of data: eq_res = [next_st, min]
+                        emit(nice, eq_res, "ok")
+                  }
+            }
+            mut as int64: span = max - min + 1
+            mut as int64: offset = raw_val /r span
+            mut as int64: res_val = min + offset
+            mut as list of data: res = [next_st, res_val]
+            emit(nice, res, "ok")
+      }
+
+      op randomNextFloat (as int64: state) as list of data ==> {
+            mut as list of data: pair = randomLcgNext(state)
+            mut as int64: next_st = pair[1] as int64
+            mut as int64: raw_val = pair[2] as int64
+            route {
+                  raw_val < 0 ==> {
+                        raw_val = 0 - raw_val
+                  }
+            }
+            mut as int64: frac = raw_val /r 1000000
+            mut as float64: fval = (frac as float64) /f 1000000.0
+            mut as list of data: res = [next_st, fval]
+            emit(nice, res, "ok")
+      }
+
+      op randomNextFloatRange (as int64: state, as float64: min, as float64: max) as list of data ==> {
+            mut as list of data: pair = randomNextFloat(state)
+            mut as int64: next_st = pair[1] as int64
+            mut as float64: u = pair[2] as float64
+            mut as float64: diff = max - min
+            mut as float64: val = min + (diff * u)
+            mut as list of data: res = [next_st, val]
+            emit(nice, res, "ok")
+      }
+
+      op randomNextBool (as int64: state) as list of data ==> {
+            mut as list of data: pair = randomLcgNext(state)
+            mut as int64: next_st = pair[1] as int64
+            mut as int64: raw_val = pair[2] as int64
+            mut as bool: bval = (raw_val /r 2) == 1
+            mut as list of data: res = [next_st, bval]
+            emit(nice, res, "ok")
+      }
+
+      op randomNextBernoulli (as int64: state, as float64: p) as list of data ==> {
+            mut as list of data: pair = randomNextFloat(state)
+            mut as int64: next_st = pair[1] as int64
+            mut as float64: u = pair[2] as float64
+            mut as bool: success = u < p
+            mut as list of data: res = [next_st, success]
+            emit(nice, res, "ok")
+      }
+
+      op randomNextGaussian (as int64: state, as float64: mean, as float64: std_dev) as list of data ==> {
+            #L Irwin-Hall distribution: soma de 12 uniformes U(0,1) - 6.0
+            mut as int64: cur_st = state
+            mut as float64: sum = 0.0
+            infinite (i in 1 .. 12) {
+                  mut as list of data: pair = randomNextFloat(cur_st)
+                  cur_st = pair[1] as int64
+                  mut as float64: u = pair[2] as float64
+                  sum = sum + u
+            }
+            mut as float64: z = sum - 6.0
+            mut as float64: val = mean + (std_dev * z)
+            mut as list of data: res = [cur_st, val]
+            emit(nice, res, "ok")
+      }
+
+      op randomNextDice (as int64: state, as int64: count, as int64: sides) as list of data ==> {
+            mut as int64: cur_st = state
+            mut as int64: total = 0
+            mut as list of data: rolls = []
+            route {
+                  count <= 0 or sides <= 0 ==> {
+                        mut as list of data: empty_res = [state, [0, []]]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            infinite (i in 1 .. count) {
+                  mut as list of data: pair = randomNextIntRange(cur_st, 1, sides)
+                  cur_st = pair[1] as int64
+                  mut as int64: r = pair[2] as int64
+                  total = total + r
+                  rolls[i] = r
+            }
+            mut as list of data: roll_info = [total, rolls]
+            mut as list of data: res = [cur_st, roll_info]
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

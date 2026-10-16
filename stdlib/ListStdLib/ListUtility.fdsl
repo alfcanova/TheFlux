@@ -1,0 +1,130 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListUtility
+#L ==============================================================================
+
+contract (ListUtilityContract) {
+      op listEquals (as list of data: lhs, as list of data: rhs) as bool
+      op listJoin (as list of data: items, as string: separator) as string
+      op listSwap (as list of data: items, as int64: i, as int64: j) as list of data
+      op listReplaceAt (as list of data: items, as int64: index, as data: item) as list of data
+      op listConcat (as list of data: left, as list of data: right) as list of data
+      op listRepeat (as data: item, as int64: count) as list of data
+      op listFill (as list of data: items, as data: value) as list of data
+}
+
+agent (ListStdLib) impl ListUtilityContract {
+      #L -- ListUtilityContract ---------------------------------------
+      op listEquals (as list of data: lhs, as list of data: rhs) as bool ==> {
+            mut as int64: n_l = listLength(lhs)
+            mut as int64: n_r = listLength(rhs)
+            mut as bool: eq = n_l == n_r
+            route {
+                  eq ==> {
+                        mut as int64: idx = 1
+                        infinite (idx <= n_l) {
+                              route {
+                                    lhs[idx] != rhs[idx] ==> {
+                                          eq = false
+                                          break
+                                    }
+                              }
+                              idx = idx + 1
+                        }
+                  }
+            }
+            emit(nice, eq, "ok")
+      }
+
+      op listJoin (as list of data: items, as string: separator) as string ==> {
+            mut as string: text = ""
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              text = "" + x
+                              first = false
+                        }
+                        not first ==> {
+                              text = text + separator + x
+                        }
+                  }
+            }
+            imut as string: res = text
+            emit(nice, res, "ok")
+      }
+
+      op listSwap (as list of data: items, as int64: i, as int64: j) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  i < 1 or i > total or j < 1 or j > total ==> {
+                        mut as data: trigger_err = items[0]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            mut as data: temp = res[i]
+            res[i] = res[j]
+            res[j] = temp
+            emit(nice, res, "ok")
+      }
+
+      op listReplaceAt (as list of data: items, as int64: index, as data: item) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  index < 1 or index > total ==> {
+                        mut as data: trigger_err = items[index]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            res[index] = item
+            emit(nice, res, "ok")
+      }
+
+      op listConcat (as list of data: left, as list of data: right) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in left) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            infinite (y in right) {
+                  rlen = rlen + 1
+                  res[rlen] = y
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRepeat (as data: item, as int64: count) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  count > 0 ==> {
+                        infinite (i in 1 .. count) {
+                              res[i] = item
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFill (as list of data: items, as data: value) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  res[curr] = value
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+}

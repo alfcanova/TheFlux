@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Dominio: DslParser
+#L ==============================================================================
+
+contract (DslParserContract) {
+      op dslCreateParser (as data: lexer, as map: grammar_rules) as data
+      op dslIsValidSyntax (as data: parser, as string: dsl_code) as bool
+      op dslGetErrors (as data: parser, as string: dsl_code) as list of data
+      op dslFormatErrors (as list of data: errors, as string: dsl_code) as string
+}
+
+agent (DslStdLib) impl DslParserContract {
+      #L -- DslParserContract ------------------------------------------
+      op dslCreateParser (as data: lexer, as map: grammar_rules) as data ==> {
+            emit(nice, stdDslCreateParser(lexer, grammar_rules), "ok")
+      }
+
+      op dslIsValidSyntax (as data: parser, as string: dsl_code) as bool ==> {
+            emit(nice, stdDslIsValidSyntax(parser, dsl_code), "ok")
+      }
+
+      op dslGetErrors (as data: parser, as string: dsl_code) as list of data ==> {
+            emit(nice, stdDslGetErrors(parser, dsl_code), "ok")
+      }
+
+      op dslFormatErrors (as list of data: errors, as string: dsl_code) as string ==> {
+            emit(nice, stdDslFormatErrors(errors, dsl_code), "ok")
+      }
+}

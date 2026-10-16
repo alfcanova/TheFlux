@@ -1,0 +1,51 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressBzip2
+#L ==============================================================================
+
+contract (CompressBzip2Contract) {
+      op compressBzip2 (as string: input_data) as string
+      op compressBzip2Level (as string: input_data, as int64: level) as string
+      op decompressBzip2 (as string: compressed_data) as string
+      op decompressBzip2Safe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsBzip2 (as string: compressed_data) as bool
+}
+
+agent (CompressStdLib) impl CompressBzip2Contract {
+      #L -- CompressBzip2Contract --------------------------------------
+      op compressBzip2 (as string: input_data) as string ==> {
+            emit(nice, stdCompressBzip2(input_data), "ok")
+      }
+
+      op compressBzip2Level (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressBzip2Level(input_data, level), "ok")
+      }
+
+      op decompressBzip2 (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressBzip2(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao bzip2")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressBzip2Safe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressBzip2Safe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao bzip2")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsBzip2 (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsBzip2(compressed_data), "ok")
+      }
+}

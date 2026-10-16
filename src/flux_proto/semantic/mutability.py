@@ -25,16 +25,44 @@ def validate_mutability(st: SymbolTable, ast: ASTNode) -> list[Diagnostic]:
 
 
 def _check_reassigns(ast: ASTNode, st: SymbolTable, diags: list[Diagnostic]) -> None:
+    storage_mutability: dict[str, bool] = {}
+    for sd in _walk_nodes(ast, StorageDecl):
+        for item in sd.items:
+            storage_mutability[item.name] = item.mutable
+
     for ra in _walk_nodes(ast, VariableReassign):
+        is_mut = storage_mutability.get(ra.name)
         sym = st.resolve(ra.name)
-        if sym is not None and not sym.mutable:
+        if is_mut is None and sym is None:
+            from flux_proto.diagnostics.catalog import create_diagnostic
             diags.append(
-                Diagnostic(
-                    code="SEM001",
-                    severity=Severity.ERROR,
+                create_diagnostic(
+                    code_or_mnemonic="SEM303",
                     line=getattr(ra, "line", 0),
                     column=getattr(ra, "column", 0),
-                    message=f"cannot reassign immutable variable '{ra.name}'",
+                    custom_msg=f"identificador não declarado: a variável '{ra.name}' precisa ser declarada com 'mut' ou 'imut'",
+                )
+            )
+            continue
+        if is_mut is False:
+            from flux_proto.diagnostics.catalog import create_diagnostic
+            diags.append(
+                create_diagnostic(
+                    code_or_mnemonic="OWN501",
+                    line=getattr(ra, "line", 0),
+                    column=getattr(ra, "column", 0),
+                    custom_msg=f"cannot reassign immutable variable '{ra.name}'",
+                )
+            )
+            continue
+        if sym is not None and not sym.mutable:
+            from flux_proto.diagnostics.catalog import create_diagnostic
+            diags.append(
+                create_diagnostic(
+                    code_or_mnemonic="OWN501",
+                    line=getattr(ra, "line", 0),
+                    column=getattr(ra, "column", 0),
+                    custom_msg=f"cannot reassign immutable variable '{ra.name}'",
                 )
             )
 
@@ -58,13 +86,13 @@ def _check_struct_field_assigns(ast: ASTNode, st: SymbolTable, diags: list[Diagn
             continue
         fdef = next((f for f in sdef.fields if f.name == fa.field), None)
         if fdef is not None and not fdef.mutable:
+            from flux_proto.diagnostics.catalog import create_diagnostic
             diags.append(
-                Diagnostic(
-                    code="SEM001",
-                    severity=Severity.ERROR,
+                create_diagnostic(
+                    code_or_mnemonic="OWN502",
                     line=getattr(fa, "line", 0),
                     column=getattr(fa, "column", 0),
-                    message=f"cannot assign to immutable field '{fa.field}' of struct '{sdef.name}'",
+                    custom_msg=f"cannot assign to immutable field '{fa.field}' of struct '{sdef.name}'",
                 )
             )
 
@@ -87,23 +115,20 @@ def _walk_nodes(node: ASTNode, kind: type) -> list:
 def _check_symbols(st: SymbolTable, diags: list[Diagnostic]) -> None:
     for sym in st.all_symbols():
         if not sym.mutable and not sym.initialized:
+            from flux_proto.diagnostics.catalog import create_diagnostic
             diags.append(
-                Diagnostic(
-                    code="SEM001",
-                    severity=Severity.ERROR,
+                create_diagnostic(
+                    code_or_mnemonic="SEM305",
                     line=getattr(sym.decl_node, "line", 0),
                     column=getattr(sym.decl_node, "column", 0),
-                    message=f"immutable declaration '{sym.name}' requires an initializer",
+                    custom_msg=f"immutable declaration '{sym.name}' requires an initializer",
                 )
             )
 
 
 def _check_ast_collections(ast: ASTNode, st: SymbolTable, diags: list[Diagnostic]) -> None:
-    if isinstance(ast, FluxProgram):
-        for sd in ast.storages:
-            _check_storage_decl(sd, st, diags)
-    for child in ast.children:
-        _check_ast_collections(child, st, diags)
+    for sd in _walk_nodes(ast, StorageDecl):
+        _check_storage_decl(sd, st, diags)
 
 
 def _check_storage_decl(sd: StorageDecl, st: SymbolTable, diags: list[Diagnostic]) -> None:
@@ -111,13 +136,13 @@ def _check_storage_decl(sd: StorageDecl, st: SymbolTable, diags: list[Diagnostic
         if not item.mutable and item.type_ref is not None:
             type_name = _type_name(item.type_ref)
             if type_name and type_name.startswith(_COLLECTION_PREFIXES):
+                from flux_proto.diagnostics.catalog import create_diagnostic
                 diags.append(
-                    Diagnostic(
-                        code="SEM001",
-                        severity=Severity.ERROR,
+                    create_diagnostic(
+                        code_or_mnemonic="OWN505",
                         line=getattr(item, "line", 0),
                         column=getattr(item, "column", 0),
-                        message=f"immutable declaration '{item.name}' cannot have collection type '{type_name}'",
+                        custom_msg=f"immutable declaration '{item.name}' cannot have collection type '{type_name}'",
                     )
                 )
 

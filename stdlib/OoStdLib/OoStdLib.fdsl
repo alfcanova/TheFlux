@@ -1,0 +1,13 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OoStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use OOValidation.fdsl
+use OOCasting.fdsl
+use OODispatch.fdsl
+use OOIntrospection.fdsl
+use OOLifecycle.fdsl
+
+agent (OoStdLib) {
+}

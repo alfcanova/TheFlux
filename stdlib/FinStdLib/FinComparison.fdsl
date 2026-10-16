@@ -1,0 +1,87 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinComparison
+#L ==============================================================================
+
+contract (FinComparisonContract) {
+      op finEquals (as FinDecimal: a, as FinDecimal: b) as bool
+      op finCompare (as FinDecimal: a, as FinDecimal: b) as int64
+      op finGt (as FinDecimal: a, as FinDecimal: b) as bool
+      op finGte (as FinDecimal: a, as FinDecimal: b) as bool
+      op finLt (as FinDecimal: a, as FinDecimal: b) as bool
+      op finLte (as FinDecimal: a, as FinDecimal: b) as bool
+      op finIsZero (as FinDecimal: val) as bool
+      op finIsPositive (as FinDecimal: val) as bool
+      op finIsNegative (as FinDecimal: val) as bool
+      op finBetween (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as bool
+      op finIsValidBalance (as FinDecimal: val) as bool
+}
+
+#L ==============================================================================
+#L 3. FinTimeValueOfMoneyContract
+#L ==============================================================================
+
+agent (FinStdLib) impl FinComparisonContract {
+      #L 2. FinComparisonContract
+      #L ==============================================================================
+
+      op finEquals (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw == b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finCompare (as FinDecimal: a, as FinDecimal: b) as int64 ==> {
+            route {
+                  a.raw > b.raw ==> { emit(nice, 1, "ok") }
+                  a.raw < b.raw ==> { emit(nice, -1, "ok") }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op finGt (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw > b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finGte (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw >= b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finLt (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw < b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finLte (as FinDecimal: a, as FinDecimal: b) as bool ==> {
+            mut as bool: res = (a.raw <= b.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finIsZero (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw == 0)
+            emit(nice, res, "ok")
+      }
+
+      op finIsPositive (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw > 0)
+            emit(nice, res, "ok")
+      }
+
+      op finIsNegative (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw < 0)
+            emit(nice, res, "ok")
+      }
+
+      op finBetween (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as bool ==> {
+            mut as bool: res = (val.raw >= min_val.raw and val.raw <= max_val.raw)
+            emit(nice, res, "ok")
+      }
+
+      op finIsValidBalance (as FinDecimal: val) as bool ==> {
+            mut as bool: res = (val.raw >= 0)
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

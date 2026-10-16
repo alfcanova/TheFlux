@@ -1,0 +1,12 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ThreadStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use ThreadChannel.fdsl
+use ThreadSync.fdsl
+use ThreadLifecycle.fdsl
+use ThreadSystem.fdsl
+
+agent (ThreadStdLib) {
+}

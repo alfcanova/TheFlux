@@ -1,0 +1,237 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringValidation
+#L ==============================================================================
+
+contract (StringValidationContract) {
+      op stringIsAlpha (as string: text) as bool
+      op stringIsDigit (as string: text) as bool
+      op stringIsAlphanumeric (as string: text) as bool
+      op stringIsWhitespace (as string: text) as bool
+      op stringIsBlank (as string: text) as bool
+      op stringIsLower (as string: text) as bool
+      op stringIsUpper (as string: text) as bool
+      op stringIsAscii (as string: text) as bool
+}
+
+agent (StringStdLib) impl StringValidationContract {
+      #L -- StringValidationContract ----------------------------------
+      op stringIsAlpha (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: alpha = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as bool: all_alpha = true
+            infinite (c in text) {
+                  mut as bool: found = false
+                  infinite (a in alpha) {
+                        route {
+                              c == a ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_alpha = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_alpha
+            emit(nice, res, "ok")
+      }
+
+      op stringIsDigit (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: digits = "0123456789"
+            mut as bool: all_digits = true
+            infinite (c in text) {
+                  mut as bool: found = false
+                  infinite (d in digits) {
+                        route {
+                              c == d ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_digits = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_digits
+            emit(nice, res, "ok")
+      }
+
+      op stringIsAlphanumeric (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: alnum = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            mut as bool: all_alnum = true
+            infinite (c in text) {
+                  mut as bool: found = false
+                  infinite (a in alnum) {
+                        route {
+                              c == a ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_alnum = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_alnum
+            emit(nice, res, "ok")
+      }
+
+      op stringIsWhitespace (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as bool: all_ws = true
+            infinite (c in text) {
+                  route {
+                        c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                              all_ws = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_ws
+            emit(nice, res, "ok")
+      }
+
+      op stringIsBlank (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+            }
+            mut as bool: all_ws = true
+            infinite (c in text) {
+                  route {
+                        c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                              all_ws = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_ws
+            emit(nice, res, "ok")
+      }
+
+      op stringIsLower (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            mut as bool: has_alpha = false
+            mut as bool: has_upper = false
+            infinite (c in text) {
+                  infinite (u in upp) {
+                        route {
+                              c == u ==> {
+                                    has_upper = true
+                                    break
+                              }
+                        }
+                  }
+                  infinite (l in low) {
+                        route {
+                              c == l ==> {
+                                    has_alpha = true
+                                    break
+                              }
+                        }
+                  }
+            }
+            mut as bool: is_low = has_alpha and not has_upper
+            imut as bool: res = is_low
+            emit(nice, res, "ok")
+      }
+
+      op stringIsUpper (as string: text) as bool ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            mut as bool: has_alpha = false
+            mut as bool: has_lower = false
+            infinite (c in text) {
+                  infinite (u in upp) {
+                        route {
+                              c == u ==> {
+                                    has_alpha = true
+                                    break
+                              }
+                        }
+                  }
+                  infinite (l in low) {
+                        route {
+                              c == l ==> {
+                                    has_lower = true
+                                    break
+                              }
+                        }
+                  }
+            }
+            mut as bool: is_up = has_alpha and not has_lower
+            imut as bool: res = is_up
+            emit(nice, res, "ok")
+      }
+
+      op stringIsAscii (as string: text) as bool ==> {
+            mut as bool: all_ascii = true
+            infinite (c in text) {
+                  route {
+                        c > "~" ==> {
+                              all_ascii = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_ascii
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,20 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Dominio: DslExecution
+#L ==============================================================================
+
+contract (DslExecutionContract) {
+      op dslCompile (as map: ast, as string: target_end) as data
+      op dslExecuteInline (as data: parser, as string: dsl_code, mut as data: context) as data
+}
+
+agent (DslStdLib) impl DslExecutionContract {
+      #L -- DslExecutionContract ---------------------------------------
+      op dslCompile (as map: ast, as string: target_end) as data ==> {
+            emit(nice, stdDslCompile(ast, target_end), "ok")
+      }
+
+      op dslExecuteInline (as data: parser, as string: dsl_code, mut as data: context) as data ==> {
+            emit(nice, stdDslExecuteInline(parser, dsl_code, context), "ok")
+      }
+}

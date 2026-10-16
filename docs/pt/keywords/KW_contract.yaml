@@ -1,0 +1,76 @@
+keyword: contract
+category: Declaração de Contrato
+description: 'Declara um contrato que define um conjunto de assinaturas de operações (op) que um agente (agent) pode implementar.
+  O contrato é uma interface que especifica nomes, parâmetros e tipos de retorno sem implementação.
+
+  Contratos são válidos apenas em arquivos .fdsl. O nome do contrato deve estar em PascalCase. '
+syntax: "contract (<Nome_PascalCase>) {\n      op <nome_camelCase> ([mut | imut | as] <tipo>: <identificador> [, ...]) [as\
+  \ <tipo_retorno>]\n      op <nome_camelCase> () [as <tipo_retorno>]\n      ...\n}\n"
+pseudocode: "CONTRATO Operavel:\n    assinatura ligar()\n    assinatura desligar()\n// conjunto de assinaturas que um agente\
+  \ pode implementar"
+usages:
+- name: Contrato com operações simples
+  description: Contrato com ops sem parâmetros.
+  examples:
+  - code: "contract (Readable) {\n      op read () as int64\n}\n"
+- name: Contrato com operações parametrizadas
+  description: Contrato para operações matemáticas básicas com parâmetros nomeados.
+  examples:
+  - code: "contract (OperacoesBasicas) {\n      op somar (as int64: a, as int64: b) as int64\n      op subtrair (as int64:\
+      \ a, as int64: b) as int64\n      op multiplicar (as int64: a, as int64: b) as int64\n      op dividirInteiro (as int64:\
+      \ a, as int64: b) as int64\n}\n"
+- name: Múltiplos contratos no mesmo arquivo
+  description: Dois contratos declarados sequencialmente em um .fdsl.
+  examples:
+  - code: "contract (ReadOp) {\n      op read () as int64\n}\ncontract (WriteOp) {\n      op write () as int64\n}\n"
+restrictions:
+- O nome do contrato deve estar em PascalCase (SEM330).
+- Operações em contratos não podem ter corpo (apenas assinatura) (SYN130).
+- As operações declaradas dentro do contrato devem seguir camelCase (SEM331).
+- Deve haver pelo menos uma operação no contrato.
+- Contratos são válidos apenas em arquivos .fdsl (não em .flux).
+- Agentes implementam contratos via a cláusula `impl` na declaração `agent`.
+errors:
+- code: "SEM330"
+  mnemonic: "CONTRACT_NAME_PASCAL_CASE"
+  severity: "Error"
+  trigger: "Nome de contrato declarado fora da convenção PascalCase"
+  message: "Nome de contrato deve utilizar a convenção PascalCase"
+  hint: "Renomeie o contrato para iniciar com letra maiúscula (ex: 'CalculadoraContract')"
+  example_bad: |
+    contract (meuContrato) {
+      op executar() as int64
+    }
+  example_good: |
+    contract (MeuContrato) {
+      op executar() as int64
+    }
+- code: "SEM331"
+  mnemonic: "CONTRACT_OP_CAMEL_CASE"
+  severity: "Error"
+  trigger: "Nome de operação em contrato declarado fora da convenção camelCase"
+  message: "Operação de contrato deve utilizar a convenção camelCase"
+  hint: "Renomeie a operação para iniciar com letra minúscula (ex: 'calcularTotal')"
+  example_bad: |
+    contract (Processador) {
+      op ExecutarTarefa() as bool
+    }
+  example_good: |
+    contract (Processador) {
+      op executarTarefa() as bool
+    }
+- code: "SYN130"
+  mnemonic: "CONTRACT_OP_CANNOT_HAVE_BODY"
+  severity: "Error"
+  trigger: "Operação declarada dentro de contrato com corpo executável ou bloco '==>'"
+  message: "Operações dentro de 'contract' definem apenas assinaturas e não podem possuir corpo de execução"
+  hint: "Remova o corpo da operação ('==> { ... }'); implementações pertencem ao 'agent'"
+  example_bad: |
+    contract (Servico) {
+      op somar(as int64: a) as int64 ==> { emit(nice, a + 1, "ok") }
+    }
+  example_good: |
+    contract (Servico) {
+      op somar(as int64: a) as int64
+    }
+

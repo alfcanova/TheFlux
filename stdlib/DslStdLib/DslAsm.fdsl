@@ -1,0 +1,35 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Dominio: DslAsm
+#L ==============================================================================
+
+contract (DslAsmContract) {
+      op dslGetAsmEngine (as string: architecture) as data
+      op dslAsmAssemble (as data: asm_engine, as string: asm_code) as list of int64
+      op dslAsmDisassemble (as data: asm_engine, as list of int64: machine_code) as string
+      op dslAsmValidateRegisters (as data: asm_engine, as list of string: registers) as bool
+      op dslAsmGetRegisterMap (as data: asm_engine) as map
+}
+
+agent (DslStdLib) impl DslAsmContract {
+      #L -- DslAsmContract ---------------------------------------------
+      op dslGetAsmEngine (as string: architecture) as data ==> {
+            emit(nice, stdDslGetAsmEngine(architecture), "ok")
+      }
+
+      op dslAsmAssemble (as data: asm_engine, as string: asm_code) as list of int64 ==> {
+            emit(nice, stdDslAsmAssemble(asm_engine, asm_code), "ok")
+      }
+
+      op dslAsmDisassemble (as data: asm_engine, as list of int64: machine_code) as string ==> {
+            emit(nice, stdDslAsmDisassemble(asm_engine, machine_code), "ok")
+      }
+
+      op dslAsmValidateRegisters (as data: asm_engine, as list of string: registers) as bool ==> {
+            emit(nice, stdDslAsmValidateRegisters(asm_engine, registers), "ok")
+      }
+
+      op dslAsmGetRegisterMap (as data: asm_engine) as map ==> {
+            emit(nice, stdDslAsmGetRegisterMap(asm_engine), "ok")
+      }
+}

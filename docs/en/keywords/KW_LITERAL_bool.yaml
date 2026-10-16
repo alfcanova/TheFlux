@@ -1,0 +1,78 @@
+keyword: True, False
+category: Boolean Literal
+description: 'Literais booleanos. A forma canônica é PascalCase: True e False. Apenas essas duas formas são aceitas como literais;
+  qualquer outra capitalização (true, false, TRUE, FALSE) não é alias e lexa como identifier, causando error de variable indefinida.'
+syntax: True | False
+pseudocode: 'verdadeiro := True
+
+  falso      := False'
+usages:
+- name: Forma canônica
+  description: As únicas formas aceitas.
+  examples:
+  - code: 'mut as bool: ativo= True
+
+      mut as bool: completo= False'
+- name: Usage em route
+  description: Booleans as direct route condition.
+  examples:
+  - code: 'route { True --> { print("Sempre executa") } }
+
+      route { False --> { print("Nunca executa") } }'
+- name: Pattern in dataflow
+  description: Booleanos em patterns de dataflow (-->/==>).
+  examples:
+  - code: route { True ==> { print("OK") } }
+restrictions:
+- Apenas True e False são literais booleanos válidos.
+- 'true, false, TRUE, FALSE não são aliases: lexam como IDENTIFIER e generate errorr de variable indefinida (ou type indefinido).'
+- Booleanos são do type bool.
+errors:
+- code: TYP441
+  mnemonic: EXPECT_BOOL_GOT_INT
+  severity: Error
+  trigger: Expression expects a boolean (bool) and received an integer
+  message: Expected bool, got integer (int)
+  hint: Use boolean comparison (e.g. 'val != 0') instead of bare integer
+  example_bad: 'mut as bool: b = 1
+
+    '
+  example_good: 'mut as bool: b = (1 != 0)
+
+    '
+- code: TYP442
+  mnemonic: EXPECT_BOOL_GOT_STRING
+  severity: Error
+  trigger: Expression expects a boolean (bool) and received a string
+  message: Expected bool, got string
+  hint: Compare string content (e.g. 's == "true"')
+  example_bad: 'mut as bool: b = "True"
+
+    '
+  example_good: 'mut as bool: b = ("True" == "True")
+
+    '
+- code: TYP443
+  mnemonic: EXPECT_BOOL_GOT_FLOAT
+  severity: Error
+  trigger: Expression expects a boolean (bool) and received a float
+  message: Expected bool, got float
+  hint: Use comparison (e.g. 'f != 0.0')
+  example_bad: 'mut as bool: b = 0.0
+
+    '
+  example_good: 'mut as bool: b = (0.0 != 0.0)
+
+    '
+- code: LEX010
+  mnemonic: BOOL_INVALID_LITERAL_CASING
+  severity: Error
+  trigger: Boolean literal written with invalid casing (e.g., True, TRUE, False, FALSE)
+  message: Invalid boolean literal casing; expected strictly 'true' or 'false' in lowercase
+  hint: 'Write boolean literals strictly in lowercase: ''true'' or ''false'''
+  example_bad: 'mut as bool: ativo = true
+
+    '
+  example_good: 'mut as bool: ativo = True
+
+    '

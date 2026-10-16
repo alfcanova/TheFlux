@@ -1,0 +1,15 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use DbSql.fdsl
+use DbKv.fdsl
+use DbDoc.fdsl
+use DbColumn.fdsl
+use DbGraph.fdsl
+use DbVector.fdsl
+use DbValidation.fdsl
+
+agent (DbStdLib) {
+}

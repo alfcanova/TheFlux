@@ -1,0 +1,16 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RegexStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use StringStdLib
+use CharStdLib
+
+use RegexSearch.fdsl
+use RegexTransform.fdsl
+use RegexCapture.fdsl
+use RegexUtility.fdsl
+use RegexPreset.fdsl
+
+agent (RegexStdLib) {
+}

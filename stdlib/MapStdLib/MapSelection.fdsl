@@ -1,0 +1,135 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapSelection
+#L ==============================================================================
+
+contract (MapSelectionContract) {
+      op mapTake (as map: record, as int64: n) as map
+      op mapDrop (as map: record, as int64: n) as map
+      op mapTakeLast (as map: record, as int64: n) as map
+      op mapDropLast (as map: record, as int64: n) as map
+      op mapFilterKeys (as map: record, as list of data: allowed_keys) as map
+      op mapOmitKeys (as map: record, as list of data: omitted_keys) as map
+      op mapFilterValues (as map: record, as list of data: allowed_values) as map
+      op mapOmitValues (as map: record, as list of data: omitted_values) as map
+}
+
+agent (MapStdLib) impl MapSelectionContract {
+      #L 6. MapSelectionContract (8 operacoes)
+      #L ==============================================================================
+      op mapTake (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        count < n ==> {
+                              count = count + 1
+                              m[k] = record[k]
+                        }
+                        count >= n ==> {
+                              break
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapDrop (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: count = 0
+            infinite (k in record) {
+                  count = count + 1
+                  route {
+                        count > n ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapTakeLast (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: total = 0
+            infinite (k in record) { total = total + 1 }
+            mut as int64: start_idx = total - n + 1
+            route {
+                  start_idx < 1 ==> { start_idx = 1 }
+            }
+            mut as int64: curr = 1
+            infinite (k in record) {
+                  route {
+                        curr >= start_idx ==> {
+                              m[k] = record[k]
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, m, "ok")
+      }
+
+      op mapDropLast (as map: record, as int64: n) as map ==> {
+            mut as map: m = map{}
+            mut as int64: total = 0
+            infinite (k in record) { total = total + 1 }
+            mut as int64: keep_count = total - n
+            mut as int64: curr = 1
+            infinite (k in record) {
+                  route {
+                        curr <= keep_count ==> {
+                              m[k] = record[k]
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, m, "ok")
+      }
+
+      op mapFilterValues (as map: record, as list of data: allowed_values) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: allowed = false
+                  infinite (av in allowed_values) {
+                        route {
+                              record[k] == av ==> {
+                                    allowed = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        allowed ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapOmitValues (as map: record, as list of data: omitted_values) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: omit = false
+                  infinite (ov in omitted_values) {
+                        route {
+                              record[k] == ov ==> {
+                                    omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not omit ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

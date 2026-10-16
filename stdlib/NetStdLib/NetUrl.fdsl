@@ -1,0 +1,112 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NetStdLib
+#L Dominio: NetUrl
+#L ==============================================================================
+
+contract (NetUrlContract) {
+      op netUrlGetScheme (as string: url) as string
+      op netUrlGetHost (as string: url) as string
+      op netUrlGetPort (as string: url) as int64
+      op netUrlGetPath (as string: url) as string
+      op netUrlGetQuery (as string: url) as string
+      op netUrlGetFragment (as string: url) as string
+      op netUrlEncode (as string: text) as string
+      op netUrlDecode (as string: text) as string
+      op netUrlIsValid (as string: url) as bool
+      op netUrlJoin (as string: base_url, as string: relative_path) as string
+
+      #L Aliases
+      op urlGetScheme (as string: url) as string
+      op urlGetHost (as string: url) as string
+      op urlGetPort (as string: url) as int64
+      op urlGetPath (as string: url) as string
+      op urlGetQuery (as string: url) as string
+      op urlGetFragment (as string: url) as string
+      op urlEncode (as string: text) as string
+      op urlDecode (as string: text) as string
+      op urlIsValid (as string: url) as bool
+      op urlJoin (as string: base_url, as string: relative_path) as string
+}
+
+agent (NetStdLib) impl NetUrlContract {
+      #L -- NetUrlContract --------------------------------------------
+      op netUrlGetScheme (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetScheme(url), "ok")
+      }
+
+      op netUrlGetHost (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetHost(url), "ok")
+      }
+
+      op netUrlGetPort (as string: url) as int64 ==> {
+            emit(nice, stdNetUrlGetPort(url), "ok")
+      }
+
+      op netUrlGetPath (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetPath(url), "ok")
+      }
+
+      op netUrlGetQuery (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetQuery(url), "ok")
+      }
+
+      op netUrlGetFragment (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetFragment(url), "ok")
+      }
+
+      op netUrlEncode (as string: text) as string ==> {
+            emit(nice, stdNetUrlEncode(text), "ok")
+      }
+
+      op netUrlDecode (as string: text) as string ==> {
+            emit(nice, stdNetUrlDecode(text), "ok")
+      }
+
+      op netUrlIsValid (as string: url) as bool ==> {
+            emit(nice, stdNetUrlIsValid(url), "ok")
+      }
+
+      op netUrlJoin (as string: base_url, as string: relative_path) as string ==> {
+            emit(nice, stdNetUrlJoin(base_url, relative_path), "ok")
+      }
+
+      op urlGetScheme (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetScheme(url), "ok")
+      }
+
+      op urlGetHost (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetHost(url), "ok")
+      }
+
+      op urlGetPort (as string: url) as int64 ==> {
+            emit(nice, stdNetUrlGetPort(url), "ok")
+      }
+
+      op urlGetPath (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetPath(url), "ok")
+      }
+
+      op urlGetQuery (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetQuery(url), "ok")
+      }
+
+      op urlGetFragment (as string: url) as string ==> {
+            emit(nice, stdNetUrlGetFragment(url), "ok")
+      }
+
+      op urlEncode (as string: text) as string ==> {
+            emit(nice, stdNetUrlEncode(text), "ok")
+      }
+
+      op urlDecode (as string: text) as string ==> {
+            emit(nice, stdNetUrlDecode(text), "ok")
+      }
+
+      op urlIsValid (as string: url) as bool ==> {
+            emit(nice, stdNetUrlIsValid(url), "ok")
+      }
+
+      op urlJoin (as string: base_url, as string: relative_path) as string ==> {
+            emit(nice, stdNetUrlJoin(base_url, relative_path), "ok")
+      }
+}

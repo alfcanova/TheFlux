@@ -1,0 +1,43 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetRelation
+#L ==============================================================================
+
+contract (SetRelationContract) {
+      op setIsSubset (as set of data: lhs, as set of data: rhs) as bool
+      op setIsSuperset (as set of data: lhs, as set of data: rhs) as bool
+      op setIsDisjoint (as set of data: lhs, as set of data: rhs) as bool
+      op setIsProperSubset (as set of data: lhs, as set of data: rhs) as bool
+      op setIsProperSuperset (as set of data: lhs, as set of data: rhs) as bool
+}
+
+agent (SetStdLib) impl SetRelationContract {
+      #L -- SetRelationContract ---------------------------------------
+      op setIsSubset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsSubset(lhs, rhs), "ok")
+      }
+
+      op setIsSuperset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsSuperset(lhs, rhs), "ok")
+      }
+
+      op setIsDisjoint (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, stdSetIsDisjoint(lhs, rhs), "ok")
+      }
+
+      op setIsProperSubset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            mut as int64: len_l = setLength(lhs)
+            mut as int64: len_r = setLength(rhs)
+            mut as bool: res = false
+            route {
+                  len_l < len_r ==> {
+                        res = stdSetIsSubset(lhs, rhs)
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op setIsProperSuperset (as set of data: lhs, as set of data: rhs) as bool ==> {
+            emit(nice, setIsProperSubset(rhs, lhs), "ok")
+      }
+}

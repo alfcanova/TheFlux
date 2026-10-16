@@ -1,0 +1,90 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugAssert
+#L ==============================================================================
+
+contract (DebugAssertContract) {
+      op debugAssert (as bool: condition, as string: message) as bool
+      op debugAssertEqualInt (as int64: actual, as int64: expected, as string: tag) as bool
+      op debugAssertEqualString (as string: actual, as string: expected, as string: tag) as bool
+      op debugAssertEqualBool (as bool: actual, as bool: expected, as string: tag) as bool
+      op debugAssertInRange (as int64: val, as int64: min_val, as int64: max_val, as string: tag) as bool
+}
+
+agent (DebugStdLib) impl DebugAssertContract {
+      #L ==============================================================================
+      #L Utilitarios Internos
+      #L ==============================================================================
+      op _ord (as string: ch) as int64 ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            route {
+                  ch == "#" ==> { emit(nice, 35, "ok") }
+                  ch == "\n" ==> { emit(nice, 10, "ok") }
+                  ch == "\t" ==> { emit(nice, 9, "ok") }
+                  ch == "\r" ==> { emit(nice, 13, "ok") }
+            }
+            mut as int64: found_code = 0
+            mut as int64: idx = 1
+            infinite (c in ascii_table) {
+                  route {
+                        c == ch and found_code == 0 ==> {
+                              mut as int64: code_val = 31 + idx
+                              route {
+                                    code_val >= 35 ==> { code_val = code_val + 1 }
+                              }
+                              found_code = code_val
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_code, "ok")
+      }
+
+      op _toHexByte (as int64: code) as string ==> {
+            mut as string: hex_digits = "0123456789ABCDEF"
+            mut as int64: hi = code /i 16
+            mut as int64: lo = code - hi * 16
+            mut as string: res = hex_digits[hi + 1] + hex_digits[lo + 1]
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 2. DebugAssertContract
+      #L ==============================================================================
+      op debugAssert (as bool: condition, as string: message) as bool ==> {
+            route {
+                  condition ==> { emit(nice, true, "ok") }
+                  _ ==> { emit(fail, false, message) }
+            }
+      }
+
+      op debugAssertEqualInt (as int64: actual, as int64: expected, as string: tag) as bool ==> {
+            route {
+                  actual == expected ==> { emit(nice, true, "ok") }
+                  _ ==> { emit(fail, false, tag + ": esperado " + expected + " mas obteve " + actual) }
+            }
+      }
+
+      op debugAssertEqualString (as string: actual, as string: expected, as string: tag) as bool ==> {
+            route {
+                  actual == expected ==> { emit(nice, true, "ok") }
+                  _ ==> { emit(fail, false, tag + ": esperado '" + expected + "' mas obteve '" + actual + "'") }
+            }
+      }
+
+      op debugAssertEqualBool (as bool: actual, as bool: expected, as string: tag) as bool ==> {
+            route {
+                  actual == expected ==> { emit(nice, true, "ok") }
+                  _ ==> { emit(fail, false, tag + ": valor booleano divergente") }
+            }
+      }
+
+      op debugAssertInRange (as int64: val, as int64: min_val, as int64: max_val, as string: tag) as bool ==> {
+            route {
+                  val >= min_val and val <= max_val ==> { emit(nice, true, "ok") }
+                  _ ==> { emit(fail, false, tag + ": valor " + val + " fora do intervalo [" + min_val + ", " + max_val + "]") }
+            }
+      }
+
+      #L ==============================================================================
+}

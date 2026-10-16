@@ -1,0 +1,100 @@
+contract (AngleConversionContract) {
+      op degreesToRadians64 (as float64: value) as float64
+      op degreesToRadians32 (as float32: value) as float32
+      op degreesToRadians16 (as float16: value) as float16
+      op gradiansToRadians64 (as float64: value) as float64
+      op gradiansToRadians32 (as float32: value) as float32
+      op gradiansToRadians16 (as float16: value) as float16
+      op radiansToDegrees64 (as float64: value) as float64
+      op radiansToDegrees32 (as float32: value) as float32
+      op radiansToDegrees16 (as float16: value) as float16
+      op gradiansToDegrees64 (as float64: value) as float64
+      op gradiansToDegrees32 (as float32: value) as float32
+      op gradiansToDegrees16 (as float16: value) as float16
+      op radiansToGradians64 (as float64: value) as float64
+      op radiansToGradians32 (as float32: value) as float32
+      op radiansToGradians16 (as float16: value) as float16
+      op degreesToGradians64 (as float64: value) as float64
+      op degreesToGradians32 (as float32: value) as float32
+      op degreesToGradians16 (as float16: value) as float16
+}
+
+agent (MathStdLib) impl AngleConversionContract {
+      op degreesToRadians64 (as float64: value) as float64 ==> {
+            mut as float64: res = value * (3.14159265358979323846264338327 /f 180.0)
+            emit(nice, res, "ok")
+      }
+      op degreesToRadians32 (as float32: value) as float32 ==> {
+            mut as float32: res = (degreesToRadians64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op degreesToRadians16 (as float16: value) as float16 ==> {
+            mut as float16: res = (degreesToRadians64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op gradiansToRadians64 (as float64: value) as float64 ==> {
+            mut as float64: res = value * (3.14159265358979323846264338327 /f 200.0)
+            emit(nice, res, "ok")
+      }
+      op gradiansToRadians32 (as float32: value) as float32 ==> {
+            mut as float32: res = (gradiansToRadians64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op gradiansToRadians16 (as float16: value) as float16 ==> {
+            mut as float16: res = (gradiansToRadians64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op radiansToDegrees64 (as float64: value) as float64 ==> {
+            mut as float64: res = value * (180.0 /f 3.14159265358979323846264338327)
+            emit(nice, res, "ok")
+      }
+      op radiansToDegrees32 (as float32: value) as float32 ==> {
+            mut as float32: res = (radiansToDegrees64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op radiansToDegrees16 (as float16: value) as float16 ==> {
+            mut as float16: res = (radiansToDegrees64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op gradiansToDegrees64 (as float64: value) as float64 ==> {
+            mut as float64: res = value * 0.9
+            emit(nice, res, "ok")
+      }
+      op gradiansToDegrees32 (as float32: value) as float32 ==> {
+            mut as float32: res = (gradiansToDegrees64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op gradiansToDegrees16 (as float16: value) as float16 ==> {
+            mut as float16: res = (gradiansToDegrees64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op radiansToGradians64 (as float64: value) as float64 ==> {
+            mut as float64: res = value * (200.0 /f 3.14159265358979323846264338327)
+            emit(nice, res, "ok")
+      }
+      op radiansToGradians32 (as float32: value) as float32 ==> {
+            mut as float32: res = (radiansToGradians64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op radiansToGradians16 (as float16: value) as float16 ==> {
+            mut as float16: res = (radiansToGradians64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op degreesToGradians64 (as float64: value) as float64 ==> {
+            mut as float64: res = (value * 10.0) /f 9.0
+            emit(nice, res, "ok")
+      }
+      op degreesToGradians32 (as float32: value) as float32 ==> {
+            mut as float32: res = (degreesToGradians64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op degreesToGradians16 (as float16: value) as float16 ==> {
+            mut as float16: res = (degreesToGradians64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+}

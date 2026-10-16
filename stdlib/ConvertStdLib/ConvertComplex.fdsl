@@ -1,0 +1,36 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Dominio: ConvertComplex
+#L ==============================================================================
+
+contract (ConvertComplexContract) {
+      op convertToComplex (as float64: real, as float64: imag) as complex64
+      op convertToComplex32 (as float64: real, as float64: imag) as complex32
+      op convertToComplex128 (as float64: real, as float64: imag) as complex128
+      op convertComplexToList (as complex64: value) as list of data
+}
+
+agent (ConvertStdLib) impl ConvertComplexContract {
+      #L 5. ConvertComplexContract
+      #L ==============================================================================
+      op convertToComplex (as float64: real, as float64: imag) as complex64 ==> {
+            mut as complex64: c = (real as complex64) + ((imag as complex64) * 1.0i)
+            emit(nice, c, "ok")
+      }
+
+      op convertToComplex32 (as float64: real, as float64: imag) as complex32 ==> {
+            mut as complex32: c = (real as complex32) + ((imag as complex32) * 1.0i)
+            emit(nice, c, "ok")
+      }
+
+      op convertToComplex128 (as float64: real, as float64: imag) as complex128 ==> {
+            mut as complex128: c = (real as complex128) + ((imag as complex128) * 1.0i)
+            emit(nice, c, "ok")
+      }
+
+      op convertComplexToList (as complex64: value) as list of data ==> {
+            emit(nice, [value], "ok")
+      }
+
+      #L ==============================================================================
+}

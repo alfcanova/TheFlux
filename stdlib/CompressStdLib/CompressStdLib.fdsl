@@ -1,0 +1,48 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Arquivo Agregador Mestre e Tipos Compartilhados de Compressao
+#L ==============================================================================
+
+#L --- Tipos e Estruturas Publicas da CompressStdLib ---
+enum (CompressFormat) {
+      DEFLATE
+      ZLIB
+      GZIP
+      BZIP2
+      LZMA
+      LZMA2
+      XZ
+      ZSTD
+      BROTLI
+      ZIP
+      TAR
+      SEVEN_ZIP
+      RAR
+      UNKNOWN
+}
+
+struct (CompressStats) {
+      imut: .uncompressed_size: int64
+      imut: .compressed_size: int64
+      imut: .ratio: float64
+      imut: .savings_percent: float64
+      imut: .format: CompressFormat
+}
+
+struct (DecompressQuota) {
+      mut: .max_bytes: int64
+      mut: .strict_abort: bool
+}
+
+#L --- Modulos de Dominio ---
+use CompressDeflate.fdsl
+use CompressZlib.fdsl
+use CompressGzip.fdsl
+use CompressBzip2.fdsl
+use CompressLzma.fdsl
+use CompressXz.fdsl
+use CompressZstd.fdsl
+use CompressInspection.fdsl
+
+agent (CompressStdLib) {
+}

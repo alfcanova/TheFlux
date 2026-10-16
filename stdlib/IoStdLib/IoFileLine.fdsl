@@ -1,0 +1,25 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoFileLine
+#L ==============================================================================
+
+contract (IoFileLineContract) {
+      op readLines (as string: path) as list of data
+      op writeLines (as string: path, as list of data: lines) as string
+      op appendLines (as string: path, as list of data: lines) as string
+}
+
+agent (IoStdLib) impl IoFileLineContract {
+      #L -- IoFileLineContract ----------------------------------------
+      op readLines (as string: path) as list of data ==> {
+            emit(nice, stdIoReadLines(path), "ok")
+      }
+
+      op writeLines (as string: path, as list of data: lines) as string ==> {
+            emit(nice, stdIoWriteLines(path, lines), "ok")
+      }
+
+      op appendLines (as string: path, as list of data: lines) as string ==> {
+            emit(nice, stdIoAppendLines(path, lines), "ok")
+      }
+}

@@ -1,0 +1,55 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Arquivo Agregador Mestre e Tipos Compartilhados de Computacao Simbolica
+#L ==============================================================================
+
+#L --- Tipos e Estruturas Publicas da SymbolicStdLib ---
+struct (SymbolicPolyDivideResult) {
+      mut: .quotient: string
+      mut: .remainder: string
+}
+
+struct (SymbolicStats) {
+      mut: .node_count: int64
+      mut: .depth: int64
+      mut: .variable_count: int64
+      mut: .is_canonical: bool
+}
+
+enum (SymbolicNodeType) {
+      SymbolicSymbol
+      SymbolicNumber
+      SymbolicAdd
+      SymbolicSub
+      SymbolicMul
+      SymbolicDivInt
+      SymbolicDivFloat
+      SymbolicPow
+      SymbolicNeg
+      SymbolicFunc
+}
+
+struct (SymbolicNode) {
+      mut: .type_name: string
+      mut: .value: string
+      mut: .ast_repr: string
+}
+
+#L --- Dependencias Externas da StdLib ---
+use StringStdLib
+use MathStdLib
+use ConvertStdLib
+
+#L --- Modulos de Dominio ---
+use SymbolicCore.fdsl
+use SymbolicPoly.fdsl
+use SymbolicSolver.fdsl
+use SymbolicSubstitution.fdsl
+use SymbolicValidation.fdsl
+use SymbolicCalculus.fdsl
+use SymbolicMatrix.fdsl
+use SymbolicTransform.fdsl
+use SymbolicFormat.fdsl
+
+agent (SymbolicStdLib) {
+}

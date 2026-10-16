@@ -1,0 +1,26 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FileSignatureStdLib
+#L Dominio: FileAuthSignature
+#L ==============================================================================
+
+contract (FileAuthSignatureContract) {
+      op fileHmacSha256 (as string: path, as string: key) as string
+      op fileHmacMd5 (as string: path, as string: key) as string
+      op fileVerifyHmac (as string: path, as string: key, as string: expected_hmac) as bool
+}
+
+agent (FileSignatureStdLib) impl FileAuthSignatureContract {
+      #L -- FileAuthSignatureContract ---------------------------------
+      op fileHmacSha256 (as string: path, as string: key) as string ==> {
+            emit(nice, stdFileHmacSha256(path, key), "ok")
+      }
+
+      op fileHmacMd5 (as string: path, as string: key) as string ==> {
+            emit(nice, stdFileHmacMd5(path, key), "ok")
+      }
+
+      op fileVerifyHmac (as string: path, as string: key, as string: expected_hmac) as bool ==> {
+            mut as string: actual = stdFileHmacSha256(path, key)
+            emit(nice, actual == expected_hmac, "ok")
+      }
+}

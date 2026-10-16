@@ -1,0 +1,39 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Arquivo Agregador Mestre e Tipos Compartilhados de Calculos Financeiros
+#L ==============================================================================
+
+#L --- Modos de Arredondamento Contabil ---
+enum (RoundingMode) {
+      FinHalfEven
+      FinHalfUp
+      FinUp
+      FinDown
+}
+
+#L --- Tipo FinDecimal (Ponto Fixo 10^8) ---
+struct (FinDecimal) {
+      mut: .raw: int64
+      mut: .scale: int64
+}
+
+#L --- Parcela de Amortizacao ---
+struct (AmortizationInstallment) {
+      mut: .month: int64
+      mut: .payment: FinDecimal
+      mut: .amortization: FinDecimal
+      mut: .interest: FinDecimal
+      mut: .balance: FinDecimal
+}
+
+#L --- Modulos de Dominio ---
+use FinDecimal.fdsl
+use FinComparison.fdsl
+use FinTimeValueOfMoney.fdsl
+use FinRate.fdsl
+use FinAmortization.fdsl
+use FinDepreciation.fdsl
+use FinFormat.fdsl
+
+agent (FinStdLib) {
+}

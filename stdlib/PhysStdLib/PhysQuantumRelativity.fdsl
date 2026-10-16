@@ -1,0 +1,73 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysQuantumRelativity
+#L ==============================================================================
+
+contract (PhysQuantumRelativityContract) {
+      op physPhotonEnergy (as float64: frequency) as float64
+      op physDeBroglieWavelength (as float64: momentum) as float64
+      op physMassEnergyEquivalence (as float64: mass) as float64
+      op physLorentzGamma (as float64: velocity) as float64
+      op physTimeDilation (as float64: proper_time, as float64: velocity) as float64
+      op physLengthContraction (as float64: proper_length, as float64: velocity) as float64
+}
+
+agent (PhysStdLib) impl PhysQuantumRelativityContract {
+      #L PhysQuantumRelativityContract (Quantica e Relatividade)
+      #L =====================================================================
+      op physPhotonEnergy (as float64: frequency) as float64 ==> {
+            mut as float64: e = C_PLANCK * frequency
+            emit(nice, e, "ok")
+      }
+      op physDeBroglieWavelength (as float64: momentum) as float64 ==> {
+            route {
+                  momentum <= 0.0 ==> {
+                        emit(fail, 0.0, "momento invalido em De Broglie")
+                  }
+            }
+            mut as float64: lambda = C_PLANCK /f momentum
+            emit(nice, lambda, "ok")
+      }
+      op physMassEnergyEquivalence (as float64: mass) as float64 ==> {
+            mut as float64: e = mass * (C_SPEED_OF_LIGHT * C_SPEED_OF_LIGHT)
+            emit(nice, e, "ok")
+      }
+      op physLorentzGamma (as float64: velocity) as float64 ==> {
+            mut as float64: beta = velocity /f C_SPEED_OF_LIGHT
+            mut as float64: beta2 = beta * beta
+            route {
+                  beta2 >= 1.0 ==> {
+                        emit(fail, 0.0, "velocidade igual ou superior a luz")
+                  }
+            }
+            mut as float64: denom = (1.0 - beta2) ^e 0.5
+            mut as float64: gamma = 1.0 /f denom
+            emit(nice, gamma, "ok")
+      }
+      op physTimeDilation (as float64: proper_time, as float64: velocity) as float64 ==> {
+            mut as float64: beta = velocity /f C_SPEED_OF_LIGHT
+            mut as float64: beta2 = beta * beta
+            route {
+                  beta2 >= 1.0 ==> {
+                        emit(fail, 0.0, "velocidade superior a luz em dilatacao temporal")
+                  }
+            }
+            mut as float64: denom = (1.0 - beta2) ^e 0.5
+            mut as float64: t = proper_time /f denom
+            emit(nice, t, "ok")
+      }
+      op physLengthContraction (as float64: proper_length, as float64: velocity) as float64 ==> {
+            mut as float64: beta = velocity /f C_SPEED_OF_LIGHT
+            mut as float64: beta2 = beta * beta
+            route {
+                  beta2 >= 1.0 ==> {
+                        emit(fail, 0.0, "velocidade superior a luz em contracao de Lorentz")
+                  }
+            }
+            mut as float64: factor = (1.0 - beta2) ^e 0.5
+            mut as float64: l = proper_length * factor
+            emit(nice, l, "ok")
+      }
+
+      #L =====================================================================
+}

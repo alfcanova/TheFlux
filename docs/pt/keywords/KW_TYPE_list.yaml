@@ -1,0 +1,57 @@
+keyword: list
+category: Tipo de Coleção - List
+description: Sequência homogênea com índice 1-based e atribuição por índice.
+syntax: 'mut as list of Type: var1, var2, ..., varN [= [<valor>, ...]]'
+pseudocode: 'lista : LISTA DE int64   // homogenea, indice 1-based'
+usages:
+- name: Lista (list)
+  description: Sequência homogênea com índice 1-based e atribuição por índice.
+  examples:
+  - code: 'mut as list of int64: xs = [10, 20, 30]
+
+      print(xs[1])        # 10
+
+      print(xs[3])        # 30
+
+      xs[2] = 25
+
+      print(xs)           # [10, 25, 30]'
+restrictions:
+- 'list REQUER ''of Type'' (ex: ''list of int64'').'
+- Listas usam índices 1-based (first = [1]).
+- 'Growth por atribuição indexada: <list>[len+1] = v faz append; in-range substitui; > len+1 é erro out of range.'
+- Tipo do elemento pode ser outra coleção (list of list of string).
+- Suportado nos 5 backends (in, vm, wat, wasm, llvm).
+errors:
+- code: "SYN160"
+  mnemonic: "LIST_REQUIRES_OF_TYPE"
+  severity: "Error"
+  trigger: "Declaração de 'list' sem especificar o tipo dos elementos com 'of <tipo>'"
+  message: "Tipo 'list' requer especificação do tipo de elemento com 'of <tipo>'"
+  hint: "Especifique o tipo dos elementos com 'of <tipo>' (ex: 'list of int64')"
+  example_bad: |
+    mut as list: xs = [1, 2, 3]
+  example_good: |
+    mut as list of int64: xs = [1, 2, 3]
+- code: "OWN505"
+  mnemonic: "COLLECTION_CANNOT_BE_IMMUTABLE"
+  severity: "Error"
+  trigger: "Tentativa de declarar coleção dinâmica ('list' ou 'set') como imutável ('imut')"
+  message: "Coleções dinâmicas não podem ser imutáveis ('imut'); utilize 'mut as list of <tipo>:'"
+  hint: "Tipos list e set não podem ser imutáveis; declare utilizando 'mut as <tipo>:'"
+  example_bad: |
+    imut as list of int64: XS = [1, 2, 3]
+  example_good: |
+    mut as list of int64: xs = [1, 2, 3]
+- code: "RT702"
+  mnemonic: "INDEX_OUT_OF_BOUNDS"
+  severity: "Error"
+  trigger: "Acesso a índice menor que 1 ou maior que o comprimento da lista/tensor"
+  message: "Índice fora dos limites da coleção (indexação 1-based)"
+  hint: "Lembre-se: TheFlux adota indexação 1-based (1..N). Verifique se o índice está dentro da faixa válida"
+  example_bad: |
+    mut as list of int64: xs = [10, 20]
+    print(xs[3])
+  example_good: |
+    mut as list of int64: xs = [10, 20]
+    print(xs[2])

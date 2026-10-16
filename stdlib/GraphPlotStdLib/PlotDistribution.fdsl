@@ -1,0 +1,84 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotDistribution
+#L ==============================================================================
+
+contract (PlotDistributionContract) {
+      op plotHistogram (as map: ctx, as list of float64: data_vals, as int64: n_bins) as map
+      op plotKde (as map: ctx, as list of float64: data_vals, as float64: bandwidth) as map
+      op plotBoxplot (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map
+      op plotViolin (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map
+      op plotStrip (as map: ctx, as list of float64: data_vals, as float64: center_x) as map
+      op plotOgive (as map: ctx, as list of float64: data_vals) as map
+      op plotQqPlot (as map: ctx, as list of float64: data_vals) as map
+}
+
+agent (GraphPlotStdLib) impl PlotDistributionContract {
+      #L 3. PlotDistributionContract (Família 1)
+      #L =====================================================================
+
+      op plotHistogram (as map: ctx, as list of float64: data_vals, as int64: n_bins) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "histogram"
+            layer["data"] = data_vals
+            layer["bins"] = n_bins
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotKde (as map: ctx, as list of float64: data_vals, as float64: bandwidth) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "kde"
+            layer["data"] = data_vals
+            layer["bandwidth"] = bandwidth
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotBoxplot (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "boxplot"
+            layer["data"] = data_vals
+            layer["cx"] = center_x
+            layer["w"] = width
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotViolin (as map: ctx, as list of float64: data_vals, as float64: center_x, as float64: width) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "violin"
+            layer["data"] = data_vals
+            layer["cx"] = center_x
+            layer["w"] = width
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotStrip (as map: ctx, as list of float64: data_vals, as float64: center_x) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "strip"
+            layer["data"] = data_vals
+            layer["cx"] = center_x
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotOgive (as map: ctx, as list of float64: data_vals) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "ogive"
+            layer["data"] = data_vals
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotQqPlot (as map: ctx, as list of float64: data_vals) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "qqplot"
+            layer["data"] = data_vals
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

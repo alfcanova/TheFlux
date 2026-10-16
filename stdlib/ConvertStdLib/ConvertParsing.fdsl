@@ -1,0 +1,273 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Dominio: ConvertParsing
+#L ==============================================================================
+
+contract (ConvertParsingContract) {
+      op convertParseInt (as string: text) as int64
+      op convertParseIntOrDefault (as string: text, as int64: default) as int64
+      op convertParseFloat (as string: text) as float64
+      op convertParseFloatOrDefault (as string: text, as float64: default) as float64
+      op convertParseBool (as string: text) as bool
+      op convertParseHex (as string: text) as int64
+      op convertParseBinary (as string: text) as int64
+      op convertParseOctal (as string: text) as int64
+}
+
+agent (ConvertStdLib) impl ConvertParsingContract {
+      #L 4. ConvertParsingContract (1-Index)
+      #L ==============================================================================
+      op _charToDigit (as string: c) as int64 ==> {
+            route {
+                  c == "0" ==> { emit(nice, 0, "ok") }
+                  c == "1" ==> { emit(nice, 1, "ok") }
+                  c == "2" ==> { emit(nice, 2, "ok") }
+                  c == "3" ==> { emit(nice, 3, "ok") }
+                  c == "4" ==> { emit(nice, 4, "ok") }
+                  c == "5" ==> { emit(nice, 5, "ok") }
+                  c == "6" ==> { emit(nice, 6, "ok") }
+                  c == "7" ==> { emit(nice, 7, "ok") }
+                  c == "8" ==> { emit(nice, 8, "ok") }
+                  c == "9" ==> { emit(nice, 9, "ok") }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      op _charToHexDigit (as string: c) as int64 ==> {
+            route {
+                  c == "0" ==> { emit(nice, 0, "ok") }
+                  c == "1" ==> { emit(nice, 1, "ok") }
+                  c == "2" ==> { emit(nice, 2, "ok") }
+                  c == "3" ==> { emit(nice, 3, "ok") }
+                  c == "4" ==> { emit(nice, 4, "ok") }
+                  c == "5" ==> { emit(nice, 5, "ok") }
+                  c == "6" ==> { emit(nice, 6, "ok") }
+                  c == "7" ==> { emit(nice, 7, "ok") }
+                  c == "8" ==> { emit(nice, 8, "ok") }
+                  c == "9" ==> { emit(nice, 9, "ok") }
+                  c == "a" or c == "A" ==> { emit(nice, 10, "ok") }
+                  c == "b" or c == "B" ==> { emit(nice, 11, "ok") }
+                  c == "c" or c == "C" ==> { emit(nice, 12, "ok") }
+                  c == "d" or c == "D" ==> { emit(nice, 13, "ok") }
+                  c == "e" or c == "E" ==> { emit(nice, 14, "ok") }
+                  c == "f" or c == "F" ==> { emit(nice, 15, "ok") }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      op convertParseIntOrDefault (as string: text, as int64: default) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, default, "ok") }
+            }
+            mut as bool: negative = false
+            mut as int64: start_idx = 1
+            route {
+                  text[1] == "-" ==> {
+                        negative = true
+                        start_idx = 2
+                  }
+                  text[1] == "+" ==> {
+                        start_idx = 2
+                  }
+            }
+            route {
+                  start_idx > len ==> { emit(nice, default, "ok") }
+            }
+            mut as int64: res = 0
+            mut as bool: valid = true
+            infinite (i in start_idx .. len) {
+                  route {
+                        valid ==> {
+                              mut as string: ch = text[i]
+                              mut as int64: d = _charToDigit(ch)
+                              route {
+                                    d < 0 ==> { valid = false }
+                                    d >= 0 ==> { res = res * 10 + d }
+                              }
+                        }
+                  }
+            }
+            route {
+                  not valid ==> { emit(nice, default, "ok") }
+                  valid and negative ==> { emit(nice, 0 - res, "ok") }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseInt (as string: text) as int64 ==> {
+            mut as int64: val = convertParseIntOrDefault(text, 0)
+            emit(nice, val, "ok")
+      }
+
+      op convertParseFloatOrDefault (as string: text, as float64: default) as float64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, default, "ok") }
+            }
+            mut as bool: negative = false
+            mut as int64: start_idx = 1
+            route {
+                  text[1] == "-" ==> {
+                        negative = true
+                        start_idx = 2
+                  }
+                  text[1] == "+" ==> {
+                        start_idx = 2
+                  }
+            }
+            route {
+                  start_idx > len ==> { emit(nice, default, "ok") }
+            }
+            mut as int64: dot_idx = -1
+            infinite (i in start_idx .. len) {
+                  route {
+                        text[i] == "." and dot_idx == -1 ==> {
+                              dot_idx = i
+                        }
+                  }
+            }
+            mut as float64: int_part = 0.0
+            mut as float64: frac_part = 0.0
+            mut as bool: valid = true
+            route {
+                  dot_idx == -1 ==> {
+                        infinite (i in start_idx .. len) {
+                              route {
+                                    valid ==> {
+                                          mut as int64: d = _charToDigit(text[i])
+                                          route {
+                                                d < 0 ==> { valid = false }
+                                                d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  dot_idx != -1 ==> {
+                        infinite (i in start_idx .. dot_idx - 1) {
+                              route {
+                                    valid ==> {
+                                          mut as int64: d = _charToDigit(text[i])
+                                          route {
+                                                d < 0 ==> { valid = false }
+                                                d >= 0 ==> { int_part = int_part * 10.0 + (d as float64) }
+                                          }
+                                    }
+                              }
+                        }
+                        mut as float64: divisor = 10.0
+                        infinite (i in dot_idx + 1 .. len) {
+                              route {
+                                    valid ==> {
+                                          mut as int64: d = _charToDigit(text[i])
+                                          route {
+                                                d < 0 ==> { valid = false }
+                                                d >= 0 ==> {
+                                                      frac_part = frac_part + ((d as float64) /f divisor)
+                                                      divisor = divisor * 10.0
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  not valid ==> { emit(nice, default, "ok") }
+            }
+            mut as float64: res = int_part + frac_part
+            route {
+                  negative ==> { res = 0.0 - res }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseFloat (as string: text) as float64 ==> {
+            mut as float64: val = convertParseFloatOrDefault(text, 0.0)
+            emit(nice, val, "ok")
+      }
+
+      op convertParseBool (as string: text) as bool ==> {
+            route {
+                  text == "true" or text == "1" or text == "yes" or text == "t" or text == "sim" ==> {
+                        emit(nice, true, "ok")
+                  }
+            }
+            emit(nice, false, "ok")
+      }
+
+      op convertParseHex (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: start_idx = 1
+            route {
+                  len >= 2 and (text[1..2] == "0x" or text[1..2] == "0X") ==> {
+                        start_idx = 3
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start_idx .. len) {
+                  mut as int64: d = _charToHexDigit(text[i])
+                  route {
+                        d < 0 ==> { emit(nice, 0, "ok") }
+                  }
+                  res = res * 16 + d
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseBinary (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: start_idx = 1
+            route {
+                  len >= 2 and (text[1..2] == "0b" or text[1..2] == "0B") ==> {
+                        start_idx = 3
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start_idx .. len) {
+                  mut as string: ch = text[i]
+                  route {
+                        ch == "0" ==> { res = res * 2 }
+                        ch == "1" ==> { res = res * 2 + 1 }
+                        ch != "0" and ch != "1" ==> { emit(nice, 0, "ok") }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op convertParseOctal (as string: text) as int64 ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: start_idx = 1
+            route {
+                  len >= 2 and (text[1..2] == "0o" or text[1..2] == "0O") ==> {
+                        start_idx = 3
+                  }
+            }
+            mut as int64: res = 0
+            infinite (i in start_idx .. len) {
+                  mut as int64: d = _charToDigit(text[i])
+                  route {
+                        d < 0 or d >= 8 ==> { emit(nice, 0, "ok") }
+                  }
+                  res = res * 8 + d
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

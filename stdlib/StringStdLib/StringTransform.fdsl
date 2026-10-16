@@ -1,0 +1,236 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringTransform
+#L ==============================================================================
+
+contract (StringTransformContract) {
+      op stringUpper (as string: text) as string
+      op stringLower (as string: text) as string
+      op stringCapitalize (as string: text) as string
+      op stringTrim (as string: text) as string
+      op stringTrimStart (as string: text) as string
+      op stringTrimEnd (as string: text) as string
+      op stringReplace (as string: text, as string: target, as string: replacement) as string
+      op stringReplaceFirst (as string: text, as string: target, as string: replacement) as string
+      op stringReverse (as string: text) as string
+      op stringRepeat (as string: text, as int64: count) as string
+      op stringConcat (as string: left, as string: right) as string
+      op stringSurround (as string: text, as string: prefix, as string: suffix) as string
+}
+
+agent (StringStdLib) impl StringTransformContract {
+      #L -- StringTransformContract -----------------------------------
+      op stringUpper (as string: text) as string ==> {
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as string: mapped = c
+                  mut as int64: idx = 1
+                  infinite (lc in low) {
+                        route {
+                              c == lc ==> {
+                                    mapped = upp[idx]
+                                    break
+                              }
+                        }
+                        idx = idx + 1
+                  }
+                  res = res + mapped
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringLower (as string: text) as string ==> {
+            imut as string: low = "abcdefghijklmnopqrstuvwxyz"
+            imut as string: upp = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as string: mapped = c
+                  mut as int64: idx = 1
+                  infinite (uc in upp) {
+                        route {
+                              c == uc ==> {
+                                    mapped = low[idx]
+                                    break
+                              }
+                        }
+                        idx = idx + 1
+                  }
+                  res = res + mapped
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringCapitalize (as string: text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: first_char = stringUpper(text[1])
+            route {
+                  len_t == 1 ==> {
+                        emit(nice, first_char, "ok")
+                  }
+            }
+            imut as string: rest = stringLower(text[2..len_t])
+            imut as string: res = first_char + rest
+            emit(nice, res, "ok")
+      }
+
+      op stringTrim (as string: text) as string ==> {
+            mut as string: s1 = stringTrimStart(text)
+            mut as string: res = stringTrimEnd(s1)
+            emit(nice, res, "ok")
+      }
+
+      op stringTrimStart (as string: text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as int64: start_idx = len_t + 1
+            mut as int64: curr = 1
+            infinite (c in text) {
+                  route {
+                        c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                              start_idx = curr
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            route {
+                  start_idx > len_t ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: res = text[start_idx..len_t]
+            emit(nice, res, "ok")
+      }
+
+      op stringTrimEnd (as string: text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as int64: end_idx = 0
+            route {
+                  len_t > 0 ==> {
+                        infinite (i in len_t .. 1) {
+                              mut as string: c = text[i]
+                              route {
+                                    c != " " and c != "\t" and c != "\n" and c != "\r" ==> {
+                                          end_idx = i
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  end_idx == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            imut as string: res = text[1..end_idx]
+            emit(nice, res, "ok")
+      }
+
+      op stringReplace (as string: text, as string: target, as string: replacement) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            mut as int64: len_tgt = stringLength(target)
+            route {
+                  len_tgt == 0 or len_tgt > len_t ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            mut as int64: max_i = len_t - len_tgt + 1
+            infinite {
+                  route {
+                        i > len_t ==> {
+                              break
+                        }
+                        i > max_i ==> {
+                              res = res + text[i..len_t]
+                              break
+                        }
+                  }
+                  mut as int64: end_i = i + len_tgt - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == target ==> {
+                              res = res + replacement
+                              i = i + len_tgt
+                        }
+                        sub != target ==> {
+                              res = res + text[i]
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringReplaceFirst (as string: text, as string: target, as string: replacement) as string ==> {
+            mut as int64: idx = stringIndexOf(text, target)
+            route {
+                  idx <= 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: len_tgt = stringLength(target)
+            mut as int64: len_text = stringLength(text)
+            mut as string: before = ""
+            route {
+                  idx > 1 ==> {
+                        before = text[1..(idx - 1)]
+                  }
+            }
+            mut as string: after = ""
+            mut as int64: after_start = idx + len_tgt
+            route {
+                  after_start <= len_text ==> {
+                        after = text[after_start..len_text]
+                  }
+            }
+            imut as string: res = before + replacement + after
+            emit(nice, res, "ok")
+      }
+
+      op stringReverse (as string: text) as string ==> {
+            mut as string: res = ""
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t > 0 ==> {
+                        infinite (i in len_t .. 1) {
+                              res = res + text[i]
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringRepeat (as string: text, as int64: count) as string ==> {
+            mut as string: res = ""
+            route {
+                  count > 0 ==> {
+                        infinite (i in 1 .. count) {
+                              res = res + text
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringConcat (as string: left, as string: right) as string ==> {
+            imut as string: res = left + right
+            emit(nice, res, "ok")
+      }
+
+      op stringSurround (as string: text, as string: prefix, as string: suffix) as string ==> {
+            imut as string: res = prefix + text + suffix
+            emit(nice, res, "ok")
+      }
+}

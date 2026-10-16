@@ -1,0 +1,181 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicSubstitution
+#L ==============================================================================
+
+contract (SymbolicSubstitutionContract) {
+      op symbolicSubstitute (as string: expression, as string: variable, as string: replacement) as string
+      op symbolicSubstituteAll (as string: expression, as map: replacements) as string
+      op symbolicEvaluate (as string: expression, as map: variables) as float64
+      op symbolicGetVariables (as string: expression) as list of data
+}
+
+agent (SymbolicStdLib) impl SymbolicSubstitutionContract {
+      op symbolicSubstitute (as string: expression, as string: variable, as string: replacement) as string ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as string: rebuilt = ""
+            infinite (t in toks) {
+                  mut as map: tm = t
+                  mut as string: tt = "" + tm["type"]
+                  mut as string: tv = "" + tm["val"]
+                  route {
+                        tt == "var" and tv == variable ==> {
+                              rebuilt = rebuilt + "(" + replacement + ")"
+                        }
+                        _ ==> {
+                              rebuilt = rebuilt + " " + tv + " "
+                        }
+                  }
+            }
+            emit(nice, symbolicSimplify(rebuilt), "ok")
+      }
+
+      op symbolicSubstituteAll (as string: expression, as map: replacements) as string ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as string: rebuilt = ""
+            infinite (t in toks) {
+                  mut as map: tm = t
+                  mut as string: tt = "" + tm["type"]
+                  mut as string: tv = "" + tm["val"]
+                  route {
+                        tt == "var" and _symMapHasKey(replacements, tv) ==> {
+                              mut as string: rep = "" + replacements[tv]
+                              rebuilt = rebuilt + "(" + rep + ")"
+                        }
+                        _ ==> {
+                              rebuilt = rebuilt + " " + tv + " "
+                        }
+                  }
+            }
+            emit(nice, symbolicSimplify(rebuilt), "ok")
+      }
+
+      op symbolicEvaluate (as string: expression, as map: variables) as float64 ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as list of data: fixed = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(fixed)
+
+            mut as list of data: st = []
+            mut as int64: n_st = 0
+
+            mut as int64: n_rpn = 0
+            infinite (t in rpn) { n_rpn = n_rpn + 1 }
+
+            mut as int64: i = 1
+            infinite (i <= n_rpn) {
+                  mut as map: t = rpn[i]
+                  mut as string: tt = "" + t["type"]
+                  route {
+                        tt == "num" ==> {
+                              mut as float64: nv = t["num_val"] as float64
+                              n_st = n_st + 1
+                              st[n_st] = nv
+                        }
+                        tt == "var" ==> {
+                              mut as string: v = "" + t["val"]
+                              mut as float64: vv = 0.0
+                              route {
+                                    _symMapHasKey(variables, v) ==> {
+                                          vv = variables[v] as float64
+                                    }
+                              }
+                              n_st = n_st + 1
+                              st[n_st] = vv
+                        }
+                        tt == "op" ==> {
+                              mut as float64: b = st[n_st] as float64
+                              mut as float64: a = st[n_st - 1] as float64
+                              n_st = n_st - 1
+                              mut as string: op_sym = "" + t["val"]
+                              route {
+                                    op_sym == "+" ==> { st[n_st] = a + b }
+                                    op_sym == "-" ==> { st[n_st] = a - b }
+                                    op_sym == "*" ==> { st[n_st] = a * b }
+                                    op_sym == "/" or op_sym == "/f" ==> { st[n_st] = a /f b }
+                                    op_sym == "/i" ==> { st[n_st] = ((a as int64) /i (b as int64)) as float64 }
+                                    op_sym == "^e" ==> {
+                                          mut as float64: p_res = 1.0
+                                          mut as int64: exp = (b as int64)
+                                          mut as int64: e_step = 1
+                                          infinite (e_step <= exp) {
+                                                p_res = p_res * a
+                                                e_step = e_step + 1
+                                          }
+                                          st[n_st] = p_res
+                                    }
+                              }
+                        }
+                  }
+                  i = i + 1
+            }
+
+            route {
+                  n_st > 0 ==> {
+                        emit(nice, st[n_st] as float64, "ok")
+                  }
+            }
+            emit(nice, 0.0, "ok")
+      }
+
+      op symbolicGetVariables (as string: expression) as list of data ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as list of data: vars = []
+            mut as int64: n_vars = 0
+
+            infinite (t in toks) {
+                  mut as map: tm = t
+                  route {
+                        tm["type"] == "var" ==> {
+                              mut as string: v = "" + tm["val"]
+                              mut as bool: exists = false
+                              mut as int64: vi = 1
+                              infinite (vi <= n_vars) {
+                                    route {
+                                          vars[vi] == v ==> {
+                                                exists = true
+                                                break
+                                          }
+                                    }
+                                    vi = vi + 1
+                              }
+                              route {
+                                    not exists ==> {
+                                          n_vars = n_vars + 1
+                                          vars[n_vars] = v
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            #L Ordena variaveis alfabeticamente
+            route {
+                  n_vars > 1 ==> {
+                        mut as int64: vi = 1
+                        infinite (vi < n_vars) {
+                              mut as int64: vj = 1
+                              mut as int64: vlimit = n_vars - vi
+                              infinite (vj <= vlimit) {
+                                    mut as string: va = vars[vj]
+                                    mut as string: vb = vars[vj + 1]
+                                    route {
+                                          va > vb ==> {
+                                                vars[vj] = vb
+                                                vars[vj + 1] = va
+                                          }
+                                    }
+                                    vj = vj + 1
+                              }
+                              vi = vi + 1
+                        }
+                  }
+            }
+
+            emit(nice, vars, "ok")
+      }
+
+      #L ==============================================================================
+      #L 5. SymbolicValidationContract (Fase 1)
+      #L ==============================================================================
+
+}

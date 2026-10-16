@@ -1,0 +1,97 @@
+keyword: use
+category: Import Declaration
+description: Importa agents ou operations de agents de outros modules. Pode importar um agent integer with alias, uma operation
+  específica with alias, ou um grupo de operations de um agent.
+syntax: 'use <AgentePascalCase> as <AliasPascalCase>
+
+  use <AgentePascalCase>::<operacao_camelCase> as <alias_camelCase>
+
+  use <AgentePascalCase>::{ <op> [as <alias>], ... }'
+pseudocode: 'USAR Modulo::Operacao        // importa operacao especifica
+
+  USAR Calc COMO Aritmetica    // importa agente com alias'
+usages:
+- name: Importar agent with alias
+  description: Importa um agent completo com um alias; operations são usadas via Alias::op.
+  examples:
+  - code: use AgentOfPrint as AP
+  - code: use AgentOfMath as AM
+- name: Importar operation específica
+  description: Importa uma operation específica de um agent with alias; a operation passa a ser chamável pelo alias.
+  examples:
+  - code: use AgentOfMath::dot as produtoEscalar
+- name: Importar grupo de operations
+  description: Importa múltiplas operations de um agent.
+  examples:
+  - code: "use AgentOfMath::{\n    dot as produtoEscalar,\n    crux,\n    inverse\n}"
+- name: Usage de agent importado
+  description: Utiliza operations do agent importado via alias e ::.
+  examples:
+  - code: AP::printNome
+  - code: AM::printNome
+- name: Usage de operation importada with alias
+  description: Chama diretamente a operation importada pelo alias.
+  examples:
+  - code: produtoEscalar(2, 3)
+  - code: meuPrint()
+restrictions:
+- Nomes de agents e aliases de agents devem estar em PascalCase.
+- Nomes de operations e aliases de operations devem estar em camelCase.
+- 'Aliases de operations são chamados como function: `alias(args)`.'
+- 'Aliases de agents são usados com `::` para acessar operations: `Alias::op(args)`.'
+- Declarações `use` devem vir no início do file, antes de outras declarations.
+errors:
+- code: IMP201
+  mnemonic: MODULE_NOT_FOUND
+  severity: Error
+  trigger: Import directive 'use' referencing a module or .fdsl file that does not exist on disk
+  message: Imported module or file not found on disk
+  hint: Verify module spelling and ensure the .fdsl file exists in stdlib/ or import search path
+  example_bad: 'use ModuloInexistente as MI
+
+    '
+  example_good: 'use MathStdLib as MS
+
+    '
+- code: IMP202
+  mnemonic: CIRCULAR_IMPORT
+  severity: Error
+  trigger: Circular dependency detected between imported modules
+  message: Circular dependency detected among imported modules
+  hint: Refactor modules to break dependency cycle, extracting shared types or contracts into a common aggregator
+  example_bad: '# ModuloA importa ModuloB e ModuloB importa ModuloA
+
+    use ModuloB
+
+    '
+  example_good: 'use ModuloComum
+
+    '
+- code: IMP203
+  mnemonic: PRIVATE_OP_ACCESS
+  severity: Error
+  trigger: Attempt to call private operation (prefixed with '_') from outside its defining module
+  message: Cannot access private operation; operations prefixed with '_' are private to their module
+  hint: Use public contract operations instead of calling internal private helpers ('op _*') directly
+  example_bad: 'use CalculadoraAgent::_auxiliar as aux
+
+    '
+  example_good: 'use CalculadoraAgent::somar as somar
+
+    '
+- code: IMP204
+  mnemonic: DUPLICATE_IMPORT_ALIAS
+  severity: Error
+  trigger: Multiple modules imported with conflicting aliases or identifiers in the same scope
+  message: 'Import alias conflict: identifier already in use by another module'
+  hint: 'Provide a distinct alias with ''as'': ''use ModuleA as MA'' and ''use ModuleB as MB'''
+  example_bad: 'use ModuloA as M
+
+    use ModuloB as M
+
+    '
+  example_good: 'use ModuloA as MA
+
+    use ModuloB as MB
+
+    '

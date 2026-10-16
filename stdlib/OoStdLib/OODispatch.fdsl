@@ -1,0 +1,33 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OoStdLib
+#L Dominio: OODispatch
+#L ==============================================================================
+
+contract (OODispatchContract) {
+      op ooDispatch (as data: interface_object, as string: method_name, as list of data: args) as data
+}
+
+agent (OoStdLib) impl OODispatchContract {
+      #L OODispatchContract
+      #L ==============================================================================
+
+      op ooDispatch (as data: interface_object, as string: method_name, as list of data: args) as data ==> {
+            route {
+                  interface_object["__valid__"] != true ==> {
+                        emit(fail, {}, "Objeto polimorfico invalido para despacho")
+                  }
+                  _ ==> {
+                        mut as map: dispatch_info = map{}
+                        dispatch_info["contract"] = interface_object["__contract__"]
+                        dispatch_info["type"] = interface_object["__type__"]
+                        dispatch_info["method"] = method_name
+                        dispatch_info["instance"] = interface_object["__data__"]
+                        dispatch_info["args"] = args
+                        dispatch_info["status"] = "dispatched"
+                        emit(nice, dispatch_info, "Despacho executado")
+                  }
+            }
+      }
+
+      #L ==============================================================================
+}

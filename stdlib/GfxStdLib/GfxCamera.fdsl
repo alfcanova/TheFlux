@@ -1,0 +1,57 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxCamera
+#L ==============================================================================
+
+contract (GfxCameraContract) {
+      op gfxCamera2DNew (as float64: target_x, as float64: target_y, as float64: offset_x, as float64: offset_y, as float64: rotation_deg, as float64: zoom) as map
+      op gfxWorldToScreen2D (as float64: wx, as float64: wy, as map: camera) as list of float64
+      op gfxScreenToWorld2D (as float64: sx, as float64: sy, as map: camera) as list of float64
+}
+
+agent (GfxStdLib) impl GfxCameraContract {
+      #L 7. GfxCameraContract
+      #L =====================================================================
+
+      op gfxCamera2DNew (as float64: target_x, as float64: target_y, as float64: offset_x, as float64: offset_y, as float64: rotation_deg, as float64: zoom) as map ==> {
+            mut as map: cam = map{}
+            cam["target_x"] = target_x
+            cam["target_y"] = target_y
+            cam["offset_x"] = offset_x
+            cam["offset_y"] = offset_y
+            cam["rotation"] = rotation_deg
+            mut as float64: z = zoom
+            route {
+                  z <= 0.0 ==> { z = 1.0 }
+            }
+            cam["zoom"] = z
+            emit(nice, cam, "ok")
+      }
+
+      op gfxWorldToScreen2D (as float64: wx, as float64: wy, as map: camera) as list of float64 ==> {
+            mut as float64: tx = camera["target_x"] as float64
+            mut as float64: ty = camera["target_y"] as float64
+            mut as float64: ox = camera["offset_x"] as float64
+            mut as float64: oy = camera["offset_y"] as float64
+            mut as float64: z = camera["zoom"] as float64
+            mut as float64: sx = (wx - tx) * z + ox
+            mut as float64: sy = (wy - ty) * z + oy
+            emit(nice, [sx, sy], "ok")
+      }
+
+      op gfxScreenToWorld2D (as float64: sx, as float64: sy, as map: camera) as list of float64 ==> {
+            mut as float64: tx = camera["target_x"] as float64
+            mut as float64: ty = camera["target_y"] as float64
+            mut as float64: ox = camera["offset_x"] as float64
+            mut as float64: oy = camera["offset_y"] as float64
+            mut as float64: z = camera["zoom"] as float64
+            route {
+                  z <= 0.0 ==> { z = 1.0 }
+            }
+            mut as float64: wx = (sx - ox) /f z + tx
+            mut as float64: wy = (sy - oy) /f z + ty
+            emit(nice, [wx, wy], "ok")
+      }
+
+      #L =====================================================================
+}

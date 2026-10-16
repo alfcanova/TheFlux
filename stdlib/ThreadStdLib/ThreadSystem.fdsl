@@ -1,0 +1,48 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ThreadStdLib
+#L Dominio: ThreadSystem
+#L ==============================================================================
+
+contract (ThreadSystemContract) {
+      op threadHardwareConcurrency () as int64
+      op threadSleep (as int64: milliseconds) as bool
+      op threadSleepMs (as int64: milliseconds) as bool
+      op threadYield () as bool
+
+      #L Aliases
+      op hardwareConcurrency () as int64
+      op sleepMs (as int64: milliseconds) as bool
+      op yield () as bool
+}
+
+agent (ThreadStdLib) impl ThreadSystemContract {
+      #L -- ThreadSystemContract --------------------------------------
+      op threadHardwareConcurrency () as int64 ==> {
+            emit(nice, stdThreadHardwareConcurrency(), "ok")
+      }
+
+      op threadSleep (as int64: milliseconds) as bool ==> {
+            emit(nice, stdThreadSleep(milliseconds), "ok")
+      }
+
+      op threadSleepMs (as int64: milliseconds) as bool ==> {
+            emit(nice, stdThreadSleep(milliseconds), "ok")
+      }
+
+      op threadYield () as bool ==> {
+            emit(nice, stdThreadYield(), "ok")
+      }
+
+      #L Aliases
+      op hardwareConcurrency () as int64 ==> {
+            emit(nice, stdThreadHardwareConcurrency(), "ok")
+      }
+
+      op sleepMs (as int64: milliseconds) as bool ==> {
+            emit(nice, stdThreadSleep(milliseconds), "ok")
+      }
+
+      op yield () as bool ==> {
+            emit(nice, stdThreadYield(), "ok")
+      }
+}

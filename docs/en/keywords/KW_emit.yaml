@@ -1,0 +1,75 @@
+keyword: emit
+category: Return Instruction
+description: 'Encerra a function atual devolvendo um struct implícito de resultado com três fields sempre definidos: `.sta`
+  ("nice" | "fail"), `.val` (value do identifier emitido, tipado pelo `as <type>` da function) e `.msg` (mensagem string ou
+  interpolada). `emit` é o statement terminal required do body de uma function. O struct integer fica disponível via variable
+  (`r = calc(5)`); depois leia cada field com acesso nomeado.'
+syntax: 'emit(nice, <identificador>, "<mensagem>")
+
+  emit(fail, <identificador>, "<mensagem>")'
+pseudocode: "FUNCAO calc(x):\n    SE invalido(x):\n        EMITIR(falha, x, \"entrada invalida\")\n    EMITIR(ok, x, \"calculado\"\
+  )   // terminal: encerra a funcao"
+usages:
+- name: Emit nice com return e consumo dos fields
+  description: Devolve o resultado de success; o chamador lê .sta, .val e .msg.
+  examples:
+  - code: "function (calc) (as int64: x) as int64 {\n      emit(nice, x, \"ok\")\n}\n\nprogram (Main) {\n      imut as auto:\
+      \ r = calc(5)\n      print(r.sta)     #L \"nice\"\n      print(r.val)     #L 5\n      print(r.msg)     #L \"ok\"\n}\n"
+- name: Emit fail em caminho de error
+  description: Devolve status de error em um branch de route; os três fields continuam preenchidos.
+  examples:
+  - code: "function (dividir) (as int64: dividendo, as int64: divisor) as int64 {\n      route {\n            divisor == 0\
+      \ ==> {\n                  emit(fail, divisor, \"divisao por zero\")\n            }\n            _ ==> {\n         \
+      \         mut as int64: resultado = dividendo /i divisor\n                  emit(nice, resultado, \"divisao executada\"\
+      )\n            }\n      }\n}\n\nprogram (Main) {\n      imut as auto: r = dividir(10, 2)\n      print(r.sta)     #L\
+      \ \"nice\"\n      print(r.val)     #L 5\n      print(r.msg)     #L \"divisao executada\"\n}\n"
+- name: Emit fail com return
+  description: Devolve o status de error junto com o value e a mensagem.
+  examples:
+  - code: "function (validar) (as int64: idade) as int64 {\n      route {\n            idade < 18 ==> {\n                \
+      \  emit(fail, idade, \"menor de idade\")\n            }\n            _ ==> {\n                  emit(nice, idade, \"\
+      validacao concluida\")\n            }\n      }\n}\n\nprogram (Main) {\n      imut as auto: r = validar(15)\n      print(r.sta)\
+      \     #L \"fail\"\n      print(r.val)     #L 15\n      print(r.msg)     #L \"menor de idade\"\n}\n"
+restrictions:
+- Apenas os status `nice` (success) e `fail` (error) são permitidos.
+- '`emit` é o statement terminal do body de uma function — nada pode vir depois.'
+- '`value` é um único identifier declarado (sem lista, sem expression, sem literal direto).'
+- A mensagem must be string literal ou string interpolada.
+- Functions com `as <type>` de return devem ter `emit` em todo caminho de execução (loops não contam).
+errors:
+- code: SEM350
+  mnemonic: EMIT_INVALID_CHANNEL
+  severity: Error
+  trigger: Emit instruction using channel other than 'nice' or 'fail'
+  message: Invalid emit channel; expected 'nice' for success or 'fail' for failure
+  hint: 'Use canonical channel: ''emit(nice, value, "ok")'' or ''emit(fail, value, "error message")'''
+  example_bad: 'emit(ok, resultado, "sucesso")
+
+    '
+  example_good: 'emit(nice, resultado, "sucesso")
+
+    '
+- code: SEM351
+  mnemonic: EMIT_NON_TERMINAL_STATEMENT
+  severity: Error
+  trigger: Statements placed after terminal emit instruction within the same block
+  message: 'Unreachable code: emit is terminal and exits the current operation/function'
+  hint: Remove statements following 'emit' or place them before the emit call
+  example_bad: 'emit(nice, total, "fim")
+
+    print("depois do emit")
+
+    '
+  example_good: 'print("antes do emit")
+
+    emit(nice, total, "fim")
+
+    '
+- code: TYP450
+  mnemonic: EMIT_RETURN_TYPE_MISMATCH
+  severity: Error
+  trigger: Value type emitted in emit does not match declared return type in operation signature
+  message: Emitted value type does not match operation declared return type
+  hint: Ensure the second argument in 'emit(channel, value, msg)' matches the operation return type
+  example_bad: "op calcular() as int64 ==> {\n  mut as string: txt = \"42\"\n  emit(nice, txt, \"ok\")\n}\n"
+  example_good: "op calcular() as int64 ==> {\n  mut as int64: num = 42\n  emit(nice, num, \"ok\")\n}\n"

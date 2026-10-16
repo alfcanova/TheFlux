@@ -1,0 +1,263 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotRender
+#L ==============================================================================
+
+contract (PlotRenderContract) {
+      op plotRender (as map: ctx) as map
+      op plotPresent (as map: ctx) as bool
+      op plotShow (as map: ctx, as int64: ms) as bool
+      op plotWait (as map: ctx) as bool
+}
+
+agent (GraphPlotStdLib) impl PlotRenderContract {
+      #L 11. PlotRenderContract
+      #L =====================================================================
+
+      op plotRender (as map: ctx) as map ==> {
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            mut as int64: vp_x = ctx["vp_x"] as int64
+            mut as int64: vp_y = ctx["vp_y"] as int64
+            mut as int64: vp_w = ctx["vp_w"] as int64
+            mut as int64: vp_h = ctx["vp_h"] as int64
+            mut as int64: m_t = ctx["margin_top"] as int64
+            mut as int64: m_r = ctx["margin_right"] as int64
+            mut as int64: m_b = ctx["margin_bottom"] as int64
+            mut as int64: m_l = ctx["margin_left"] as int64
+
+            #L 1. Fundo do grafico
+            gctx = gfxClearBackground(gctx, [25, 25, 30, 255])
+            
+            #L 2. Area interna de plotagem
+            mut as float64: px = (vp_x + m_l) as float64
+            mut as float64: py = (vp_y + m_t) as float64
+            mut as float64: pw = (vp_w - m_l - m_r) as float64
+            mut as float64: ph = (vp_h - m_t - m_b) as float64
+            gctx = gfxDrawRect(gctx, px, py, pw, ph, [35, 35, 42, 255])
+
+            #L 3. Titulo
+            mut as string: title = ctx["title"] as string
+            route {
+                  title != "" ==> {
+                        gctx = gfxDrawText(gctx, title, (vp_x + m_l) as float64, (vp_y + 12) as float64, 16, [240, 240, 240, 255])
+                  }
+            }
+
+            #L 4. Grades e Eixos
+            route {
+                  ctx["show_grid"] as bool ==> {
+                        mut as int64: gi = 1
+                        infinite (gi <= 4) {
+                              mut as float64: gx = px + (pw * (gi as float64) /f 5.0)
+                              mut as float64: gy = py + (ph * (gi as float64) /f 5.0)
+                              gctx = gfxDrawLine(gctx, gx, py, gx, py + ph, [55, 55, 65, 255])
+                              gctx = gfxDrawLine(gctx, px, gy, px + pw, gy, [55, 55, 65, 255])
+                              gi = gi + 1
+                        }
+                  }
+            }
+
+            route {
+                  ctx["show_axes"] as bool ==> {
+                        gctx = gfxDrawRectLines(gctx, px, py, pw, ph, [120, 120, 135, 255])
+                  }
+            }
+
+            #L 5. Renderizacao das Camadas
+            mut as list of data: layers = ctx["layers"] as list of data
+            mut as int64: total_layers = ctx["items_count"] as int64
+            mut as int64: li = 1
+            infinite (li <= total_layers) {
+                  mut as map: lyr = layers[li] as map
+                  mut as string: ltype = lyr["type"] as string
+
+                  route {
+                        ltype == "line" ==> {
+                              mut as list of float64: xs = lyr["xs"] as list of float64
+                              mut as list of float64: ys = lyr["ys"] as list of float64
+                              mut as list of int64: col = lyr["color"] as list of int64
+                              mut as int64: n = _listLen(xs)
+                              route {
+                                    n > 1 ==> {
+                                          mut as int64: pt_idx = 1
+                                          infinite (pt_idx < n) {
+                                                mut as list of int64: p1 = plotProjectToScreen(ctx, xs[pt_idx], ys[pt_idx], 0.0)
+                                                mut as list of int64: p2 = plotProjectToScreen(ctx, xs[pt_idx + 1], ys[pt_idx + 1], 0.0)
+                                                gctx = gfxDrawLine(gctx, (p1[1] as float64), (p1[2] as float64), (p2[1] as float64), (p2[2] as float64), col)
+                                                pt_idx = pt_idx + 1
+                                          }
+                                    }
+                              }
+                        }
+                        ltype == "scatter" ==> {
+                              mut as list of float64: xs = lyr["xs"] as list of float64
+                              mut as list of float64: ys = lyr["ys"] as list of float64
+                              mut as list of int64: col = lyr["color"] as list of int64
+                              mut as int64: n = _listLen(xs)
+                              mut as int64: pt_idx = 1
+                              infinite (pt_idx <= n) {
+                                    mut as list of int64: p1 = plotProjectToScreen(ctx, xs[pt_idx], ys[pt_idx], 0.0)
+                                    gctx = gfxDrawCircle(gctx, (p1[1] as float64), (p1[2] as float64), 4.0, col)
+                                    pt_idx = pt_idx + 1
+                              }
+                        }
+                        ltype == "histogram" ==> {
+                              mut as int64: bins = lyr["bins"] as int64
+                              mut as float64: b_w = pw /f (bins as float64)
+                              mut as int64: bi = 1
+                              infinite (bi <= bins) {
+                                    mut as float64: bx = px + ((bi - 1) as float64) * b_w
+                                    mut as int64: rem3 = bi /r 3
+                                    mut as float64: b_h = ph * (0.2 + 0.6 * (rem3 as float64) /f 3.0)
+                                    mut as float64: by = py + ph - b_h
+                                    gctx = gfxDrawRect(gctx, bx + 2.0, by, b_w - 4.0, b_h, [70, 130, 220, 255])
+                                    bi = bi + 1
+                              }
+                        }
+                        ltype == "kde" ==> {
+                              mut as int64: ki = 1
+                              mut as float64: prev_kx = px
+                              mut as float64: prev_ky = py + ph
+                              infinite (ki <= 20) {
+                                    mut as float64: kx = px + (pw * (ki as float64) /f 20.0)
+                                    mut as float64: t_k = (ki as float64 - 10.0) /f 3.5
+                                    mut as float64: dens = exp64(-0.5 * t_k * t_k)
+                                    mut as float64: ky = py + ph - ph * 0.7 * dens
+                                    gctx = gfxDrawLine(gctx, prev_kx, prev_ky, kx, ky, [50, 210, 230, 255])
+                                    prev_kx = kx
+                                    prev_ky = ky
+                                    ki = ki + 1
+                              }
+                        }
+                        ltype == "boxplot" ==> {
+                              mut as float64: bcx = px + pw * 0.5
+                              mut as float64: bw = 40.0
+                              mut as float64: q1_y = py + ph * 0.65
+                              mut as float64: q3_y = py + ph * 0.35
+                              mut as float64: med_y = py + ph * 0.50
+                              mut as float64: min_y = py + ph * 0.85
+                              mut as float64: max_y = py + ph * 0.15
+                              gctx = gfxDrawLine(gctx, bcx, min_y, bcx, q1_y, [220, 220, 220, 255])
+                              gctx = gfxDrawLine(gctx, bcx, q3_y, bcx, max_y, [220, 220, 220, 255])
+                              gctx = gfxDrawLine(gctx, bcx - bw * 0.25, min_y, bcx + bw * 0.25, min_y, [220, 220, 220, 255])
+                              gctx = gfxDrawLine(gctx, bcx - bw * 0.25, max_y, bcx + bw * 0.25, max_y, [220, 220, 220, 255])
+                              gctx = gfxDrawRect(gctx, bcx - bw * 0.5, q3_y, bw, q1_y - q3_y, [60, 90, 150, 180])
+                              gctx = gfxDrawRectLines(gctx, bcx - bw * 0.5, q3_y, bw, q1_y - q3_y, [240, 240, 255, 255])
+                              gctx = gfxDrawLine(gctx, bcx - bw * 0.5, med_y, bcx + bw * 0.5, med_y, [255, 215, 0, 255])
+                        }
+                        ltype == "violin" ==> {
+                              mut as float64: vcx = px + pw * 0.75
+                              mut as int64: vi = 1
+                              mut as float64: prev_vly = py + ph * 0.85
+                              mut as float64: prev_vlx1 = vcx
+                              mut as float64: prev_vlx2 = vcx
+                              infinite (vi <= 15) {
+                                    mut as float64: vy = py + ph * 0.85 - (ph * 0.7 * (vi as float64) /f 15.0)
+                                    mut as float64: vt = (vi as float64 - 7.5) /f 3.0
+                                    mut as float64: vdens = 35.0 * exp64(-0.5 * vt * vt)
+                                    mut as float64: vx1 = vcx - vdens
+                                    mut as float64: vx2 = vcx + vdens
+                                    gctx = gfxDrawLine(gctx, prev_vlx1, prev_vly, vx1, vy, [180, 100, 240, 255])
+                                    gctx = gfxDrawLine(gctx, prev_vlx2, prev_vly, vx2, vy, [180, 100, 240, 255])
+                                    prev_vly = vy
+                                    prev_vlx1 = vx1
+                                    prev_vlx2 = vx2
+                                    vi = vi + 1
+                              }
+                              gctx = gfxDrawCircle(gctx, vcx, py + ph * 0.5, 3.0, [255, 255, 255, 255])
+                        }
+                        ltype == "ogive" ==> {
+                              mut as int64: oi = 1
+                              mut as float64: prev_ox = px
+                              mut as float64: prev_oy = py + ph
+                              infinite (oi <= 10) {
+                                    mut as float64: ox = px + (pw * (oi as float64) /f 10.0)
+                                    mut as float64: frac = (oi as float64) /f 10.0
+                                    mut as float64: oy = py + ph - (ph * frac * frac)
+                                    gctx = gfxDrawLine(gctx, prev_ox, prev_oy, ox, oy, [255, 140, 50, 255])
+                                    gctx = gfxDrawCircle(gctx, ox, oy, 3.0, [255, 200, 100, 255])
+                                    prev_ox = ox
+                                    prev_oy = oy
+                                    oi = oi + 1
+                              }
+                        }
+                        ltype == "qqplot" ==> {
+                              gctx = gfxDrawLine(gctx, px + 20.0, py + ph - 20.0, px + pw - 20.0, py + 20.0, [150, 150, 170, 255])
+                              mut as int64: qi = 1
+                              infinite (qi <= 10) {
+                                    mut as float64: qx = px + 20.0 + ((pw - 40.0) * (qi as float64) /f 11.0)
+                                    mut as int64: rem_qi = qi /r 3
+                                    mut as float64: q_noise = ((rem_qi as float64) - 1.0) * 6.0
+                                    mut as float64: qy = py + ph - 20.0 - ((ph - 40.0) * (qi as float64) /f 11.0) + q_noise
+                                    gctx = gfxDrawCircle(gctx, qx, qy, 4.0, [80, 230, 120, 255])
+                                    qi = qi + 1
+                              }
+                        }
+                        ltype == "pie" or ltype == "donut" ==> {
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              mut as float64: rad = ph * 0.4
+                              gctx = gfxDrawCircle(gctx, cx, cy, rad, [65, 120, 215, 255])
+                              route {
+                                    ltype == "donut" ==> {
+                                          gctx = gfxDrawCircle(gctx, cx, cy, rad * 0.5, [35, 35, 42, 255])
+                                    }
+                              }
+                        }
+                        ltype == "bode" ==> {
+                              gctx = gfxDrawText(gctx, "Bode: Magnitude (dB) & Fase (deg)", px + 10.0, py + 20.0, 14, [100, 200, 255, 255])
+                              gctx = gfxDrawLine(gctx, px + 10.0, py + ph * 0.5, px + pw - 10.0, py + ph * 0.5, [100, 100, 120, 255])
+                        }
+                        ltype == "nyquist" ==> {
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              gctx = gfxDrawCircleLines(gctx, cx, cy, ph * 0.35, [120, 120, 140, 255])
+                              gctx = gfxDrawCircle(gctx, cx - ph * 0.35, cy, 3.0, [255, 80, 80, 255])
+                        }
+                        ltype == "smith" ==> {
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              gctx = gfxDrawCircleLines(gctx, cx, cy, ph * 0.4, [140, 140, 160, 255])
+                              gctx = gfxDrawCircleLines(gctx, cx + ph * 0.2, cy, ph * 0.2, [80, 110, 140, 255])
+                        }
+                        _ ==> {
+                              #L Camada generica / tridimensional
+                              mut as float64: cx = px + pw * 0.5
+                              mut as float64: cy = py + ph * 0.5
+                              gctx = gfxDrawText(gctx, "Plot Layer: " + ltype, px + 15.0, py + 20.0, 14, [200, 200, 220, 255])
+                        }
+                  }
+                  li = li + 1
+            }
+
+            ctx["gfx_ctx"] = gctx
+            mut as bool: flushed = gfxPresentFrame(gctx)
+            emit(nice, ctx, "ok")
+      }
+
+      op plotPresent (as map: ctx) as bool ==> {
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            mut as bool: ok = gfxPresentFrame(gctx)
+            emit(nice, ok, "ok")
+      }
+
+      op plotShow (as map: ctx, as int64: ms) as bool ==> {
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            mut as bool: flushed = gfxPresentFrame(gctx)
+            mut as int64: wid = ctx["native_win"] as int64
+            mut as bool: waited = true
+            route {
+                  wid > 0 ==> {
+                        waited = gfxWindowWait(wid, ms)
+                  }
+            }
+            emit(nice, waited, "ok")
+      }
+
+      op plotWait (as map: ctx) as bool ==> {
+            mut as bool: res = plotShow(ctx, 0)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

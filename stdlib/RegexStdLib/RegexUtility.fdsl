@@ -1,0 +1,111 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RegexStdLib
+#L Dominio: RegexUtility
+#L ==============================================================================
+
+contract (RegexUtilityContract) {
+      op regexEscape (as string: text) as string
+      op regexIsValid (as string: pattern) as bool
+      op regexIsPatternLiteral (as string: pattern) as bool
+      op regexMatchWithFlags (as string: pattern, as string: text, as string: flags) as bool
+}
+
+agent (RegexStdLib) impl RegexUtilityContract {
+      #L 4. RegexUtilityContract
+      #L ==============================================================================
+
+      op regexEscape (as string: text) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  route {
+                        _isMetaChar(c) ==> {
+                              res = res + "\\" + c
+                        }
+                        _ ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexIsValid (as string: pattern) as bool ==> {
+            mut as int64: paren_depth = 0
+            mut as int64: bracket_depth = 0
+            mut as int64: brace_depth = 0
+            mut as bool: in_escape = false
+            mut as bool: valid = true
+
+            infinite (c in pattern) {
+                  route {
+                        in_escape ==> {
+                              in_escape = false
+                        }
+                        c == "\\" ==> {
+                              in_escape = true
+                        }
+                        c == "(" ==> {
+                              paren_depth = paren_depth + 1
+                        }
+                        c == ")" ==> {
+                              paren_depth = paren_depth - 1
+                              route {
+                                    paren_depth < 0 ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                        c == "[" ==> {
+                              bracket_depth = bracket_depth + 1
+                        }
+                        c == "]" ==> {
+                              bracket_depth = bracket_depth - 1
+                              route {
+                                    bracket_depth < 0 ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                        c == "{" ==> {
+                              brace_depth = brace_depth + 1
+                        }
+                        c == "}" ==> {
+                              brace_depth = brace_depth - 1
+                              route {
+                                    brace_depth < 0 ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  in_escape or paren_depth != 0 or bracket_depth != 0 or brace_depth != 0 ==> {
+                        valid = false
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      op regexIsPatternLiteral (as string: pattern) as bool ==> {
+            mut as bool: lit = _isPatternLiteral(pattern)
+            emit(nice, lit, "ok")
+      }
+
+      op regexMatchWithFlags (as string: pattern, as string: text, as string: flags) as bool ==> {
+            mut as string: p = pattern
+            mut as string: t = text
+            route {
+                  stringContains(flags, "i") ==> {
+                        p = stringLower(pattern)
+                        t = stringLower(text)
+                  }
+            }
+            emit(nice, regexIsMatch(p, t), "ok")
+      }
+
+      #L ==============================================================================
+}

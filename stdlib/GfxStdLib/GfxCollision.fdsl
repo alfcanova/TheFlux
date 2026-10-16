@@ -1,0 +1,57 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxCollision
+#L ==============================================================================
+
+contract (GfxCollisionContract) {
+      op gfxCheckCollisionRecs (as float64: x1, as float64: y1, as float64: w1, as float64: h1, as float64: x2, as float64: y2, as float64: w2, as float64: h2) as bool
+      op gfxCheckCollisionCircles (as float64: c1x, as float64: c1y, as float64: r1, as float64: c2x, as float64: c2y, as float64: r2) as bool
+      op gfxCheckCollisionPointRec (as float64: px, as float64: py, as float64: rx, as float64: ry, as float64: rw, as float64: rh) as bool
+      op gfxCheckCollisionPointCircle (as float64: px, as float64: py, as float64: cx, as float64: cy, as float64: radius) as bool
+}
+
+agent (GfxStdLib) impl GfxCollisionContract {
+      #L 5. GfxCollisionContract
+      #L =====================================================================
+
+      op gfxCheckCollisionRecs (as float64: x1, as float64: y1, as float64: w1, as float64: h1, as float64: x2, as float64: y2, as float64: w2, as float64: h2) as bool ==> {
+            route {
+                  x1 < (x2 + w2) and (x1 + w1) > x2 and y1 < (y2 + h2) and (y1 + h1) > y2 ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op gfxCheckCollisionCircles (as float64: c1x, as float64: c1y, as float64: r1, as float64: c2x, as float64: c2y, as float64: r2) as bool ==> {
+            mut as float64: dx = c1x - c2x
+            mut as float64: dy = c1y - c2y
+            mut as float64: dist_sq = dx * dx + dy * dy
+            mut as float64: rad_sum = r1 + r2
+            mut as float64: rad_sq = rad_sum * rad_sum
+            emit(nice, dist_sq <= rad_sq, "ok")
+      }
+
+      op gfxCheckCollisionPointRec (as float64: px, as float64: py, as float64: rx, as float64: ry, as float64: rw, as float64: rh) as bool ==> {
+            route {
+                  px >= rx and px <= (rx + rw) and py >= ry and py <= (ry + rh) ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op gfxCheckCollisionPointCircle (as float64: px, as float64: py, as float64: cx, as float64: cy, as float64: radius) as bool ==> {
+            mut as float64: dx = px - cx
+            mut as float64: dy = py - cy
+            mut as float64: dist_sq = dx * dx + dy * dy
+            mut as float64: r_sq = radius * radius
+            emit(nice, dist_sq <= r_sq, "ok")
+      }
+
+      #L =====================================================================
+}

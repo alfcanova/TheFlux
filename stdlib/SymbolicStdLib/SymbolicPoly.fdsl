@@ -1,0 +1,154 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicPoly
+#L ==============================================================================
+
+contract (SymbolicPolyContract) {
+      op symbolicDegree (as string: expression, as string: variable) as int64
+      op symbolicCoefficients (as string: expression, as string: variable) as list of data
+      op symbolicPolynomialDivide (as string: numerator, as string: denominator, as string: variable) as SymbolicPolyDivideResult
+      op symbolicCollect (as string: expression, as string: variable) as string
+}
+
+agent (SymbolicStdLib) impl SymbolicPolyContract {
+      op symbolicDegree (as string: expression, as string: variable) as int64 ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as list of data: fixed = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(fixed)
+            mut as list of data: poly = _symEvalRpnToPoly(rpn)
+
+            mut as int64: max_deg = 0
+            infinite (item in poly) {
+                  mut as map: m = item
+                  mut as map: p = m["p"]
+                  route {
+                        _symMapHasKey(p, variable) ==> {
+                              mut as int64: d = p[variable] as int64
+                              route {
+                                    d > max_deg ==> {
+                                          max_deg = d
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, max_deg, "ok")
+      }
+
+      op symbolicCoefficients (as string: expression, as string: variable) as list of data ==> {
+            mut as int64: max_deg = symbolicDegree(expression, variable)
+            mut as list of data: toks = _symTokenize(expression)
+            mut as list of data: fixed = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(fixed)
+            mut as list of data: poly = _symEvalRpnToPoly(rpn)
+
+            mut as list of data: coeffs = []
+            mut as int64: d = 0
+            infinite (d <= max_deg) {
+                  coeffs[d + 1] = 0.0
+                  d = d + 1
+            }
+
+            infinite (item in poly) {
+                  mut as map: m = item
+                  mut as float64: c = m["c"] as float64
+                  mut as map: p = m["p"]
+                  mut as int64: deg = 0
+                  route {
+                        _symMapHasKey(p, variable) ==> {
+                              deg = p[variable] as int64
+                        }
+                  }
+                  route {
+                        deg <= max_deg ==> {
+                              coeffs[deg + 1] = (coeffs[deg + 1] as float64) + c
+                        }
+                  }
+            }
+            emit(nice, coeffs, "ok")
+      }
+
+      op symbolicPolynomialDivide (as string: numerator, as string: denominator, as string: variable) as SymbolicPolyDivideResult ==> {
+            mut as list of data: t_num = _symTokenize(numerator)
+            mut as list of data: f_num = _symFixUnaryMinus(t_num)
+            mut as list of data: r_num = _symShuntingYard(f_num)
+            mut as list of data: A = _symEvalRpnToPoly(r_num)
+
+            mut as list of data: t_den = _symTokenize(denominator)
+            mut as list of data: f_den = _symFixUnaryMinus(t_den)
+            mut as list of data: r_den = _symShuntingYard(f_den)
+            mut as list of data: B = _symEvalRpnToPoly(r_den)
+
+            mut as list of data: Q = []
+            mut as list of data: rem = A
+
+            mut as int64: dB = 0
+            mut as float64: cB = 0.0
+            infinite (bm in B) {
+                  mut as map: m = bm
+                  mut as map: bp = m["p"]
+                  mut as int64: d = 0
+                  route { _symMapHasKey(bp, variable) ==> { d = bp[variable] as int64 } }
+                  route {
+                        d >= dB ==> {
+                              dB = d
+                              cB = m["c"] as float64
+                        }
+                  }
+            }
+
+            route {
+                  _symAbsFloat(cB) < 0.000000001 ==> {
+                        mut as SymbolicPolyDivideResult: err_res = SymbolicPolyDivideResult(.quotient: "", .remainder: "")
+                        emit(nice, err_res, "ok")
+                  }
+            }
+
+            infinite (true) {
+                  mut as int64: dA = -1
+                  mut as float64: cA = 0.0
+                  infinite (am in rem) {
+                        mut as map: m2 = am
+                        mut as map: ap = m2["p"]
+                        mut as int64: d2 = 0
+                        route { _symMapHasKey(ap, variable) ==> { d2 = ap[variable] as int64 } }
+                        route {
+                              d2 > dA ==> {
+                                    dA = d2
+                                    cA = m2["c"] as float64
+                              }
+                        }
+                  }
+
+                  route {
+                        dA < dB or dA < 0 ==> {
+                              break
+                        }
+                  }
+
+                  mut as int64: t_deg = dA - dB
+                  mut as float64: t_coeff = cA /f cB
+                  mut as map: t_pow = map{}
+                  route { t_deg > 0 ==> { t_pow[variable] = t_deg } }
+                  mut as list of data: term = [_symMakeMono(t_coeff, t_pow)]
+
+                  Q = _symPolyAdd(Q, term)
+                  mut as list of data: sub_poly = _symPolyMul(term, B)
+                  rem = _symPolySub(rem, sub_poly)
+            }
+
+            mut as string: q_str = _symFormatPoly(Q)
+            mut as string: r_str = _symFormatPoly(rem)
+            mut as SymbolicPolyDivideResult: res = SymbolicPolyDivideResult(.quotient: q_str, .remainder: r_str)
+            emit(nice, res, "ok")
+      }
+
+      op symbolicCollect (as string: expression, as string: variable) as string ==> {
+            emit(nice, symbolicSimplify(expression), "ok")
+      }
+
+      #L ==============================================================================
+      #L 3. SymbolicSolverContract (Fase 1)
+      #L ==============================================================================
+
+}

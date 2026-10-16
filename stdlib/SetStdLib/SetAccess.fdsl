@@ -1,0 +1,96 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetAccess
+#L ==============================================================================
+
+contract (SetAccessContract) {
+      op setGetFirst (as set of data: items) as data
+      op setGetAt (as set of data: items, as int64: index) as data
+      op setGetLast (as set of data: items) as data
+      op setGetLeft (as set of data: items, as int64: n) as set of data
+      op setGetRight (as set of data: items, as int64: n) as set of data
+      op setGetCenter (as set of data: items, as int64: n) as set of data
+      op setSlice (as set of data: items, as int64: start, as int64: end) as set of data
+}
+
+agent (SetStdLib) impl SetAccessContract {
+      #L -- SetAccessContract -----------------------------------------
+      op setGetFirst (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            emit(nice, l[1], "ok")
+      }
+
+      op setGetLast (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: len_l = stdCollectionLength(l)
+            emit(nice, l[len_l], "ok")
+      }
+
+      op setGetAt (as set of data: items, as int64: index) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            emit(nice, l[index], "ok")
+      }
+
+      op setGetLeft (as set of data: items, as int64: n) as set of data ==> {
+            emit(nice, setTake(items, n), "ok")
+      }
+
+      op setGetRight (as set of data: items, as int64: n) as set of data ==> {
+            emit(nice, setTakeLast(items, n), "ok")
+      }
+
+      op setGetCenter (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: total = stdCollectionLength(l)
+            route {
+                  total == 0 or n < 0 ==> {
+                        emit(nice, stdSetToSet([]), "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> { start_idx = 1 }
+            }
+            route {
+                  end_idx > total ==> { end_idx = total }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, stdSetToSet([]), "ok")
+                  }
+            }
+            emit(nice, setSlice(items, start_idx, end_idx), "ok")
+      }
+
+      op setSlice (as set of data: items, as int64: start, as int64: end) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        curr >= start and curr <= end ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+}

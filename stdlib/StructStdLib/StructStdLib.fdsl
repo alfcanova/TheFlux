@@ -1,0 +1,188 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StructStdLib
+#L Arquivo Agregador Mestre e Operacoes Utilitarias Compartilhadas
+#L ==============================================================================
+
+#L --- Modulos de Dominio ---
+use StructCore.fdsl
+use StructIntrospection.fdsl
+use StructMemory.fdsl
+use StructConversion.fdsl
+
+agent (StructStdLib) {
+
+      #L ==============================================================================
+      #L Utilitarios Internos de Reflexao e Desestruturacao Compartilhados
+      #L ==============================================================================
+
+      op _extractStructType (as data: instance) as string ==> {
+            mut as string: text = "" + instance
+            mut as string: sname = ""
+            mut as bool: is_map = false
+            mut as bool: has_paren = false
+            infinite (ch in text) {
+                  route {
+                        ch == "{" ==> {
+                              is_map = true
+                              break
+                        }
+                        ch == "(" ==> {
+                              has_paren = true
+                              break
+                        }
+                        ch == " " or ch == "\n" ==> {
+                              break
+                        }
+                        _ ==> {
+                              sname = sname + ch
+                        }
+                  }
+            }
+            route {
+                  not has_paren and not is_map ==> {
+                        sname = ""
+                  }
+            }
+            route {
+                  is_map ==> {
+                        mut as int64: m = 0
+                        mut as string: k = ""
+                        mut as string: v = ""
+                        infinite (ch in text) {
+                              route {
+                                    m == 0 ==> {
+                                          route {
+                                                ch == "{" or ch == "," ==> {
+                                                      m = 1
+                                                      k = ""
+                                                }
+                                          }
+                                    }
+                                    m == 1 ==> {
+                                          route {
+                                                ch == ":" ==> {
+                                                      m = 2
+                                                      v = ""
+                                                }
+                                                ch != " " and ch != "{" and ch != "," ==> {
+                                                      k = k + ch
+                                                }
+                                          }
+                                    }
+                                    m == 2 ==> {
+                                          route {
+                                                ch == "," or ch == "}" ==> {
+                                                      route {
+                                                            k == "__struct__" ==> {
+                                                                  mut as string: trimmed = ""
+                                                                  mut as bool: started = false
+                                                                  infinite (c in v) {
+                                                                        route {
+                                                                              c != " " or started ==> {
+                                                                                    started = true
+                                                                                    trimmed = trimmed + c
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  sname = trimmed
+                                                                  break
+                                                            }
+                                                      }
+                                                      m = 1
+                                                      k = ""
+                                                }
+                                                _ ==> {
+                                                      v = v + ch
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, sname, "ok")
+      }
+
+      op _isFieldMutable (as string: field) as bool ==> {
+            mut as bool: has_lower = false
+            infinite (ch in field) {
+                  route {
+                        ch >= "a" and ch <= "z" ==> {
+                              has_lower = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, has_lower, "ok")
+      }
+
+      op _extractStructMap (as data: instance) as map ==> {
+            mut as string: text = "" + instance
+            mut as map: campos = map{}
+            mut as string: cur_key = ""
+            mut as string: cur_val = ""
+            mut as int64: modo = 0
+
+            infinite (ch in text) {
+                  route {
+                        modo == 0 ==> {
+                              route {
+                                    ch == "." ==> {
+                                          modo = 1
+                                          cur_key = ""
+                                    }
+                                    ch == "{" or ch == "," ==> {
+                                          modo = 1
+                                          cur_key = ""
+                                    }
+                              }
+                        }
+                        modo == 1 ==> {
+                              route {
+                                    ch == ":" ==> {
+                                          modo = 2
+                                          cur_val = ""
+                                    }
+                                    ch != " " and ch != "." and ch != "{" and ch != "," ==> {
+                                          cur_key = cur_key + ch
+                                    }
+                              }
+                        }
+                        modo == 2 ==> {
+                              route {
+                                    ch == "," or ch == ")" or ch == "}" ==> {
+                                          route {
+                                                cur_key != "" and cur_key != "__struct__" ==> {
+                                                      mut as string: trimmed = ""
+                                                      mut as bool: started = false
+                                                      infinite (c in cur_val) {
+                                                            route {
+                                                                  c != " " or started ==> {
+                                                                        started = true
+                                                                        trimmed = trimmed + c
+                                                                  }
+                                                            }
+                                                      }
+                                                      campos[cur_key] = trimmed
+                                                }
+                                          }
+                                          route {
+                                                ch == "," ==> {
+                                                      modo = 1
+                                                      cur_key = ""
+                                                }
+                                                _ ==> {
+                                                      modo = 0
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          cur_val = cur_val + ch
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, campos, "ok")
+      }
+}

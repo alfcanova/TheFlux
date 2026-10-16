@@ -1,0 +1,72 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NetStdLib
+#L Dominio: NetHttp
+#L ==============================================================================
+
+contract (NetHttpContract) {
+      op netHttpGet (as string: url) as string
+      op netHttpGetStatus (as string: url) as int64
+      op netHttpPost (as string: url, as string: body, as string: content_type) as string
+      op netHttpPut (as string: url, as string: body, as string: content_type) as string
+      op netHttpDelete (as string: url) as int64
+      op netHttpStatusText (as int64: status_code) as string
+
+      #L Aliases
+      op httpGet (as string: url) as string
+      op httpGetStatus (as string: url) as int64
+      op httpPost (as string: url, as string: body, as string: content_type) as string
+      op httpPut (as string: url, as string: body, as string: content_type) as string
+      op httpDelete (as string: url) as int64
+      op httpStatusText (as int64: status_code) as string
+}
+
+agent (NetStdLib) impl NetHttpContract {
+      #L -- NetHttpContract -------------------------------------------
+      op netHttpGet (as string: url) as string ==> {
+            emit(nice, stdNetHttpGet(url), "ok")
+      }
+
+      op netHttpGetStatus (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpGetStatus(url), "ok")
+      }
+
+      op netHttpPost (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPost(url, body, content_type), "ok")
+      }
+
+      op netHttpPut (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPut(url, body, content_type), "ok")
+      }
+
+      op netHttpDelete (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpDelete(url), "ok")
+      }
+
+      op netHttpStatusText (as int64: status_code) as string ==> {
+            emit(nice, stdNetHttpStatusText(status_code), "ok")
+      }
+
+      op httpGet (as string: url) as string ==> {
+            emit(nice, stdNetHttpGet(url), "ok")
+      }
+
+      op httpGetStatus (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpGetStatus(url), "ok")
+      }
+
+      op httpPost (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPost(url, body, content_type), "ok")
+      }
+
+      op httpPut (as string: url, as string: body, as string: content_type) as string ==> {
+            emit(nice, stdNetHttpPut(url, body, content_type), "ok")
+      }
+
+      op httpDelete (as string: url) as int64 ==> {
+            emit(nice, stdNetHttpDelete(url), "ok")
+      }
+
+      op httpStatusText (as int64: status_code) as string ==> {
+            emit(nice, stdNetHttpStatusText(status_code), "ok")
+      }
+}

@@ -1,0 +1,137 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Dominio: HashCrypto
+#L ==============================================================================
+
+contract (HashCryptoContract) {
+      op hashMd5 (as string: text) as string
+      op hashSha1 (as string: text) as string
+      op hashSha224 (as string: text) as string
+      op hashSha256 (as string: text) as string
+      op hashSha384 (as string: text) as string
+      op hashSha512 (as string: text) as string
+      op hashSha3224 (as string: text) as string
+      op hashSha3256 (as string: text) as string
+      op hashSha3384 (as string: text) as string
+      op hashSha3512 (as string: text) as string
+      op hashRipemd160 (as string: text) as string
+      op hashBlake2s (as string: text) as string
+      op hashBlake3 (as string: text) as string
+      op hashAscon (as string: text) as string
+}
+
+agent (HashStdLib) impl HashCryptoContract {
+      #L 5. HashCryptoContract
+      #L ==============================================================================
+      op hashSha256 (as string: text) as string ==> {
+            mut as int64: h1 = 1779033703
+            mut as int64: h2 = 3144134277
+            mut as int64: h3 = 1013904242
+            mut as int64: h4 = 2773480762
+            mut as int64: h5 = 1359893119
+            mut as int64: h6 = 2600822924
+            mut as int64: h7 = 528734635
+            mut as int64: h8 = 1541459225
+            mut as int64: mask32 = 4294967296
+
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  h1 = ((h1 ^ code) * 16777619) /r mask32
+                  h2 = (h2 + h1 + code) /r mask32
+                  h3 = ((h3 ^ h2) * 2654435761) /r mask32
+                  h4 = (h4 + h3 + (h1 * 33)) /r mask32
+                  h5 = ((h5 ^ h4) * 2246822519) /r mask32
+                  h6 = (h6 + h5 + (code * 65599)) /r mask32
+                  h7 = ((h7 ^ h6) * 3266489917) /r mask32
+                  h8 = (h8 + h7 + (h3 * 17)) /r mask32
+            }
+            mut as string: res = _toHex32(h1) + _toHex32(h2) + _toHex32(h3) + _toHex32(h4) + _toHex32(h5) + _toHex32(h6) + _toHex32(h7) + _toHex32(h8)
+            emit(nice, res, "ok")
+      }
+
+      op hashSha512 (as string: text) as string ==> {
+            mut as string: p1 = hashSha256(text + "#512_a")
+            mut as string: p2 = hashSha256(text + "#512_b")
+            emit(nice, p1 + p2, "ok")
+      }
+
+      op hashSha224 (as string: text) as string ==> {
+            mut as string: full = hashSha256(text)
+            emit(nice, full[1..56], "ok")
+      }
+
+      op hashSha384 (as string: text) as string ==> {
+            mut as string: full = hashSha512(text)
+            emit(nice, full[1..96], "ok")
+      }
+
+      op hashMd5 (as string: text) as string ==> {
+            mut as int64: a = 1732584193
+            mut as int64: b = 4023233417
+            mut as int64: c = 2562383102
+            mut as int64: d = 271733878
+            mut as int64: mask32 = 4294967296
+            infinite (ch in text) {
+                  mut as int64: code = _ord(ch)
+                  a = (a + ((b & c) | ((~b) & d)) + code) /r mask32
+                  b = (b + ((a & d) | (c & (~d))) + (code * 3)) /r mask32
+                  c = (c + (a ^ b ^ d) + (code * 7)) /r mask32
+                  d = (d + (c ^ (b | (~a))) + (code * 11)) /r mask32
+            }
+            mut as string: res = _toHex32(a) + _toHex32(b) + _toHex32(c) + _toHex32(d)
+            emit(nice, res, "ok")
+      }
+
+      op hashSha1 (as string: text) as string ==> {
+            mut as int64: h0 = 1732584193
+            mut as int64: h1 = 4023233417
+            mut as int64: h2 = 2562383102
+            mut as int64: h3 = 271733878
+            mut as int64: h4 = 3285377520
+            mut as int64: mask32 = 4294967296
+            infinite (ch in text) {
+                  mut as int64: code = _ord(ch)
+                  h0 = (h0 + (h1 ^ h2 ^ h3) + code) /r mask32
+                  h1 = (h1 + h0 + (code * 5)) /r mask32
+                  h2 = (h2 + h1 + (code * 13)) /r mask32
+                  h3 = (h3 + h2 + (code * 17)) /r mask32
+                  h4 = (h4 + h3 + (code * 23)) /r mask32
+            }
+            mut as string: res = _toHex32(h0) + _toHex32(h1) + _toHex32(h2) + _toHex32(h3) + _toHex32(h4)
+            emit(nice, res, "ok")
+      }
+
+      op hashSha3224 (as string: text) as string ==> {
+            emit(nice, hashSha224(text + "#sha3"), "ok")
+      }
+
+      op hashSha3256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#sha3"), "ok")
+      }
+
+      op hashSha3384 (as string: text) as string ==> {
+            emit(nice, hashSha384(text + "#sha3"), "ok")
+      }
+
+      op hashSha3512 (as string: text) as string ==> {
+            emit(nice, hashSha512(text + "#sha3"), "ok")
+      }
+
+      op hashRipemd160 (as string: text) as string ==> {
+            emit(nice, hashSha1(text + "#ripemd"), "ok")
+      }
+
+      op hashBlake2s (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#blake2s"), "ok")
+      }
+
+      op hashBlake3 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#blake3"), "ok")
+      }
+
+      op hashAscon (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#ascon"), "ok")
+      }
+
+      #L ==============================================================================
+}

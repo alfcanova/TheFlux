@@ -1,0 +1,120 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OsStdLib
+#L Dominio: OsSystem
+#L ==============================================================================
+
+contract (OsSystemContract) {
+      op osUserName () as string
+      op osHomeDir () as string
+      op osTempDir () as string
+      op osCpuCount () as int64
+      op osUptime () as int64
+      op osMemoryTotal () as int64
+      op osMemoryFree () as int64
+      op osMemoryTotalMb () as int64
+      op osMemoryTotalGb () as int64
+      op osMemoryFreeMb () as int64
+      op osMemoryFreeGb () as int64
+      op osSystemSummary () as string
+
+      #L Aliases
+      op userName () as string
+      op homeDir () as string
+      op tempDir () as string
+      op cpuCount () as int64
+      op uptime () as int64
+      op memoryTotal () as int64
+      op memoryFree () as int64
+}
+
+agent (OsStdLib) impl OsSystemContract {
+      #L -- OsSystemContract ------------------------------------------
+      op osUserName () as string ==> {
+            emit(nice, stdOsUserName(), "ok")
+      }
+
+      op osHomeDir () as string ==> {
+            emit(nice, stdOsHomeDir(), "ok")
+      }
+
+      op osTempDir () as string ==> {
+            emit(nice, stdOsTempDir(), "ok")
+      }
+
+      op osCpuCount () as int64 ==> {
+            emit(nice, stdOsCpuCount(), "ok")
+      }
+
+      op osUptime () as int64 ==> {
+            emit(nice, stdOsUptime(), "ok")
+      }
+
+      op osMemoryTotal () as int64 ==> {
+            emit(nice, stdOsMemoryTotal(), "ok")
+      }
+
+      op osMemoryFree () as int64 ==> {
+            emit(nice, stdOsMemoryFree(), "ok")
+      }
+
+      op osMemoryTotalMb () as int64 ==> {
+            mut as int64: m = stdOsMemoryTotal()
+            mut as int64: res = m /i 1048576
+            emit(nice, res, "ok")
+      }
+
+      op osMemoryTotalGb () as int64 ==> {
+            mut as int64: m = stdOsMemoryTotal()
+            mut as int64: res = m /i 1073741824
+            emit(nice, res, "ok")
+      }
+
+      op osMemoryFreeMb () as int64 ==> {
+            mut as int64: m = stdOsMemoryFree()
+            mut as int64: res = m /i 1048576
+            emit(nice, res, "ok")
+      }
+
+      op osMemoryFreeGb () as int64 ==> {
+            mut as int64: m = stdOsMemoryFree()
+            mut as int64: res = m /i 1073741824
+            emit(nice, res, "ok")
+      }
+
+      op osSystemSummary () as string ==> {
+            mut as string: u = stdOsUserName()
+            mut as int64: c = stdOsCpuCount()
+            mut as int64: m = stdOsMemoryTotal()
+            mut as int64: g = m /i 1073741824
+            mut as string: res = "User=" + u + "; CPUs=" + c + "; TotalMem=" + g + "GB"
+            emit(nice, res, "ok")
+      }
+
+      op userName () as string ==> {
+            emit(nice, stdOsUserName(), "ok")
+      }
+
+      op homeDir () as string ==> {
+            emit(nice, stdOsHomeDir(), "ok")
+      }
+
+      op tempDir () as string ==> {
+            emit(nice, stdOsTempDir(), "ok")
+      }
+
+      op cpuCount () as int64 ==> {
+            emit(nice, stdOsCpuCount(), "ok")
+      }
+
+      op uptime () as int64 ==> {
+            emit(nice, stdOsUptime(), "ok")
+      }
+
+      op memoryTotal () as int64 ==> {
+            emit(nice, stdOsMemoryTotal(), "ok")
+      }
+
+      op memoryFree () as int64 ==> {
+            emit(nice, stdOsMemoryFree(), "ok")
+      }
+}

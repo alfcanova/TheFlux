@@ -1,0 +1,256 @@
+contract (RootsAndRoundingContract) {
+      op squareRoot64 (as float64: value) as float64
+      op squareRoot32 (as float32: value) as float32
+      op squareRoot16 (as float16: value) as float16
+      op cubeRoot64 (as float64: value) as float64
+      op cubeRoot32 (as float32: value) as float32
+      op cubeRoot16 (as float16: value) as float16
+      op integerSquareRoot64 (as int64: value) as int64
+      op integerSquareRoot32 (as int32: value) as int32
+      op integerSquareRoot16 (as int16: value) as int16
+      op floor64 (as float64: value) as int64
+      op floor32 (as float32: value) as int32
+      op floor16 (as float16: value) as int16
+      op ceil64 (as float64: value) as int64
+      op ceil32 (as float32: value) as int32
+      op ceil16 (as float16: value) as int16
+      op round64 (as float64: value) as int64
+      op round32 (as float32: value) as int32
+      op round16 (as float16: value) as int16
+      op roundToInt64 (as float64: value) as int64
+      op roundToInt32 (as float32: value) as int32
+      op roundToInt16 (as float16: value) as int16
+      op truncate64 (as float64: value) as int64
+      op truncate32 (as float32: value) as int32
+      op truncate16 (as float16: value) as int16
+}
+
+agent (MathStdLib) impl RootsAndRoundingContract {
+      op squareRoot64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value < 0.0 ==> {
+                        emit(fail, zero_val, "raiz quadrada de numero negativo")
+                  }
+                  value == 0.0 ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  value > 0.0 ==> {
+                        mut as float64: x = value
+                        mut as float64: y = (x + 1.0) /f 2.0
+                        infinite {
+                              mut as float64: diff = y - x /f y
+                              route {
+                                    diff < 0.0 ==> {
+                                          diff = 0.0 - diff
+                                    }
+                              }
+                              route {
+                                    diff < 1.0e-15 ==> {
+                                          break
+                                    }
+                              }
+                              y = (y + x /f y) /f 2.0
+                        }
+                        emit(nice, y, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op squareRoot32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  value < (0.0 as float32) ==> {
+                        emit(fail, zero_val, "raiz quadrada de numero negativo")
+                  }
+            }
+            mut as float32: res = (squareRoot64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op squareRoot16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  value < (0.0 as float16) ==> {
+                        emit(fail, zero_val, "raiz quadrada de numero negativo")
+                  }
+            }
+            mut as float16: res = (squareRoot64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op integerSquareRoot64 (as int64: value) as int64 ==> {
+            mut as int64: zero_val = 0
+            route {
+                  value < 0 ==> {
+                        emit(fail, zero_val, "raiz quadrada inteira de numero negativo")
+                  }
+                  value == 0 ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  value > 0 ==> {
+                        mut as int64: x0 = value /i 2
+                        route {
+                              x0 == 0 ==> {
+                                    x0 = 1
+                              }
+                        }
+                        mut as int64: x1 = (x0 + value /i x0) /i 2
+                        infinite {
+                              route {
+                                    x1 >= x0 ==> {
+                                          break
+                                    }
+                              }
+                              x0 = x1
+                              x1 = (x0 + value /i x0) /i 2
+                        }
+                        emit(nice, x0, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op integerSquareRoot32 (as int32: value) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  value < (0 as int32) ==> {
+                        emit(fail, zero_val, "raiz quadrada inteira de numero negativo")
+                  }
+            }
+            mut as int32: res = (integerSquareRoot64(value as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+
+      op integerSquareRoot16 (as int16: value) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  value < (0 as int16) ==> {
+                        emit(fail, zero_val, "raiz quadrada inteira de numero negativo")
+                  }
+            }
+            mut as int16: res = (integerSquareRoot64(value as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op cubeRoot64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value == 0.0 ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  value != 0.0 ==> {
+                        mut as float64: sign = 1.0
+                        mut as float64: x = value
+                        route {
+                              x < 0.0 ==> {
+                                    sign = -1.0
+                                    x = 0.0 - x
+                              }
+                        }
+                        mut as float64: y = x ^r 3.0
+                        mut as float64: y3 = y * y * y
+                        y = y * ((y3 + 2.0 * x) /f (2.0 * y3 + x))
+                        y3 = y * y * y
+                        y = y * ((y3 + 2.0 * x) /f (2.0 * y3 + x))
+                        mut as float64: res = sign * y
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op cubeRoot32 (as float32: value) as float32 ==> {
+            mut as float32: res = (cubeRoot64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op cubeRoot16 (as float16: value) as float16 ==> {
+            mut as float16: res = (cubeRoot64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op floor64 (as float64: value) as int64 ==> {
+            mut as int64: i = value as int64
+            route {
+                  (value < 0.0) and (value != (i as float64)) ==> {
+                        i = i - 1
+                  }
+            }
+            emit(nice, i, "ok")
+      }
+
+      op floor32 (as float32: value) as int32 ==> {
+            mut as int32: res = (floor64(value as float64)).val as int32
+            emit(nice, res, "ok")
+      }
+      op floor16 (as float16: value) as int16 ==> {
+            mut as int16: res = (floor64(value as float64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op ceil64 (as float64: value) as int64 ==> {
+            mut as int64: i = value as int64
+            route {
+                  (value > 0.0) and (value != (i as float64)) ==> {
+                        i = i + 1
+                  }
+            }
+            emit(nice, i, "ok")
+      }
+
+      op ceil32 (as float32: value) as int32 ==> {
+            mut as int32: res = (ceil64(value as float64)).val as int32
+            emit(nice, res, "ok")
+      }
+      op ceil16 (as float16: value) as int16 ==> {
+            mut as int16: res = (ceil64(value as float64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op round64 (as float64: value) as int64 ==> {
+            mut as float64: offset = 0.5
+            route {
+                  value < 0.0 ==> {
+                        offset = -0.5
+                  }
+            }
+            mut as int64: res = (floor64(value + offset)).val
+            emit(nice, res, "ok")
+      }
+
+      op round32 (as float32: value) as int32 ==> {
+            mut as int32: res = (round64(value as float64)).val as int32
+            emit(nice, res, "ok")
+      }
+      op round16 (as float16: value) as int16 ==> {
+            mut as int16: res = (round64(value as float64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op roundToInt64 (as float64: value) as int64 ==> {
+            mut as int64: res = (round64(value)).val
+            emit(nice, res, "ok")
+      }
+      op roundToInt32 (as float32: value) as int32 ==> {
+            mut as int32: res = (round32(value)).val
+            emit(nice, res, "ok")
+      }
+      op roundToInt16 (as float16: value) as int16 ==> {
+            mut as int16: res = (round16(value)).val
+            emit(nice, res, "ok")
+      }
+
+      op truncate64 (as float64: value) as int64 ==> {
+            mut as int64: res = value as int64
+            emit(nice, res, "ok")
+      }
+      op truncate32 (as float32: value) as int32 ==> {
+            mut as int32: res = (value as float64) as int32
+            emit(nice, res, "ok")
+      }
+      op truncate16 (as float16: value) as int16 ==> {
+            mut as int16: res = (value as float64) as int16
+            emit(nice, res, "ok")
+      }
+}

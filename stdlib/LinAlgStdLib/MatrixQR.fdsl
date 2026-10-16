@@ -1,0 +1,157 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: MatrixQR
+#L ==============================================================================
+
+contract (MatrixQRContract) {
+      op matrixQR (as map: matrix) as list of data
+      op matrixSolveQR (as map: Q, as map: R, as list of data: b) as list of data
+}
+
+agent (LinAlgStdLib) impl MatrixQRContract {
+      #L 5. MatrixQRContract - Decomposicao QR via Reflexoes de Householder
+      #L ==============================================================================
+
+      op matrixQR (as map: matrix) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: m = sh[1] as int64
+            mut as int64: n = sh[2] as int64
+
+            mut as map: R = _mapClone(matrix)
+            R["data"] = _listClone(matrix["data"] as list of data)
+
+            mut as map: Q = tensorNew([m, m])
+            mut as int64: id_i = 1
+            infinite (id_i <= m) {
+                  Q = tensorSetAt(Q, [id_i, id_i], 1.0)
+                  id_i = id_i + 1
+            }
+
+            mut as int64: k = 1
+            infinite (k <= n) {
+                  mut as float64: norm_x = 0.0
+                  mut as int64: row = k
+                  infinite (row <= m) {
+                        mut as float64: val = tensorGetAt(R, [row, k])
+                        norm_x = norm_x + (val * val)
+                        row = row + 1
+                  }
+                  norm_x = _sqrt(norm_x)
+
+                  mut as float64: kk_val = tensorGetAt(R, [k, k])
+                  route {
+                        kk_val > 0.0 ==> {
+                              norm_x = 0.0 - norm_x
+                        }
+                  }
+
+                  mut as list of data: v = []
+                  mut as int64: v_i = 1
+                  infinite (v_i <= m) {
+                        v[v_i] = 0.0
+                        v_i = v_i + 1
+                  }
+
+                  v[k] = kk_val - norm_x
+                  row = k + 1
+                  infinite (row <= m) {
+                        v[row] = tensorGetAt(R, [row, k])
+                        row = row + 1
+                  }
+
+                  mut as float64: v_norm_sq = 0.0
+                  row = k
+                  infinite (row <= m) {
+                        mut as float64: v_val = v[row] as float64
+                        v_norm_sq = v_norm_sq + (v_val * v_val)
+                        row = row + 1
+                  }
+
+                  route {
+                        v_norm_sq > 0.000000000000001 ==> {
+                              mut as int64: col = k
+                              infinite (col <= n) {
+                                    mut as float64: tau = 0.0
+                                    row = k
+                                    infinite (row <= m) {
+                                          tau = tau + (v[row] as float64) * tensorGetAt(R, [row, col])
+                                          row = row + 1
+                                    }
+                                    tau = (2.0 * tau) /f v_norm_sq
+
+                                    row = k
+                                    infinite (row <= m) {
+                                          mut as float64: r_new = tensorGetAt(R, [row, col]) - tau * (v[row] as float64)
+                                          R = tensorSetAt(R, [row, col], r_new)
+                                          row = row + 1
+                                    }
+                                    col = col + 1
+                              }
+
+                              col = 1
+                              infinite (col <= m) {
+                                    mut as float64: tau = 0.0
+                                    row = k
+                                    infinite (row <= m) {
+                                          tau = tau + (v[row] as float64) * tensorGetAt(Q, [col, row])
+                                          row = row + 1
+                                    }
+                                    tau = (2.0 * tau) /f v_norm_sq
+
+                                    row = k
+                                    infinite (row <= m) {
+                                          mut as float64: q_new = tensorGetAt(Q, [col, row]) - tau * (v[row] as float64)
+                                          Q = tensorSetAt(Q, [col, row], q_new)
+                                          row = row + 1
+                                    }
+                                    col = col + 1
+                              }
+                        }
+                  }
+                  k = k + 1
+            }
+            emit(nice, [Q, R], "ok")
+      }
+
+      op matrixSolveQR (as map: Q, as map: R, as list of data: b) as list of data ==> {
+            mut as list of data: sh_r = R["shape"] as list of data
+            mut as int64: m = sh_r[1] as int64
+            mut as int64: n = sh_r[2] as int64
+
+            mut as list of data: qty = []
+            mut as int64: i = 1
+            infinite (i <= m) {
+                  mut as float64: acc = 0.0
+                  mut as int64: j = 1
+                  infinite (j <= m) {
+                        acc = acc + tensorGetAt(Q, [j, i]) * (b[j] as float64)
+                        j = j + 1
+                  }
+                  qty[i] = acc
+                  i = i + 1
+            }
+
+            mut as list of data: x = []
+            mut as int64: k_init = 1
+            infinite (k_init <= n) {
+                  x[k_init] = 0.0
+                  k_init = k_init + 1
+            }
+
+            i = n
+            infinite {
+                  route { i < 1 ==> { break } }
+                  mut as float64: sum = 0.0
+                  mut as int64: j = i + 1
+                  infinite (j <= n) {
+                        sum = sum + tensorGetAt(R, [i, j]) * (x[j] as float64)
+                        j = j + 1
+                  }
+                  x[i] = ((qty[i] as float64) - sum) /f tensorGetAt(R, [i, i])
+                  i = i - 1
+            }
+            emit(nice, x, "ok")
+      }
+
+      #L ==============================================================================
+}

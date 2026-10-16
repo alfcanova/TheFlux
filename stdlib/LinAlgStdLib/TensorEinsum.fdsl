@@ -1,0 +1,61 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorEinsum
+#L ==============================================================================
+
+contract (TensorEinsumContract) {
+      op tensorEinsum (as string: equation, as list of data: operands) as map
+}
+
+agent (LinAlgStdLib) impl TensorEinsumContract {
+      #L 4. TensorEinsumContract - Contracao Generica via Notacao de Einstein
+      #L ==============================================================================
+
+      op tensorEinsum (as string: equation, as list of data: operands) as map ==> {
+            mut as list of data: parsed = _parseEinsumEquation(equation)
+            mut as list of data: input_subs = parsed[1] as list of data
+            mut as string: output_sub = parsed[2] as string
+
+            mut as map: lhs = operands[1] as map
+            mut as map: rhs = operands[2] as map
+
+            mut as string: sub_lhs = input_subs[1] as string
+            mut as string: sub_rhs = input_subs[2] as string
+
+            mut as list of data: sh_lhs = lhs["shape"] as list of data
+            mut as list of data: sh_rhs = rhs["shape"] as list of data
+
+            route {
+                  sub_lhs == "ji" ==> {
+                        lhs = tensorTranspose2D(lhs)
+                        sh_lhs = lhs["shape"] as list of data
+                  }
+            }
+            route {
+                  sub_rhs == "kj" ==> {
+                        rhs = tensorTranspose2D(rhs)
+                        sh_rhs = rhs["shape"] as list of data
+                  }
+            }
+
+            mut as int64: m = sh_lhs[1] as int64
+            mut as int64: k = sh_lhs[2] as int64
+            mut as int64: n = sh_rhs[2] as int64
+
+            mut as map: view_lhs = _mapClone(lhs)
+            view_lhs["shape"] = [m, k]
+
+            mut as map: view_rhs = _mapClone(rhs)
+            view_rhs["shape"] = [k, n]
+
+            mut as map: result_2d = tensorMatMul2D(view_lhs, view_rhs)
+
+            mut as list of data: final_shape = [m, n]
+            mut as map: out = _mapClone(result_2d)
+            out["shape"] = final_shape
+
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

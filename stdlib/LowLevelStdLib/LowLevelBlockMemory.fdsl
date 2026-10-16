@@ -1,0 +1,83 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelBlockMemory
+#L ==============================================================================
+
+contract (LowLevelBlockMemoryContract) {
+      op lowMemoryCopy (as map: mem, as int64: src_addr, as int64: dst_addr, as int64: count) as map
+      op lowMemorySet (as map: mem, as int64: dst_addr, as int64: byte_val, as int64: count) as map
+      op lowMemoryCompare (as map: mem, as int64: addr1, as int64: addr2, as int64: count) as int64
+      op lowMemoryClear (as map: mem, as int64: address, as int64: count) as map
+      op lowMemoryDump (as map: mem, as int64: address, as int64: count) as string
+}
+
+agent (LowLevelStdLib) impl LowLevelBlockMemoryContract {
+      #L LowLevelBlockMemoryContract
+      #L =====================================================================
+
+      op lowMemoryCopy (as map: mem, as int64: src_addr, as int64: dst_addr, as int64: count) as map ==> {
+            route {
+                  count <= 0 or src_addr == dst_addr ==> { emit(nice, mem, "ok") }
+            }
+            infinite (i in 0 .. (count - 1)) {
+                  mut as int64: b = lowMemoryPeekByte(mem, src_addr + i)
+                  mem["" + (dst_addr + i)] = b
+            }
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemorySet (as map: mem, as int64: dst_addr, as int64: byte_val, as int64: count) as map ==> {
+            route {
+                  count <= 0 ==> { emit(nice, mem, "ok") }
+            }
+            mut as int64: b = byte_val & 255
+            infinite (i in 0 .. (count - 1)) {
+                  mem["" + (dst_addr + i)] = b
+            }
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryCompare (as map: mem, as int64: addr1, as int64: addr2, as int64: count) as int64 ==> {
+            route {
+                  count <= 0 or addr1 == addr2 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: cmp = 0
+            infinite (i in 0 .. (count - 1)) {
+                  mut as int64: b1 = lowMemoryPeekByte(mem, addr1 + i)
+                  mut as int64: b2 = lowMemoryPeekByte(mem, addr2 + i)
+                  route {
+                        b1 < b2 ==> {
+                              cmp = -1
+                              break
+                        }
+                        b1 > b2 ==> {
+                              cmp = 1
+                              break
+                        }
+                  }
+            }
+            emit(nice, cmp, "ok")
+      }
+
+      op lowMemoryClear (as map: mem, as int64: address, as int64: count) as map ==> {
+            emit(nice, lowMemorySet(mem, address, 0, count), "ok")
+      }
+
+      op lowMemoryDump (as map: mem, as int64: address, as int64: count) as string ==> {
+            route {
+                  count <= 0 ==> { emit(nice, "", "ok") }
+            }
+            mut as string: out = ""
+            infinite (i in 0 .. (count - 1)) {
+                  mut as int64: b = lowMemoryPeekByte(mem, address + i)
+                  mut as string: h = _byteToHex(b)
+                  route {
+                        i == 0 ==> { out = h }
+                        _ ==> { out = out + " " + h }
+                  }
+            }
+            emit(nice, out, "ok")
+      }
+
+      #L =====================================================================
+}

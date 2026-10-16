@@ -1,0 +1,79 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Dominio: CharUtility
+#L ==============================================================================
+
+contract (CharUtilityContract) {
+      op charToString (as char: c) as string
+      op charRepeat (as char: c, as int64: count) as string
+      op charIsVowel (as char: c) as bool
+      op charIsConsonant (as char: c) as bool
+      op charEscape (as char: c) as string
+      op charName (as char: c) as string
+}
+
+agent (CharStdLib) impl CharUtilityContract {
+      #L -- CharUtilityContract ---------------------------------------
+      op charToString (as char: c) as string ==> {
+            imut as string: res = c as string
+            emit(nice, res, "ok")
+      }
+
+      op charRepeat (as char: c, as int64: count) as string ==> {
+            mut as string: res = ""
+            mut as int64: i = 0
+            mut as string: s = c as string
+            infinite {
+                  route {
+                        i >= count ==> {
+                              break
+                        }
+                  }
+                  res = res + s
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op charIsVowel (as char: c) as bool ==> {
+            mut as char: lo = charToLower(c)
+            imut as bool: res = (lo == 'a' or lo == 'e' or lo == 'i' or lo == 'o' or lo == 'u')
+            emit(nice, res, "ok")
+      }
+
+      op charIsConsonant (as char: c) as bool ==> {
+            mut as bool: is_alp = charIsAlpha(c)
+            mut as bool: is_vow = charIsVowel(c)
+            imut as bool: res = (is_alp and not is_vow)
+            emit(nice, res, "ok")
+      }
+
+      op charEscape (as char: c) as string ==> {
+            route { c == '\n' ==> { emit(nice, "\\n", "ok") } }
+            route { c == '\t' ==> { emit(nice, "\\t", "ok") } }
+            route { c == '\r' ==> { emit(nice, "\\r", "ok") } }
+            route { c == '\0' ==> { emit(nice, "\\0", "ok") } }
+            route { c == '\\' ==> { emit(nice, "\\\\", "ok") } }
+            route { c == '\'' ==> { emit(nice, "\\'", "ok") } }
+            imut as string: res = c as string
+            emit(nice, res, "ok")
+      }
+
+      op charName (as char: c) as string ==> {
+            route { c == ' ' ==> { emit(nice, "espaco", "ok") } }
+            route { c == '\n' ==> { emit(nice, "nova_linha", "ok") } }
+            route { c == '\t' ==> { emit(nice, "tabulacao", "ok") } }
+            route { c == '\r' ==> { emit(nice, "retorno_carro", "ok") } }
+            mut as bool: is_dig = charIsDigit(c)
+            route { is_dig ==> { emit(nice, "digito", "ok") } }
+            mut as bool: is_upp = charIsUpper(c)
+            route { is_upp ==> { emit(nice, "letra_maiuscula", "ok") } }
+            mut as bool: is_low = charIsLower(c)
+            route { is_low ==> { emit(nice, "letra_minuscula", "ok") } }
+            mut as bool: is_pun = charIsPunctuation(c)
+            route { is_pun ==> { emit(nice, "pontuacao", "ok") } }
+            mut as bool: is_ctl = charIsControl(c)
+            route { is_ctl ==> { emit(nice, "controle", "ok") } }
+            emit(nice, "outro", "ok")
+      }
+}

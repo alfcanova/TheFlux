@@ -1,0 +1,146 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinFormat
+#L ==============================================================================
+
+contract (FinFormatContract) {
+      op finFormatCurrency (as FinDecimal: value, as string: locale) as string
+      op finFormatPercent (as float64: rate, as int64: decimals) as string
+      op finParseCurrency (as string: text) as FinDecimal
+}
+
+#L ==============================================================================
+#L Agente Implementador: FinStdLib
+#L ==============================================================================
+
+agent (FinStdLib) impl FinFormatContract {
+      #L 7. FinFormatContract
+      #L ==============================================================================
+
+      op finFormatCurrency (as FinDecimal: value, as string: locale) as string ==> {
+            mut as int64: half = 500000
+            mut as int64: is_neg = 0
+            mut as int64: r = value.raw
+            route {
+                  r < 0 ==> {
+                        is_neg = 1
+                        r = -r
+                  }
+            }
+            mut as int64: int_part = r /i 100000000
+            mut as int64: rem = r /r 100000000
+            mut as int64: cents = rem /i 1000000
+            mut as int64: subcents = rem /r 1000000
+            route {
+                  subcents >= half ==> {
+                        cents = cents + 1
+                  }
+            }
+            route {
+                  cents >= 100 ==> {
+                        int_part = int_part + 1
+                        cents = 0
+                  }
+            }
+            mut as string: cents_str = "" + cents
+            route {
+                  cents < 10 ==> {
+                        cents_str = "0" + cents_str
+                  }
+            }
+            mut as string: sign = ""
+            route {
+                  is_neg == 1 ==> {
+                        sign = "-"
+                  }
+            }
+            route {
+                  locale == "pt-BR" ==> {
+                        mut as string: res = "R$ " + sign + int_part + "," + cents_str
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as string: def_res = "$" + sign + int_part + "." + cents_str
+            emit(nice, def_res, "ok")
+      }
+
+      op finFormatPercent (as float64: rate, as int64: decimals) as string ==> {
+            mut as int64: dec = decimals
+            route {
+                  dec < 0 ==> { dec = 2 }
+                  dec > 6 ==> { dec = 6 }
+            }
+            mut as float64: pct = rate * 100.0
+            mut as string: sign = ""
+            route {
+                  pct < 0.0 ==> {
+                        sign = "-"
+                        pct = -pct
+                  }
+            }
+            mut as int64: mult = 1
+            mut as int64: i = 1
+            infinite (i <= dec) {
+                  mult = mult * 10
+                  i = i + 1
+            }
+            mut as int64: total_scaled = ((pct * (mult as float64)) + 0.5) as int64
+            mut as int64: ip = total_scaled /i mult
+            mut as int64: frac = total_scaled /r mult
+            mut as string: frac_str = "" + frac
+            mut as int64: frac_len = 0
+            infinite (c in frac_str) {
+                  frac_len = frac_len + 1
+            }
+            infinite (frac_len < dec) {
+                  frac_str = "0" + frac_str
+                  frac_len = frac_len + 1
+            }
+            route {
+                  dec == 0 ==> {
+                        mut as string: res0 = sign + ip + "%"
+                        emit(nice, res0, "ok")
+                  }
+            }
+            mut as string: res = sign + ip + "." + frac_str + "%"
+            emit(nice, res, "ok")
+      }
+
+      op finParseCurrency (as string: text) as FinDecimal ==> {
+            mut as int64: len = 0
+            infinite (c in text) {
+                  len = len + 1
+            }
+            mut as string: clean = ""
+            mut as int64: is_neg = 0
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as char: ch = text[i]
+                  route {
+                        ch == '-' ==> {
+                              is_neg = 1
+                        }
+                        ch == '0' or ch == '1' or ch == '2' or ch == '3' or ch == '4' or ch == '5' or ch == '6' or ch == '7' or ch == '8' or ch == '9' or ch == '.' or ch == ',' ==> {
+                              clean = clean + ch
+                        }
+                  }
+                  i = i + 1
+            }
+            mut as FinDecimal: parsed = FinDecimal(.raw: 0, .scale: 8)
+            mut as int64: clean_len = 0
+            infinite (c in clean) {
+                  clean_len = clean_len + 1
+            }
+            route {
+                  clean_len > 0 ==> {
+                        parsed = (finCreateDecimal(clean)).val
+                  }
+            }
+            route {
+                  is_neg == 1 and parsed.raw > 0 ==> {
+                        parsed = FinDecimal(.raw: -parsed.raw, .scale: 8)
+                  }
+            }
+            emit(nice, parsed, "ok")
+      }
+}

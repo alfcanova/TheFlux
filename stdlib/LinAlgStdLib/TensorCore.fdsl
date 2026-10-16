@@ -1,0 +1,210 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorCore
+#L ==============================================================================
+
+contract (TensorCoreContract) {
+      op tensorNew (as list of data: shape) as map
+      op tensorGetAt (as map: tensor, as list of data: indices) as float64
+      op tensorSetAt (as map: tensor, as list of data: indices, as float64: val) as map
+      op tensorTranspose2D (as map: tensor) as map
+      op tensorPermute (as map: tensor, as list of data: axes) as map
+}
+
+agent (LinAlgStdLib) impl TensorCoreContract {
+
+      #L ==============================================================================
+      #L Utilitarios Internos
+      #L ==============================================================================
+
+      op _mapClone (as map: record) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  m[k] = record[k]
+            }
+            emit(nice, m, "ok")
+      }
+
+      op _listClone (as list of data: l) as list of data ==> {
+            mut as list of data: out = []
+            mut as int64: i = 1
+            infinite (x in l) {
+                  out[i] = x
+                  i = i + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op _sqrt (as float64: val) as float64 ==> {
+            route {
+                  val <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = val ^r 2
+            emit(nice, res, "ok")
+      }
+
+      op _parseEinsumEquation (as string: equation) as list of data ==> {
+            mut as string: lhs_part = ""
+            mut as string: rhs_part = ""
+            mut as bool: in_rhs = false
+            mut as string: prev_c = ""
+
+            infinite (c in equation) {
+                  route {
+                        prev_c == "-" and c == ">" ==> {
+                              in_rhs = true
+                              mut as int64: lhs_len = 0
+                              infinite (x in lhs_part) { lhs_len = lhs_len + 1 }
+                              route {
+                                    lhs_len > 1 ==> {
+                                          lhs_part = lhs_part[1..(lhs_len - 1)]
+                                    }
+                                    lhs_len <= 1 ==> {
+                                          lhs_part = ""
+                                    }
+                              }
+                        }
+                        in_rhs ==> {
+                              rhs_part = rhs_part + c
+                        }
+                        _ ==> {
+                              lhs_part = lhs_part + c
+                        }
+                  }
+                  prev_c = c
+            }
+
+            mut as list of data: input_subs = []
+            mut as string: cur_sub = ""
+            mut as int64: sub_idx = 1
+            infinite (c in lhs_part) {
+                  route {
+                        c == "," ==> {
+                              input_subs[sub_idx] = cur_sub
+                              sub_idx = sub_idx + 1
+                              cur_sub = ""
+                        }
+                        _ ==> {
+                              cur_sub = cur_sub + c
+                        }
+                  }
+            }
+            input_subs[sub_idx] = cur_sub
+
+            emit(nice, [input_subs, rhs_part], "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. TensorCoreContract - Estrutura Basica N-D baseada em Strides
+      #L ==============================================================================
+
+      op tensorNew (as list of data: shape) as map ==> {
+            mut as int64: ndim = 0
+            infinite (x in shape) { ndim = ndim + 1 }
+
+            mut as list of data: strides = []
+            mut as int64: s_idx = 1
+            infinite (s_idx <= ndim) {
+                  strides[s_idx] = 0
+                  s_idx = s_idx + 1
+            }
+
+            mut as int64: current_stride = 1
+            mut as int64: total_size = 1
+
+            mut as int64: i = ndim
+            infinite {
+                  route { i < 1 ==> { break } }
+                  mut as int64: dim_size = shape[i] as int64
+                  strides[i] = current_stride
+                  total_size = total_size * dim_size
+                  current_stride = current_stride * dim_size
+                  i = i - 1
+            }
+
+            mut as list of data: data_buffer = []
+            mut as int64: b_idx = 1
+            infinite (b_idx <= total_size) {
+                  data_buffer[b_idx] = 0.0
+                  b_idx = b_idx + 1
+            }
+
+            mut as map: tensor = map{}
+            tensor["ndim"] = ndim
+            tensor["shape"] = shape
+            tensor["strides"] = strides
+            tensor["offset"] = 1
+            tensor["data"] = data_buffer
+
+            emit(nice, tensor, "ok")
+      }
+
+      op _computeLinearIndex (as map: tensor, as list of data: indices) as int64 ==> {
+            mut as list of data: strides = tensor["strides"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+            mut as int64: linear_idx = tensor["offset"] as int64
+
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  mut as int64: idx = indices[i] as int64
+                  mut as int64: st = strides[i] as int64
+                  linear_idx = linear_idx + (idx - 1) * st
+                  i = i + 1
+            }
+            emit(nice, linear_idx, "ok")
+      }
+
+      op tensorGetAt (as map: tensor, as list of data: indices) as float64 ==> {
+            mut as int64: real_idx = _computeLinearIndex(tensor, indices)
+            mut as list of data: buffer = tensor["data"] as list of data
+            emit(nice, buffer[real_idx] as float64, "ok")
+      }
+
+      op tensorSetAt (as map: tensor, as list of data: indices, as float64: val) as map ==> {
+            mut as int64: real_idx = _computeLinearIndex(tensor, indices)
+            mut as map: new_tensor = _mapClone(tensor)
+            mut as list of data: buffer = _listClone(tensor["data"] as list of data)
+            buffer[real_idx] = val
+            new_tensor["data"] = buffer
+            emit(nice, new_tensor, "ok")
+      }
+
+      op tensorTranspose2D (as map: tensor) as map ==> {
+            mut as map: t = _mapClone(tensor)
+            mut as list of data: sh = tensor["shape"] as list of data
+            mut as list of data: st = tensor["strides"] as list of data
+
+            mut as list of data: new_sh = [sh[2], sh[1]]
+            mut as list of data: new_st = [st[2], st[1]]
+
+            t["shape"] = new_sh
+            t["strides"] = new_st
+            emit(nice, t, "ok")
+      }
+
+      op tensorPermute (as map: tensor, as list of data: axes) as map ==> {
+            mut as map: p = _mapClone(tensor)
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as list of data: old_st = tensor["strides"] as list of data
+
+            mut as list of data: new_sh = []
+            mut as list of data: new_st = []
+
+            mut as int64: i = 1
+            mut as int64: ndim = tensor["ndim"] as int64
+            infinite (i <= ndim) {
+                  mut as int64: target_axis = axes[i] as int64
+                  new_sh[i] = old_sh[target_axis]
+                  new_st[i] = old_st[target_axis]
+                  i = i + 1
+            }
+
+            p["shape"] = new_sh
+            p["strides"] = new_st
+            emit(nice, p, "ok")
+      }
+
+      #L ==============================================================================
+}

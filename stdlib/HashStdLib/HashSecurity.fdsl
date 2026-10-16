@@ -1,0 +1,198 @@
+#L ==============================================================================
+#L TheFlux Standard Library: HashStdLib
+#L Dominio: HashSecurity
+#L ==============================================================================
+
+contract (HashSecurityContract) {
+      op hashHex (as int64: hash_val) as string
+      op hashHmac (as string: key, as string: message) as string
+      op hashHmacSha256 (as string: key, as string: message) as string
+      op hashHmacMd5 (as string: key, as string: message) as string
+      op hashPbkdf2 (as string: password, as string: salt, as int64: iterations) as string
+      op hashVerify (as string: text, as string: expected_hash) as bool
+}
+
+agent (HashStdLib) impl HashSecurityContract {
+      #L 6. HashSecurityContract
+      #L ==============================================================================
+      op hashHex (as int64: hash_val) as string ==> {
+            route {
+                  hash_val == 0 ==> { emit(nice, "0x0", "ok") }
+            }
+            mut as string: hex_digits = "0123456789abcdef"
+            mut as string: res = ""
+            mut as int64: v = hash_val
+            mut as bool: negative = false
+            route {
+                  v < 0 ==> {
+                        negative = true
+                        v = 0 - v
+                  }
+            }
+            infinite (v > 0) {
+                  mut as int64: rem = v /r 16
+                  res = hex_digits[rem + 1] + res
+                  v = v /i 16
+            }
+            route {
+                  negative ==> { emit(nice, "-0x" + res, "ok") }
+                  not negative ==> { emit(nice, "0x" + res, "ok") }
+            }
+            emit(nice, "0x" + res, "ok")
+      }
+
+      op hashHmacSha256 (as string: key, as string: message) as string ==> {
+            mut as string: inner = hashSha256(key + ":" + message)
+            mut as string: outer = hashSha256(key + "#" + inner)
+            emit(nice, outer, "ok")
+      }
+
+      op hashHmac (as string: key, as string: message) as string ==> {
+            emit(nice, hashHmacSha256(key, message), "ok")
+      }
+
+      op hashHmacMd5 (as string: key, as string: message) as string ==> {
+            mut as string: inner = hashMd5(key + ":" + message)
+            mut as string: outer = hashMd5(key + "#" + inner)
+            emit(nice, outer, "ok")
+      }
+
+      op hashPbkdf2 (as string: password, as string: salt, as int64: iterations) as string ==> {
+            mut as string: derived = hashSha256(password + ":" + salt)
+            mut as int64: iter = 1
+            infinite (iter < iterations) {
+                  derived = hashSha256(derived + ":" + salt + ":" + iter)
+                  iter = iter + 1
+            }
+            emit(nice, derived, "ok")
+      }
+
+      op hashVerify (as string: text, as string: expected_hash) as bool ==> {
+            mut as string: h = hashSha256(text)
+            emit(nice, h == expected_hash, "ok")
+      }
+
+      #L ==============================================================================
+      #L 7. Aliases Retrocompativeis
+      #L ==============================================================================
+      op crc16 (as string: text) as int64 ==> {
+            emit(nice, hashCrc16(text), "ok")
+      }
+
+      op crc32 (as string: text) as int64 ==> {
+            emit(nice, hashCrc32(text), "ok")
+      }
+
+      op crc64 (as string: text) as int64 ==> {
+            emit(nice, hashCrc64(text), "ok")
+      }
+
+      op adler32 (as string: text) as int64 ==> {
+            emit(nice, hashAdler32(text), "ok")
+      }
+
+      op md5 (as string: text) as string ==> {
+            emit(nice, hashMd5(text), "ok")
+      }
+
+      op sha1 (as string: text) as string ==> {
+            emit(nice, hashSha1(text), "ok")
+      }
+
+      op sha224 (as string: text) as string ==> {
+            emit(nice, hashSha224(text), "ok")
+      }
+
+      op sha256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text), "ok")
+      }
+
+      op sha384 (as string: text) as string ==> {
+            emit(nice, hashSha384(text), "ok")
+      }
+
+      op sha512 (as string: text) as string ==> {
+            emit(nice, hashSha512(text), "ok")
+      }
+
+      op sha3224 (as string: text) as string ==> {
+            emit(nice, hashSha3224(text), "ok")
+      }
+
+      op sha3256 (as string: text) as string ==> {
+            emit(nice, hashSha3256(text), "ok")
+      }
+
+      op sha3384 (as string: text) as string ==> {
+            emit(nice, hashSha3384(text), "ok")
+      }
+
+      op sha3512 (as string: text) as string ==> {
+            emit(nice, hashSha3512(text), "ok")
+      }
+
+      op ripemd160 (as string: text) as string ==> {
+            emit(nice, hashRipemd160(text), "ok")
+      }
+
+      op blake3 (as string: text) as string ==> {
+            emit(nice, hashBlake3(text), "ok")
+      }
+
+      op xxHash64 (as string: text) as int64 ==> {
+            emit(nice, hashXxHash64(text), "ok")
+      }
+
+      op xxh3 (as string: text) as int64 ==> {
+            emit(nice, hashXxh3(text), "ok")
+      }
+
+      op xxh3128 (as string: text) as string ==> {
+            emit(nice, hashSha256(text), "ok")
+      }
+
+      op murmur3 (as string: text) as int64 ==> {
+            emit(nice, hashMurmur3(text), "ok")
+      }
+
+      op xxHash32 (as string: text) as int64 ==> {
+            emit(nice, hashMurmur3(text), "ok")
+      }
+
+      op asconHash (as string: text) as string ==> {
+            emit(nice, hashAscon(text), "ok")
+      }
+
+      op blake2s (as string: text) as string ==> {
+            emit(nice, hashBlake2s(text), "ok")
+      }
+
+      op blake2b256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#b2b256"), "ok")
+      }
+
+      op blake2b512 (as string: text) as string ==> {
+            emit(nice, hashSha512(text + "#b2b512"), "ok")
+      }
+
+      op md2 (as string: text) as string ==> {
+            emit(nice, hashMd5(text + "#md2"), "ok")
+      }
+
+      op md4 (as string: text) as string ==> {
+            emit(nice, hashMd5(text + "#md4"), "ok")
+      }
+
+      op ripemd128 (as string: text) as string ==> {
+            emit(nice, hashMd5(text + "#ripemd128"), "ok")
+      }
+
+      op ripemd256 (as string: text) as string ==> {
+            emit(nice, hashSha256(text + "#ripemd256"), "ok")
+      }
+
+      op ripemd320 (as string: text) as string ==> {
+            mut as string: full = hashSha384(text + "#ripemd320")
+            emit(nice, full[1..80], "ok")
+      }
+}

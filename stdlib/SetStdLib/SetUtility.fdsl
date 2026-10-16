@@ -1,0 +1,61 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetUtility
+#L ==============================================================================
+
+contract (SetUtilityContract) {
+      op setEquals (as set of data: lhs, as set of data: rhs) as bool
+      op setJoin (as set of data: items, as string: separator) as string
+      op setSwap (as set of data: items, as data: old_val, as data: new_val) as set of data
+}
+
+agent (SetStdLib) impl SetUtilityContract {
+      #L -- SetUtilityContract ----------------------------------------
+      op setEquals (as set of data: lhs, as set of data: rhs) as bool ==> {
+            mut as int64: len_l = setLength(lhs)
+            mut as int64: len_r = setLength(rhs)
+            mut as bool: eq = false
+            route {
+                  len_l == len_r ==> {
+                        eq = stdSetIsSubset(lhs, rhs)
+                  }
+            }
+            emit(nice, eq, "ok")
+      }
+
+      op setJoin (as set of data: items, as string: separator) as string ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as string: text = ""
+            mut as bool: first = true
+            infinite (x in l) {
+                  route {
+                        first ==> {
+                              text = "" + x
+                              first = false
+                        }
+                        not first ==> {
+                              text = text + separator + x
+                        }
+                  }
+            }
+            emit(nice, text, "ok")
+      }
+
+      op setSwap (as set of data: items, as data: old_val, as data: new_val) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            infinite (x in l) {
+                  rlen = rlen + 1
+                  route {
+                        x == old_val ==> {
+                              res_l[rlen] = new_val
+                        }
+                        x != old_val ==> {
+                              res_l[rlen] = x
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+}

@@ -29,11 +29,12 @@ def verify_contract_agent(st: SymbolTable, impl: ImplDef) -> list[Diagnostic]:
     for sig in required_sigs:
         impl_op = impl_ops.get(sig.name)
         if impl_op is None:
+            from flux_proto.diagnostics.catalog import create_diagnostic
             diags.append(
-                Diagnostic(
-                    code="SEM001", severity=Severity.ERROR,
+                create_diagnostic(
+                    code_or_mnemonic="SEM340",
                     line=_line_of(impl), column=_col_of(impl),
-                    message=f"missing op '{sig.name}' in impl '{impl.name}' for '{impl.for_type}'",
+                    custom_msg=f"missing op '{sig.name}' in impl '{impl.name}' for '{impl.for_type}'",
                 )
             )
             continue

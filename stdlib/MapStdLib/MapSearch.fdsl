@@ -1,0 +1,49 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapSearch
+#L ==============================================================================
+
+contract (MapSearchContract) {
+      op mapContainsKey (as map: record, as string: key) as bool
+      op mapContainsAnyKey (as map: record, as list of data: keys) as bool
+      op mapContainsAllKeys (as map: record, as list of data: keys) as bool
+      op mapContainsValue (as map: record, as data: value) as bool
+      op mapContainsAnyValue (as map: record, as list of data: values) as bool
+      op mapContainsAllValues (as map: record, as list of data: values) as bool
+      op mapFindKey (as map: record, as data: value) as data
+      op mapFindKeys (as map: record, as data: value) as list of data
+      op mapCountValues (as map: record, as data: value) as int64
+}
+
+agent (MapStdLib) impl MapSearchContract {
+      #L MapSearchContract (9 operacoes)
+      #L ==============================================================================
+      op mapFindKey (as map: record, as data: value) as data ==> {
+            mut as data: res = ""
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              res = k
+                              break
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapFindKeys (as map: record, as data: value) as list of data ==> {
+            mut as list of data: keys = []
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              count = count + 1
+                              keys[count] = k
+                        }
+                  }
+            }
+            emit(nice, keys, "ok")
+      }
+
+      #L ==============================================================================
+}

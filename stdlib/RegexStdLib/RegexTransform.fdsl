@@ -1,0 +1,123 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RegexStdLib
+#L Dominio: RegexTransform
+#L ==============================================================================
+
+contract (RegexTransformContract) {
+      op regexReplace (as string: pattern, as string: text, as string: replacement) as string
+      op regexReplaceFirst (as string: pattern, as string: text, as string: replacement) as string
+      op regexReplaceLimit (as string: pattern, as string: text, as string: replacement, as int64: max_count) as string
+      op regexSplit (as string: pattern, as string: text) as list of data
+      op regexSplitLimit (as string: pattern, as string: text, as int64: limit) as list of data
+}
+
+agent (RegexStdLib) impl RegexTransformContract {
+      #L 2. RegexTransformContract
+      #L ==============================================================================
+
+      op regexReplace (as string: pattern, as string: text, as string: replacement) as string ==> {
+            emit(nice, regexReplaceLimit(pattern, text, replacement, -1), "ok")
+      }
+
+      op regexReplaceFirst (as string: pattern, as string: text, as string: replacement) as string ==> {
+            emit(nice, regexReplaceLimit(pattern, text, replacement, 1), "ok")
+      }
+
+      op regexReplaceLimit (as string: pattern, as string: text, as string: replacement, as int64: max_count) as string ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: len_sp = _listLen(sp)
+            route {
+                  len_sp == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+
+            mut as string: res = ""
+            mut as int64: last_pos = 1
+            mut as int64: rep_count = 0
+            mut as int64: len_t = stringLength(text)
+
+            infinite (item in sp) {
+                  route {
+                        max_count > 0 and rep_count >= max_count ==> {
+                              break
+                        }
+                  }
+                  mut as list of data: s_item = item as list of data
+                  mut as int64: s_idx = s_item[1] as int64
+                  mut as int64: e_idx = s_item[2] as int64
+                  route {
+                        s_idx > last_pos ==> {
+                              res = res + stringSlice(text, last_pos, s_idx - 1)
+                        }
+                  }
+                  res = res + replacement
+                  last_pos = e_idx + 1
+                  rep_count = rep_count + 1
+            }
+
+            route {
+                  last_pos <= len_t ==> {
+                        res = res + stringSlice(text, last_pos, len_t)
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexSplit (as string: pattern, as string: text) as list of data ==> {
+            emit(nice, regexSplitLimit(pattern, text, -1), "ok")
+      }
+
+      op regexSplitLimit (as string: pattern, as string: text, as int64: limit) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: sp = m["spans"] as list of data
+            mut as int64: len_sp = _listLen(sp)
+            route {
+                  len_sp == 0 ==> {
+                        mut as list of data: single = []
+                        single[1] = text
+                        emit(nice, single, "ok")
+                  }
+            }
+
+            mut as list of data: parts = []
+            mut as int64: count = 0
+            mut as int64: last_pos = 1
+            mut as int64: split_count = 0
+            mut as int64: len_t = stringLength(text)
+
+            infinite (item in sp) {
+                  route {
+                        limit > 0 and split_count >= limit - 1 ==> {
+                              break
+                        }
+                  }
+                  mut as list of data: s_item = item as list of data
+                  mut as int64: s_idx = s_item[1] as int64
+                  mut as int64: e_idx = s_item[2] as int64
+                  mut as string: piece = ""
+                  route {
+                        s_idx > last_pos ==> {
+                              piece = stringSlice(text, last_pos, s_idx - 1)
+                        }
+                  }
+                  count = count + 1
+                  parts[count] = piece
+                  last_pos = e_idx + 1
+                  split_count = split_count + 1
+            }
+
+            mut as string: rem_piece = ""
+            route {
+                  last_pos <= len_t ==> {
+                        rem_piece = stringSlice(text, last_pos, len_t)
+                  }
+            }
+            count = count + 1
+            parts[count] = rem_piece
+            emit(nice, parts, "ok")
+      }
+
+      #L ==============================================================================
+}

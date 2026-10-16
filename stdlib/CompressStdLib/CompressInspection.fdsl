@@ -1,0 +1,48 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressInspection
+#L ==============================================================================
+
+contract (CompressInspectionContract) {
+      op compressEstimateDecompressedSize (as string: compressed_data) as int64
+      op compressDetectFormat (as string: compressed_data) as string
+      op compressStats (as string: uncompressed, as string: compressed) as CompressStats
+      op decompressAuto (as string: compressed_data) as string
+      op compressIsEffective (as string: uncompressed, as string: compressed) as bool
+      op compressIsFormatSupported (as string: format_name) as bool
+}
+
+agent (CompressStdLib) impl CompressInspectionContract {
+      #L -- CompressInspectionContract ---------------------------------
+      op compressEstimateDecompressedSize (as string: compressed_data) as int64 ==> {
+            emit(nice, stdCompressEstimateDecompressedSize(compressed_data), "ok")
+      }
+
+      op compressDetectFormat (as string: compressed_data) as string ==> {
+            emit(nice, stdCompressDetectFormat(compressed_data), "ok")
+      }
+
+      op compressStats (as string: uncompressed, as string: compressed) as CompressStats ==> {
+            emit(nice, stdCompressStats(uncompressed, compressed), "ok")
+      }
+
+      op decompressAuto (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressAuto(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "formato nao suportado ou falha na auto-descompressao")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsEffective (as string: uncompressed, as string: compressed) as bool ==> {
+            emit(nice, stdCompressIsEffective(uncompressed, compressed), "ok")
+      }
+
+      op compressIsFormatSupported (as string: format_name) as bool ==> {
+            emit(nice, stdCompressIsFormatSupported(format_name), "ok")
+      }
+}

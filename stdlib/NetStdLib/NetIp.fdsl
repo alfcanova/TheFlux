@@ -1,0 +1,82 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NetStdLib
+#L Dominio: NetIp
+#L ==============================================================================
+
+contract (NetIpContract) {
+      op netIpIsValid (as string: ip) as bool
+      op netIpIsV4 (as string: ip) as bool
+      op netIpIsV6 (as string: ip) as bool
+      op netIpIsLoopback (as string: ip) as bool
+      op netIpIsPrivate (as string: ip) as bool
+      op netResolveHost (as string: host) as string
+      op netResolveIp (as string: ip) as string
+
+      #L Aliases
+      op ipIsValid (as string: ip) as bool
+      op ipIsV4 (as string: ip) as bool
+      op ipIsV6 (as string: ip) as bool
+      op ipIsLoopback (as string: ip) as bool
+      op ipIsPrivate (as string: ip) as bool
+      op resolveHost (as string: host) as string
+      op resolveIp (as string: ip) as string
+}
+
+agent (NetStdLib) impl NetIpContract {
+      #L -- NetIpContract ---------------------------------------------
+      op netIpIsValid (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsValid(ip), "ok")
+      }
+
+      op netIpIsV4 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV4(ip), "ok")
+      }
+
+      op netIpIsV6 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV6(ip), "ok")
+      }
+
+      op netIpIsLoopback (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsLoopback(ip), "ok")
+      }
+
+      op netIpIsPrivate (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsPrivate(ip), "ok")
+      }
+
+      op netResolveHost (as string: host) as string ==> {
+            emit(nice, stdNetResolveHost(host), "ok")
+      }
+
+      op netResolveIp (as string: ip) as string ==> {
+            emit(nice, stdNetResolveIp(ip), "ok")
+      }
+
+      op ipIsValid (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsValid(ip), "ok")
+      }
+
+      op ipIsV4 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV4(ip), "ok")
+      }
+
+      op ipIsV6 (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsV6(ip), "ok")
+      }
+
+      op ipIsLoopback (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsLoopback(ip), "ok")
+      }
+
+      op ipIsPrivate (as string: ip) as bool ==> {
+            emit(nice, stdNetIpIsPrivate(ip), "ok")
+      }
+
+      op resolveHost (as string: host) as string ==> {
+            emit(nice, stdNetResolveHost(host), "ok")
+      }
+
+      op resolveIp (as string: ip) as string ==> {
+            emit(nice, stdNetResolveIp(ip), "ok")
+      }
+}

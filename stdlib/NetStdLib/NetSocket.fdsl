@@ -1,0 +1,52 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NetStdLib
+#L Dominio: NetSocket
+#L ==============================================================================
+
+contract (NetSocketContract) {
+      op netTcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool
+      op netLocalIp () as string
+      op netPortIsAvailable (as int64: port) as bool
+      op netPing (as string: host) as bool
+
+      #L Aliases
+      op tcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool
+      op localIp () as string
+      op portIsAvailable (as int64: port) as bool
+      op ping (as string: host) as bool
+}
+
+agent (NetStdLib) impl NetSocketContract {
+      #L -- NetSocketContract -----------------------------------------
+      op netTcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool ==> {
+            emit(nice, stdNetTcpPing(host, port, timeout_ms), "ok")
+      }
+
+      op netLocalIp () as string ==> {
+            emit(nice, stdNetLocalIp(), "ok")
+      }
+
+      op netPortIsAvailable (as int64: port) as bool ==> {
+            emit(nice, stdNetPortIsAvailable(port), "ok")
+      }
+
+      op netPing (as string: host) as bool ==> {
+            emit(nice, stdNetPing(host), "ok")
+      }
+
+      op tcpPing (as string: host, as int64: port, as int64: timeout_ms) as bool ==> {
+            emit(nice, stdNetTcpPing(host, port, timeout_ms), "ok")
+      }
+
+      op localIp () as string ==> {
+            emit(nice, stdNetLocalIp(), "ok")
+      }
+
+      op portIsAvailable (as int64: port) as bool ==> {
+            emit(nice, stdNetPortIsAvailable(port), "ok")
+      }
+
+      op ping (as string: host) as bool ==> {
+            emit(nice, stdNetPing(host), "ok")
+      }
+}

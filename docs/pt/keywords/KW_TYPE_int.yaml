@@ -1,0 +1,101 @@
+keyword: int8, int16, int32, int64, uint8, uint16, uint32, uint64
+category: Tipo Numérico - Inteiro
+description: Tipos inteiros de largura fixa com sinal e sem sinal (int8, int16, int32, int64, uint8, uint16, uint32, uint64).
+syntax: 'mut as <tipo>: <var> = <valor>     # tipo obrigatório na declaração
+
+  mut as int8: <var> = <valor>      # -128 a 127
+
+  mut as int16: <var> = <valor>     # -32768 a 32767
+
+  mut as int32: <var> = <valor>     # -2147483648 a 2147483647
+
+  mut as int64: <var> = <valor>     # -9223372036854775808 a 9223372036854775807
+
+  mut as uint8: <var> = <valor>     # 0 a 255
+
+  mut as uint16: <var> = <valor>    # 0 a 65535
+
+  mut as uint32: <var> = <valor>    # 0 a 4294967295
+
+  mut as uint64: <var> = <valor>    # 0 a 18446744073709551615'
+pseudocode: 'i : INTEIRO64 = 42   // int8..uint64, com/sem sinal'
+usages:
+- name: Inteiros com sinal
+  description: Declaração de todos os tipos inteiros com sinal.
+  examples:
+  - code: 'mut as int8: byte = -8
+
+      mut as int16: small = -1600
+
+      mut as int32: medium = -32000
+
+      mut as int64: large = -64000'
+- name: Inteiros sem sinal
+  description: Declaração de todos os tipos inteiros sem sinal.
+  examples:
+  - code: 'mut as uint8: u_byte = 8
+
+      mut as uint16: u_small = 1600
+
+      mut as uint32: u_medium = 32000
+
+      mut as uint64: u_large = 64000'
+restrictions:
+- Valores fora da faixa suportada pelo tipo são rejeitados em tempo de compilação (SEM301).
+- Os tipos genéricos int e uint foram removidos; a especificação exata da largura é obrigatória.
+- Não há literais com sufixo de tipo; o tipo vem da declaração explícita.
+- A divisão inteira utiliza /i e o resto utiliza /r (/f é reservado para divisão decimal).
+- 'Ver também KW_LITERAL_integer.yaml (literal) — tipos e literais são arquivos espelhados: TYPES descreve a forma na declaração,
+  LITERAL descreve a sintaxe do valor.'
+errors:
+- code: "TYP401"
+  mnemonic: "EXPECT_INT_GOT_FLOAT"
+  severity: "Error"
+  trigger: "Uma variável ou parâmetro declarado como inteiro (int8..uint64) recebe um número de ponto flutuante"
+  message: "A variável esperava um inteiro e recebeu um número decimal (float)"
+  hint: "Use 'trunc()' ou 'round()' para converter explicitamente o valor decimal para inteiro"
+  example_bad: |
+    mut as int64: x = 3.14
+  example_good: |
+    mut as int64: x = trunc(3.14)
+- code: "TYP402"
+  mnemonic: "EXPECT_INT_GOT_COMPLEX"
+  severity: "Error"
+  trigger: "Uma variável ou parâmetro do tipo inteiro recebe um número complexo"
+  message: "A variável esperava um inteiro e recebeu um número complexo"
+  hint: "Números complexos possuem partes real e imaginária. Extraia a parte desejada (.real) antes de converter"
+  example_bad: |
+    mut as int64: x = 1 + 2i
+  example_good: |
+    mut as int64: x = trunc((1 + 2i).real)
+- code: "TYP403"
+  mnemonic: "EXPECT_INT_GOT_STRING"
+  severity: "Error"
+  trigger: "Uma variável ou parâmetro do tipo inteiro recebe uma string"
+  message: "A variável esperava um inteiro e recebeu um texto (string)"
+  hint: "Use 'parse_int()' para converter a string em inteiro"
+  example_bad: |
+    mut as int64: x = "42"
+  example_good: |
+    mut as int64: x = parse_int("42")
+- code: "TYP404"
+  mnemonic: "EXPECT_INT_GOT_BOOL"
+  severity: "Error"
+  trigger: "Uma variável ou parâmetro do tipo inteiro recebe um booleano"
+  message: "A variável esperava um inteiro e recebeu um booleano (bool)"
+  hint: "Use 'as int64' para conversão explícita de bool para inteiro"
+  example_bad: |
+    mut as int64: x = true
+  example_good: |
+    mut as int64: x = true as int64
+- code: "SEM301"
+  mnemonic: "INT_LITERAL_OUT_OF_RANGE"
+  severity: "Error"
+  trigger: "O valor literal numérico excede os limites suportados pela largura do tipo inteiro declarado"
+  message: "Valor literal excede os limites suportados pelo tipo inteiro"
+  hint: "Utilize um tipo inteiro com maior largura (ex: int64 ou uint64)"
+  example_bad: |
+    mut as int8: x = 300
+  example_good: |
+    mut as int16: x = 300
+

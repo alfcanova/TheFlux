@@ -1,0 +1,56 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressZlib
+#L ==============================================================================
+
+contract (CompressZlibContract) {
+      op compressZlib (as string: input_data) as string
+      op compressZlibLevel (as string: input_data, as int64: level) as string
+      op decompressZlib (as string: compressed_data) as string
+      op decompressZlibSafe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsZlib (as string: compressed_data) as bool
+      op compressZlibAdler32 (as string: compressed_data) as int64
+}
+
+agent (CompressStdLib) impl CompressZlibContract {
+      #L -- CompressZlibContract ---------------------------------------
+      op compressZlib (as string: input_data) as string ==> {
+            emit(nice, stdCompressZlib(input_data), "ok")
+      }
+
+      op compressZlibLevel (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressZlibLevel(input_data, level), "ok")
+      }
+
+      op decompressZlib (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressZlib(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao zlib")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressZlibSafe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressZlibSafe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao zlib")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsZlib (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsZlib(compressed_data), "ok")
+      }
+
+      op compressZlibAdler32 (as string: compressed_data) as int64 ==> {
+            emit(nice, stdCompressZlibAdler32(compressed_data), "ok")
+      }
+}

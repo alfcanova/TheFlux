@@ -1,0 +1,77 @@
+keyword: mut
+category: Declaração de Variável
+description: 'Declara uma variável mutável, com valor inicial explícito opcional. Sem valor inicial, a variável recebe o valor
+  padrão do tipo (0, 0.0, false, string vazia etc.). Múltiplas variáveis podem ser declaradas com vírgulas na forma principal
+  (`mut as <tipo>: a, b = 42`).'
+syntax: 'mut as <tipo>: <identificador> [, <identificador> ...] [= <expressão>]'
+pseudocode: 'VARIAVEL contador := 0
+
+  contador := contador + 1    // reatribuivel'
+usages:
+- name: Declaração com tipo e valor inicial
+  description: Declara uma variável mutável com tipo explícito e valor inicial.
+  examples:
+  - code: 'mut as int64: contador = 0
+
+      mut as string: nome = "TheFlux"'
+- name: Declaração com valor padrão do tipo
+  description: Sem valor inicial, a variável recebe o valor padrão do tipo.
+  examples:
+  - code: 'mut as int64: contador
+
+      mut as string: nome'
+- name: Declaração múltipla em linha
+  description: Várias variáveis na forma principal, separadas por vírgula; tipo e valor inicial são compartilhados entre todas.
+  examples:
+  - code: 'mut as int64: a, b = 42'
+restrictions:
+- Os identificadores devem seguir snake_case (SEM306).
+- 'Variáveis mutáveis podem ser reatribuídas com `=` e com operadores compostos: =+, =-, =*, =/i, =/r, =/f, =^e, =^r, =^,
+  =&, =|, =~, =<<, =>>, =>>>.'
+- "O tipo é obrigatório após `as` (não há forma sem tipo; 'mut: var: type' gera SYN105)."
+- 'Múltiplas variáveis em uma única declaração são aceitas apenas na forma principal, com vírgulas entre os identificadores
+  (`mut as <tipo>: a, b = 42`); o tipo e o valor inicial são compartilhados. Valores diferentes exigem declarações separadas.'
+errors:
+- code: "SEM306"
+  mnemonic: "MUT_IDENTIFIER_SNAKE_CASE"
+  severity: "Warning"
+  trigger: "Identificador mutável declarado fora da convenção snake_case"
+  message: "Identificador mutável ('mut') deve utilizar a convenção snake_case"
+  hint: "Renomeie o identificador para letras minúsculas separadas por sublinhado (ex: 'contador_total')"
+  example_bad: |
+    mut as int64: contadorTotal = 0
+  example_good: |
+    mut as int64: contador_total = 0
+- code: "SYN105"
+  mnemonic: "MUT_MISSING_AS_KEYWORD"
+  severity: "Error"
+  trigger: "Declaração mutável no formato antigo 'mut: var: Tipo' sem a palavra-chave 'as'"
+  message: "Sintaxe inválida de declaração: esperado 'as' após 'mut'"
+  hint: "Utilize a sintaxe canônica: 'mut as <tipo>: <identificador> [= <valor>]'"
+  example_bad: |
+    mut: x: int64 = 10
+  example_good: |
+    mut as int64: x = 10
+- code: "SEM303"
+  mnemonic: "UNDEFINED_IDENTIFIER"
+  severity: "Error"
+  trigger: "Uso de identificador de variável não declarado no escopo léxico corrente"
+  message: "Identificador não declarado: a variável precisa ser declarada com 'mut' ou 'imut'"
+  hint: "Declare a variável com 'mut as <tipo>:' ou 'imut as <tipo>:' antes de utilizá-la"
+  example_bad: |
+    x = 10
+  example_good: |
+    mut as int64: x = 10
+- code: "SEM304"
+  mnemonic: "DUPLICATE_IDENTIFIER"
+  severity: "Error"
+  trigger: "Redeclaração de identificador que já existe no mesmo escopo léxico"
+  message: "Identificador duplicado: a variável já foi declarada anteriormente neste mesmo escopo"
+  hint: "Renomeie uma das declarações para evitar colisão no mesmo escopo"
+  example_bad: |
+    mut as int64: total = 1
+    mut as int64: total = 2
+  example_good: |
+    mut as int64: total_inicial = 1
+    mut as int64: total_final = 2
+

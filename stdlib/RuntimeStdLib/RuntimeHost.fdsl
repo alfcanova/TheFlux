@@ -1,0 +1,133 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RuntimeStdLib
+#L Dominio: RuntimeHost
+#L ==============================================================================
+
+contract (RuntimeHostContract) {
+      op runtimeBackend () as string
+      op runtimeIsNative () as bool
+      op runtimeIsWasm () as bool
+      op runtimeIsInterpreter () as bool
+      op runtimePointerSize () as int64
+      op runtimeCompilerVersion () as string
+      op runtimeGetArgs () as list of data
+      op runtimeGetArgCount () as int64
+      op runtimeGetArg (as int64: index) as string
+      op runtimeExecutablePath () as string
+
+      #L Aliases
+      op backend () as string
+      op isNative () as bool
+      op isWasm () as bool
+      op isInterpreter () as bool
+      op compilerVersion () as string
+      op getArgs () as list of data
+      op getArgCount () as int64
+      op getArg (as int64: index) as string
+}
+
+agent (RuntimeStdLib) impl RuntimeHostContract {
+      #L -- RuntimeHostContract ---------------------------------------
+      op runtimeBackend () as string ==> {
+            emit(nice, stdRuntimeBackend(), "ok")
+      }
+
+      op runtimeIsNative () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "llvm", "ok")
+      }
+
+      op runtimeIsWasm () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "wat" or b == "wasm", "ok")
+      }
+
+      op runtimeIsInterpreter () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "in" or b == "vm" or b == "vmr", "ok")
+      }
+
+      op runtimePointerSize () as int64 ==> {
+            mut as string: b = stdRuntimeBackend()
+            route {
+                  b == "wat" or b == "wasm" ==> { emit(nice, 4, "ok") }
+                  _ ==> { emit(nice, 8, "ok") }
+            }
+      }
+
+      op runtimeCompilerVersion () as string ==> {
+            emit(nice, stdRuntimeCompilerVersion(), "ok")
+      }
+
+      op runtimeGetArgs () as list of data ==> {
+            emit(nice, stdRuntimeGetArgs(), "ok")
+      }
+
+      op runtimeGetArgCount () as int64 ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            emit(nice, stdCollectionLength(a), "ok")
+      }
+
+      op runtimeGetArg (as int64: index) as string ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            mut as int64: n = stdCollectionLength(a)
+            route {
+                  index >= 1 and index <= n ==> {
+                        emit(nice, "" + a[index], "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "", "ok")
+                  }
+            }
+      }
+
+      op runtimeExecutablePath () as string ==> {
+            emit(nice, stdRuntimeExecutablePath(), "ok")
+      }
+
+      #L Aliases Host
+      op backend () as string ==> {
+            emit(nice, stdRuntimeBackend(), "ok")
+      }
+
+      op isNative () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "llvm", "ok")
+      }
+
+      op isWasm () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "wat" or b == "wasm", "ok")
+      }
+
+      op isInterpreter () as bool ==> {
+            mut as string: b = stdRuntimeBackend()
+            emit(nice, b == "in" or b == "vm" or b == "vmr", "ok")
+      }
+
+      op compilerVersion () as string ==> {
+            emit(nice, stdRuntimeCompilerVersion(), "ok")
+      }
+
+      op getArgs () as list of data ==> {
+            emit(nice, stdRuntimeGetArgs(), "ok")
+      }
+
+      op getArgCount () as int64 ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            emit(nice, stdCollectionLength(a), "ok")
+      }
+
+      op getArg (as int64: index) as string ==> {
+            mut as list of data: a = stdRuntimeGetArgs()
+            mut as int64: n = stdCollectionLength(a)
+            route {
+                  index >= 1 and index <= n ==> {
+                        emit(nice, "" + a[index], "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "", "ok")
+                  }
+            }
+      }
+}

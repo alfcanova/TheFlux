@@ -1,0 +1,32 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetSearch
+#L ==============================================================================
+
+contract (SetSearchContract) {
+      op setContains (as set of data: items, as data: item) as bool
+      op setContainsAny (as set of data: lhs, as set of data: rhs) as bool
+      op setContainsAll (as set of data: lhs, as set of data: rhs) as bool
+      op setIndexOf (as set of data: items, as data: item) as int64
+      op setCount (as set of data: items, as data: item) as int64
+}
+
+agent (SetStdLib) impl SetSearchContract {
+      #L -- SetSearchContract -----------------------------------------
+      op setIndexOf (as set of data: items, as data: item) as int64 ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: idx = -1
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        x == item ==> {
+                              idx = curr
+                              break
+                        }
+                  }
+                  curr = curr + 1
+            }
+            imut as int64: res = idx
+            emit(nice, res, "ok")
+      }
+}

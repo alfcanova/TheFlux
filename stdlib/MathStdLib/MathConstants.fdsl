@@ -1,0 +1,277 @@
+contract (MathConstantsContract) {
+      op pi64 () as float64
+      op pi32 () as float32
+      op pi16 () as float16
+      op e64 () as float64
+      op e32 () as float32
+      op e16 () as float16
+      op tau64 () as float64
+      op tau32 () as float32
+      op tau16 () as float16
+      op sqrt2_64 () as float64
+      op sqrt2_32 () as float32
+      op sqrt2_16 () as float16
+      op sqrt3_64 () as float64
+      op sqrt3_32 () as float32
+      op sqrt3_16 () as float16
+      op invSqrt2_64 () as float64
+      op invSqrt2_32 () as float32
+      op invSqrt2_16 () as float16
+      op invSqrt3_64 () as float64
+      op invSqrt3_32 () as float32
+      op invSqrt3_16 () as float16
+      op ln2_64 () as float64
+      op ln2_32 () as float32
+      op ln2_16 () as float16
+      op ln10_64 () as float64
+      op ln10_32 () as float32
+      op ln10_16 () as float16
+      op log2e64 () as float64
+      op log2e32 () as float32
+      op log2e16 () as float16
+      op log10e64 () as float64
+      op log10e32 () as float32
+      op log10e16 () as float16
+      op pi_2_64 () as float64
+      op pi_2_32 () as float32
+      op pi_2_16 () as float16
+      op pi_4_64 () as float64
+      op pi_4_32 () as float32
+      op pi_4_16 () as float16
+      op invPi64 () as float64
+      op invPi32 () as float32
+      op invPi16 () as float16
+      op phi64 () as float64
+      op phi32 () as float32
+      op phi16 () as float16
+}
+
+agent (MathStdLib) impl MathConstantsContract {
+      #B Constantes Matematicas Multi-Precisao (Derivadas por Cast da Ancora 64-bit) B#
+      imut as float64: PI64 = 3.14159265358979323846264338327
+      imut as float32: PI32 = PI64 as float32
+      imut as float16: PI16 = PI64 as float16
+      imut as float64: E64 = 2.71828182845904523536028747135
+      imut as float32: E32 = E64 as float32
+      imut as float16: E16 = E64 as float16
+      imut as float64: TAU64 = 6.28318530717958623199592693708
+      imut as float32: TAU32 = TAU64 as float32
+      imut as float16: TAU16 = TAU64 as float16
+      imut as float64: SQRT2_64 = 1.41421356237309514547462185874
+      imut as float32: SQRT2_32 = SQRT2_64 as float32
+      imut as float16: SQRT2_16 = SQRT2_64 as float16
+      imut as float64: SQRT3_64 = 1.73205080756887719317660412344
+      imut as float32: SQRT3_32 = SQRT3_64 as float32
+      imut as float16: SQRT3_16 = SQRT3_64 as float16
+      imut as float64: INV_SQRT2_64 = 0.707106781186547572737310921369
+      imut as float32: INV_SQRT2_32 = INV_SQRT2_64 as float32
+      imut as float16: INV_SQRT2_16 = INV_SQRT2_64 as float16
+      imut as float64: INV_SQRT3_64 = 0.577350269189625764509148780502
+      imut as float32: INV_SQRT3_32 = INV_SQRT3_64 as float32
+      imut as float16: INV_SQRT3_16 = INV_SQRT3_64 as float16
+      imut as float64: LN2_64 = 0.693147180559945286226763982996
+      imut as float32: LN2_32 = LN2_64 as float32
+      imut as float16: LN2_16 = LN2_64 as float16
+      imut as float64: LN10_64 = 2.30258509299404590109361379291
+      imut as float32: LN10_32 = LN10_64 as float32
+      imut as float16: LN10_16 = LN10_64 as float16
+      imut as float64: LOG2E_64 = 1.44269504088896340735992468100
+      imut as float32: LOG2E_32 = LOG2E_64 as float32
+      imut as float16: LOG2E_16 = LOG2E_64 as float16
+      imut as float64: LOG10E_64 = 0.434294481903251827651128929574
+      imut as float32: LOG10E_32 = LOG10E_64 as float32
+      imut as float16: LOG10E_16 = LOG10E_64 as float16
+      imut as float64: PI_2_64 = 1.570796326794896557998981734272
+      imut as float32: PI_2_32 = PI_2_64 as float32
+      imut as float16: PI_2_16 = PI_2_64 as float16
+      imut as float64: PI_4_64 = 0.785398163397448278999490867136
+      imut as float32: PI_4_32 = PI_4_64 as float32
+      imut as float16: PI_4_16 = PI_4_64 as float16
+      imut as float64: INV_PI_64 = 0.318309886183790671537767526745
+      imut as float32: INV_PI_32 = INV_PI_64 as float32
+      imut as float16: INV_PI_16 = INV_PI_64 as float16
+      imut as float64: PHI_64 = 1.61803398874989484820458683437
+      imut as float32: PHI_32 = PHI_64 as float32
+      imut as float16: PHI_16 = PHI_64 as float16
+
+      op pi64 () as float64 ==> {
+            imut as float64: res = PI64
+            emit(nice, res, "ok")
+      }
+      op pi32 () as float32 ==> {
+            imut as float32: res = PI32
+            emit(nice, res, "ok")
+      }
+      op pi16 () as float16 ==> {
+            imut as float16: res = PI16
+            emit(nice, res, "ok")
+      }
+      op e64 () as float64 ==> {
+            imut as float64: res = E64
+            emit(nice, res, "ok")
+      }
+      op e32 () as float32 ==> {
+            imut as float32: res = E32
+            emit(nice, res, "ok")
+      }
+      op e16 () as float16 ==> {
+            imut as float16: res = E16
+            emit(nice, res, "ok")
+      }
+      op tau64 () as float64 ==> {
+            imut as float64: res = TAU64
+            emit(nice, res, "ok")
+      }
+      op tau32 () as float32 ==> {
+            imut as float32: res = TAU32
+            emit(nice, res, "ok")
+      }
+      op tau16 () as float16 ==> {
+            imut as float16: res = TAU16
+            emit(nice, res, "ok")
+      }
+      op sqrt2_64 () as float64 ==> {
+            imut as float64: res = SQRT2_64
+            emit(nice, res, "ok")
+      }
+      op sqrt2_32 () as float32 ==> {
+            imut as float32: res = SQRT2_32
+            emit(nice, res, "ok")
+      }
+      op sqrt2_16 () as float16 ==> {
+            imut as float16: res = SQRT2_16
+            emit(nice, res, "ok")
+      }
+      op sqrt3_64 () as float64 ==> {
+            imut as float64: res = SQRT3_64
+            emit(nice, res, "ok")
+      }
+      op sqrt3_32 () as float32 ==> {
+            imut as float32: res = SQRT3_32
+            emit(nice, res, "ok")
+      }
+      op sqrt3_16 () as float16 ==> {
+            imut as float16: res = SQRT3_16
+            emit(nice, res, "ok")
+      }
+      op invSqrt2_64 () as float64 ==> {
+            imut as float64: res = INV_SQRT2_64
+            emit(nice, res, "ok")
+      }
+      op invSqrt2_32 () as float32 ==> {
+            imut as float32: res = INV_SQRT2_32
+            emit(nice, res, "ok")
+      }
+      op invSqrt2_16 () as float16 ==> {
+            imut as float16: res = INV_SQRT2_16
+            emit(nice, res, "ok")
+      }
+      op invSqrt3_64 () as float64 ==> {
+            imut as float64: res = INV_SQRT3_64
+            emit(nice, res, "ok")
+      }
+      op invSqrt3_32 () as float32 ==> {
+            imut as float32: res = INV_SQRT3_32
+            emit(nice, res, "ok")
+      }
+      op invSqrt3_16 () as float16 ==> {
+            imut as float16: res = INV_SQRT3_16
+            emit(nice, res, "ok")
+      }
+      op ln2_64 () as float64 ==> {
+            imut as float64: res = LN2_64
+            emit(nice, res, "ok")
+      }
+      op ln2_32 () as float32 ==> {
+            imut as float32: res = LN2_32
+            emit(nice, res, "ok")
+      }
+      op ln2_16 () as float16 ==> {
+            imut as float16: res = LN2_16
+            emit(nice, res, "ok")
+      }
+      op ln10_64 () as float64 ==> {
+            imut as float64: res = LN10_64
+            emit(nice, res, "ok")
+      }
+      op ln10_32 () as float32 ==> {
+            imut as float32: res = LN10_32
+            emit(nice, res, "ok")
+      }
+      op ln10_16 () as float16 ==> {
+            imut as float16: res = LN10_16
+            emit(nice, res, "ok")
+      }
+      op log2e64 () as float64 ==> {
+            imut as float64: res = LOG2E_64
+            emit(nice, res, "ok")
+      }
+      op log2e32 () as float32 ==> {
+            imut as float32: res = LOG2E_32
+            emit(nice, res, "ok")
+      }
+      op log2e16 () as float16 ==> {
+            imut as float16: res = LOG2E_16
+            emit(nice, res, "ok")
+      }
+      op log10e64 () as float64 ==> {
+            imut as float64: res = LOG10E_64
+            emit(nice, res, "ok")
+      }
+      op log10e32 () as float32 ==> {
+            imut as float32: res = LOG10E_32
+            emit(nice, res, "ok")
+      }
+      op log10e16 () as float16 ==> {
+            imut as float16: res = LOG10E_16
+            emit(nice, res, "ok")
+      }
+      op pi_2_64 () as float64 ==> {
+            imut as float64: res = PI_2_64
+            emit(nice, res, "ok")
+      }
+      op pi_2_32 () as float32 ==> {
+            imut as float32: res = PI_2_32
+            emit(nice, res, "ok")
+      }
+      op pi_2_16 () as float16 ==> {
+            imut as float16: res = PI_2_16
+            emit(nice, res, "ok")
+      }
+      op pi_4_64 () as float64 ==> {
+            imut as float64: res = PI_4_64
+            emit(nice, res, "ok")
+      }
+      op pi_4_32 () as float32 ==> {
+            imut as float32: res = PI_4_32
+            emit(nice, res, "ok")
+      }
+      op pi_4_16 () as float16 ==> {
+            imut as float16: res = PI_4_16
+            emit(nice, res, "ok")
+      }
+      op invPi64 () as float64 ==> {
+            imut as float64: res = INV_PI_64
+            emit(nice, res, "ok")
+      }
+      op invPi32 () as float32 ==> {
+            imut as float32: res = INV_PI_32
+            emit(nice, res, "ok")
+      }
+      op invPi16 () as float16 ==> {
+            imut as float16: res = INV_PI_16
+            emit(nice, res, "ok")
+      }
+      op phi64 () as float64 ==> {
+            imut as float64: res = PHI_64
+            emit(nice, res, "ok")
+      }
+      op phi32 () as float32 ==> {
+            imut as float32: res = PHI_32
+            emit(nice, res, "ok")
+      }
+      op phi16 () as float16 ==> {
+            imut as float16: res = PHI_16
+            emit(nice, res, "ok")
+      }
+}

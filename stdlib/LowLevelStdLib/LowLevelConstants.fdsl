@@ -1,0 +1,154 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelConstants
+#L ==============================================================================
+
+contract (LowLevelConstantsContract) {
+      op mask8 () as int64
+      op mask16 () as int64
+      op mask32 () as int64
+      op mask64 () as int64
+      op int8Min () as int64
+      op int8Max () as int64
+      op uint8Max () as int64
+      op int16Min () as int64
+      op int16Max () as int64
+      op uint16Max () as int64
+      op int32Min () as int64
+      op int32Max () as int64
+      op uint32Max () as int64
+      op int64Min () as int64
+      op int64Max () as int64
+      op sizeByte () as int64
+      op sizeHWord () as int64
+      op sizeWord () as int64
+      op sizeDWord () as int64
+      op bitsByte () as int64
+      op bitsHWord () as int64
+      op bitsWord () as int64
+      op bitsDWord () as int64
+      op pageSize4K () as int64
+      op pageSizeHuge2M () as int64
+      op cacheLineSize () as int64
+      op endianLittle () as int64
+      op endianBig () as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelConstantsContract {
+
+      #L =====================================================================
+      #L Utilitarios Internos
+      #L =====================================================================
+
+      op _hexDigit (as int64: d) as string ==> {
+            mut as int64: v = d & 15
+            route {
+                  v == 0 ==> { emit(nice, "0", "ok") }
+                  v == 1 ==> { emit(nice, "1", "ok") }
+                  v == 2 ==> { emit(nice, "2", "ok") }
+                  v == 3 ==> { emit(nice, "3", "ok") }
+                  v == 4 ==> { emit(nice, "4", "ok") }
+                  v == 5 ==> { emit(nice, "5", "ok") }
+                  v == 6 ==> { emit(nice, "6", "ok") }
+                  v == 7 ==> { emit(nice, "7", "ok") }
+                  v == 8 ==> { emit(nice, "8", "ok") }
+                  v == 9 ==> { emit(nice, "9", "ok") }
+                  v == 10 ==> { emit(nice, "A", "ok") }
+                  v == 11 ==> { emit(nice, "B", "ok") }
+                  v == 12 ==> { emit(nice, "C", "ok") }
+                  v == 13 ==> { emit(nice, "D", "ok") }
+                  v == 14 ==> { emit(nice, "E", "ok") }
+                  v == 15 ==> { emit(nice, "F", "ok") }
+                  _ ==> { emit(nice, "0", "ok") }
+            }
+      }
+
+      op _byteToHex (as int64: b) as string ==> {
+            mut as int64: val = b & 255
+            mut as int64: hi = (val >>> 4) & 15
+            mut as int64: lo = val & 15
+            mut as string: res = _hexDigit(hi) + _hexDigit(lo)
+            emit(nice, res, "ok")
+      }
+
+      op _hexCharVal (as string: ch) as int64 ==> {
+            route {
+                  ch == "0" ==> { emit(nice, 0, "ok") }
+                  ch == "1" ==> { emit(nice, 1, "ok") }
+                  ch == "2" ==> { emit(nice, 2, "ok") }
+                  ch == "3" ==> { emit(nice, 3, "ok") }
+                  ch == "4" ==> { emit(nice, 4, "ok") }
+                  ch == "5" ==> { emit(nice, 5, "ok") }
+                  ch == "6" ==> { emit(nice, 6, "ok") }
+                  ch == "7" ==> { emit(nice, 7, "ok") }
+                  ch == "8" ==> { emit(nice, 8, "ok") }
+                  ch == "9" ==> { emit(nice, 9, "ok") }
+                  ch == "A" or ch == "a" ==> { emit(nice, 10, "ok") }
+                  ch == "B" or ch == "b" ==> { emit(nice, 11, "ok") }
+                  ch == "C" or ch == "c" ==> { emit(nice, 12, "ok") }
+                  ch == "D" or ch == "d" ==> { emit(nice, 13, "ok") }
+                  ch == "E" or ch == "e" ==> { emit(nice, 14, "ok") }
+                  ch == "F" or ch == "f" ==> { emit(nice, 15, "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op _memHasKey (as map: m, as string: target_key) as bool ==> {
+            mut as bool: found = false
+            infinite (k in m) {
+                  route {
+                        k == target_key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      #L =====================================================================
+      #L LowLevelConstantsContract
+      #L =====================================================================
+
+      op mask8 () as int64 ==> { emit(nice, 255, "ok") }
+      op mask16 () as int64 ==> { emit(nice, 65535, "ok") }
+      op mask32 () as int64 ==> { emit(nice, 4294967295, "ok") }
+      op mask64 () as int64 ==> { emit(nice, -1, "ok") }
+
+      op int8Min () as int64 ==> { emit(nice, -128, "ok") }
+      op int8Max () as int64 ==> { emit(nice, 127, "ok") }
+      op uint8Max () as int64 ==> { emit(nice, 255, "ok") }
+
+      op int16Min () as int64 ==> { emit(nice, -32768, "ok") }
+      op int16Max () as int64 ==> { emit(nice, 32767, "ok") }
+      op uint16Max () as int64 ==> { emit(nice, 65535, "ok") }
+
+      op int32Min () as int64 ==> { emit(nice, -2147483648, "ok") }
+      op int32Max () as int64 ==> { emit(nice, 2147483647, "ok") }
+      op uint32Max () as int64 ==> { emit(nice, 4294967295, "ok") }
+
+      op int64Min () as int64 ==> {
+            #L Minimo de 64 bits em complemento de dois
+            mut as int64: min_val = 0 - 9223372036854775807 - 1
+            emit(nice, min_val, "ok")
+      }
+      op int64Max () as int64 ==> { emit(nice, 9223372036854775807, "ok") }
+
+      op sizeByte () as int64 ==> { emit(nice, 1, "ok") }
+      op sizeHWord () as int64 ==> { emit(nice, 2, "ok") }
+      op sizeWord () as int64 ==> { emit(nice, 4, "ok") }
+      op sizeDWord () as int64 ==> { emit(nice, 8, "ok") }
+
+      op bitsByte () as int64 ==> { emit(nice, 8, "ok") }
+      op bitsHWord () as int64 ==> { emit(nice, 16, "ok") }
+      op bitsWord () as int64 ==> { emit(nice, 32, "ok") }
+      op bitsDWord () as int64 ==> { emit(nice, 64, "ok") }
+
+      op pageSize4K () as int64 ==> { emit(nice, 4096, "ok") }
+      op pageSizeHuge2M () as int64 ==> { emit(nice, 2097152, "ok") }
+      op cacheLineSize () as int64 ==> { emit(nice, 64, "ok") }
+      op endianLittle () as int64 ==> { emit(nice, 1, "ok") }
+      op endianBig () as int64 ==> { emit(nice, 2, "ok") }
+
+      #L =====================================================================
+}

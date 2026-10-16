@@ -1,0 +1,79 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinDepreciation
+#L ==============================================================================
+
+contract (FinDepreciationContract) {
+      op finDepreciationLinear (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years) as FinDecimal
+      op finDepreciationSyd (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal
+      op finDepreciationDdb (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal
+}
+
+#L ==============================================================================
+#L 7. FinFormatContract
+#L ==============================================================================
+
+agent (FinStdLib) impl FinDepreciationContract {
+      #L 6. FinDepreciationContract
+      #L ==============================================================================
+
+      op finDepreciationLinear (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years) as FinDecimal ==> {
+            route {
+                  life_years <= 0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as int64: depreciable_raw = cost.raw - salvage.raw
+            mut as int64: annual_raw = depreciable_raw /i life_years
+            mut as FinDecimal: annual = FinDecimal(.raw: annual_raw, .scale: 8)
+            emit(nice, annual, "ok")
+      }
+
+      op finDepreciationSyd (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal ==> {
+            route {
+                  life_years <= 0 or period <= 0 or period > life_years ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as int64: syd = (life_years * (life_years + 1)) /i 2
+            mut as int64: factor = (life_years - period) + 1
+            mut as int64: base_raw = cost.raw - salvage.raw
+            mut as int64: num_raw = base_raw * factor
+            mut as int64: res_raw = num_raw /i syd
+            mut as FinDecimal: res = FinDecimal(.raw: res_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDepreciationDdb (as FinDecimal: cost, as FinDecimal: salvage, as int64: life_years, as int64: period) as FinDecimal ==> {
+            route {
+                  life_years <= 0 or period <= 0 or period > life_years ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(nice, zero_dec, "ok")
+                  }
+            }
+            mut as float64: rate = 2.0 /f (life_years as float64)
+            mut as FinDecimal: current_val = cost
+            mut as FinDecimal: depr_val = FinDecimal(.raw: 0, .scale: 8)
+            mut as int64: p = 1
+            infinite (p <= period) {
+                  mut as float64: cur_f = (current_val.raw as float64) /f 100000000.0
+                  mut as float64: d_f = cur_f * rate
+                  depr_val = FinDecimal(.raw: (d_f * 100000000.0) as int64, .scale: 8)
+                  #L Nao deprecia abaixo do salvage
+                  mut as FinDecimal: next_val = FinDecimal(.raw: current_val.raw - depr_val.raw, .scale: 8)
+                  route {
+                        next_val.raw < salvage.raw ==> {
+                              depr_val = FinDecimal(.raw: current_val.raw - salvage.raw, .scale: 8)
+                              next_val = salvage
+                        }
+                  }
+                  current_val = next_val
+                  p = p + 1
+            }
+            emit(nice, depr_val, "ok")
+      }
+
+      #L ==============================================================================
+}

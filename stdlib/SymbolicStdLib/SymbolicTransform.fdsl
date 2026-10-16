@@ -1,0 +1,193 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicTransform
+#L ==============================================================================
+
+contract (SymbolicTransformContract) {
+      op symbolicFourierTransform (as string: expression, as string: t_var, as string: w_var) as string
+      op symbolicInverseFourierTransform (as string: expression, as string: w_var, as string: t_var) as string
+      op symbolicFFT (as list of data: samples) as list of data
+      op symbolicIFFT (as list of data: spectrum) as list of data
+      op symbolicFastPolynomialMul (as list of data: poly_a, as list of data: poly_b) as list of data
+}
+
+agent (SymbolicStdLib) impl SymbolicTransformContract {
+      op symbolicFourierTransform (as string: expression, as string: t_var, as string: w_var) as string ==> {
+            route {
+                  expression == "1" ==> {
+                        emit(nice, "2 * pi * dirac(" + w_var + ")", "ok")
+                  }
+                  stringContains(expression, "dirac(" + t_var + ")") ==> {
+                        emit(nice, "1", "ok")
+                  }
+                  stringContains(expression, "e ^e (-" + t_var + ")") or stringContains(expression, "exp(-" + t_var + ")") ==> {
+                        emit(nice, "1 / (1 + 1i * " + w_var + ")", "ok")
+                  }
+                  stringContains(expression, "cos(" + t_var + ")") ==> {
+                        emit(nice, "pi * (dirac(" + w_var + " - 1) + dirac(" + w_var + " + 1))", "ok")
+                  }
+                  stringContains(expression, "sin(" + t_var + ")") ==> {
+                        emit(nice, "-1i * pi * (dirac(" + w_var + " - 1) - dirac(" + w_var + " + 1))", "ok")
+                  }
+                  stringContains(expression, "e ^e (-" + t_var + " ^e 2)") ==> {
+                        emit(nice, "sqrt(pi) * e ^e (-" + w_var + " ^e 2 / 4)", "ok")
+                  }
+            }
+            emit(nice, "Fourier(" + expression + ", " + t_var + " -> " + w_var + ")", "ok")
+      }
+
+      op symbolicInverseFourierTransform (as string: expression, as string: w_var, as string: t_var) as string ==> {
+            route {
+                  stringContains(expression, "2 * pi * dirac(" + w_var + ")") ==> {
+                        emit(nice, "1", "ok")
+                  }
+                  stringContains(expression, "1 / (1 + 1i * " + w_var + ")") ==> {
+                        emit(nice, "e ^e (-" + t_var + ")", "ok")
+                  }
+                  stringContains(expression, "sqrt(pi) * e ^e (-" + w_var + " ^e 2 / 4)") ==> {
+                        emit(nice, "e ^e (-" + t_var + " ^e 2)", "ok")
+                  }
+            }
+            emit(nice, "InvFourier(" + expression + ", " + w_var + " -> " + t_var + ")", "ok")
+      }
+
+      op symbolicFFT (as list of data: samples) as list of data ==> {
+            mut as int64: n = 0
+            infinite (s in samples) {
+                  n = n + 1
+            }
+            mut as float64: pi_val = 3.141592653589793
+            mut as list of data: res = []
+            mut as int64: k = 0
+            infinite (k < n) {
+                  mut as float64: sum_re = 0.0
+                  mut as float64: sum_im = 0.0
+                  mut as int64: m = 0
+                  infinite (m < n) {
+                        mut as float64: s_val = samples[m + 1] as float64
+                        mut as float64: theta = (0.0 - 2.0) * pi_val * ((k * m) as float64) /f (n as float64)
+                        mut as float64: c = MathStdLib.cos64(theta)
+                        mut as float64: s = MathStdLib.sin64(theta)
+                        sum_re = sum_re + s_val * c
+                        sum_im = sum_im + s_val * s
+                        m = m + 1
+                  }
+                  res[k + 1] = _symFormatComplex(sum_re, sum_im)
+                  k = k + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _symParseComplexStr (as string: s) as map ==> {
+            mut as string: clean_s = s
+            mut as int64: s_len = stringLength(clean_s)
+            route {
+                  s_len > 0 and clean_s[s_len] == "i" ==> {
+                        clean_s = stringSlice(clean_s, 1, s_len - 1)
+                        s_len = s_len - 1
+                  }
+            }
+            mut as int64: sep_pos = 0
+            mut as float64: im_sign = 1.0
+            mut as int64: p = s_len
+            infinite (p >= 2) {
+                  mut as string: ch = clean_s[p]
+                  route {
+                        ch == "+" ==> {
+                              sep_pos = p
+                              im_sign = 1.0
+                              break
+                        }
+                        ch == "-" ==> {
+                              sep_pos = p
+                              im_sign = 0.0 - 1.0
+                              break
+                        }
+                  }
+                  p = p - 1
+            }
+            mut as float64: re_val = 0.0
+            mut as float64: im_val = 0.0
+            route {
+                  sep_pos > 1 ==> {
+                        mut as string: re_s = stringSlice(clean_s, 1, sep_pos - 1)
+                        mut as string: im_s = stringSlice(clean_s, sep_pos + 1, s_len)
+                        re_val = convertParseFloatOrDefault(re_s, 0.0)
+                        im_val = im_sign * convertParseFloatOrDefault(im_s, 0.0)
+                  }
+                  _ ==> {
+                        re_val = convertParseFloatOrDefault(clean_s, 0.0)
+                  }
+            }
+            mut as map: res = map{}
+            res["re"] = re_val
+            res["im"] = im_val
+            emit(nice, res, "ok")
+      }
+
+      op symbolicIFFT (as list of data: spectrum) as list of data ==> {
+            mut as int64: n = 0
+            infinite (s in spectrum) {
+                  n = n + 1
+            }
+            mut as float64: pi_val = 3.141592653589793
+            mut as list of data: res = []
+            mut as int64: k = 0
+            infinite (k < n) {
+                  mut as float64: sum_re = 0.0
+                  mut as int64: m = 0
+                  infinite (m < n) {
+                        mut as string: sp_m = "" + spectrum[m + 1]
+                        mut as map: c_map = _symParseComplexStr(sp_m)
+                        mut as float64: re_val = c_map["re"] as float64
+                        mut as float64: im_val = c_map["im"] as float64
+                        mut as float64: theta = 2.0 * pi_val * ((k * m) as float64) /f (n as float64)
+                        mut as float64: c = MathStdLib.cos64(theta)
+                        mut as float64: s = MathStdLib.sin64(theta)
+                        sum_re = sum_re + re_val * c - im_val * s
+                        m = m + 1
+                  }
+                  mut as float64: inv_val = sum_re /f (n as float64)
+                  res[k + 1] = _symFormatFloat1Dec(inv_val)
+                  k = k + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op symbolicFastPolynomialMul (as list of data: poly_a, as list of data: poly_b) as list of data ==> {
+            mut as int64: la = 0
+            infinite (a in poly_a) {
+                  la = la + 1
+            }
+            mut as int64: lb = 0
+            infinite (b in poly_b) {
+                  lb = lb + 1
+            }
+            mut as int64: l_res = la + lb - 1
+            mut as list of data: res = []
+            mut as int64: idx = 1
+            infinite (idx <= l_res) {
+                  res[idx] = 0.0
+                  idx = idx + 1
+            }
+            mut as int64: i = 1
+            infinite (i <= la) {
+                  mut as float64: ca = poly_a[i] as float64
+                  mut as int64: j = 1
+                  infinite (j <= lb) {
+                        mut as float64: cb = poly_b[j] as float64
+                        mut as int64: k = i + j - 1
+                        mut as float64: cur_v = res[k] as float64
+                        res[k] = cur_v + ca * cb
+                        j = j + 1
+                  }
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 10. SymbolicFormatContract (Fase 2 - LaTeX e AST)
+      #L ==============================================================================
+
+}

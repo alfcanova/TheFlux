@@ -1,0 +1,503 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FinStdLib
+#L Dominio: FinDecimal
+#L ==============================================================================
+
+contract (FinDecimalContract) {
+      op finCreateDecimal (as string: value) as FinDecimal
+      op finFromInt (as int64: value) as FinDecimal
+      op finFromFloat (as float64: value) as FinDecimal
+      op finDecimalToString (as FinDecimal: val) as string
+      op finDecimalToFloat (as FinDecimal: val) as float64
+      op finAdd (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finSubtract (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finMultiply (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finDivide (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finRound (as FinDecimal: val, as int64: decimals, as RoundingMode: mode) as FinDecimal
+      op finAbs (as FinDecimal: val) as FinDecimal
+      op finNegate (as FinDecimal: val) as FinDecimal
+      op finMin (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finMax (as FinDecimal: a, as FinDecimal: b) as FinDecimal
+      op finClamp (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as FinDecimal
+      op finSplit (as FinDecimal: amount, as int64: parts) as list of data
+      op finAllocate (as FinDecimal: amount, as list of data: weights) as list of data
+}
+
+#L ==============================================================================
+#L 2. FinComparisonContract
+#L ==============================================================================
+
+agent (FinStdLib) impl FinDecimalContract {
+
+      #L --- Funcoes Auxiliares Privadas ---
+
+      op _absInt (as int64: val) as int64 ==> {
+            mut as int64: res = val
+            route {
+                  val < 0 ==> { res = -val }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _strLen (as string: text) as int64 ==> {
+            mut as int64: count = 0
+            infinite (c in text) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _pow10 (as int64: n) as int64 ==> {
+            mut as int64: res = 1
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  res = res * 10
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op _digitValue (as char: ch) as int64 ==> {
+            route {
+                  ch == '0' ==> { emit(nice, 0, "ok") }
+                  ch == '1' ==> { emit(nice, 1, "ok") }
+                  ch == '2' ==> { emit(nice, 2, "ok") }
+                  ch == '3' ==> { emit(nice, 3, "ok") }
+                  ch == '4' ==> { emit(nice, 4, "ok") }
+                  ch == '5' ==> { emit(nice, 5, "ok") }
+                  ch == '6' ==> { emit(nice, 6, "ok") }
+                  ch == '7' ==> { emit(nice, 7, "ok") }
+                  ch == '8' ==> { emit(nice, 8, "ok") }
+                  ch == '9' ==> { emit(nice, 9, "ok") }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. FinDecimalContract
+      #L ==============================================================================
+
+      op finFromInt (as int64: value) as FinDecimal ==> {
+            mut as int64: scaled = value * 100000000
+            mut as FinDecimal: res = FinDecimal(.raw: scaled, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finFromFloat (as float64: value) as FinDecimal ==> {
+            mut as float64: scaled_f = value * 100000000.0
+            mut as int64: scaled = scaled_f as int64
+            mut as FinDecimal: res = FinDecimal(.raw: scaled, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDecimalToFloat (as FinDecimal: val) as float64 ==> {
+            mut as float64: rf = val.raw as float64
+            mut as float64: res = rf /f 100000000.0
+            emit(nice, res, "ok")
+      }
+
+      op finCreateDecimal (as string: value) as FinDecimal ==> {
+            mut as int64: len = 0
+            infinite (c in value) {
+                  len = len + 1
+            }
+            mut as int64: is_neg = 0
+            mut as int64: idx = 1
+
+            #L Checa sinal
+            route {
+                  len > 0 ==> {
+                        mut as char: first = value[1]
+                        route {
+                              first == '-' ==> {
+                                    is_neg = 1
+                                    idx = 2
+                              }
+                              first == '+' ==> {
+                                    idx = 2
+                              }
+                        }
+                  }
+            }
+
+            mut as int64: int_part = 0
+            mut as int64: has_dot = 0
+            mut as int64: frac_part = 0
+            mut as int64: frac_digits = 0
+
+            infinite (idx <= len) {
+                  mut as char: ch = value[idx]
+                  route {
+                        ch == '.' or ch == ',' ==> {
+                              has_dot = 1
+                        }
+                        has_dot == 0 ==> {
+                              mut as int64: dv = -1
+                              route {
+                                    ch == '0' ==> { dv = 0 }
+                                    ch == '1' ==> { dv = 1 }
+                                    ch == '2' ==> { dv = 2 }
+                                    ch == '3' ==> { dv = 3 }
+                                    ch == '4' ==> { dv = 4 }
+                                    ch == '5' ==> { dv = 5 }
+                                    ch == '6' ==> { dv = 6 }
+                                    ch == '7' ==> { dv = 7 }
+                                    ch == '8' ==> { dv = 8 }
+                                    ch == '9' ==> { dv = 9 }
+                              }
+                              route {
+                                    dv >= 0 ==> {
+                                          int_part = (int_part * 10) + dv
+                                    }
+                              }
+                        }
+                        has_dot == 1 ==> {
+                              route {
+                                    frac_digits < 8 ==> {
+                                          mut as int64: dv2 = -1
+                                          route {
+                                                ch == '0' ==> { dv2 = 0 }
+                                                ch == '1' ==> { dv2 = 1 }
+                                                ch == '2' ==> { dv2 = 2 }
+                                                ch == '3' ==> { dv2 = 3 }
+                                                ch == '4' ==> { dv2 = 4 }
+                                                ch == '5' ==> { dv2 = 5 }
+                                                ch == '6' ==> { dv2 = 6 }
+                                                ch == '7' ==> { dv2 = 7 }
+                                                ch == '8' ==> { dv2 = 8 }
+                                                ch == '9' ==> { dv2 = 9 }
+                                          }
+                                          route {
+                                                dv2 >= 0 ==> {
+                                                      frac_part = (frac_part * 10) + dv2
+                                                      frac_digits = frac_digits + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+
+            #L Completa casas decimais ate 8
+            route {
+                  frac_digits < 8 ==> {
+                        mut as int64: p = 1
+                        mut as int64: rem_digits = 8 - frac_digits
+                        infinite (rem_digits > 0) {
+                              p = p * 10
+                              rem_digits = rem_digits - 1
+                        }
+                        frac_part = frac_part * p
+                  }
+            }
+
+            mut as int64: total = (int_part * 100000000) + frac_part
+            route {
+                  is_neg == 1 ==> {
+                        total = -total
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: total, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDecimalToString (as FinDecimal: val) as string ==> {
+            mut as int64: r = val.raw
+            mut as string: sign = ""
+            route {
+                  r < 0 ==> {
+                        sign = "-"
+                        r = -r
+                  }
+            }
+            mut as int64: int_part = r /i 100000000
+            mut as int64: frac_part = r /r 100000000
+
+            #L Formata fracionario com zeros a esquerda
+            mut as string: frac_str = "" + frac_part
+            mut as int64: flen = 0
+            infinite (c in frac_str) {
+                  flen = flen + 1
+            }
+            mut as string: pad = ""
+            mut as int64: diff = 8 - flen
+            mut as int64: i = 1
+            infinite (i <= diff) {
+                  pad = pad + "0"
+                  i = i + 1
+            }
+            frac_str = pad + frac_str
+
+            mut as string: res = sign + int_part + "." + frac_str
+            emit(nice, res, "ok")
+      }
+
+      op finAdd (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            mut as int64: sum_raw = a.raw + b.raw
+            mut as FinDecimal: res = FinDecimal(.raw: sum_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finSubtract (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            mut as int64: sub_raw = a.raw - b.raw
+            mut as FinDecimal: res = FinDecimal(.raw: sub_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finMultiply (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            mut as int64: s = 100000000
+            mut as int64: a_sign = 1
+            mut as int64: a_raw = a.raw
+            route {
+                  a_raw < 0 ==> {
+                        a_sign = -1
+                        a_raw = -a_raw
+                  }
+            }
+            mut as int64: b_sign = 1
+            mut as int64: b_raw = b.raw
+            route {
+                  b_raw < 0 ==> {
+                        b_sign = -1
+                        b_raw = -b_raw
+                  }
+            }
+
+            mut as int64: a_int = a_raw /i s
+            mut as int64: a_frac = a_raw /r s
+            mut as int64: b_int = b_raw /i s
+            mut as int64: b_frac = b_raw /r s
+
+            #L Decomposicao para prevencao de overflow de 64 bits:
+            mut as int64: term1 = a_int * b_raw
+            mut as int64: term2 = a_frac * b_int
+            mut as int64: term3 = (a_frac * b_frac) /i s
+            mut as int64: total = term1 + term2 + term3
+
+            route {
+                  a_sign != b_sign ==> {
+                        total = -total
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: total, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finDivide (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            route {
+                  b.raw == 0 ==> {
+                        mut as FinDecimal: zero_dec = FinDecimal(.raw: 0, .scale: 8)
+                        emit(fail, zero_dec, "divisao por zero")
+                  }
+            }
+            mut as int64: s = 100000000
+            mut as int64: a_sign = 1
+            mut as int64: a_raw = a.raw
+            route {
+                  a_raw < 0 ==> {
+                        a_sign = -1
+                        a_raw = -a_raw
+                  }
+            }
+            mut as int64: b_sign = 1
+            mut as int64: b_raw = b.raw
+            route {
+                  b_raw < 0 ==> {
+                        b_sign = -1
+                        b_raw = -b_raw
+                  }
+            }
+
+            mut as int64: a_int = a_raw /i b_raw
+            mut as int64: a_rem = a_raw /r b_raw
+            mut as int64: total = (a_int * s) + ((a_rem * s) /i b_raw)
+
+            route {
+                  a_sign != b_sign ==> {
+                        total = -total
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: total, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finRound (as FinDecimal: val, as int64: decimals, as RoundingMode: mode) as FinDecimal ==> {
+            mut as int64: d = 8 - decimals
+            route {
+                  d <= 0 ==> {
+                        emit(nice, val, "ok")
+                  }
+                  d > 8 ==> {
+                        d = 8
+                  }
+            }
+            mut as int64: divisor = 1
+            mut as int64: pi = 1
+            infinite (pi <= d) {
+                  divisor = divisor * 10
+                  pi = pi + 1
+            }
+            mut as int64: half = divisor /i 2
+            mut as int64: is_neg = 0
+            mut as int64: r = val.raw
+            route {
+                  r < 0 ==> {
+                        is_neg = 1
+                        r = -r
+                  }
+            }
+
+            mut as int64: int_part = r /i divisor
+            mut as int64: rem = r /r divisor
+
+            match (mode) {
+                  RoundingMode::FinDown ==> {
+                        #L Apenas trunca
+                  }
+                  RoundingMode::FinUp ==> {
+                        route {
+                              rem > 0 ==> { int_part = int_part + 1 }
+                        }
+                  }
+                  RoundingMode::FinHalfUp ==> {
+                        route {
+                              rem >= half ==> { int_part = int_part + 1 }
+                        }
+                  }
+                  RoundingMode::FinHalfEven ==> {
+                        route {
+                              rem > half ==> {
+                                    int_part = int_part + 1
+                              }
+                              rem == half ==> {
+                                    route {
+                                          (int_part /r 2) != 0 ==> {
+                                                int_part = int_part + 1
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            mut as int64: final_raw = int_part * divisor
+            route {
+                  is_neg == 1 ==> {
+                        final_raw = -final_raw
+                  }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: final_raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finAbs (as FinDecimal: val) as FinDecimal ==> {
+            mut as int64: r = val.raw
+            route {
+                  r < 0 ==> { r = -r }
+            }
+            mut as FinDecimal: res = FinDecimal(.raw: r, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finNegate (as FinDecimal: val) as FinDecimal ==> {
+            mut as FinDecimal: res = FinDecimal(.raw: -val.raw, .scale: 8)
+            emit(nice, res, "ok")
+      }
+
+      op finMin (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            route {
+                  a.raw <= b.raw ==> { emit(nice, a, "ok") }
+            }
+            emit(nice, b, "ok")
+      }
+
+      op finMax (as FinDecimal: a, as FinDecimal: b) as FinDecimal ==> {
+            route {
+                  a.raw >= b.raw ==> { emit(nice, a, "ok") }
+            }
+            emit(nice, b, "ok")
+      }
+
+      op finClamp (as FinDecimal: val, as FinDecimal: min_val, as FinDecimal: max_val) as FinDecimal ==> {
+            route {
+                  val.raw < min_val.raw ==> { emit(nice, min_val, "ok") }
+                  val.raw > max_val.raw ==> { emit(nice, max_val, "ok") }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op finSplit (as FinDecimal: amount, as int64: parts) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  parts <= 0 ==> {
+                        emit(fail, res, "partes devem ser positivas")
+                  }
+            }
+            mut as int64: is_neg = 0
+            mut as int64: total = amount.raw
+            route {
+                  total < 0 ==> {
+                        is_neg = 1
+                        total = -total
+                  }
+            }
+            mut as int64: base = total /i parts
+            mut as int64: rem = total /r parts
+            mut as int64: i = 1
+            infinite (i <= parts) {
+                  mut as int64: part_raw = base
+                  route {
+                        i <= rem ==> {
+                              part_raw = part_raw + 1
+                        }
+                  }
+                  route {
+                        is_neg == 1 ==> {
+                              part_raw = -part_raw
+                        }
+                  }
+                  res[i] = FinDecimal(.raw: part_raw, .scale: 8)
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op finAllocate (as FinDecimal: amount, as list of data: weights) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: total_weight = 0
+            infinite (w in weights) {
+                  total_weight = total_weight + (w as int64)
+            }
+            route {
+                  total_weight <= 0 ==> {
+                        emit(fail, res, "pesos devem somar mais que zero")
+                  }
+            }
+            mut as int64: remainder = amount.raw
+            mut as int64: first_share = 0
+            mut as int64: n = 1
+            infinite (w in weights) {
+                  mut as int64: wi = w as int64
+                  mut as int64: share = (amount.raw * wi) /i total_weight
+                  route {
+                        n == 1 ==> {
+                              first_share = share
+                        }
+                  }
+                  remainder = remainder - share
+                  res[n] = FinDecimal(.raw: share, .scale: 8)
+                  n = n + 1
+            }
+            #L Distribui o resto de centavos no primeiro recebedor
+            route {
+                  remainder != 0 and n > 1 ==> {
+                        res[1] = FinDecimal(.raw: first_share + remainder, .scale: 8)
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

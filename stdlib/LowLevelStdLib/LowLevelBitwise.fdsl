@@ -1,0 +1,43 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelBitwise
+#L ==============================================================================
+
+contract (LowLevelBitwiseContract) {
+      op lowBitAnd (as int64: a, as int64: b) as int64
+      op lowBitOr (as int64: a, as int64: b) as int64
+      op lowBitXor (as int64: a, as int64: b) as int64
+      op lowBitNot (as int64: a) as int64
+      op lowBitNand (as int64: a, as int64: b) as int64
+      op lowBitNor (as int64: a, as int64: b) as int64
+      op lowBitXnor (as int64: a, as int64: b) as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelBitwiseContract {
+      #L LowLevelBitwiseContract
+      #L =====================================================================
+
+      op lowBitAnd (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, a & b, "ok")
+      }
+      op lowBitOr (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, a | b, "ok")
+      }
+      op lowBitXor (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, a ^ b, "ok")
+      }
+      op lowBitNot (as int64: a) as int64 ==> {
+            emit(nice, ~a, "ok")
+      }
+      op lowBitNand (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, ~(a & b), "ok")
+      }
+      op lowBitNor (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, ~(a | b), "ok")
+      }
+      op lowBitXnor (as int64: a, as int64: b) as int64 ==> {
+            emit(nice, ~(a ^ b), "ok")
+      }
+
+      #L =====================================================================
+}

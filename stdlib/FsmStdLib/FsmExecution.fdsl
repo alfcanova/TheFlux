@@ -1,0 +1,44 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FsmStdLib
+#L Dominio: FsmExecution
+#L ==============================================================================
+
+contract (FsmExecutionContract) {
+      op fsmTransition (as map: fsm_instance, as string: current_state, as string: event_name) as string
+      op fsmTryTransition (as map: fsm_instance, as string: current_state, as string: event_name) as list of data
+}
+
+agent (FsmStdLib) impl FsmExecutionContract {
+      #L 3. FsmExecutionContract
+      #L ==============================================================================
+
+      op fsmTransition (as map: fsm_instance, as string: current_state, as string: event_name) as string ==> {
+            mut as bool: can = fsmCanTransition(fsm_instance, current_state, event_name)
+            route {
+                  can ==> {
+                        mut as string: next_st = fsmNextState(fsm_instance, current_state, event_name)
+                        emit(nice, next_st, "ok")
+                  }
+                  _ ==> {
+                        emit(fail, "", "transicao de estado invalida: " + current_state + " com evento " + event_name)
+                  }
+            }
+      }
+
+      op fsmTryTransition (as map: fsm_instance, as string: current_state, as string: event_name) as list of data ==> {
+            mut as bool: can = fsmCanTransition(fsm_instance, current_state, event_name)
+            mut as list of data: res = []
+            route {
+                  can ==> {
+                        mut as string: next_st = fsmNextState(fsm_instance, current_state, event_name)
+                        res = [true, next_st]
+                  }
+                  _ ==> {
+                        res = [false, current_state]
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

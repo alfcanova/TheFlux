@@ -1,0 +1,170 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicSolver
+#L ==============================================================================
+
+contract (SymbolicSolverContract) {
+      op symbolicSolve (as string: equation, as string: variable) as list of data
+      op symbolicSolveLinear (as string: equation, as string: variable) as float64
+      op symbolicSolveQuadratic (as string: equation, as string: variable) as list of data
+      op symbolicSolveSystem (as list of data: equations, as list of data: variables) as map
+}
+
+agent (SymbolicStdLib) impl SymbolicSolverContract {
+      op symbolicSolveLinear (as string: equation, as string: variable) as float64 ==> {
+            mut as string: eq = equation
+            mut as int64: eq_pos = stringIndexOf(equation, "=")
+            route {
+                  eq_pos > 0 ==> {
+                        mut as string: lhs = stringSlice(equation, 1, eq_pos - 1)
+                        mut as string: rhs = stringSlice(equation, eq_pos + 1, stringLength(equation))
+                        eq = "(" + lhs + ") - (" + rhs + ")"
+                  }
+            }
+
+            mut as list of data: coeffs = symbolicCoefficients(eq, variable)
+            mut as float64: c0 = coeffs[1] as float64
+            mut as float64: c1 = coeffs[2] as float64
+
+            route {
+                  _symAbsFloat(c1) < 0.000000001 ==> {
+                        emit(fail, 0.0, "equacao linear impossivel ou sem solucao unica")
+                  }
+            }
+            mut as float64: root = (0.0 - c0) /f c1
+            emit(nice, root, "ok")
+      }
+
+      op symbolicSolveQuadratic (as string: equation, as string: variable) as list of data ==> {
+            mut as string: eq = equation
+            mut as int64: eq_pos = stringIndexOf(equation, "=")
+            route {
+                  eq_pos > 0 ==> {
+                        mut as string: lhs = stringSlice(equation, 1, eq_pos - 1)
+                        mut as string: rhs = stringSlice(equation, eq_pos + 1, stringLength(equation))
+                        eq = "(" + lhs + ") - (" + rhs + ")"
+                  }
+            }
+
+            mut as list of data: coeffs = symbolicCoefficients(eq, variable)
+            mut as float64: c0 = coeffs[1] as float64
+            mut as float64: c1 = coeffs[2] as float64
+            mut as float64: c2 = coeffs[3] as float64
+
+            mut as float64: delta = c1 * c1 - 4.0 * c2 * c0
+            mut as list of data: roots = []
+
+            route {
+                  delta > 0.000000001 ==> {
+                        mut as float64: s = _symSqrt(delta)
+                        mut as float64: r1 = (0.0 - c1 - s) /f (2.0 * c2)
+                        mut as float64: r2 = (0.0 - c1 + s) /f (2.0 * c2)
+                        route {
+                              r1 > r2 ==> {
+                                    mut as float64: tmp = r1
+                                    r1 = r2
+                                    r2 = tmp
+                              }
+                        }
+                        roots[1] = r1
+                        roots[2] = r2
+                  }
+                  _symAbsFloat(delta) <= 0.000000001 ==> {
+                        mut as float64: r = (0.0 - c1) /f (2.0 * c2)
+                        roots[1] = r
+                  }
+                  delta < -0.000000001 ==> {
+                        mut as float64: real_part = (0.0 - c1) /f (2.0 * c2)
+                        mut as float64: imag_part = _symSqrt(0.0 - delta) /f (2.0 * c2)
+                        mut as string: root_plus = _symFormatFloatVal(real_part) + " + " + _symFormatFloatVal(imag_part) + "i"
+                        mut as string: root_minus = _symFormatFloatVal(real_part) + " - " + _symFormatFloatVal(imag_part) + "i"
+                        roots[1] = root_plus
+                        roots[2] = root_minus
+                  }
+            }
+            emit(nice, roots, "ok")
+      }
+
+      op symbolicSolve (as string: equation, as string: variable) as list of data ==> {
+            mut as string: eq = equation
+            mut as int64: eq_pos = stringIndexOf(equation, "=")
+            route {
+                  eq_pos > 0 ==> {
+                        mut as string: lhs = stringSlice(equation, 1, eq_pos - 1)
+                        mut as string: rhs = stringSlice(equation, eq_pos + 1, stringLength(equation))
+                        eq = "(" + lhs + ") - (" + rhs + ")"
+                  }
+            }
+
+            mut as int64: deg = symbolicDegree(eq, variable)
+            route {
+                  deg == 1 ==> {
+                        mut as float64: r = symbolicSolveLinear(eq, variable)
+                        mut as list of data: single = [r]
+                        emit(nice, single, "ok")
+                  }
+                  deg == 2 ==> {
+                        emit(nice, symbolicSolveQuadratic(eq, variable), "ok")
+                  }
+            }
+            mut as list of data: empty = []
+            emit(nice, empty, "ok")
+      }
+
+      op symbolicSolveSystem (as list of data: equations, as list of data: variables) as map ==> {
+            mut as string: v1 = variables[1]
+            mut as string: v2 = variables[2]
+
+            mut as list of data: c_eq1 = symbolicCoefficients(equations[1], v1)
+            mut as list of data: c_eq2 = symbolicCoefficients(equations[2], v1)
+
+            #L c1*v1 + d1*v2 = k1 via avaliacao
+            mut as map: pt0 = map{v1: 0.0, v2: 0.0}
+            mut as map: pt_x = map{v1: 1.0, v2: 0.0}
+            mut as map: pt_y = map{v1: 0.0, v2: 1.0}
+
+            #L Transforma eq em lhs - rhs
+            mut as string: eq1_norm = equations[1]
+            mut as int64: eq1_eq = stringIndexOf(eq1_norm, "=")
+            route {
+                  eq1_eq > 0 ==> {
+                        eq1_norm = "(" + stringSlice(eq1_norm, 1, eq1_eq - 1) + ") - (" + stringSlice(eq1_norm, eq1_eq + 1, stringLength(eq1_norm)) + ")"
+                  }
+            }
+
+            mut as string: eq2_norm = equations[2]
+            mut as int64: eq2_eq = stringIndexOf(eq2_norm, "=")
+            route {
+                  eq2_eq > 0 ==> {
+                        eq2_norm = "(" + stringSlice(eq2_norm, 1, eq2_eq - 1) + ") - (" + stringSlice(eq2_norm, eq2_eq + 1, stringLength(eq2_norm)) + ")"
+                  }
+            }
+
+            mut as float64: e1_0 = symbolicEvaluate(eq1_norm, pt0)
+            mut as float64: a1 = symbolicEvaluate(eq1_norm, pt_x) - e1_0
+            mut as float64: b1 = symbolicEvaluate(eq1_norm, pt_y) - e1_0
+            mut as float64: c_const1 = 0.0 - e1_0
+
+            mut as float64: e2_0 = symbolicEvaluate(eq2_norm, pt0)
+            mut as float64: a2 = symbolicEvaluate(eq2_norm, pt_x) - e2_0
+            mut as float64: b2 = symbolicEvaluate(eq2_norm, pt_y) - e2_0
+            mut as float64: c_const2 = 0.0 - e2_0
+
+            mut as float64: det = a1 * b2 - a2 * b1
+            mut as map: sol = map{}
+            route {
+                  _symAbsFloat(det) > 0.000000001 ==> {
+                        mut as float64: ans_x = (c_const1 * b2 - c_const2 * b1) /f det
+                        mut as float64: ans_y = (a1 * c_const2 - a2 * c_const1) /f det
+                        sol[v1] = ans_x
+                        sol[v2] = ans_y
+                  }
+            }
+            emit(nice, sol, "ok")
+      }
+
+      #L ==============================================================================
+      #L 4. SymbolicSubstitutionContract (Fase 1)
+      #L ==============================================================================
+
+}

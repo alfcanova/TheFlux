@@ -1,0 +1,107 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapAggregate
+#L ==============================================================================
+
+contract (MapAggregateContract) {
+      op mapMin (as map: record) as data
+      op mapMax (as map: record) as data
+      op mapSum (as map: record) as data
+      op mapProduct (as map: record) as data
+      op mapAverage (as map: record) as float64
+      op mapCountValues (as map: record, as data: value) as int64
+}
+
+agent (MapStdLib) impl MapAggregateContract {
+      #L 5. MapAggregateContract (6 operacoes)
+      #L ==============================================================================
+      op mapMin (as map: record) as data ==> {
+            mut as int64: min_val = 0
+            mut as bool: first = true
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  route {
+                        first ==> {
+                              min_val = val
+                              first = false
+                        }
+                        not first and val < min_val ==> {
+                              min_val = val
+                        }
+                  }
+            }
+            imut as int64: res = min_val
+            emit(nice, res, "ok")
+      }
+
+      op mapMax (as map: record) as data ==> {
+            mut as int64: max_val = 0
+            mut as bool: first = true
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  route {
+                        first ==> {
+                              max_val = val
+                              first = false
+                        }
+                        not first and val > max_val ==> {
+                              max_val = val
+                        }
+                  }
+            }
+            imut as int64: res = max_val
+            emit(nice, res, "ok")
+      }
+
+      op mapSum (as map: record) as data ==> {
+            mut as int64: total = 0
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  total = total + val
+            }
+            imut as int64: res = total
+            emit(nice, res, "ok")
+      }
+
+      op mapProduct (as map: record) as data ==> {
+            mut as int64: total = 1
+            infinite (k in record) {
+                  mut as int64: val = record[k] as int64
+                  total = total * val
+            }
+            imut as int64: res = total
+            emit(nice, res, "ok")
+      }
+
+      op mapAverage (as map: record) as float64 ==> {
+            mut as int64: count = 0
+            mut as float64: sum_val = 0.0
+            infinite (k in record) {
+                  count = count + 1
+                  sum_val = sum_val + ((record[k] as int64) as float64)
+            }
+            route {
+                  count == 0 ==> {
+                        mut as data: trigger_err = record["_not_found_"]
+                  }
+            }
+            mut as float64: avg = sum_val /f (count as float64)
+            imut as float64: res = avg
+            emit(nice, res, "ok")
+      }
+
+      op mapCountValues (as map: record, as data: value) as int64 ==> {
+            mut as int64: count = 0
+            infinite (k in record) {
+                  route {
+                        record[k] == value ==> {
+                              count = count + 1
+                        }
+                  }
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugState
+#L ==============================================================================
+
+contract (DebugStateContract) {
+      op debugStateTransition (as string: entity_name, as string: from_state, as string: to_state, as string: event_name) as string
+      op debugStateAudit (as string: current_state, as list of data: allowed_states) as bool
+      op debugBreadcrumb (as string: trail, as string: new_event) as string
+}
+
+agent (DebugStdLib) impl DebugStateContract {
+      #L 8. DebugStateContract
+      #L ==============================================================================
+      op debugStateTransition (as string: entity_name, as string: from_state, as string: to_state, as string: event_name) as string ==> {
+            emit(nice, "[FSM:" + entity_name + "] '" + from_state + "' --(" + event_name + ")--> '" + to_state + "'", "ok")
+      }
+
+      op debugStateAudit (as string: current_state, as list of data: allowed_states) as bool ==> {
+            mut as bool: valid = false
+            infinite (st in allowed_states) {
+                  route {
+                        st == current_state ==> {
+                              valid = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      op debugBreadcrumb (as string: trail, as string: new_event) as string ==> {
+            route {
+                  trail == "" ==> { emit(nice, new_event, "ok") }
+                  _ ==> { emit(nice, trail + " > " + new_event, "ok") }
+            }
+      }
+
+      #L ==============================================================================
+}

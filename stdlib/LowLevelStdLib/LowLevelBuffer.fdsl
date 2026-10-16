@@ -1,0 +1,144 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelBuffer
+#L ==============================================================================
+
+contract (LowLevelBufferContract) {
+      op lowBufferNew (as int64: capacity) as map
+      op lowBufferLength (as map: buf) as int64
+      op lowBufferCapacity (as map: buf) as int64
+      op lowBufferWriteByte (as map: buf, as int64: val) as map
+      op lowBufferWriteHWord (as map: buf, as int64: val) as map
+      op lowBufferWriteWord (as map: buf, as int64: val) as map
+      op lowBufferWriteDWord (as map: buf, as int64: val) as map
+      op lowBufferReadByte (as map: buf, as int64: offset) as int64
+      op lowBufferReadHWord (as map: buf, as int64: offset) as int64
+      op lowBufferReadWord (as map: buf, as int64: offset) as int64
+      op lowBufferReadDWord (as map: buf, as int64: offset) as int64
+      op lowBufferToHex (as map: buf) as string
+      op lowBufferFromHex (as string: hex_str) as map
+}
+
+#L ==============================================================================
+#L Agente LowLevelStdLib
+#L ==============================================================================
+
+agent (LowLevelStdLib) impl LowLevelBufferContract {
+      #L LowLevelBufferContract
+      #L =====================================================================
+
+      op lowBufferNew (as int64: capacity) as map ==> {
+            mut as map: buf = map{}
+            buf["cap"] = capacity
+            buf["len"] = 0
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferLength (as map: buf) as int64 ==> {
+            mut as int64: l = buf["len"] as int64
+            emit(nice, l, "ok")
+      }
+
+      op lowBufferCapacity (as map: buf) as int64 ==> {
+            mut as int64: c = buf["cap"] as int64
+            emit(nice, c, "ok")
+      }
+
+      op lowBufferWriteByte (as map: buf, as int64: val) as map ==> {
+            mut as int64: cur_len = buf["len"] as int64
+            mut as string: k = "b_" + cur_len
+            buf[k] = val & 255
+            buf["len"] = cur_len + 1
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferWriteHWord (as map: buf, as int64: val) as map ==> {
+            buf = lowBufferWriteByte(buf, val & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 8) & 255)
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferWriteWord (as map: buf, as int64: val) as map ==> {
+            buf = lowBufferWriteByte(buf, val & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 8) & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 16) & 255)
+            buf = lowBufferWriteByte(buf, (val >>> 24) & 255)
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferWriteDWord (as map: buf, as int64: val) as map ==> {
+            infinite (i in 0 .. 7) {
+                  buf = lowBufferWriteByte(buf, (val >>> (i * 8)) & 255)
+            }
+            emit(nice, buf, "ok")
+      }
+
+      op lowBufferReadByte (as map: buf, as int64: offset) as int64 ==> {
+            mut as string: k = "b_" + offset
+            mut as int64: val = 0
+            route {
+                  _memHasKey(buf, k) ==> {
+                        val = buf[k] as int64
+                  }
+            }
+            emit(nice, val & 255, "ok")
+      }
+
+      op lowBufferReadHWord (as map: buf, as int64: offset) as int64 ==> {
+            mut as int64: b0 = lowBufferReadByte(buf, offset)
+            mut as int64: b1 = lowBufferReadByte(buf, offset + 1)
+            mut as int64: res = b0 | (b1 << 8)
+            emit(nice, res, "ok")
+      }
+
+      op lowBufferReadWord (as map: buf, as int64: offset) as int64 ==> {
+            mut as int64: b0 = lowBufferReadByte(buf, offset)
+            mut as int64: b1 = lowBufferReadByte(buf, offset + 1)
+            mut as int64: b2 = lowBufferReadByte(buf, offset + 2)
+            mut as int64: b3 = lowBufferReadByte(buf, offset + 3)
+            mut as int64: res = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+            emit(nice, res, "ok")
+      }
+
+      op lowBufferReadDWord (as map: buf, as int64: offset) as int64 ==> {
+            mut as int64: res = 0
+            infinite (i in 0 .. 7) {
+                  mut as int64: b = lowBufferReadByte(buf, offset + i)
+                  res = res | (b << (i * 8))
+            }
+            emit(nice, res, "ok")
+      }
+
+      op lowBufferToHex (as map: buf) as string ==> {
+            mut as int64: l = buf["len"] as int64
+            route {
+                  l <= 0 ==> { emit(nice, "", "ok") }
+            }
+            mut as string: hex_out = ""
+            infinite (i in 0 .. (l - 1)) {
+                  mut as int64: b = lowBufferReadByte(buf, i)
+                  hex_out = hex_out + _byteToHex(b)
+            }
+            emit(nice, hex_out, "ok")
+      }
+
+      op lowBufferFromHex (as string: hex_str) as map ==> {
+            mut as int64: slen = 0
+            infinite (c in hex_str) { slen = slen + 1 }
+            mut as int64: n_bytes = slen /i 2
+            mut as map: buf = lowBufferNew(n_bytes)
+            route {
+                  n_bytes <= 0 ==> { emit(nice, buf, "ok") }
+            }
+            infinite (i in 1 .. n_bytes) {
+                  mut as int64: idx = (i - 1) * 2 + 1
+                  mut as string: ch1 = hex_str[idx]
+                  mut as string: ch2 = hex_str[idx + 1]
+                  mut as int64: v1 = _hexCharVal(ch1)
+                  mut as int64: v2 = _hexCharVal(ch2)
+                  mut as int64: b = (v1 << 4) | v2
+                  buf = lowBufferWriteByte(buf, b)
+            }
+            emit(nice, buf, "ok")
+      }
+}

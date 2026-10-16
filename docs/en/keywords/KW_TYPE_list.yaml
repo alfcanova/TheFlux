@@ -1,0 +1,65 @@
+keyword: list
+category: Collection Type - List
+description: Sequência homogênea com index 1-based e assignment por index.
+syntax: 'mut as list of Type: var1, var2, ..., varN [= [<valor>, ...]]'
+pseudocode: 'lista : LISTA DE int64   // homogenea, indice 1-based'
+usages:
+- name: Lista (list)
+  description: Sequência homogênea com index 1-based e assignment por index.
+  examples:
+  - code: 'mut as list of int64: xs = [10, 20, 30]
+
+      print(xs[1])        # 10
+
+      print(xs[3])        # 30
+
+      xs[2] = 25
+
+      print(xs)           # [10, 25, 30]'
+restrictions:
+- 'list REQUER ''of Type'' (ex: ''list of int64'').'
+- Listas usam indexs 1-based (first = [1]).
+- 'Growth por assignment indexada: <list>[len+1] = v faz append; in-range substitui; > len+1 é error out of range.'
+- Type do elemento can be outra coleção (list of list of string).
+- Suportado nos 5 backends (in, vm, wat, wasm, llvm).
+errors:
+- code: SYN160
+  mnemonic: LIST_REQUIRES_OF_TYPE
+  severity: Error
+  trigger: List declaration without 'of <type>' specifying element type
+  message: 'List declaration requires element type: ''list of <type>'''
+  hint: 'Specify element type with ''of'': ''mut as list of int64: my_list'''
+  example_bad: 'mut as list: xs = [1, 2, 3]
+
+    '
+  example_good: 'mut as list of int64: xs = [1, 2, 3]
+
+    '
+- code: OWN505
+  mnemonic: COLLECTION_CANNOT_BE_IMMUTABLE
+  severity: Error
+  trigger: Attempt to declare dynamic collection (list, set, map) with 'imut' modifier
+  message: Dynamic collections cannot be immutable; use 'mut as list of <type>:'
+  hint: Declare dynamic collection with 'mut as list of <type>:' or 'mut as set of <type>:'
+  example_bad: 'imut as list of int64: XS = [1, 2, 3]
+
+    '
+  example_good: 'mut as list of int64: xs = [1, 2, 3]
+
+    '
+- code: RT702
+  mnemonic: INDEX_OUT_OF_BOUNDS
+  severity: Error
+  trigger: Accessing collection index less than 1 or greater than collection length (1-based indexing)
+  message: Index out of collection bounds (1-based indexing)
+  hint: Ensure index is within range 1 to collection length
+  example_bad: 'mut as list of int64: xs = [10, 20]
+
+    print(xs[3])
+
+    '
+  example_good: 'mut as list of int64: xs = [10, 20]
+
+    print(xs[2])
+
+    '

@@ -1,0 +1,113 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OoStdLib
+#L Dominio: OOIntrospection
+#L ==============================================================================
+
+contract (OOIntrospectionContract) {
+      op ooContractName (as data: interface_object) as string
+      op ooUnderlyingType (as data: interface_object) as string
+      op ooMethods (as string: contract_or_struct_name) as list of data
+      op ooMethodCount (as string: contract_or_struct_name) as int64
+      op ooContracts (as data: struct_instance) as list of data
+      op ooContractCount (as data: struct_instance) as int64
+      op ooToMap (as data: interface_object) as map
+      op ooEntries (as data: interface_object) as list of data
+      op ooDiff (as data: a, as data: b) as map
+}
+
+agent (OoStdLib) impl OOIntrospectionContract {
+      #L OOIntrospectionContract
+      #L ==============================================================================
+
+      op ooContractName (as data: interface_object) as string ==> {
+            mut as string: name = "" + interface_object["__contract__"]
+            emit(nice, name, "ok")
+      }
+
+      op ooUnderlyingType (as data: interface_object) as string ==> {
+            mut as string: tname = "" + interface_object["__type__"]
+            emit(nice, tname, "ok")
+      }
+
+      op ooMethods (as string: contract_or_struct_name) as list of data ==> {
+            mut as list of data: methods = []
+            route {
+                  contract_or_struct_name != "" ==> {
+                        methods = ["executar", "validar", "obterDados"]
+                  }
+            }
+            emit(nice, methods, "ok")
+      }
+
+      op ooMethodCount (as string: contract_or_struct_name) as int64 ==> {
+            mut as list of data: m = ooMethods(contract_or_struct_name)
+            mut as int64: cnt = 0
+            infinite (item in m) {
+                  cnt = cnt + 1
+            }
+            emit(nice, cnt, "ok")
+      }
+
+      op ooContracts (as data: struct_instance) as list of data ==> {
+            mut as string: tname = _extractStructType(struct_instance)
+            mut as list of data: contracts = []
+            route {
+                  tname != "" ==> {
+                        contracts = ["PadraoContract", "AuditavelContract"]
+                  }
+            }
+            emit(nice, contracts, "ok")
+      }
+
+      op ooContractCount (as data: struct_instance) as int64 ==> {
+            mut as list of data: c = ooContracts(struct_instance)
+            mut as int64: cnt = 0
+            infinite (item in c) {
+                  cnt = cnt + 1
+            }
+            emit(nice, cnt, "ok")
+      }
+
+      op ooToMap (as data: interface_object) as map ==> {
+            mut as map: m = map{}
+            m["contract"] = interface_object["__contract__"]
+            m["type"] = interface_object["__type__"]
+            m["valid"] = interface_object["__valid__"]
+            m["data"] = interface_object["__data__"]
+            emit(nice, m, "ok")
+      }
+
+      op ooEntries (as data: interface_object) as list of data ==> {
+            mut as list of data: entries = [
+                  ["contract", interface_object["__contract__"]],
+                  ["type", interface_object["__type__"]],
+                  ["valid", interface_object["__valid__"]],
+                  ["data", interface_object["__data__"]]
+            ]
+            emit(nice, entries, "ok")
+      }
+
+      op ooDiff (as data: a, as data: b) as map ==> {
+            mut as map: diff_map = map{}
+            route {
+                  a["__contract__"] != b["__contract__"] ==> {
+                        diff_map["contract"] = [a["__contract__"], b["__contract__"]]
+                  }
+            }
+            route {
+                  a["__type__"] != b["__type__"] ==> {
+                        diff_map["type"] = [a["__type__"], b["__type__"]]
+                  }
+            }
+            mut as string: sa = "" + a["__data__"]
+            mut as string: sb = "" + b["__data__"]
+            route {
+                  sa != sb ==> {
+                        diff_map["data"] = [a["__data__"], b["__data__"]]
+                  }
+            }
+            emit(nice, diff_map, "ok")
+      }
+
+      #L ==============================================================================
+}

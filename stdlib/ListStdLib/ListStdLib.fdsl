@@ -1,0 +1,17 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use ListBasic.fdsl
+use ListAccess.fdsl
+use ListMutation.fdsl
+use ListTransform.fdsl
+use ListSearch.fdsl
+use ListSelection.fdsl
+use ListUtility.fdsl
+use ListAggregate.fdsl
+use ListCombinator.fdsl
+
+agent (ListStdLib) {
+}

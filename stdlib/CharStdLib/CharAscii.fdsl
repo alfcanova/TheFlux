@@ -1,0 +1,80 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CharStdLib
+#L Dominio: CharAscii
+#L ==============================================================================
+
+contract (CharAsciiContract) {
+      op charToAscii (as char: c) as int64
+      op charFromAscii (as int64: code) as char
+      op charIsPrintable (as char: c) as bool
+      op charIsControl (as char: c) as bool
+}
+
+agent (CharStdLib) impl CharAsciiContract {
+      #L -- CharAsciiContract -----------------------------------------
+      op charToAscii (as char: c) as int64 ==> {
+            route { c == '\0' ==> { emit(nice, 0, "ok") } }
+            route { c == '\t' ==> { emit(nice, 9, "ok") } }
+            route { c == '\n' ==> { emit(nice, 10, "ok") } }
+            route { c == '\r' ==> { emit(nice, 13, "ok") } }
+            imut as string: printable = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as int64: idx = 1
+            mut as bool: found = false
+            infinite (p in printable) {
+                  route {
+                        p == (c as string) ==> {
+                              found = true
+                              break
+                        }
+                  }
+                  idx = idx + 1
+            }
+            route {
+                  found ==> {
+                        mut as int64: code = 31 + idx
+                        emit(nice, code, "ok")
+                  }
+            }
+            emit(nice, -1, "ok")
+      }
+
+      op charFromAscii (as int64: code) as char ==> {
+            route { code == 0 ==> { emit(nice, '\0', "ok") } }
+            route { code == 9 ==> { emit(nice, '\t', "ok") } }
+            route { code == 10 ==> { emit(nice, '\n', "ok") } }
+            route { code == 13 ==> { emit(nice, '\r', "ok") } }
+            route {
+                  code >= 32 and code <= 126 ==> {
+                        imut as string: printable = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+                        mut as int64: idx = code - 31
+                        imut as char: res = printable[idx]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, '?', "ok")
+      }
+
+      op charIsPrintable (as char: c) as bool ==> {
+            mut as int64: code = charToAscii(c)
+            imut as bool: res = (code >= 32 and code <= 126)
+            emit(nice, res, "ok")
+      }
+
+      op charIsControl (as char: c) as bool ==> {
+            mut as int64: code = charToAscii(c)
+            route {
+                  code >= 0 and code < 32 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+            }
+            route {
+                  code == 127 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+            }
+            mut as bool: f = false
+            emit(nice, f, "ok")
+      }
+}

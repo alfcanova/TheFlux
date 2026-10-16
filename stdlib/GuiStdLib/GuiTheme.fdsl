@@ -1,0 +1,68 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiTheme
+#L ==============================================================================
+
+contract (GuiThemeContract) {
+      op guiThemeDefault () as map
+      op guiThemeDark () as map
+      op guiThemeLight () as map
+      op guiSetTheme (as map: ctx, as map: theme) as map
+      op guiGetThemeColor (as map: ctx, as string: key) as list of int64
+}
+
+agent (GuiStdLib) impl GuiThemeContract {
+      #L 3. GuiThemeContract
+      #L =====================================================================
+
+      op guiThemeDefault () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [30, 30, 35, 255]
+            t["panel"] = [45, 45, 52, 255]
+            t["primary"] = [0, 120, 215, 255]
+            t["text"] = [240, 240, 240, 255]
+            t["border"] = [70, 70, 80, 255]
+            t["hover"] = [0, 140, 240, 255]
+            emit(nice, t, "ok")
+      }
+
+      op guiThemeDark () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [18, 18, 20, 255]
+            t["panel"] = [28, 28, 32, 255]
+            t["primary"] = [80, 100, 220, 255]
+            t["text"] = [230, 230, 230, 255]
+            t["border"] = [50, 50, 60, 255]
+            t["hover"] = [100, 120, 240, 255]
+            emit(nice, t, "ok")
+      }
+
+      op guiThemeLight () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [245, 245, 247, 255]
+            t["panel"] = [255, 255, 255, 255]
+            t["primary"] = [0, 100, 200, 255]
+            t["text"] = [20, 20, 25, 255]
+            t["border"] = [200, 200, 210, 255]
+            t["hover"] = [30, 130, 230, 255]
+            emit(nice, t, "ok")
+      }
+
+      op guiSetTheme (as map: ctx, as map: theme) as map ==> {
+            ctx["theme"] = theme
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetThemeColor (as map: ctx, as string: key) as list of int64 ==> {
+            mut as map: theme = ctx["theme"] as map
+            mut as list of int64: def_col = [255, 255, 255, 255]
+            route {
+                  _mapHasKey(theme, key) ==> {
+                        emit(nice, theme[key] as list of int64, "ok")
+                  }
+            }
+            emit(nice, def_col, "ok")
+      }
+
+      #L =====================================================================
+}

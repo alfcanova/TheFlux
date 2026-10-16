@@ -1,0 +1,26 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use MathStdLib
+use StatStdLib
+use LinAlgStdLib
+use GfxStdLib
+use NativeGfxStdLib
+
+use PlotContext.fdsl
+use PlotTransform.fdsl
+use PlotDistribution.fdsl
+use PlotRelation.fdsl
+use PlotSurfaceField.fdsl
+use PlotComposition.fdsl
+use PlotGeometryCoord.fdsl
+use PlotSpecialMath.fdsl
+use PlotEngineeringControl.fdsl
+use PlotTheme.fdsl
+use PlotRender.fdsl
+use PlotExport.fdsl
+
+agent (GraphPlotStdLib) {
+}

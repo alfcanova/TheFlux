@@ -1,0 +1,497 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Dominio: FormatJson
+#L ==============================================================================
+
+contract (FormatJsonContract) {
+      op formatParseJson (as string: json_text) as data
+      op formatStringifyJson (as data: val) as string
+      op formatIsValidJson (as string: json_text) as bool
+      op formatMinifyJson (as string: json_text) as string
+      op formatPrettyJson (as string: json_text, as int64: indent_size) as string
+
+      #L Aliases
+      op parseJson (as string: json_text) as data
+      op stringifyJson (as data: val) as string
+      op isValidJson (as string: json_text) as bool
+      op minifyJson (as string: json_text) as string
+      op prettyJson (as string: json_text, as int64: indent_size) as string
+}
+
+agent (FormatStdLib) impl FormatJsonContract {
+      #L 1. FormatJsonContract
+      #L ==============================================================================
+
+      op _jsonSkipWs (as string: text, as int64: idx, as int64: len) as int64 ==> {
+            mut as int64: curr = idx
+            infinite (curr <= len) {
+                  route {
+                        _fmtIsWs(_fmtCharAt(text, curr)) ==> { curr = curr + 1 }
+                        _ ==> { break }
+                  }
+            }
+            emit(nice, curr, "ok")
+      }
+
+      op _jsonParseString (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as string: res = ""
+            mut as int64: curr = idx + 1
+            infinite (curr <= len) {
+                  mut as string: c = _fmtCharAt(text, curr)
+                  route {
+                        c == "\"" ==> {
+                              curr = curr + 1
+                              break
+                        }
+                        c == "\\" ==> {
+                              curr = curr + 1
+                              route {
+                                    curr <= len ==> {
+                                          mut as string: esc = _fmtCharAt(text, curr)
+                                          route {
+                                                esc == "n" ==> { res = res + "\n" }
+                                                esc == "t" ==> { res = res + "\t" }
+                                                esc == "r" ==> { res = res + "\r" }
+                                                esc == "\"" ==> { res = res + "\"" }
+                                                esc == "\\" ==> { res = res + "\\" }
+                                                esc == "/" ==> { res = res + "/" }
+                                                _ ==> { res = res + esc }
+                                          }
+                                          curr = curr + 1
+                                    }
+                              }
+                        }
+                        c != "\"" and c != "\\" ==> {
+                              res = res + c
+                              curr = curr + 1
+                        }
+                  }
+            }
+            mut as list of data: ret = [res, curr]
+            emit(nice, ret, "ok")
+      }
+
+      op _jsonParseNumber (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as string: raw = ""
+            mut as int64: curr = idx
+            mut as bool: has_dot = false
+            infinite (curr <= len) {
+                  mut as string: c = _fmtCharAt(text, curr)
+                  route {
+                        (c >= "0" and c <= "9") or c == "-" or c == "+" ==> {
+                              raw = raw + c
+                              curr = curr + 1
+                        }
+                        c == "." ==> {
+                              has_dot = true
+                              raw = raw + c
+                              curr = curr + 1
+                        }
+                        c == "e" or c == "E" ==> {
+                              raw = raw + c
+                              curr = curr + 1
+                        }
+                        _ ==> { break }
+                  }
+            }
+            route {
+                  has_dot ==> {
+                        mut as float64: fval = _fmtParseFloat(raw)
+                        mut as list of data: ret_f = [fval, curr]
+                        emit(nice, ret_f, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: ival = _fmtParseInt(raw)
+                        mut as list of data: ret_i = [ival, curr]
+                        emit(nice, ret_i, "ok")
+                  }
+            }
+      }
+
+      op _jsonParseArray (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as list of data: arr = []
+            mut as int64: curr = idx + 1
+            curr = _jsonSkipWs(text, curr, len)
+            route {
+                  curr <= len and _fmtCharAt(text, curr) == "]" ==> {
+                        mut as int64: next_c = curr + 1
+                        mut as list of data: ret_empty = [arr, next_c]
+                        emit(nice, ret_empty, "ok")
+                  }
+            }
+            mut as int64: arr_len = 0
+            infinite (curr <= len) {
+                  mut as list of data: item_res = _jsonParseValue(text, curr, len)
+                  curr = item_res[2] as int64
+                  arr_len = arr_len + 1
+                  arr[arr_len] = item_res[1]
+                  curr = _jsonSkipWs(text, curr, len)
+                  route {
+                        curr <= len and _fmtCharAt(text, curr) == "," ==> {
+                              curr = curr + 1
+                              curr = _jsonSkipWs(text, curr, len)
+                        }
+                        curr <= len and _fmtCharAt(text, curr) == "]" ==> {
+                              curr = curr + 1
+                              break
+                        }
+                        _ ==> { break }
+                  }
+            }
+            mut as list of data: ret = [arr, curr]
+            emit(nice, ret, "ok")
+      }
+
+      op _jsonParseObject (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as map: obj = map{}
+            mut as int64: curr = idx + 1
+            curr = _jsonSkipWs(text, curr, len)
+            route {
+                  curr <= len and _fmtCharAt(text, curr) == "}" ==> {
+                        mut as int64: next_c = curr + 1
+                        mut as list of data: ret_empty = [obj, next_c]
+                        emit(nice, ret_empty, "ok")
+                  }
+            }
+            infinite (curr <= len) {
+                  route {
+                        _fmtCharAt(text, curr) != "\"" ==> { break }
+                  }
+                  mut as list of data: k_res = _jsonParseString(text, curr, len)
+                  mut as string: key = k_res[1] as string
+                  curr = k_res[2] as int64
+                  curr = _jsonSkipWs(text, curr, len)
+                  route {
+                        curr <= len and _fmtCharAt(text, curr) == ":" ==> {
+                              curr = curr + 1
+                        }
+                  }
+                  curr = _jsonSkipWs(text, curr, len)
+                  mut as list of data: v_res = _jsonParseValue(text, curr, len)
+                  curr = v_res[2] as int64
+                  obj[key] = v_res[1]
+                  curr = _jsonSkipWs(text, curr, len)
+                  route {
+                        curr <= len and _fmtCharAt(text, curr) == "," ==> {
+                              curr = curr + 1
+                              curr = _jsonSkipWs(text, curr, len)
+                        }
+                        curr <= len and _fmtCharAt(text, curr) == "}" ==> {
+                              curr = curr + 1
+                              break
+                        }
+                        _ ==> { break }
+                  }
+            }
+            mut as list of data: ret = [obj, curr]
+            emit(nice, ret, "ok")
+      }
+
+      op _jsonParseValue (as string: text, as int64: idx, as int64: len) as list of data ==> {
+            mut as int64: curr = _jsonSkipWs(text, idx, len)
+            mut as string: empty = ""
+            route {
+                  curr > len ==> {
+                        mut as list of data: ret_eof = [empty, curr]
+                        emit(nice, ret_eof, "ok")
+                  }
+            }
+            mut as string: c = _fmtCharAt(text, curr)
+            route {
+                  c == "{" ==> {
+                        mut as list of data: ret_obj = _jsonParseObject(text, curr, len)
+                        emit(nice, ret_obj, "ok")
+                  }
+                  c == "[" ==> {
+                        mut as list of data: ret_arr = _jsonParseArray(text, curr, len)
+                        emit(nice, ret_arr, "ok")
+                  }
+                  c == "\"" ==> {
+                        mut as list of data: ret_str = _jsonParseString(text, curr, len)
+                        emit(nice, ret_str, "ok")
+                  }
+                  c == "t" and curr + 3 <= len and text[curr .. curr + 3] == "true" ==> {
+                        mut as bool: b_true = true
+                        mut as int64: next_idx = curr + 4
+                        mut as list of data: ret_t = [b_true, next_idx]
+                        emit(nice, ret_t, "ok")
+                  }
+                  c == "f" and curr + 4 <= len and text[curr .. curr + 4] == "false" ==> {
+                        mut as bool: b_false = false
+                        mut as int64: next_idx = curr + 5
+                        mut as list of data: ret_f = [b_false, next_idx]
+                        emit(nice, ret_f, "ok")
+                  }
+                  c == "n" and curr + 3 <= len and text[curr .. curr + 3] == "null" ==> {
+                        mut as int64: next_idx = curr + 4
+                        mut as list of data: ret_n = [empty, next_idx]
+                        emit(nice, ret_n, "ok")
+                  }
+                  (c >= "0" and c <= "9") or c == "-" or c == "+" ==> {
+                        mut as list of data: ret_num = _jsonParseNumber(text, curr, len)
+                        emit(nice, ret_num, "ok")
+                  }
+            }
+            mut as int64: next_c = curr + 1
+            mut as list of data: ret_def = [empty, next_c]
+            emit(nice, ret_def, "ok")
+      }
+
+      op formatParseJson (as string: json_text) as data ==> {
+            mut as int64: len = _fmtStrLen(json_text)
+            route {
+                  len == 0 ==> {
+                        mut as map: m_empty = map{}
+                        emit(nice, m_empty, "ok")
+                  }
+            }
+            mut as list of data: res = _jsonParseValue(json_text, 1, len)
+            mut as data: parsed_val = res[1]
+            emit(nice, parsed_val, "ok")
+      }
+
+      op formatStringifyJson (as data: val) as string ==> {
+            mut as string: res = ""
+            mut as string: s = "" + val
+            mut as int64: len_s = _fmtStrLen(s)
+            route {
+                  len_s >= 2 and _fmtCharAt(s, 1) == "{" and _fmtCharAt(s, len_s) == "}" ==> {
+                        mut as map: m = val as map
+                        res = "{"
+                        mut as bool: first = true
+                        infinite (k in m) {
+                              route {
+                                    not first ==> { res = res + ", " }
+                                    first ==> { first = false }
+                              }
+                              mut as string: sub_str = formatStringifyJson(m[k])
+                              route {
+                                    sub_str == "1" and _fmtContains(s, k + ": true") ==> { sub_str = "true" }
+                                    sub_str == "0" and _fmtContains(s, k + ": false") ==> { sub_str = "false" }
+                              }
+                              res = res + "\"" + k + "\": " + sub_str
+                        }
+                        res = res + "}"
+                        emit(nice, res, "ok")
+                  }
+                  len_s >= 2 and _fmtCharAt(s, 1) == "[" and _fmtCharAt(s, len_s) == "]" ==> {
+                        mut as list of data: l = val as list of data
+                        res = "["
+                        mut as bool: first = true
+                        infinite (item in l) {
+                              route {
+                                    not first ==> { res = res + ", " }
+                                    first ==> { first = false }
+                              }
+                              mut as string: sub_str = formatStringifyJson(item)
+                              res = res + sub_str
+                        }
+                        res = res + "]"
+                        emit(nice, res, "ok")
+                  }
+                  s == "true" ==> {
+                        mut as string: st = "true"
+                        emit(nice, st, "ok")
+                  }
+                  s == "false" ==> {
+                        mut as string: sf = "false"
+                        emit(nice, sf, "ok")
+                  }
+                  _ ==> {
+                        mut as bool: is_num = true
+                        mut as int64: i = 1
+                        route {
+                              len_s == 0 ==> { is_num = false }
+                              len_s > 0 and (_fmtCharAt(s, 1) == "-" or _fmtCharAt(s, 1) == "+") ==> { i = 2 }
+                        }
+                        infinite (i <= len_s) {
+                              mut as string: ch = _fmtCharAt(s, i)
+                              route {
+                                    (ch < "0" or ch > "9") and ch != "." ==> {
+                                          is_num = false
+                                          break
+                                    }
+                              }
+                              i = i + 1
+                        }
+                        route {
+                              is_num and len_s > 0 ==> { emit(nice, s, "ok") }
+                        }
+                        mut as string: quoted = "\"" + s + "\""
+                        emit(nice, quoted, "ok")
+                  }
+            }
+      }
+
+      op formatIsValidJson (as string: json_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(json_text)
+            mut as bool: b_false = false
+            mut as bool: b_true = true
+            route {
+                  len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as int64: start = _jsonSkipWs(json_text, 1, len)
+            route {
+                  start > len ==> { emit(nice, b_false, "ok") }
+            }
+            mut as string: c = _fmtCharAt(json_text, start)
+            route {
+                  c == "{" ==> {
+                        mut as int64: end_idx = len
+                        infinite (end_idx >= 1) {
+                              route {
+                                    _fmtIsWs(_fmtCharAt(json_text, end_idx)) ==> { end_idx = end_idx - 1 }
+                                    _ ==> { break }
+                              }
+                        }
+                        route {
+                              end_idx < start or _fmtCharAt(json_text, end_idx) != "}" ==> { emit(nice, b_false, "ok") }
+                        }
+                        mut as string: inner = _fmtTrim(json_text[start + 1 .. end_idx - 1])
+                        route {
+                              _fmtStrLen(inner) == 0 ==> { emit(nice, b_true, "ok") }
+                              not _fmtContains(inner, ":") or not _fmtContains(inner, "\"") ==> { emit(nice, b_false, "ok") }
+                        }
+                        emit(nice, b_true, "ok")
+                  }
+                  c == "[" ==> {
+                        mut as int64: end_idx = len
+                        infinite (end_idx >= 1) {
+                              route {
+                                    _fmtIsWs(_fmtCharAt(json_text, end_idx)) ==> { end_idx = end_idx - 1 }
+                                    _ ==> { break }
+                              }
+                        }
+                        route {
+                              end_idx < start or _fmtCharAt(json_text, end_idx) != "]" ==> { emit(nice, b_false, "ok") }
+                        }
+                        emit(nice, b_true, "ok")
+                  }
+                  c == "\"" ==> {
+                        mut as bool: res_str = (len >= 2 and _fmtCharAt(json_text, len) == "\"")
+                        emit(nice, res_str, "ok")
+                  }
+                  c == "t" ==> {
+                        mut as bool: res_t = (_fmtTrim(json_text) == "true")
+                        emit(nice, res_t, "ok")
+                  }
+                  c == "f" ==> {
+                        mut as bool: res_f = (_fmtTrim(json_text) == "false")
+                        emit(nice, res_f, "ok")
+                  }
+                  c == "n" ==> {
+                        mut as bool: res_n = (_fmtTrim(json_text) == "null")
+                        emit(nice, res_n, "ok")
+                  }
+                  (c >= "0" and c <= "9") or c == "-" ==> { emit(nice, b_true, "ok") }
+            }
+            emit(nice, b_false, "ok")
+      }
+
+      op formatMinifyJson (as string: json_text) as string ==> {
+            mut as int64: len = _fmtStrLen(json_text)
+            mut as string: res = ""
+            mut as bool: in_quotes = false
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(json_text, i)
+                  route {
+                        c == "\"" ==> {
+                              in_quotes = not in_quotes
+                              res = res + c
+                        }
+                        c == "\\" and in_quotes ==> {
+                              res = res + c
+                              route {
+                                    i + 1 <= len ==> {
+                                          i = i + 1
+                                          res = res + _fmtCharAt(json_text, i)
+                                    }
+                              }
+                        }
+                        in_quotes and c != "\"" and c != "\\" ==> {
+                              res = res + c
+                        }
+                        not in_quotes ==> {
+                              route {
+                                    not _fmtIsWs(c) ==> { res = res + c }
+                              }
+                        }
+                  }
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatPrettyJson (as string: json_text, as int64: indent_size) as string ==> {
+            mut as string: mini = formatMinifyJson(json_text)
+            mut as int64: len = _fmtStrLen(mini)
+            mut as string: res = ""
+            mut as int64: depth = 0
+            mut as bool: in_quotes = false
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: c = _fmtCharAt(mini, i)
+                  route {
+                        c == "\"" ==> {
+                              in_quotes = not in_quotes
+                              res = res + c
+                        }
+                        in_quotes ==> {
+                              res = res + c
+                        }
+                        not in_quotes ==> {
+                              route {
+                                    c == "{" or c == "[" ==> {
+                                          depth = depth + 1
+                                          res = res + c + "\n"
+                                          infinite (k in 1 .. depth * indent_size) { res = res + " " }
+                                    }
+                                    c == "}" or c == "]" ==> {
+                                          depth = depth - 1
+                                          res = res + "\n"
+                                          infinite (k in 1 .. depth * indent_size) { res = res + " " }
+                                          res = res + c
+                                    }
+                                    c == "," ==> {
+                                          res = res + ",\n"
+                                          infinite (k in 1 .. depth * indent_size) { res = res + " " }
+                                    }
+                                    c == ":" ==> {
+                                          res = res + ": "
+                                    }
+                                    c != "{" and c != "[" and c != "}" and c != "]" and c != "," and c != ":" ==> {
+                                          res = res + c
+                                    }
+                              }
+                        }
+                  }
+                  i = i + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L Aliases JSON
+      op parseJson (as string: json_text) as data ==> {
+            mut as data: r = formatParseJson(json_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyJson (as data: val) as string ==> {
+            mut as string: r = formatStringifyJson(val)
+            emit(nice, r, "ok")
+      }
+      op isValidJson (as string: json_text) as bool ==> {
+            mut as bool: r = formatIsValidJson(json_text)
+            emit(nice, r, "ok")
+      }
+      op minifyJson (as string: json_text) as string ==> {
+            mut as string: r = formatMinifyJson(json_text)
+            emit(nice, r, "ok")
+      }
+      op prettyJson (as string: json_text, as int64: indent_size) as string ==> {
+            mut as string: r = formatPrettyJson(json_text, indent_size)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+}

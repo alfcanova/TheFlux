@@ -1,0 +1,59 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysEnergy
+#L ==============================================================================
+
+contract (PhysEnergyContract) {
+      op physKineticEnergy (as float64: mass, as float64: velocity) as float64
+      op physPotentialEnergy (as float64: mass, as float64: height, as float64: gravity) as float64
+      op physElasticPotentialEnergy (as float64: spring_k, as float64: displacement) as float64
+      op physMechanicalEnergy (as float64: kinetic, as float64: potential) as float64
+      op physWork (as float64: force, as float64: displacement) as float64
+      op physPower (as float64: work, as float64: time) as float64
+      op physEfficiency (as float64: useful_power, as float64: total_power) as float64
+}
+
+agent (PhysStdLib) impl PhysEnergyContract {
+      #L PhysEnergyContract (Energia, Trabalho e Potencia)
+      #L =====================================================================
+      op physKineticEnergy (as float64: mass, as float64: velocity) as float64 ==> {
+            mut as float64: ek = 0.5 * mass * (velocity * velocity)
+            emit(nice, ek, "ok")
+      }
+      op physPotentialEnergy (as float64: mass, as float64: height, as float64: gravity) as float64 ==> {
+            mut as float64: ep = mass * gravity * height
+            emit(nice, ep, "ok")
+      }
+      op physElasticPotentialEnergy (as float64: spring_k, as float64: displacement) as float64 ==> {
+            mut as float64: epe = 0.5 * spring_k * (displacement * displacement)
+            emit(nice, epe, "ok")
+      }
+      op physMechanicalEnergy (as float64: kinetic, as float64: potential) as float64 ==> {
+            mut as float64: em = kinetic + potential
+            emit(nice, em, "ok")
+      }
+      op physWork (as float64: force, as float64: displacement) as float64 ==> {
+            mut as float64: w = force * displacement
+            emit(nice, w, "ok")
+      }
+      op physPower (as float64: work, as float64: time) as float64 ==> {
+            route {
+                  time == 0.0 ==> {
+                        emit(fail, 0.0, "tempo zero em potencia")
+                  }
+            }
+            mut as float64: p = work /f time
+            emit(nice, p, "ok")
+      }
+      op physEfficiency (as float64: useful_power, as float64: total_power) as float64 ==> {
+            route {
+                  total_power == 0.0 ==> {
+                        emit(fail, 0.0, "potencia total zero em rendimento")
+                  }
+            }
+            mut as float64: eff = useful_power /f total_power
+            emit(nice, eff, "ok")
+      }
+
+      #L =====================================================================
+}

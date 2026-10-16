@@ -1,0 +1,17 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use LowLevelConstants.fdsl
+use LowLevelBitwise.fdsl
+use LowLevelShiftRotate.fdsl
+use LowLevelBitInspection.fdsl
+use LowLevelEndianness.fdsl
+use LowLevelAlignment.fdsl
+use LowLevelMemoryAccess.fdsl
+use LowLevelBlockMemory.fdsl
+use LowLevelBuffer.fdsl
+
+agent (LowLevelStdLib) {
+}

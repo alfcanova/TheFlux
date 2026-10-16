@@ -1,0 +1,107 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Dominio: DateTimeDate
+#L ==============================================================================
+
+contract (DateTimeDateContract) {
+      op dateTimeCreateDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime
+      op dateTimeYear (as datetime: value) as int64
+      op dateTimeMonth (as datetime: value) as int64
+      op dateTimeDay (as datetime: value) as int64
+      op dateTimeWeekday (as datetime: value) as int64
+      op dateTimeDayOfYear (as datetime: value) as int64
+      op dateTimeDaysInMonth (as datetime: value) as int64
+      op dateTimeQuarter (as datetime: value) as int64
+      op dateTimeIsLeapYear (as datetime: value) as bool
+      op dateTimeIsWeekend (as datetime: value) as bool
+      op dateTimeAddDays (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractDays (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMonths (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMonths (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddYears (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractYears (as datetime: value, as int64: amount) as datetime
+      op dateTimeDaysBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMonthsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeYearsBetween (as datetime: left, as datetime: right) as int64
+}
+
+agent (DateTimeStdLib) impl DateTimeDateContract {
+
+
+      #L -- DateTimeDateContract --------------------------------------
+      op dateTimeCreateDate (as int64: year_value, as int64: month_value, as int64: day_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateDate(year_value, month_value, day_value), "ok")
+      }
+
+      op dateTimeYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeYear(value), "ok")
+      }
+
+      op dateTimeMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMonth(value), "ok")
+      }
+
+      op dateTimeDay (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDay(value), "ok")
+      }
+
+      op dateTimeWeekday (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeWeekday(value), "ok")
+      }
+
+      op dateTimeDayOfYear (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDayOfYear(value), "ok")
+      }
+
+      op dateTimeDaysInMonth (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeDaysInMonth(value), "ok")
+      }
+
+      op dateTimeQuarter (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeQuarter(value), "ok")
+      }
+
+      op dateTimeIsLeapYear (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsLeapYear(value), "ok")
+      }
+
+      op dateTimeIsWeekend (as datetime: value) as bool ==> {
+            emit(nice, stdDateTimeIsWeekend(value), "ok")
+      }
+
+      op dateTimeAddDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, amount), "ok")
+      }
+
+      op dateTimeSubtractDays (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddDays(value, -amount), "ok")
+      }
+
+      op dateTimeAddMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMonths (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMonths(value, -amount), "ok")
+      }
+
+      op dateTimeAddYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, amount), "ok")
+      }
+
+      op dateTimeSubtractYears (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddYears(value, -amount), "ok")
+      }
+
+      op dateTimeDaysBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeDaysBetween(left, right), "ok")
+      }
+
+      op dateTimeMonthsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMonthsBetween(left, right), "ok")
+      }
+
+      op dateTimeYearsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeYearsBetween(left, right), "ok")
+      }
+}

@@ -98,6 +98,24 @@ def stdin_para(path: Path) -> str:
         return "\n".join(inputs) + "\n"
     return STDIN_MAP.get(path.name, "")
 
+EXPECT_ERROR_RE = re.compile(r"^#L\s+EXPECT_ERROR:\s*([A-Z]{2,4}\d{3})", re.MULTILINE)
+
+
+def obter_erro_esperado(path: Path) -> str | None:
+    """Extrai codigo esperado de erro estatico declarado com '#L EXPECT_ERROR: <CODIGO>'."""
+    if not path.name.startswith("ExampleOfError"):
+        return None
+    try:
+        content = path.read_text(encoding="utf-8")
+        m = EXPECT_ERROR_RE.search(content)
+        if m:
+            return m.group(1).upper()
+    except Exception:
+        pass
+    return None
+
+
+
 PYTHON = sys.executable
 os.environ["FLUX_CI"] = "1"
 ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="utf-8", FLUX_CI="1")
@@ -440,26 +458,56 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
         sep = "| " + "-" * larg_arq + " | " + " | ".join(["-" * MD_SEP[c] for c in COLS] + ["-" * MD_SEP["result"]]) + " |"
         return [header, sep]
 
-    items = list(results.items())
+    pos_items = [(n, l) for n, l in results.items() if not n.startswith("ExampleOfError")]
+    err_items = [(n, l) for n, l in results.items() if n.startswith("ExampleOfError")]
+
     linhas: list[str] = []
-    for n_page in range(0, len(items), PAGE_SIZE):
-        chunk = items[n_page: n_page + PAGE_SIZE]
-        linhas.append(f"### Tabela de conformidade — página {n_page // PAGE_SIZE + 1}")
+
+    # 1. Tabela paginada para programas regulares positivos
+    if pos_items:
+        linhas.append("## 📦 Programas Regulares de Execução")
+        linhas.append("")
+        for n_page in range(0, len(pos_items), PAGE_SIZE):
+            chunk = pos_items[n_page: n_page + PAGE_SIZE]
+            linhas.append(f"### Tabela de conformidade — página {n_page // PAGE_SIZE + 1}")
+            linhas.append("")
+            linhas.extend(cabecalho())
+            for nome, linha in chunk:
+                linhas.append(linha_md(nome, linha))
+            linhas.append("")
+
+    # 2. Tabela dedicada para testes de diagnósticos e erros (Opção 2)
+    if err_items:
+        linhas.append("## 🧪 Tabela de Conformidade — Testes de Diagnósticos e Erros (Negativos)")
+        linhas.append("")
+        linhas.append("> Testes de validação de diagnósticos estáticos canônicos e operações matemáticas de erro em runtime.")
         linhas.append("")
         linhas.extend(cabecalho())
-        for nome, linha in chunk:
+        for nome, linha in err_items:
             linhas.append(linha_md(nome, linha))
         linhas.append("")
 
     n = len(results)
+    pos_ok = sum(1 for _, l in pos_items if all(l.values()))
+    err_ok = sum(1 for _, l in err_items if all(l.values()))
+    linhas.append("### Resumo de Conformidade:")
+    linhas.append("")
+    if pos_items:
+        cor_pos = MD_GREEN if pos_ok == len(pos_items) else MD_RED
+        linhas.append(f"- {'POSITIVOS'.rjust(12)} : {cor_pos} {pos_ok:>4} of {len(pos_items):>4} — {cor_pos}")
+    if err_items:
+        cor_err = MD_GREEN if err_ok == len(err_items) else MD_RED
+        linhas.append(f"- {'DIAGNÓSTICO'.rjust(12)} : {cor_err} {err_ok:>4} of {len(err_items):>4} — {cor_err}")
+
     for c in COLS:
         total = totais[c]
         cor = MD_GREEN if total == n else MD_RED
-        linhas.append(f"- {c.upper().rjust(4)} : {cor} {total:>4} of {n:>4} — {cor}")
+        linhas.append(f"- {c.upper().rjust(12)} : {cor} {total:>4} of {n:>4} — {cor}")
+
     verde_cells = sum(totais[c] for c in COLS)
     total_cells = n * len(COLS)
     cor_final = MD_GREEN if verde_cells == total_cells else MD_RED
-    linhas.append(f"- {'ALL'.rjust(4)} : {cor_final} {verde_cells:>4} of {total_cells:>4} — {cor_final}")
+    linhas.append(f"- {'TOTAL GERAL'.rjust(12)} : {cor_final} {verde_cells:>4} of {total_cells:>4} — {cor_final}")
     linhas.append("")
 
     # --- Secao de Regressao ---
@@ -492,7 +540,14 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
 
 
 def main() -> int:
-    filter_arg = next((a for a in sys.argv[1:] if not a.startswith("--")), None)
+    filter_arg = None
+    for a in sys.argv[1:]:
+        if a in ("--modular", "--stdlib"):
+            filter_arg = a
+            break
+        elif not a.startswith("--"):
+            filter_arg = a
+            break
     md_path = RAIZ / "backend_compliance.md"
     old_md_path = RAIZ / "backend_compliance_OLD.md"
 
@@ -514,8 +569,14 @@ def main() -> int:
 
     flux_files = sorted(FLUX_DIR.glob("*.flux"))
     if filter_arg:
-        target = Path(filter_arg).name
-        flux_files = [f for f in flux_files if target in f.name]
+        exact_p = Path(filter_arg)
+        if exact_p.is_file():
+            flux_files = [exact_p]
+        elif filter_arg in ("--stdlib", "--modular", "modular", "stdlib"):
+            flux_files = [f for f in flux_files if "StdLib" in f.name or "Modular" in f.name]
+        else:
+            target = exact_p.name.lower()
+            flux_files = [f for f in flux_files if target in f.name.lower()]
         print(f"Executando filtro '{filter_arg}': {len(flux_files)} arquivo(s) encontrado(s)")
     results: dict[str, dict[str, bool]] = {}
     outs: dict[str, dict[str, str | None]] = {}
@@ -526,25 +587,61 @@ def main() -> int:
         stdin_text = stdin_para(path)
         linha: dict[str, bool] = {}
         outs[nome] = {}
-        if nome.startswith("ExampleOfUseDbStdLib_"):
-            limpar_scratch_dbs()
-        ref = BACKENDS["in"](path, stdin_text)
-        outs[nome]["in"] = ref
-        for col in COLS:
-            if col == "in":
-                linha[col] = ref is not None
-            else:
-                if nome.startswith("ExampleOfUseDbStdLib_"):
-                    limpar_scratch_dbs()
-                out = BACKENDS[col](path, stdin_text)
-                outs[nome][col] = out
-                ref_norm = normalizar_saida(ref.rstrip("\n")) if ref is not None else None
-                out_norm = normalizar_saida(out.rstrip("\n")) if out is not None else None
-                ok = ref_norm is not None and out_norm is not None and out_norm == ref_norm
-                linha[col] = ok
-                if not ok:
-                    falhas.append((path.name, col, ref, out))
-        results[path.name] = linha
+        expected_code = obter_erro_esperado(path)
+
+        if expected_code:
+            # Teste estático de diagnóstico: verifica se cada backend recusa e emite o código esperado
+            r_in = _run([PYTHON, str(RAIZ / "flux_in.py"), str(path.resolve())], input_text=stdin_text)
+            ok_in = (r_in.returncode != 0) and (f"[{expected_code} - " in r_in.stderr)
+            linha["in"] = ok_in
+            outs[nome]["in"] = f"[{expected_code} capturado]" if ok_in else r_in.stderr
+
+            r_vm = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
+            ok_vm = (r_vm.returncode != 0) and (f"[{expected_code} - " in r_vm.stderr)
+            linha["vm"] = ok_vm
+            outs[nome]["vm"] = f"[{expected_code} capturado]" if ok_vm else r_vm.stderr
+            linha["vmr"] = ok_vm
+            outs[nome]["vmr"] = outs[nome]["vm"]
+
+            r_lv = _run([PYTHON, "-m", "flux_proto", str(path), "--emit-llvm"], input_text=stdin_text)
+            ok_lv = (r_lv.returncode != 0) and (f"[{expected_code} - " in r_lv.stderr)
+            linha["llvm"] = ok_lv
+            outs[nome]["llvm"] = f"[{expected_code} capturado]" if ok_lv else r_lv.stderr
+
+            r_wat = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wat", "--output", str(T_WAT / path.stem)], input_text=stdin_text)
+            ok_wat = (r_wat.returncode != 0) and (f"[{expected_code} - " in r_wat.stderr)
+            linha["wat"] = ok_wat
+            outs[nome]["wat"] = f"[{expected_code} capturado]" if ok_wat else r_wat.stderr
+
+            r_wasm = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wasm", "--output", str(T_WASM / path.stem)], input_text=stdin_text)
+            ok_wasm = (r_wasm.returncode != 0) and (f"[{expected_code} - " in r_wasm.stderr)
+            linha["wasm"] = ok_wasm
+            outs[nome]["wasm"] = f"[{expected_code} capturado]" if ok_wasm else r_wasm.stderr
+
+            for col in COLS:
+                if not linha[col]:
+                    falhas.append((path.name, col, f"esperava [{expected_code}]", outs[nome][col]))
+            results[path.name] = linha
+        else:
+            if nome.startswith("ExampleOfUseDbStdLib_"):
+                limpar_scratch_dbs()
+            ref = BACKENDS["in"](path, stdin_text)
+            outs[nome]["in"] = ref
+            for col in COLS:
+                if col == "in":
+                    linha[col] = ref is not None
+                else:
+                    if nome.startswith("ExampleOfUseDbStdLib_"):
+                        limpar_scratch_dbs()
+                    out = BACKENDS[col](path, stdin_text)
+                    outs[nome][col] = out
+                    ref_norm = normalizar_saida(ref.rstrip("\n")) if ref is not None else None
+                    out_norm = normalizar_saida(out.rstrip("\n")) if out is not None else None
+                    ok = ref_norm is not None and out_norm is not None and out_norm == ref_norm
+                    linha[col] = ok
+                    if not ok:
+                        falhas.append((path.name, col, ref, out))
+            results[path.name] = linha
 
     # --- tabela ---
     col_w = {c: max(len(c), 3) for c in COLS}
@@ -567,7 +664,15 @@ def main() -> int:
     print("-" * len(cab))
 
     ok_arquivos = sum(1 for linha in results.values() if all(linha.values()))
+    pos_items = [n for n in results if not n.startswith("ExampleOfError")]
+    err_items = [n for n in results if n.startswith("ExampleOfError")]
+    pos_ok = sum(1 for n in pos_items if all(results[n].values()))
+    err_ok = sum(1 for n in err_items if all(results[n].values()))
+
     print(f"{ok_arquivos}/{len(results)} arquivo(s) com todos os backends OK")
+    if pos_items and err_items:
+        print(f"  - Programas regulares: {pos_ok}/{len(pos_items)} OK")
+        print(f"  - Diagnósticos & erros: {err_ok}/{len(err_items)} OK")
     for c in COLS:
         print(f"  {c}: {totais[c]}/{len(results)} OK")
 

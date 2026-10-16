@@ -1,0 +1,88 @@
+keyword: borrow
+category: Posse
+description: Empréstimo dos valores de um identificador sem transferir a sua posse (ownership). borrow() é imutável — múltiplos
+  empréstimos simultâneos são permitidos. borrow_mut() é exclusivo — bloqueia outros borrows, moves e escritas por referência
+  externa.
+syntax: 'borrow(<identificador>)
+
+  borrow_mut(<identificador>)
+
+  '
+pseudocode: 'x  ← 42
+
+  leitura := EMPRESTAR(x)      // emprestimo imutavel, compartilhado
+
+  outra   := EMPRESTAR(x)      // permitido: varias leituras simultaneas
+
+  escrita := EMPRESTAR_MUT(x)  // exclusivo: bloqueia outros emprestimos'
+usages:
+- name: Borrow imutável múltiplo
+  description: Múltiplos borrows imutáveis simultâneos são permitidos.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r1 = borrow(x)
+
+      mut as int64: r2 = borrow(x)
+
+      print(r1 + r2)
+
+      '
+- name: Borrow mutável exclusivo
+  description: borrow_mut() bloqueia outros borrows, moves e escritas externas.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: ref = borrow_mut(x)
+
+      ref = 100
+
+      print(ref)
+
+      '
+- name: Valor original preservado
+  description: Operações em referências não alteram o valor original.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r = borrow(x)
+
+      print(r)
+
+      print(x)
+
+      '
+restrictions:
+- 'borrow() imutável: múltiplos simultâneos OK.'
+- 'borrow_mut() exclusivo: bloqueia outros borrows, moves e escritas.'
+- 'Leitura de variável em borrow_mut por referência diferente → erro.'
+- 'Reatribuição de ref via borrow_mut() é permitida.'
+errors:
+- code: "OWN503"
+  mnemonic: "USE_AFTER_MOVE"
+  severity: "Error"
+  trigger: "Tentativa de acessar uma variável após sua posse (ownership) ter sido transferida via 'move'"
+  message: "Uso inválido de valor movido: a variável já transferiu sua posse e não pode mais ser lida"
+  hint: "Utilize 'borrow' para leitura compartilhada sem consumir a propriedade do símbolo"
+  example_bad: |
+    mut as string: a = "dado"
+    mut as string: b = move(a)
+    print(a)
+  example_good: |
+    mut as string: a = "dado"
+    mut as string: b = borrow(a)
+    print(a)
+- code: "OWN504"
+  mnemonic: "MUTABLE_BORROW_CONFLICT"
+  severity: "Error"
+  trigger: "Tentativa de criar empréstimo mútuo ou leitura concorrente enquanto um 'borrow_mut' estiver ativo"
+  message: "Conflito de empréstimo: não é permitido acessar ou emprestar variável enquanto houver borrow_mut ativo"
+  hint: "Aguarde o fechamento do escopo do empréstimo mutável antes de acessar a variável novamente"
+  example_bad: |
+    mut as int64: x = 10
+    mut as int64: r1 = borrow_mut(x)
+    mut as int64: r2 = borrow(x)
+  example_good: |
+    mut as int64: x = 10
+    mut as int64: r1 = borrow(x)
+    mut as int64: r2 = borrow(x)

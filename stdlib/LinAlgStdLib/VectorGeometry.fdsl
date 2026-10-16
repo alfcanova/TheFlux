@@ -1,0 +1,144 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: VectorGeometry
+#L ==============================================================================
+
+contract (VectorGeometryContract) {
+      op vectorDotProduct (as list of data: u, as list of data: v) as float64
+      op vectorCrossProduct3D (as list of data: u, as list of data: v) as list of data
+      op vectorOuterProduct (as list of data: u, as list of data: v) as map
+      op vectorNormL1 (as list of data: v) as float64
+      op vectorNormL2 (as list of data: v) as float64
+      op vectorNormLInf (as list of data: v) as float64
+      op vectorNormalize (as list of data: v) as list of data
+      op vectorAngle (as list of data: u, as list of data: v) as float64
+      op vectorProjection (as list of data: u, as list of data: v) as list of data
+}
+
+agent (LinAlgStdLib) impl VectorGeometryContract {
+      #L 9. VectorGeometryContract - Algebra e Geometria Espacial Vetorial
+      #L ==============================================================================
+
+      op vectorDotProduct (as list of data: u, as list of data: v) as float64 ==> {
+            mut as int64: len = 0
+            infinite (x in u) { len = len + 1 }
+            mut as float64: acc = 0.0
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  acc = acc + (u[i] as float64) * (v[i] as float64)
+                  i = i + 1
+            }
+            emit(nice, acc, "ok")
+      }
+
+      op vectorCrossProduct3D (as list of data: u, as list of data: v) as list of data ==> {
+            mut as float64: u1 = u[1] as float64
+            mut as float64: u2 = u[2] as float64
+            mut as float64: u3 = u[3] as float64
+
+            mut as float64: v1 = v[1] as float64
+            mut as float64: v2 = v[2] as float64
+            mut as float64: v3 = v[3] as float64
+
+            mut as list of data: res = [u2 * v3 - u3 * v2, u3 * v1 - u1 * v3, u1 * v2 - u2 * v1]
+            emit(nice, res, "ok")
+      }
+
+      op vectorOuterProduct (as list of data: u, as list of data: v) as map ==> {
+            mut as int64: m = 0
+            infinite (x in u) { m = m + 1 }
+            mut as int64: n = 0
+            infinite (x in v) { n = n + 1 }
+
+            mut as map: out = tensorNew([m, n])
+            mut as int64: r = 1
+            infinite (r <= m) {
+                  mut as int64: c = 1
+                  infinite (c <= n) {
+                        out = tensorSetAt(out, [r, c], (u[r] as float64) * (v[c] as float64))
+                        c = c + 1
+                  }
+                  r = r + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op vectorNormL1 (as list of data: v) as float64 ==> {
+            mut as float64: sum = 0.0
+            infinite (x in v) {
+                  mut as float64: val = x as float64
+                  route { val < 0.0 ==> { val = 0.0 - val } }
+                  sum = sum + val
+            }
+            emit(nice, sum, "ok")
+      }
+
+      op vectorNormL2 (as list of data: v) as float64 ==> {
+            mut as float64: sum = 0.0
+            infinite (x in v) {
+                  mut as float64: val = x as float64
+                  sum = sum + val * val
+            }
+            mut as float64: res = _sqrt(sum)
+            emit(nice, res, "ok")
+      }
+
+      op vectorNormLInf (as list of data: v) as float64 ==> {
+            mut as float64: max_v = 0.0
+            infinite (x in v) {
+                  mut as float64: val = x as float64
+                  route { val < 0.0 ==> { val = 0.0 - val } }
+                  route { val > max_v ==> { max_v = val } }
+            }
+            emit(nice, max_v, "ok")
+      }
+
+      op vectorNormalize (as list of data: v) as list of data ==> {
+            mut as float64: norm = vectorNormL2(v)
+            mut as list of data: out = []
+            mut as int64: len = 0
+            infinite (x in v) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  route {
+                        norm > 0.0 ==> {
+                              out[i] = (v[i] as float64) /f norm
+                        }
+                        norm <= 0.0 ==> {
+                              out[i] = 0.0
+                        }
+                  }
+                  i = i + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op vectorAngle (as list of data: u, as list of data: v) as float64 ==> {
+            mut as float64: dot = vectorDotProduct(u, v)
+            mut as float64: nu = vectorNormL2(u)
+            mut as float64: nv = vectorNormL2(v)
+            mut as float64: cos_theta = dot /f (nu * nv)
+            route {
+                  cos_theta > 1.0 ==> { cos_theta = 1.0 }
+                  cos_theta < -1.0 ==> { cos_theta = -1.0 }
+            }
+            emit(nice, cos_theta, "ok")
+      }
+
+      op vectorProjection (as list of data: u, as list of data: v) as list of data ==> {
+            mut as float64: dot_uv = vectorDotProduct(u, v)
+            mut as float64: dot_vv = vectorDotProduct(v, v)
+            mut as float64: factor = dot_uv /f dot_vv
+            mut as list of data: out = []
+            mut as int64: len = 0
+            infinite (x in v) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  out[i] = (v[i] as float64) * factor
+                  i = i + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

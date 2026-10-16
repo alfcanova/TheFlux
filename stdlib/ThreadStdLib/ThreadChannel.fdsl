@@ -1,0 +1,98 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ThreadStdLib
+#L Dominio: ThreadChannel
+#L ==============================================================================
+
+contract (ThreadChannelContract) {
+      op channelCreate () as map
+      op channelCreateWithCapacity (as int64: capacity) as map
+      op channelSend (as data: port, as data: message) as bool
+      op channelRecv (as data: port) as data
+      op channelTrySend (as data: port, as data: message) as bool
+      op channelTryRecv (as data: port) as map
+      op channelClose (as data: port) as bool
+      op channelIsClosed (as data: port) as bool
+      op channelIsEmpty (as data: port) as bool
+      op channelLength (as data: port) as int64
+      op channelCapacity (as data: port) as int64
+
+      #L Aliases universais
+      op chanCreate () as map
+      op chanSend (as data: port, as data: message) as bool
+      op chanRecv (as data: port) as data
+      op chanClose (as data: port) as bool
+      op chanLen (as data: port) as int64
+      op chanCap (as data: port) as int64
+}
+
+agent (ThreadStdLib) impl ThreadChannelContract {
+      #L -- ThreadChannelContract -------------------------------------
+      op channelCreate () as map ==> {
+            emit(nice, stdChannelCreate(), "ok")
+      }
+
+      op channelCreateWithCapacity (as int64: capacity) as map ==> {
+            emit(nice, stdChannelCreateWithCapacity(capacity), "ok")
+      }
+
+      op channelSend (as data: port, as data: message) as bool ==> {
+            emit(nice, stdChannelSend(port, message), "ok")
+      }
+
+      op channelRecv (as data: port) as data ==> {
+            emit(nice, stdChannelRecv(port), "ok")
+      }
+
+      op channelTrySend (as data: port, as data: message) as bool ==> {
+            emit(nice, stdChannelTrySend(port, message), "ok")
+      }
+
+      op channelTryRecv (as data: port) as map ==> {
+            emit(nice, stdChannelTryRecv(port), "ok")
+      }
+
+      op channelClose (as data: port) as bool ==> {
+            emit(nice, stdChannelClose(port), "ok")
+      }
+
+      op channelIsClosed (as data: port) as bool ==> {
+            emit(nice, stdChannelIsClosed(port), "ok")
+      }
+
+      op channelIsEmpty (as data: port) as bool ==> {
+            emit(nice, stdChannelIsEmpty(port), "ok")
+      }
+
+      op channelLength (as data: port) as int64 ==> {
+            emit(nice, stdChannelLength(port), "ok")
+      }
+
+      op channelCapacity (as data: port) as int64 ==> {
+            emit(nice, stdChannelCapacity(port), "ok")
+      }
+
+      #L Aliases universais
+      op chanCreate () as map ==> {
+            emit(nice, stdChannelCreate(), "ok")
+      }
+
+      op chanSend (as data: port, as data: message) as bool ==> {
+            emit(nice, stdChannelSend(port, message), "ok")
+      }
+
+      op chanRecv (as data: port) as data ==> {
+            emit(nice, stdChannelRecv(port), "ok")
+      }
+
+      op chanClose (as data: port) as bool ==> {
+            emit(nice, stdChannelClose(port), "ok")
+      }
+
+      op chanLen (as data: port) as int64 ==> {
+            emit(nice, stdChannelLength(port), "ok")
+      }
+
+      op chanCap (as data: port) as int64 ==> {
+            emit(nice, stdChannelCapacity(port), "ok")
+      }
+}

@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Dominio: DbKv
+#L ==============================================================================
+
+contract (DbKvContract) {
+      op dbKvOpen (as string: engine, as string: path) as data
+      op dbKvPut (as data: connection, as string: key, as string: value) as bool
+      op dbKvGet (as data: connection, as string: key) as string
+      op dbKvDelete (as data: connection, as string: key) as bool
+      op dbKvExists (as data: connection, as string: key) as bool
+      op dbKvClose (as data: connection) as bool
+}
+
+agent (DbStdLib) impl DbKvContract {
+      #L -- DbKvContract ----------------------------------------------
+      op dbKvOpen (as string: engine, as string: path) as data ==> {
+            emit(nice, stdDbKvOpen(engine, path), "ok")
+      }
+
+      op dbKvPut (as data: connection, as string: key, as string: value) as bool ==> {
+            emit(nice, stdDbKvPut(connection, key, value), "ok")
+      }
+
+      op dbKvGet (as data: connection, as string: key) as string ==> {
+            emit(nice, stdDbKvGet(connection, key), "ok")
+      }
+
+      op dbKvDelete (as data: connection, as string: key) as bool ==> {
+            emit(nice, stdDbKvDelete(connection, key), "ok")
+      }
+
+      op dbKvExists (as data: connection, as string: key) as bool ==> {
+            emit(nice, stdDbKvExists(connection, key), "ok")
+      }
+
+      op dbKvClose (as data: connection) as bool ==> {
+            emit(nice, stdDbKvClose(connection), "ok")
+      }
+}

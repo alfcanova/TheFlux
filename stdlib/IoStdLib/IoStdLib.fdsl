@@ -1,0 +1,17 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use IoPrint.fdsl
+use IoInput.fdsl
+use IoFile.fdsl
+use IoFileInspection.fdsl
+use IoFileLine.fdsl
+use IoDirectory.fdsl
+use IoPath.fdsl
+use IoBinaryFile.fdsl
+use IoArchive.fdsl
+
+agent (IoStdLib) {
+}

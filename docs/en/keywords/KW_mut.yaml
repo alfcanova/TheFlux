@@ -1,0 +1,87 @@
+keyword: mut
+category: Variable Declaration
+description: 'Declara uma variable mutable, com value inicial explícito optional. Sem value inicial, a variable receives o
+  value pattern do type (0, 0.0, false, string vazia etc.). Múltiplas variables can be declaradas com commas na forma principal
+  (`mut as <type>: a, b = 42`).'
+syntax: 'mut as <tipo>: <identificador> [, <identificador> ...] [= <expressão>]'
+pseudocode: 'VARIAVEL contador := 0
+
+  contador := contador + 1    // reatribuivel'
+usages:
+- name: Declaration com type e value inicial
+  description: Declara uma variable mutable com type explícito e value inicial.
+  examples:
+  - code: 'mut as int64: contador = 0
+
+      mut as string: nome = "TheFlux"'
+- name: Declaration com value pattern do type
+  description: Sem value inicial, a variable receives o value pattern do type.
+  examples:
+  - code: 'mut as int64: contador
+
+      mut as string: nome'
+- name: Declaration múltipla em linha
+  description: Várias variables na forma principal, separadas por comma; type e value inicial são shareds entre todas.
+  examples:
+  - code: 'mut as int64: a, b = 42'
+restrictions:
+- Os identifiers devem seguir snake_case; a implementação emite uma sugestão (SUG) quando o nome não segue a convenção (não
+  é error).
+- 'Mutable variables can be reassigned com `=` e com operators compostos: =+, =-, =*, =/i, =/r, =/f, =^e, =^r, =^, =&, =|,
+  =~, =<<, =>>, =>>>.'
+- O type is required após `as` (there is no forma sem type).
+- 'Múltiplas variables em uma única declaration são aceitas apenas na forma principal, com commas entre os identifiers (`mut
+  as <type>: a, b = 42`); o type e o value inicial são shareds. Values diferentes exigem declarations separadas.'
+errors:
+- code: SEM306
+  mnemonic: MUT_IDENTIFIER_SNAKE_CASE
+  severity: Warning
+  trigger: Mutable variable ('mut') identifier not in snake_case
+  message: Mutable variable name must strictly follow snake_case convention
+  hint: 'Rename mutable identifier using lowercase letters and underscores: ''minha_variavel'''
+  example_bad: 'mut as int64: contadorTotal = 0
+
+    '
+  example_good: 'mut as int64: contador_total = 0
+
+    '
+- code: SYN105
+  mnemonic: MUT_MISSING_AS_KEYWORD
+  severity: Error
+  trigger: Variable declaration with mut/imut missing the mandatory 'as' keyword before type
+  message: Missing 'as' keyword in typed variable declaration
+  hint: 'Include ''as'' before the type: ''mut as <type>: <name> = <val>'' or ''imut as <type>: <NAME> = <val>'''
+  example_bad: 'mut: x: int64 = 10
+
+    '
+  example_good: 'mut as int64: x = 10
+
+    '
+- code: SEM303
+  mnemonic: UNDEFINED_IDENTIFIER
+  severity: Error
+  trigger: Assignment to variable that was not previously declared with 'mut' or 'imut'
+  message: Undefined identifier; variable must be declared before assignment
+  hint: 'Declare variable with ''mut as <type>: <name> = <val>'' before reassigning it'
+  example_bad: 'x = 10
+
+    '
+  example_good: 'mut as int64: x = 10
+
+    '
+- code: SEM304
+  mnemonic: DUPLICATE_IDENTIFIER
+  severity: Error
+  trigger: Attempt to redeclare existing identifier in the same scope
+  message: Identifier already declared in the current scope
+  hint: Use a distinct variable name or reassign existing mutable variable without redeclaring it
+  example_bad: 'mut as int64: total = 1
+
+    mut as int64: total = 2
+
+    '
+  example_good: 'mut as int64: total_inicial = 1
+
+    mut as int64: total_final = 2
+
+    '

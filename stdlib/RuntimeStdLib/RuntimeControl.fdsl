@@ -1,0 +1,53 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RuntimeStdLib
+#L Dominio: RuntimeControl
+#L ==============================================================================
+
+contract (RuntimeControlContract) {
+      op runtimePanic (as string: message) as bool
+      op runtimeTrap () as bool
+      op runtimeSetPanicHook (as string: agent_name, as string: op_name) as bool
+      op runtimeStackTrace () as list of data
+
+      #L Aliases
+      op panic (as string: message) as bool
+      op trap () as bool
+      op setPanicHook (as string: agent_name, as string: op_name) as bool
+      op stackTrace () as list of data
+}
+
+agent (RuntimeStdLib) impl RuntimeControlContract {
+      #L -- RuntimeControlContract ------------------------------------
+      op runtimePanic (as string: message) as bool ==> {
+            emit(nice, stdRuntimePanic(message), "ok")
+      }
+
+      op runtimeTrap () as bool ==> {
+            emit(nice, stdRuntimeTrap(), "ok")
+      }
+
+      op runtimeSetPanicHook (as string: agent_name, as string: op_name) as bool ==> {
+            emit(nice, true, "ok")
+      }
+
+      op runtimeStackTrace () as list of data ==> {
+            emit(nice, stdRuntimeStackTrace(), "ok")
+      }
+
+      #L Aliases Control
+      op panic (as string: message) as bool ==> {
+            emit(nice, stdRuntimePanic(message), "ok")
+      }
+
+      op trap () as bool ==> {
+            emit(nice, stdRuntimeTrap(), "ok")
+      }
+
+      op setPanicHook (as string: agent_name, as string: op_name) as bool ==> {
+            emit(nice, true, "ok")
+      }
+
+      op stackTrace () as list of data ==> {
+            emit(nice, stdRuntimeStackTrace(), "ok")
+      }
+}

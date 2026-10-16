@@ -1,0 +1,66 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxTexture
+#L ==============================================================================
+
+contract (GfxTextureContract) {
+      op gfxTextureNew (as int64: width, as int64: height) as map
+      op gfxTextureGetWidth (as map: texture) as int64
+      op gfxTextureGetHeight (as map: texture) as int64
+      op gfxTextureIsLoaded (as map: texture) as bool
+      op gfxDrawTexture (as map: ctx, as map: texture, as float64: x, as float64: y) as map
+      op gfxDrawTexturePro (as map: ctx, as map: texture, as float64: sx, as float64: sy, as float64: sw, as float64: sh, as float64: dx, as float64: dy, as float64: dw, as float64: dh, as float64: rotation_deg) as map
+}
+
+agent (GfxStdLib) impl GfxTextureContract {
+      #L 6. GfxTextureContract
+      #L =====================================================================
+
+      op gfxTextureNew (as int64: width, as int64: height) as map ==> {
+            mut as map: tex = map{}
+            tex["width"] = width
+            tex["height"] = height
+            tex["loaded"] = true
+            emit(nice, tex, "ok")
+      }
+
+      op gfxTextureGetWidth (as map: texture) as int64 ==> {
+            mut as int64: w = 0
+            route {
+                  _mapHasKey(texture, "width") ==> {
+                        w = texture["width"] as int64
+                  }
+            }
+            emit(nice, w, "ok")
+      }
+
+      op gfxTextureGetHeight (as map: texture) as int64 ==> {
+            mut as int64: h = 0
+            route {
+                  _mapHasKey(texture, "height") ==> {
+                        h = texture["height"] as int64
+                  }
+            }
+            emit(nice, h, "ok")
+      }
+
+      op gfxTextureIsLoaded (as map: texture) as bool ==> {
+            mut as bool: l = false
+            route {
+                  _mapHasKey(texture, "loaded") ==> {
+                        l = texture["loaded"] == true
+                  }
+            }
+            emit(nice, l, "ok")
+      }
+
+      op gfxDrawTexture (as map: ctx, as map: texture, as float64: x, as float64: y) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawTexturePro (as map: ctx, as map: texture, as float64: sx, as float64: sy, as float64: sw, as float64: sh, as float64: dx, as float64: dy, as float64: dw, as float64: dh, as float64: rotation_deg) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      #L =====================================================================
+}

@@ -102,6 +102,7 @@ _BUILTIN_TYPE_NAMES = {
 _INT_TYPES = {"int8", "int16", "int32", "int64"}
 _UINT_TYPES = {"uint8", "uint16", "uint32", "uint64"}
 _FLOAT_TYPES = {"float16", "float32", "float64", "fp8_e4m3", "fp8_e5m2", "bf16_e8m7", "tf32_e8m10"}
+_COMPLEX_TYPES = {"complex32", "complex64", "complex128"}
 
 _INT_WIDENING = {"int8": "int16", "int16": "int32", "int32": "int64", "int64": "int64"}
 _UINT_WIDENING = {"uint8": "uint16", "uint16": "uint32", "uint32": "uint64", "uint64": "uint64"}
@@ -483,6 +484,8 @@ class TypeChecker:
             return b
         if a.name in _FLOAT_TYPES and b.name in (_INT_TYPES | _UINT_TYPES):
             return a
+        if a.name in _COMPLEX_TYPES or b.name in _COMPLEX_TYPES:
+            return a if a.name in _COMPLEX_TYPES else b
         return a
 
     def check_type_compatibility(self, actual: Type, expected: Type, node: ASTNode) -> Diagnostic | None:
@@ -516,10 +519,12 @@ class TypeChecker:
         # Complex compatibility
         complex_order = ["complex32", "complex64", "complex128"]
         if expected.name in complex_order:
-            init_node = getattr(node, "initializer", node)
-            if actual.name in _INT_TYPES | _UINT_TYPES | _FLOAT_TYPES or actual.name in complex_order:
+            if actual.name in complex_order:
                 return None
-            if isinstance(init_node, (Literal, BinaryOp)):
+            init_node = getattr(node, "initializer", node)
+            if isinstance(init_node, Literal) and str(getattr(init_node, "value_type", "")).lower() == "complex":
+                return None
+            if isinstance(init_node, BinaryOp) and actual.name in complex_order:
                 return None
             return self._make_type_mismatch(actual, expected, node)
         # Check if node is an integer literal initializer that fits the expected integer range
@@ -643,10 +648,12 @@ class TypeChecker:
         return list(self._diagnostics)
 
     def _make_type_mismatch(self, actual: Type, expected: Type, node: ASTNode) -> Diagnostic:
-        return Diagnostic(
-            code="SEM001", severity=Severity.ERROR,
-            line=_line(node), column=_col(node),
-            message=f"type mismatch: expected '{type_name(expected)}', got '{type_name(actual)}'",
+        from flux_proto.diagnostics.catalog import create_type_mismatch_diagnostic
+        return create_type_mismatch_diagnostic(
+            expected=type_name(expected),
+            actual=type_name(actual),
+            line=_line(node),
+            column=_col(node),
         )
 
 

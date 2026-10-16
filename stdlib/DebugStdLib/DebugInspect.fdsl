@@ -1,0 +1,77 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugInspect
+#L ==============================================================================
+
+contract (DebugInspectContract) {
+      op debugReprString (as string: text) as string
+      op debugReprInt (as int64: value) as string
+      op debugReprFloat (as float64: value) as string
+      op debugReprBool (as bool: value) as string
+      op debugDumpList (as list of data: items, as string: label) as string
+      op debugHexDump (as string: text) as string
+}
+
+agent (DebugStdLib) impl DebugInspectContract {
+      #L 4. DebugInspectContract
+      #L ==============================================================================
+      op debugReprString (as string: text) as string ==> {
+            emit(nice, "\"" + text + "\"", "ok")
+      }
+
+      op debugReprInt (as int64: value) as string ==> {
+            emit(nice, "Int64(" + value + ")", "ok")
+      }
+
+      op debugReprFloat (as float64: value) as string ==> {
+            emit(nice, "Float64(" + value + ")", "ok")
+      }
+
+      op debugReprBool (as bool: value) as string ==> {
+            route {
+                  value ==> { emit(nice, "Bool(true)", "ok") }
+                  _ ==> { emit(nice, "Bool(false)", "ok") }
+            }
+      }
+
+      op debugDumpList (as list of data: items, as string: label) as string ==> {
+            mut as string: out_str = label + " ["
+            mut as bool: first = true
+            mut as int64: count = 0
+            infinite (it in items) {
+                  route {
+                        first ==> {
+                              out_str = out_str + it
+                              first = false
+                        }
+                        _ ==> {
+                              out_str = out_str + ", " + it
+                        }
+                  }
+                  count = count + 1
+            }
+            out_str = out_str + "] (total: " + count + ")"
+            emit(nice, out_str, "ok")
+      }
+
+      op debugHexDump (as string: text) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (c in text) {
+                  mut as int64: code = _ord(c)
+                  mut as string: h = _toHexByte(code)
+                  route {
+                        first ==> {
+                              res = res + h
+                              first = false
+                        }
+                        _ ==> {
+                              res = res + " " + h
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

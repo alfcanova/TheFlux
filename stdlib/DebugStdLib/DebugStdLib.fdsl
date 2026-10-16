@@ -1,0 +1,16 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use DebugAssert.fdsl
+use DebugLogging.fdsl
+use DebugInspect.fdsl
+use DebugProfile.fdsl
+use DebugDiff.fdsl
+use DebugPipeline.fdsl
+use DebugState.fdsl
+use DebugFilter.fdsl
+
+agent (DebugStdLib) {
+}

@@ -1,0 +1,65 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RegexStdLib
+#L Dominio: RegexCapture
+#L ==============================================================================
+
+contract (RegexCaptureContract) {
+      op regexCaptureGroups (as string: pattern, as string: text) as map
+      op regexCaptureAll (as string: pattern, as string: text) as list of data
+      op regexExtractGroups (as string: pattern, as string: text) as list of data
+      op regexExtractAllGroups (as string: pattern, as string: text) as list of data
+}
+
+agent (RegexStdLib) impl RegexCaptureContract {
+      #L 3. RegexCaptureContract
+      #L ==============================================================================
+
+      op regexExtractGroups (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            mut as list of data: all_g = m["groups"] as list of data
+            mut as int64: count = _listLen(all_g)
+            route {
+                  count > 0 ==> {
+                        emit(nice, all_g[1], "ok")
+                  }
+            }
+            mut as list of data: empty_l = []
+            emit(nice, empty_l, "ok")
+      }
+
+      op regexExtractAllGroups (as string: pattern, as string: text) as list of data ==> {
+            mut as map: m = _findAllSpansAndGroups(pattern, text)
+            emit(nice, m["groups"], "ok")
+      }
+
+      op regexCaptureGroups (as string: pattern, as string: text) as map ==> {
+            mut as list of data: grp_list = regexExtractGroups(pattern, text)
+            mut as map: res = map{}
+            mut as int64: idx = 1
+            infinite (item in grp_list) {
+                  res["" + idx] = item
+                  idx = idx + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op regexCaptureAll (as string: pattern, as string: text) as list of data ==> {
+            mut as list of data: all_grps = regexExtractAllGroups(pattern, text)
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (grp_item in all_grps) {
+                  mut as list of data: items = grp_item as list of data
+                  mut as map: m = map{}
+                  mut as int64: idx = 1
+                  infinite (sub_item in items) {
+                        m["" + idx] = sub_item
+                        idx = idx + 1
+                  }
+                  count = count + 1
+                  res[count] = m
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

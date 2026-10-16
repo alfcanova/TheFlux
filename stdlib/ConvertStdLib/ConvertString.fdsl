@@ -1,0 +1,155 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Dominio: ConvertString
+#L ==============================================================================
+
+contract (ConvertStringContract) {
+      op convertToString (as data: value) as string
+      op convertIntToString (as int64: value) as string
+      op convertFloatToString (as float64: value) as string
+      op convertBoolToString (as bool: value) as string
+      op convertEnumToString (as data: value) as string
+}
+
+agent (ConvertStdLib) impl ConvertStringContract {
+      #L 6. ConvertStringContract
+      #L ==============================================================================
+      op convertToString (as data: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertIntToString (as int64: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertFloatToString (as float64: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertBoolToString (as bool: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      op convertEnumToString (as data: value) as string ==> {
+            emit(nice, "" + value, "ok")
+      }
+
+      #L ==============================================================================
+      #L 7. Aliases Retrocompativeis
+      #L ==============================================================================
+      op parseInt (as string: text) as int64 ==> {
+            emit(nice, convertParseInt(text), "ok")
+      }
+
+      op parseIntOrDefault (as string: text, as int64: default) as int64 ==> {
+            emit(nice, convertParseIntOrDefault(text, default), "ok")
+      }
+
+      op parseFloat (as string: text) as float64 ==> {
+            emit(nice, convertParseFloat(text), "ok")
+      }
+
+      op parseFloatOrDefault (as string: text, as float64: default) as float64 ==> {
+            emit(nice, convertParseFloatOrDefault(text, default), "ok")
+      }
+
+      op parseBool (as string: text) as bool ==> {
+            emit(nice, convertParseBool(text), "ok")
+      }
+
+      op toString (as data: value) as string ==> {
+            emit(nice, convertToString(value), "ok")
+      }
+
+      op intToString (as int64: value) as string ==> {
+            emit(nice, convertIntToString(value), "ok")
+      }
+
+      op floatToString (as float64: value) as string ==> {
+            emit(nice, convertFloatToString(value), "ok")
+      }
+
+      op boolToString (as bool: value) as string ==> {
+            emit(nice, convertBoolToString(value), "ok")
+      }
+
+      op intToFloat (as int64: value) as float64 ==> {
+            emit(nice, convertIntToFloat(value), "ok")
+      }
+
+      op floatToInt (as float64: value) as int64 ==> {
+            emit(nice, convertFloatToInt(value), "ok")
+      }
+
+      op intToInt32 (as int64: value) as int32 ==> {
+            emit(nice, convertIntToInt32(value), "ok")
+      }
+
+      op intToInt32OrDefault (as int64: value, as int32: default) as int32 ==> {
+            emit(nice, convertIntToInt32OrDefault(value, default), "ok")
+      }
+
+      op intToUint8 (as int64: value) as uint8 ==> {
+            emit(nice, convertIntToUint8(value), "ok")
+      }
+
+      op intToUint8OrDefault (as int64: value, as uint8: default) as uint8 ==> {
+            emit(nice, convertIntToUint8OrDefault(value, default), "ok")
+      }
+
+      op boolToInt (as bool: value) as int64 ==> {
+            emit(nice, convertBoolToInt(value), "ok")
+      }
+
+      op intToBool (as int64: value) as bool ==> {
+            emit(nice, convertIntToBool(value), "ok")
+      }
+
+      op castToInt32 (as int64: value) as int32 ==> {
+            emit(nice, convertCastToInt32(value), "ok")
+      }
+
+      op castToInt64 (as int32: value) as int64 ==> {
+            emit(nice, convertCastToInt64(value), "ok")
+      }
+
+      op castToFloat64 (as float32: value) as float64 ==> {
+            emit(nice, convertCastToFloat64(value), "ok")
+      }
+
+      op castToFloat32 (as data: value) as float32 ==> {
+            emit(nice, convertCastToFloat32(value), "ok")
+      }
+
+      op castToBf16E8M7 (as float32: value) as bf16_e8m7 ==> {
+            emit(nice, convertCastToBf16E8M7(value), "ok")
+      }
+
+      op castToTf32E8M10 (as float32: value) as tf32_e8m10 ==> {
+            emit(nice, convertCastToTf32E8M10(value), "ok")
+      }
+
+      op castToFp8E4M3 (as float32: value) as fp8_e4m3 ==> {
+            emit(nice, convertCastToFp8E4M3(value), "ok")
+      }
+
+      op castToFp8E4M3OrDefault (as float32: value, as fp8_e4m3: default) as fp8_e4m3 ==> {
+            emit(nice, convertCastToFp8E4M3OrDefault(value, default), "ok")
+      }
+
+      op castToFp8E5M2 (as float32: value) as fp8_e5m2 ==> {
+            emit(nice, convertCastToFp8E5M2(value), "ok")
+      }
+
+      op toComplex (as float64: real, as float64: imag) as complex64 ==> {
+            emit(nice, convertToComplex(real, imag), "ok")
+      }
+
+      op complexToList (as complex64: value) as list of data ==> {
+            emit(nice, convertComplexToList(value), "ok")
+      }
+
+      op enumToString (as data: value) as string ==> {
+            emit(nice, convertEnumToString(value), "ok")
+      }
+}

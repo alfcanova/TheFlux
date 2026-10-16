@@ -1,0 +1,109 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringMutation
+#L ==============================================================================
+
+contract (StringMutationContract) {
+      op stringPushFront (as string: text, as string: char) as string
+      op stringPushBack (as string: text, as string: char) as string
+      op stringPrepend (as string: text, as string: prefix) as string
+      op stringAppend (as string: text, as string: suffix) as string
+      op stringInsertFirst (as string: text, as string: insert_text) as string
+      op stringInsertAt (as string: text, as int64: index, as string: insert_text) as string
+      op stringInsertLast (as string: text, as string: insert_text) as string
+      op stringInsert (as string: text, as int64: index, as string: insert_text) as string
+      op stringRemoveFirst (as string: text) as string
+      op stringRemoveAt (as string: text, as int64: index) as string
+      op stringRemoveLast (as string: text) as string
+      op stringRemove (as string: text, as string: target) as string
+      op stringRemoveAll (as string: text, as string: target) as string
+}
+
+agent (StringStdLib) impl StringMutationContract {
+      #L -- StringMutationContract ------------------------------------
+      op stringPushFront (as string: text, as string: char) as string ==> {
+            emit(nice, char + text, "ok")
+      }
+
+      op stringPushBack (as string: text, as string: char) as string ==> {
+            emit(nice, text + char, "ok")
+      }
+
+      op stringPrepend (as string: text, as string: prefix) as string ==> {
+            emit(nice, prefix + text, "ok")
+      }
+
+      op stringAppend (as string: text, as string: suffix) as string ==> {
+            emit(nice, text + suffix, "ok")
+      }
+
+      op stringInsertFirst (as string: text, as string: insert_text) as string ==> {
+            emit(nice, insert_text + text, "ok")
+      }
+
+      op stringInsertAt (as string: text, as int64: index, as string: insert_text) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  index <= 1 ==> {
+                        emit(nice, insert_text + text, "ok")
+                  }
+                  index > len_t ==> {
+                        emit(nice, text + insert_text, "ok")
+                  }
+                  index > 1 and index <= len_t ==> {
+                        mut as string: left = text[1..(index - 1)]
+                        mut as string: right = text[index..len_t]
+                        emit(nice, left + insert_text + right, "ok")
+                  }
+            }
+      }
+
+      op stringInsertLast (as string: text, as string: insert_text) as string ==> {
+            emit(nice, text + insert_text, "ok")
+      }
+
+      op stringInsert (as string: text, as int64: index, as string: insert_text) as string ==> {
+            emit(nice, stringInsertAt(text, index, insert_text), "ok")
+      }
+
+      op stringRemoveFirst (as string: text) as string ==> {
+            emit(nice, stringRemoveAt(text, 1), "ok")
+      }
+
+      op stringRemoveAt (as string: text, as int64: index) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  index < 1 or index > len_t ==> {
+                        emit(nice, text, "ok")
+                  }
+                  index == 1 ==> {
+                        route {
+                              len_t <= 1 ==> {
+                                    emit(nice, "", "ok")
+                              }
+                              len_t > 1 ==> {
+                                    emit(nice, text[2..len_t], "ok")
+                              }
+                        }
+                  }
+                  index == len_t ==> {
+                        emit(nice, text[1..(len_t - 1)], "ok")
+                  }
+                  index > 1 and index < len_t ==> {
+                        emit(nice, text[1..(index - 1)] + text[(index + 1)..len_t], "ok")
+                  }
+            }
+      }
+
+      op stringRemoveLast (as string: text) as string ==> {
+            emit(nice, stringRemoveAt(text, stringLength(text)), "ok")
+      }
+
+      op stringRemove (as string: text, as string: target) as string ==> {
+            emit(nice, stringReplaceFirst(text, target, ""), "ok")
+      }
+
+      op stringRemoveAll (as string: text, as string: target) as string ==> {
+            emit(nice, stringReplace(text, target, ""), "ok")
+      }
+}

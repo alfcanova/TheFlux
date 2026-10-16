@@ -1,0 +1,171 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetSelection
+#L ==============================================================================
+
+contract (SetSelectionContract) {
+      op setTake (as set of data: items, as int64: n) as set of data
+      op setDrop (as set of data: items, as int64: n) as set of data
+      op setTakeLast (as set of data: items, as int64: n) as set of data
+      op setDropLast (as set of data: items, as int64: n) as set of data
+      op setFilter (as set of data: items, as list of data: allowed_items) as set of data
+      op setOmit (as set of data: items, as list of data: omitted_items) as set of data
+}
+
+agent (SetStdLib) impl SetSelectionContract {
+      #L -- SetSelectionContract --------------------------------------
+      op setTake (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            route {
+                  n > 0 ==> {
+                        mut as int64: curr = 1
+                        infinite (x in l) {
+                              route {
+                                    curr <= n ==> {
+                                          rlen = rlen + 1
+                                          res_l[rlen] = x
+                                    }
+                                    curr > n ==> {
+                                          break
+                                    }
+                              }
+                              curr = curr + 1
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setDrop (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        curr > n ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setTakeLast (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            route {
+                  n > 0 ==> {
+                        mut as int64: total = stdCollectionLength(l)
+                        mut as int64: start_idx = total - n + 1
+                        route {
+                              start_idx < 1 ==> {
+                                    start_idx = 1
+                              }
+                        }
+                        mut as int64: curr = 1
+                        infinite (x in l) {
+                              route {
+                                    curr >= start_idx ==> {
+                                          rlen = rlen + 1
+                                          res_l[rlen] = x
+                                    }
+                              }
+                              curr = curr + 1
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setDropLast (as set of data: items, as int64: n) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            route {
+                  n <= 0 ==> {
+                        emit(nice, stdSetToSet(l), "ok")
+                  }
+            }
+            mut as int64: total = stdCollectionLength(l)
+            mut as int64: keep_count = total - n
+            mut as int64: curr = 1
+            infinite (x in l) {
+                  route {
+                        curr <= keep_count ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setCount (as set of data: items, as data: item) as int64 ==> {
+            mut as bool: has_item = stdCollectionContains(items, item)
+            route {
+                  has_item ==> {
+                        mut as int64: one = 1
+                        emit(nice, one, "ok")
+                  }
+                  not has_item ==> {
+                        mut as int64: zero = 0
+                        emit(nice, zero, "ok")
+                  }
+            }
+      }
+
+      op setFilter (as set of data: items, as list of data: allowed_items) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            infinite (elem in l) {
+                  mut as bool: should_keep = false
+                  infinite (item_allowed in allowed_items) {
+                        route {
+                              elem == item_allowed ==> {
+                                    should_keep = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        should_keep ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = elem
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+
+      op setOmit (as set of data: items, as list of data: omitted_items) as set of data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as list of data: res_l = []
+            mut as int64: rlen = 0
+            infinite (elem in l) {
+                  mut as bool: should_omit = false
+                  infinite (item_omitted in omitted_items) {
+                        route {
+                              elem == item_omitted ==> {
+                                    should_omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not should_omit ==> {
+                              rlen = rlen + 1
+                              res_l[rlen] = elem
+                        }
+                  }
+            }
+            emit(nice, stdSetToSet(res_l), "ok")
+      }
+}

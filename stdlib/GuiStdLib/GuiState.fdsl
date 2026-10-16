@@ -1,0 +1,147 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiState
+#L ==============================================================================
+
+contract (GuiStateContract) {
+      op guiInitContext (as int64: screen_w, as int64: screen_h) as map
+      op guiCloseContext (as map: ctx) as map
+      op guiContextResetFrame (as map: ctx) as map
+      op guiGetWidgetCount (as map: ctx) as int64
+      op guiGetFrameCount (as map: ctx) as int64
+      op guiGetScreenWidth (as map: ctx) as int64
+      op guiGetScreenHeight (as map: ctx) as int64
+      op guiBindNativeWindow (as map: ctx, as int64: win_id) as map
+      op guiGetNativeWindow (as map: ctx) as int64
+      op guiUpdateInput (as map: ctx) as map
+      op guiPollNativeEvents (as map: ctx) as int64
+}
+
+agent (GuiStdLib) impl GuiStateContract {
+      #L 2. GuiStateContract
+      #L =====================================================================
+
+      op guiInitContext (as int64: screen_w, as int64: screen_h) as map ==> {
+            mut as map: ctx = map{}
+            ctx["screen_w"] = screen_w
+            ctx["screen_h"] = screen_h
+            ctx["cursor_x"] = 8
+            ctx["cursor_y"] = 8
+            ctx["widget_count"] = 0
+            ctx["frame_count"] = 1
+            ctx["closed"] = false
+            ctx["in_row"] = false
+            ctx["row_start_x"] = 8
+            ctx["row_start_y"] = 8
+            ctx["row_max_h"] = 0
+            ctx["theme"] = guiThemeDefault()
+            emit(nice, ctx, "ok")
+      }
+
+      op guiCloseContext (as map: ctx) as map ==> {
+            ctx["closed"] = true
+            emit(nice, ctx, "ok")
+      }
+
+      op guiContextResetFrame (as map: ctx) as map ==> {
+            ctx["cursor_x"] = 8
+            ctx["cursor_y"] = 8
+            ctx["widget_count"] = 0
+            ctx["in_row"] = false
+            ctx["row_start_x"] = 8
+            ctx["row_start_y"] = 8
+            ctx["row_max_h"] = 0
+            mut as int64: fc = ctx["frame_count"] as int64
+            ctx["frame_count"] = fc + 1
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetWidgetCount (as map: ctx) as int64 ==> {
+            mut as int64: wc = 0
+            route {
+                  _mapHasKey(ctx, "widget_count") ==> {
+                        wc = ctx["widget_count"] as int64
+                  }
+            }
+            emit(nice, wc, "ok")
+      }
+
+      op guiGetFrameCount (as map: ctx) as int64 ==> {
+            mut as int64: fc = 1
+            route {
+                  _mapHasKey(ctx, "frame_count") ==> {
+                        fc = ctx["frame_count"] as int64
+                  }
+            }
+            emit(nice, fc, "ok")
+      }
+
+      op guiGetScreenWidth (as map: ctx) as int64 ==> {
+            mut as int64: w = 0
+            route {
+                  _mapHasKey(ctx, "screen_w") ==> {
+                        w = ctx["screen_w"] as int64
+                  }
+            }
+            emit(nice, w, "ok")
+      }
+
+      op guiGetScreenHeight (as map: ctx) as int64 ==> {
+            mut as int64: h = 0
+            route {
+                  _mapHasKey(ctx, "screen_h") ==> {
+                        h = ctx["screen_h"] as int64
+                  }
+            }
+            emit(nice, h, "ok")
+      }
+
+      op guiBindNativeWindow (as map: ctx, as int64: win_id) as map ==> {
+            ctx["native_win"] = win_id
+            emit(nice, ctx, "ok")
+      }
+
+      op guiGetNativeWindow (as map: ctx) as int64 ==> {
+            mut as int64: win_id = 0
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        win_id = ctx["native_win"] as int64
+                  }
+            }
+            emit(nice, win_id, "ok")
+      }
+
+      op guiPollNativeEvents (as map: ctx) as int64 ==> {
+            mut as int64: ev = 0
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    ev = stdGfxEventPoll(win_id)
+                              }
+                        }
+                  }
+            }
+            emit(nice, ev, "ok")
+      }
+
+      op guiUpdateInput (as map: ctx) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    mut as int64: ev = stdGfxEventPoll(win_id)
+                                    ctx["mouse_x"] = stdGfxEventX()
+                                    ctx["mouse_y"] = stdGfxEventY()
+                                    ctx["mouse_down"] = ev == 1
+                              }
+                        }
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+}

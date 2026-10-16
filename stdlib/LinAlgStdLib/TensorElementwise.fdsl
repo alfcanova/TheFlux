@@ -1,0 +1,345 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorElementwise
+#L ==============================================================================
+
+contract (TensorElementwiseContract) {
+      op tensorSubElementwise (as map: lhs, as map: rhs) as map
+      op tensorMulElementwise (as map: lhs, as map: rhs) as map
+      op tensorDivElementwise (as map: lhs, as map: rhs) as map
+      op tensorMeanAxis (as map: tensor, as int64: axis) as map
+      op tensorMinAxis (as map: tensor, as int64: axis) as map
+      op tensorMaxAxis (as map: tensor, as int64: axis) as map
+      op tensorClamp (as map: tensor, as float64: min_val, as float64: max_val) as map
+}
+
+agent (LinAlgStdLib) impl TensorElementwiseContract {
+      #L 12. TensorElementwiseContract - Sub, Mul Hadamard, Div, Media, Min, Max, Clamp
+      #L ==============================================================================
+
+      op tensorSubElementwise (as map: lhs, as map: rhs) as map ==> {
+            mut as list of data: l_sh = lhs["shape"] as list of data
+            mut as map: out = tensorNew(l_sh)
+            mut as int64: ndim = lhs["ndim"] as int64
+
+            mut as int64: total = 1
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  total = total * (l_sh[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total) {
+                  mut as float64: v1 = tensorGetAt(lhs, coords)
+                  mut as float64: v2 = tensorGetAt(rhs, coords)
+                  out = tensorSetAt(out, coords, v1 - v2)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (l_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (l_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorMulElementwise (as map: lhs, as map: rhs) as map ==> {
+            mut as list of data: l_sh = lhs["shape"] as list of data
+            mut as map: out = tensorNew(l_sh)
+            mut as int64: ndim = lhs["ndim"] as int64
+
+            mut as int64: total = 1
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  total = total * (l_sh[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total) {
+                  mut as float64: v1 = tensorGetAt(lhs, coords)
+                  mut as float64: v2 = tensorGetAt(rhs, coords)
+                  out = tensorSetAt(out, coords, v1 * v2)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (l_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (l_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorDivElementwise (as map: lhs, as map: rhs) as map ==> {
+            mut as list of data: l_sh = lhs["shape"] as list of data
+            mut as map: out = tensorNew(l_sh)
+            mut as int64: ndim = lhs["ndim"] as int64
+
+            mut as int64: total = 1
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  total = total * (l_sh[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total) {
+                  mut as float64: v1 = tensorGetAt(lhs, coords)
+                  mut as float64: v2 = tensorGetAt(rhs, coords)
+                  out = tensorSetAt(out, coords, v1 /f v2)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (l_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (l_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorMeanAxis (as map: tensor, as int64: axis) as map ==> {
+            mut as map: sum_t = tensorSumAxis(tensor, axis)
+            mut as list of data: sh = tensor["shape"] as list of data
+            mut as float64: axis_len = (sh[axis] as int64) as float64
+
+            mut as map: out = _mapClone(sum_t)
+            mut as list of data: buf = _listClone(sum_t["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  buf[i] = (buf[i] as float64) /f axis_len
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      op tensorMinAxis (as map: tensor, as int64: axis) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+
+            mut as list of data: out_sh = []
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  route {
+                        i == axis ==> { out_sh[i] = 1 }
+                        i != axis ==> { out_sh[i] = old_sh[i] }
+                  }
+                  i = i + 1
+            }
+
+            mut as map: out = tensorNew(out_sh)
+            mut as list of data: out_buf = _listClone(out["data"] as list of data)
+            mut as int64: o_len = 0
+            infinite (x in out_buf) { o_len = o_len + 1 }
+            i = 1
+            infinite (i <= o_len) {
+                  out_buf[i] = 999999999999.0
+                  i = i + 1
+            }
+            out["data"] = out_buf
+
+            mut as list of data: old_buf = tensor["data"] as list of data
+            mut as int64: total = 1
+            i = 1
+            infinite (i <= ndim) {
+                  total = total * (old_sh[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total) {
+                  mut as float64: current_val = old_buf[idx] as float64
+
+                  mut as list of data: out_coords = []
+                  i = 1
+                  infinite (i <= ndim) {
+                        route {
+                              i == axis ==> { out_coords[i] = 1 }
+                              i != axis ==> { out_coords[i] = coords[i] }
+                        }
+                        i = i + 1
+                  }
+
+                  mut as float64: existing = tensorGetAt(out, out_coords)
+                  route {
+                        current_val < existing ==> {
+                              out = tensorSetAt(out, out_coords, current_val)
+                        }
+                  }
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (old_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (old_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorMaxAxis (as map: tensor, as int64: axis) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+
+            mut as list of data: out_sh = []
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  route {
+                        i == axis ==> { out_sh[i] = 1 }
+                        i != axis ==> { out_sh[i] = old_sh[i] }
+                  }
+                  i = i + 1
+            }
+
+            mut as map: out = tensorNew(out_sh)
+            mut as list of data: out_buf = _listClone(out["data"] as list of data)
+            mut as int64: o_len = 0
+            infinite (x in out_buf) { o_len = o_len + 1 }
+            i = 1
+            infinite (i <= o_len) {
+                  out_buf[i] = -999999999999.0
+                  i = i + 1
+            }
+            out["data"] = out_buf
+
+            mut as list of data: old_buf = tensor["data"] as list of data
+            mut as int64: total = 1
+            i = 1
+            infinite (i <= ndim) {
+                  total = total * (old_sh[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total) {
+                  mut as float64: current_val = old_buf[idx] as float64
+
+                  mut as list of data: out_coords = []
+                  i = 1
+                  infinite (i <= ndim) {
+                        route {
+                              i == axis ==> { out_coords[i] = 1 }
+                              i != axis ==> { out_coords[i] = coords[i] }
+                        }
+                        i = i + 1
+                  }
+
+                  mut as float64: existing = tensorGetAt(out, out_coords)
+                  route {
+                        current_val > existing ==> {
+                              out = tensorSetAt(out, out_coords, current_val)
+                        }
+                  }
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (old_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (old_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorClamp (as map: tensor, as float64: min_val, as float64: max_val) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            mut as list of data: buf = _listClone(tensor["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as float64: val = buf[i] as float64
+                  route {
+                        val < min_val ==> { val = min_val }
+                        val > max_val ==> { val = max_val }
+                  }
+                  buf[i] = val
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

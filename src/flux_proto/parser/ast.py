@@ -359,12 +359,14 @@ class UseOp(ASTNode):
     agent: str = ""
     op: str = ""
     alias: str = ""
+    path: list[str] = field(default_factory=list)
 
 
 @dataclass
 class UseGroup(ASTNode):
     agent: str = ""
     items: list[UseGroupItem] = field(default_factory=list)
+    path: list[str] = field(default_factory=list)
 
 
 @dataclass

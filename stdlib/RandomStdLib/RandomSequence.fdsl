@@ -1,0 +1,157 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RandomStdLib
+#L Dominio: RandomSequence
+#L ==============================================================================
+
+contract (RandomSequenceContract) {
+      op randomPick (as int64: state, as list of data: items) as list of data
+      op randomPickIndex (as int64: state, as list of data: items) as list of data
+      op randomShuffle (as int64: state, as list of data: items) as list of data
+      op randomSample (as int64: state, as list of data: items, as int64: k) as list of data
+      op randomChoices (as int64: state, as list of data: items, as int64: k) as list of data
+      op randomWeightedChoice (as int64: state, as list of data: items, as list of data: weights) as list of data
+}
+
+agent (RandomStdLib) impl RandomSequenceContract {
+      #L 3. RandomSequenceContract (1-Index)
+      #L ==============================================================================
+      op randomPickIndex (as int64: state, as list of data: items) as list of data ==> {
+            mut as int64: n = 0
+            infinite (x in items) { n = n + 1 }
+            route {
+                  n <= 0 ==> {
+                        mut as list of data: empty_res = [state, -1]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as list of data: pair = randomNextIntRange(state, 1, n)
+            emit(nice, pair, "ok")
+      }
+
+      op randomPick (as int64: state, as list of data: items) as list of data ==> {
+            mut as int64: n = 0
+            infinite (x in items) { n = n + 1 }
+            route {
+                  n <= 0 ==> {
+                        mut as list of data: empty_res = [state, ""]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as list of data: pair = randomNextIntRange(state, 1, n)
+            mut as int64: next_st = pair[1] as int64
+            mut as int64: idx = pair[2] as int64
+            mut as data: chosen = items[idx]
+            mut as list of data: res = [next_st, chosen]
+            emit(nice, res, "ok")
+      }
+
+      op randomShuffle (as int64: state, as list of data: items) as list of data ==> {
+            mut as int64: n = 0
+            infinite (x in items) { n = n + 1 }
+            route {
+                  n <= 1 ==> {
+                        mut as list of data: no_op = [state, items]
+                        emit(nice, no_op, "ok")
+                  }
+            }
+            mut as list of data: arr = []
+            mut as int64: k = 1
+            infinite (x in items) {
+                  arr[k] = x
+                  k = k + 1
+            }
+            mut as int64: cur_state = state
+            infinite (i in n .. 2) {
+                  mut as list of data: pair = randomNextIntRange(cur_state, 1, i)
+                  cur_state = pair[1] as int64
+                  mut as int64: j = pair[2] as int64
+                  mut as data: tmp = arr[i]
+                  arr[i] = arr[j]
+                  arr[j] = tmp
+            }
+            mut as list of data: res = [cur_state, arr]
+            emit(nice, res, "ok")
+      }
+
+      op randomSample (as int64: state, as list of data: items, as int64: k) as list of data ==> {
+            mut as int64: n = 0
+            infinite (x in items) { n = n + 1 }
+            route {
+                  k <= 0 or n == 0 ==> {
+                        mut as list of data: empty_res = [state, []]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as list of data: shuf_pair = randomShuffle(state, items)
+            mut as int64: next_st = shuf_pair[1] as int64
+            mut as list of data: shuf_list = shuf_pair[2] as list of data
+            mut as int64: limit = k
+            route {
+                  limit > n ==> {
+                        limit = n
+                  }
+            }
+            mut as list of data: sample = []
+            infinite (i in 1 .. limit) {
+                  sample[i] = shuf_list[i]
+            }
+            mut as list of data: res = [next_st, sample]
+            emit(nice, res, "ok")
+      }
+
+      op randomChoices (as int64: state, as list of data: items, as int64: k) as list of data ==> {
+            mut as int64: n = 0
+            infinite (x in items) { n = n + 1 }
+            route {
+                  n == 0 or k <= 0 ==> {
+                        mut as list of data: empty_res = [state, []]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as int64: cur_st = state
+            mut as list of data: res_list = []
+            infinite (i in 1 .. k) {
+                  mut as list of data: pair = randomNextIntRange(cur_st, 1, n)
+                  cur_st = pair[1] as int64
+                  mut as int64: idx = pair[2] as int64
+                  res_list[i] = items[idx]
+            }
+            mut as list of data: res = [cur_st, res_list]
+            emit(nice, res, "ok")
+      }
+
+      op randomWeightedChoice (as int64: state, as list of data: items, as list of data: weights) as list of data ==> {
+            mut as int64: total_weight = 0
+            infinite (w in weights) {
+                  total_weight = total_weight + (w as int64)
+            }
+            route {
+                  total_weight <= 0 ==> {
+                        mut as list of data: def_res = [state, ""]
+                        emit(nice, def_res, "ok")
+                  }
+            }
+            mut as list of data: pair = randomNextIntRange(state, 1, total_weight)
+            mut as int64: next_st = pair[1] as int64
+            mut as int64: roll = pair[2] as int64
+            mut as int64: acc = 0
+            mut as int64: chosen_idx = 1
+            mut as bool: found = false
+            mut as int64: idx = 1
+            infinite (w in weights) {
+                  acc = acc + (w as int64)
+                  route {
+                        roll <= acc and not found ==> {
+                              chosen_idx = idx
+                              found = true
+                        }
+                  }
+                  idx = idx + 1
+            }
+            mut as data: chosen_item = items[chosen_idx]
+            mut as list of data: res = [next_st, chosen_item]
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

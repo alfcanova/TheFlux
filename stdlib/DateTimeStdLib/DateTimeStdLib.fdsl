@@ -1,0 +1,14 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use DateTimeDate.fdsl
+use DateTimeTime.fdsl
+use DateTimeTimeZone.fdsl
+use DateTimeFormat.fdsl
+use DateTimeCompare.fdsl
+use DateTimeMonotonic.fdsl
+
+agent (DateTimeStdLib) {
+}

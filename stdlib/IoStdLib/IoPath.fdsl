@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoPath
+#L ==============================================================================
+
+contract (IoPathContract) {
+      op pathBaseName (as string: path) as string
+      op pathDirName (as string: path) as string
+      op pathExtension (as string: path) as string
+      op pathJoin (as string: dir, as string: file) as string
+}
+
+agent (IoStdLib) impl IoPathContract {
+      #L -- IoPathContract --------------------------------------------
+      op pathBaseName (as string: path) as string ==> {
+            emit(nice, stdIoPathBaseName(path), "ok")
+      }
+
+      op pathDirName (as string: path) as string ==> {
+            emit(nice, stdIoPathDirName(path), "ok")
+      }
+
+      op pathExtension (as string: path) as string ==> {
+            emit(nice, stdIoPathExtension(path), "ok")
+      }
+
+      op pathJoin (as string: dir, as string: file) as string ==> {
+            emit(nice, stdIoPathJoin(dir, file), "ok")
+      }
+}

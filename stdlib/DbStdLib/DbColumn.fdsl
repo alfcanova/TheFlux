@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Dominio: DbColumn
+#L ==============================================================================
+
+contract (DbColumnContract) {
+      op dbColumnOpen (as string: path) as data
+      op dbColumnExecute (as data: connection, as string: sql) as bool
+      op dbColumnQuery (as data: connection, as string: sql) as list of data
+      op dbColumnRowCount (as data: connection, as string: table_name) as int64
+      op dbColumnScalar (as data: connection, as string: sql) as data
+      op dbColumnClose (as data: connection) as bool
+}
+
+agent (DbStdLib) impl DbColumnContract {
+      #L -- DbColumnContract ------------------------------------------
+      op dbColumnOpen (as string: path) as data ==> {
+            emit(nice, stdDbColumnOpen(path), "ok")
+      }
+
+      op dbColumnExecute (as data: connection, as string: sql) as bool ==> {
+            emit(nice, stdDbColumnExecute(connection, sql), "ok")
+      }
+
+      op dbColumnQuery (as data: connection, as string: sql) as list of data ==> {
+            emit(nice, stdDbColumnQuery(connection, sql), "ok")
+      }
+
+      op dbColumnRowCount (as data: connection, as string: table_name) as int64 ==> {
+            emit(nice, stdDbColumnRowCount(connection, table_name), "ok")
+      }
+
+      op dbColumnScalar (as data: connection, as string: sql) as data ==> {
+            emit(nice, stdDbColumnScalar(connection, sql), "ok")
+      }
+
+      op dbColumnClose (as data: connection) as bool ==> {
+            emit(nice, stdDbColumnClose(connection), "ok")
+      }
+}

@@ -1,0 +1,177 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatDispersion
+#L ==============================================================================
+
+contract (StatDispersionContract) {
+      op statVariancePopulation (as list of data: data_points) as float64
+      op statVarianceSample (as list of data: data_points) as float64
+      op statStdDevPopulation (as list of data: data_points) as float64
+      op statStdDevSample (as list of data: data_points) as float64
+      op statRange (as list of data: data_points) as float64
+      op statMin (as list of data: data_points) as float64
+      op statMax (as list of data: data_points) as float64
+      op statIQR (as list of data: data_points) as float64
+      op statMeanAbsoluteDeviation (as list of data: data_points) as float64
+      op statMedianAbsoluteDeviation (as list of data: data_points) as float64
+      op statCoefficientOfVariation (as list of data: data_points) as float64
+}
+
+agent (StatStdLib) impl StatDispersionContract {
+      #L 2. StatDispersionContract
+      #L ==============================================================================
+
+      op statVariancePopulation (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mu = statMean(data_points)
+            mut as float64: sq_sum = 0.0
+            infinite (x in data_points) {
+                  mut as float64: diff = (x as float64) - mu
+                  sq_sum = sq_sum + (diff * diff)
+            }
+            emit(nice, sq_sum /f (n as float64), "ok")
+      }
+
+      op statVarianceSample (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n <= 1 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mu = statMean(data_points)
+            mut as float64: sq_sum = 0.0
+            infinite (x in data_points) {
+                  mut as float64: diff = (x as float64) - mu
+                  sq_sum = sq_sum + (diff * diff)
+            }
+            emit(nice, sq_sum /f ((n - 1) as float64), "ok")
+      }
+
+      op statStdDevPopulation (as list of data: data_points) as float64 ==> {
+            mut as float64: v = statVariancePopulation(data_points)
+            route {
+                  v <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = v ^r 2
+            emit(nice, res, "ok")
+      }
+
+      op statStdDevSample (as list of data: data_points) as float64 ==> {
+            mut as float64: v = statVarianceSample(data_points)
+            route {
+                  v <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: res = v ^r 2
+            emit(nice, res, "ok")
+      }
+
+      op statRange (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mn = statMin(data_points)
+            mut as float64: mx = statMax(data_points)
+            emit(nice, mx - mn, "ok")
+      }
+
+      op statMin (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: cur_min = data_points[1] as float64
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  route {
+                        v < cur_min ==> {
+                              cur_min = v
+                        }
+                  }
+            }
+            emit(nice, cur_min, "ok")
+      }
+
+      op statMax (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: cur_max = data_points[1] as float64
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  route {
+                        v > cur_max ==> {
+                              cur_max = v
+                        }
+                  }
+            }
+            emit(nice, cur_max, "ok")
+      }
+
+      op statIQR (as list of data: data_points) as float64 ==> {
+            mut as float64: q1 = statQuantile(data_points, 0.25)
+            mut as float64: q3 = statQuantile(data_points, 0.75)
+            emit(nice, q3 - q1, "ok")
+      }
+
+      op statMeanAbsoluteDeviation (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: mu = statMean(data_points)
+            mut as float64: sum_dev = 0.0
+            infinite (x in data_points) {
+                  sum_dev = sum_dev + _statAbs((x as float64) - mu)
+            }
+            emit(nice, sum_dev /f (n as float64), "ok")
+      }
+
+      op statMedianAbsoluteDeviation (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: med = statMedian(data_points)
+            mut as list of data: devs = []
+            infinite (x in data_points) {
+                  mut as float64: d = _statAbs((x as float64) - med)
+                  devs[_statLen(devs) + 1] = d
+            }
+            emit(nice, statMedian(devs), "ok")
+      }
+
+      op statCoefficientOfVariation (as list of data: data_points) as float64 ==> {
+            mut as float64: mu = statMean(data_points)
+            route {
+                  mu == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: sd = statStdDevSample(data_points)
+            emit(nice, sd /f mu, "ok")
+      }
+
+      #L ==============================================================================
+}

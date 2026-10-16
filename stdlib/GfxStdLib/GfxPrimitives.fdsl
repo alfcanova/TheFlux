@@ -1,0 +1,125 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxPrimitives
+#L ==============================================================================
+
+contract (GfxPrimitivesContract) {
+      op gfxClearBackground (as map: ctx, as list of int64: color) as map
+      op gfxDrawRect (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map
+      op gfxDrawRectLines (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map
+      op gfxDrawCircle (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map
+      op gfxDrawCircleLines (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map
+      op gfxDrawLine (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as list of int64: color) as map
+      op gfxDrawTriangle (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as float64: x3, as float64: y3, as list of int64: color) as map
+      op gfxDrawText (as map: ctx, as string: text, as float64: x, as float64: y, as int64: font_size, as list of int64: color) as map
+}
+
+agent (GfxStdLib) impl GfxPrimitivesContract {
+      #L 4. GfxPrimitivesContract
+      #L =====================================================================
+
+      op gfxClearBackground (as map: ctx, as list of int64: color) as map ==> {
+            ctx["bg_color"] = color
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxClear(win_id, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawRect (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxFillRect(win_id, x as int64, y as int64, w as int64, h as int64, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawRectLines (as map: ctx, as float64: x, as float64: y, as float64: w, as float64: h, as list of int64: color) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxDrawRect(win_id, x as int64, y as int64, w as int64, h as int64, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawCircle (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxFillCircle(win_id, cx as int64, cy as int64, radius as int64, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawCircleLines (as map: ctx, as float64: cx, as float64: cy, as float64: radius, as list of int64: color) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxDrawCircle(win_id, cx as int64, cy as int64, radius as int64, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawLine (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as list of int64: color) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxDrawLine(win_id, x1 as int64, y1 as int64, x2 as int64, y2 as int64, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawTriangle (as map: ctx, as float64: x1, as float64: y1, as float64: x2, as float64: y2, as float64: x3, as float64: y3, as list of int64: color) as map ==> {
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      op gfxDrawText (as map: ctx, as string: text, as float64: x, as float64: y, as int64: font_size, as list of int64: color) as map ==> {
+            route {
+                  _mapHasKey(ctx, "native_win") ==> {
+                        mut as int64: win_id = ctx["native_win"] as int64
+                        route {
+                              win_id > 0 ==> {
+                                    stdGfxDrawText(win_id, x as int64, y as int64, text, color[1], color[2], color[3])
+                              }
+                        }
+                  }
+            }
+            emit(nice, _incDrawCalls(ctx), "ok")
+      }
+
+      #L =====================================================================
+}

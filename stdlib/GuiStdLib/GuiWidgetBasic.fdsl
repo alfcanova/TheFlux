@@ -1,0 +1,49 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiWidgetBasic
+#L ==============================================================================
+
+contract (GuiWidgetBasicContract) {
+      op guiLabel (as map: ctx, as string: text) as map
+      op guiHeading (as map: ctx, as string: text) as map
+      op guiTitle (as map: ctx, as string: text) as map
+      op guiSeparator (as map: ctx) as map
+      op guiProgressBar (as map: ctx, as float64: fraction, as int64: w, as int64: h) as map
+}
+
+agent (GuiStdLib) impl GuiWidgetBasicContract {
+      #L 5. GuiWidgetBasicContract
+      #L =====================================================================
+
+      op guiLabel (as map: ctx, as string: text) as map ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            mut as int64: w = len * 8
+            emit(nice, _advanceWidget(ctx, w, 18), "ok")
+      }
+
+      op guiHeading (as map: ctx, as string: text) as map ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            mut as int64: w = len * 11
+            emit(nice, _advanceWidget(ctx, w, 24), "ok")
+      }
+
+      op guiTitle (as map: ctx, as string: text) as map ==> {
+            mut as int64: len = 0
+            infinite (c in text) { len = len + 1 }
+            mut as int64: w = len * 15
+            emit(nice, _advanceWidget(ctx, w, 32), "ok")
+      }
+
+      op guiSeparator (as map: ctx) as map ==> {
+            mut as int64: sw = ctx["screen_w"] as int64
+            emit(nice, _advanceWidget(ctx, sw - 16, 2), "ok")
+      }
+
+      op guiProgressBar (as map: ctx, as float64: fraction, as int64: w, as int64: h) as map ==> {
+            emit(nice, _advanceWidget(ctx, w, h), "ok")
+      }
+
+      #L =====================================================================
+}

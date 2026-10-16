@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Dominio: DateTimeCompare
+#L ==============================================================================
+
+contract (DateTimeCompareContract) {
+      op dateTimeSameInstant (as datetime: left, as datetime: right) as bool
+      op dateTimeIsBefore (as datetime: left, as datetime: right) as bool
+      op dateTimeIsAfter (as datetime: left, as datetime: right) as bool
+      op dateTimeCompare (as datetime: left, as datetime: right) as int64
+}
+
+agent (DateTimeStdLib) impl DateTimeCompareContract {
+      #L -- DateTimeCompareContract -----------------------------------
+      op dateTimeSameInstant (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, left == right, "ok")
+      }
+
+      op dateTimeIsBefore (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsBefore(left, right), "ok")
+      }
+
+      op dateTimeIsAfter (as datetime: left, as datetime: right) as bool ==> {
+            emit(nice, stdDateTimeIsAfter(left, right), "ok")
+      }
+
+      op dateTimeCompare (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeCompare(left, right), "ok")
+      }
+}

@@ -1,0 +1,45 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Dominio: DateTimeTimeZone
+#L ==============================================================================
+
+contract (DateTimeTimeZoneContract) {
+      op dateTimeToTimeZone (as datetime: value, as string: timezone_name) as string
+      op dateTimeToLocal (as datetime: value) as string
+      op dateTimeToUtc (as datetime: value) as datetime
+      op dateTimeUtcOffset (as datetime: value, as string: timezone_name) as float64
+      op dateTimeLocalTimeZone () as string
+      op dateTimeIsDaylightSavingTime (as datetime: value, as string: timezone_name) as bool
+      op dateTimeDstOffset (as datetime: value, as string: timezone_name) as float64
+}
+
+agent (DateTimeStdLib) impl DateTimeTimeZoneContract {
+      #L -- DateTimeTimeZoneContract ----------------------------------
+      op dateTimeToTimeZone (as datetime: value, as string: timezone_name) as string ==> {
+            emit(nice, stdDateTimeToTimeZone(value, timezone_name), "ok")
+      }
+
+      op dateTimeToLocal (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToLocal(value), "ok")
+      }
+
+      op dateTimeToUtc (as datetime: value) as datetime ==> {
+            emit(nice, stdDateTimeToUtc(value), "ok")
+      }
+
+      op dateTimeUtcOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeUtcOffset(value, timezone_name), "ok")
+      }
+
+      op dateTimeLocalTimeZone () as string ==> {
+            emit(nice, stdDateTimeLocalTimeZone(), "ok")
+      }
+
+      op dateTimeIsDaylightSavingTime (as datetime: value, as string: timezone_name) as bool ==> {
+            emit(nice, stdDateTimeIsDaylightSavingTime(value, timezone_name), "ok")
+      }
+
+      op dateTimeDstOffset (as datetime: value, as string: timezone_name) as float64 ==> {
+            emit(nice, stdDateTimeDstOffset(value, timezone_name), "ok")
+      }
+}

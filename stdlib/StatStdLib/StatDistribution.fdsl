@@ -1,0 +1,163 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatDistribution
+#L ==============================================================================
+
+contract (StatDistributionContract) {
+      op statNormalPdf (as float64: x, as float64: mean, as float64: std_dev) as float64
+      op statNormalCdf (as float64: x, as float64: mean, as float64: std_dev) as float64
+      op statNormalInvCdf (as float64: p, as float64: mean, as float64: std_dev) as float64
+      op statBinomialPmf (as int64: k, as int64: n, as float64: p) as float64
+      op statBinomialCdf (as int64: k, as int64: n, as float64: p) as float64
+      op statPoissonPmf (as int64: k, as float64: lambda_rate) as float64
+      op statPoissonCdf (as int64: k, as float64: lambda_rate) as float64
+      op statExponentialPdf (as float64: x, as float64: lambda_rate) as float64
+      op statExponentialCdf (as float64: x, as float64: lambda_rate) as float64
+      op statUniformPdf (as float64: x, as float64: a, as float64: b) as float64
+      op statUniformCdf (as float64: x, as float64: a, as float64: b) as float64
+}
+
+agent (StatStdLib) impl StatDistributionContract {
+      #L 6. StatDistributionContract
+      #L ==============================================================================
+
+      op statNormalPdf (as float64: x, as float64: mean, as float64: std_dev) as float64 ==> {
+            route {
+                  std_dev <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: z = (x - mean) /f std_dev
+            mut as float64: pi_val = pi64()
+            mut as float64: sqrt_2pi = (2.0 * pi_val) ^r 2
+            mut as float64: denom = std_dev * sqrt_2pi
+            mut as float64: exponent = 0.0 - (0.5 * z * z)
+            emit(nice, exp64(exponent) /f denom, "ok")
+      }
+
+      op statNormalCdf (as float64: x, as float64: mean, as float64: std_dev) as float64 ==> {
+            route {
+                  std_dev <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: z = (x - mean) /f std_dev
+            mut as float64: sqrt2_val = 2.0 ^r 2
+            mut as float64: arg = 0.0 - (z /f sqrt2_val)
+            emit(nice, 0.5 * erfc64(arg), "ok")
+      }
+
+      op statNormalInvCdf (as float64: p, as float64: mean, as float64: std_dev) as float64 ==> {
+            route {
+                  p <= 0.0 or p >= 1.0 or std_dev <= 0.0 ==> {
+                        emit(nice, mean, "ok")
+                  }
+            }
+            mut as float64: sqrt2_val = 2.0 ^r 2
+            mut as float64: arg = (2.0 * p) - 1.0
+            mut as float64: z = sqrt2_val * erfinv64(arg)
+            emit(nice, mean + (std_dev * z), "ok")
+      }
+
+      op statBinomialPmf (as int64: k, as int64: n, as float64: p) as float64 ==> {
+            route {
+                  k < 0 or k > n or p < 0.0 or p > 1.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+                  p == 0.0 ==> {
+                        route { k == 0 ==> { emit(nice, 1.0, "ok") } }
+                        emit(nice, 0.0, "ok")
+                  }
+                  p == 1.0 ==> {
+                        route { k == n ==> { emit(nice, 1.0, "ok") } }
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as int64: comb = combinations64(n, k)
+            mut as float64: p_k = p ^e k
+            mut as float64: q_nk = (1.0 - p) ^e (n - k)
+            emit(nice, (comb as float64) * p_k * q_nk, "ok")
+      }
+
+      op statBinomialCdf (as int64: k, as int64: n, as float64: p) as float64 ==> {
+            route {
+                  k < 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+                  k >= n ==> {
+                        emit(nice, 1.0, "ok")
+                  }
+            }
+            mut as float64: sum = 0.0
+            infinite (i in 0 .. k) {
+                  sum = sum + statBinomialPmf(i, n, p)
+            }
+            emit(nice, sum, "ok")
+      }
+
+      op statPoissonPmf (as int64: k, as float64: lambda_rate) as float64 ==> {
+            route {
+                  k < 0 or lambda_rate <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: p_lambda = lambda_rate ^e k
+            mut as float64: exp_lambda = exp64(0.0 - lambda_rate)
+            mut as int64: fact = factorial64(k)
+            emit(nice, (p_lambda * exp_lambda) /f (fact as float64), "ok")
+      }
+
+      op statPoissonCdf (as int64: k, as float64: lambda_rate) as float64 ==> {
+            route {
+                  k < 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: sum = 0.0
+            infinite (i in 0 .. k) {
+                  sum = sum + statPoissonPmf(i, lambda_rate)
+            }
+            emit(nice, sum, "ok")
+      }
+
+      op statExponentialPdf (as float64: x, as float64: lambda_rate) as float64 ==> {
+            route {
+                  x < 0.0 or lambda_rate <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, lambda_rate * exp64(0.0 - (lambda_rate * x)), "ok")
+      }
+
+      op statExponentialCdf (as float64: x, as float64: lambda_rate) as float64 ==> {
+            route {
+                  x <= 0.0 or lambda_rate <= 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, 1.0 - exp64(0.0 - (lambda_rate * x)), "ok")
+      }
+
+      op statUniformPdf (as float64: x, as float64: a, as float64: b) as float64 ==> {
+            route {
+                  b <= a or x < a or x > b ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, 1.0 /f (b - a), "ok")
+      }
+
+      op statUniformCdf (as float64: x, as float64: a, as float64: b) as float64 ==> {
+            route {
+                  b <= a or x < a ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+                  x >= b ==> {
+                        emit(nice, 1.0, "ok")
+                  }
+            }
+            emit(nice, (x - a) /f (b - a), "ok")
+      }
+
+      #L ==============================================================================
+}

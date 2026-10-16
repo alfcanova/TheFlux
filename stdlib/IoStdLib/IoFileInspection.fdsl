@@ -1,0 +1,26 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoFileInspection
+#L ==============================================================================
+
+contract (IoFileInspectionContract) {
+      op fileExists (as string: path) as bool
+      op fileSize (as string: path) as int64
+      op fileIsEmpty (as string: path) as bool
+}
+
+agent (IoStdLib) impl IoFileInspectionContract {
+      #L -- IoFileInspectionContract ----------------------------------
+      op fileExists (as string: path) as bool ==> {
+            emit(nice, stdIoFileExists(path), "ok")
+      }
+
+      op fileSize (as string: path) as int64 ==> {
+            emit(nice, stdIoFileSize(path), "ok")
+      }
+
+      op fileIsEmpty (as string: path) as bool ==> {
+            mut as int64: sz = stdIoFileSize(path)
+            emit(nice, sz == 0, "ok")
+      }
+}

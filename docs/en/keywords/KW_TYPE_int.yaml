@@ -1,0 +1,110 @@
+keyword: int8, int16, int32, int64, uint8, uint16, uint32, uint64
+category: Numeric Type - Integer
+description: Types integers de width fixa com sinal e sem sinal (int8, int16, int32, int64, uint8, uint16, uint32, uint64).
+syntax: 'mut as <tipo>: <var> = <valor>     # tipo obrigatório na declaração
+
+  mut as int8: <var> = <valor>      # -128 a 127
+
+  mut as int16: <var> = <valor>     # -32768 a 32767
+
+  mut as int32: <var> = <valor>     # -2147483648 a 2147483647
+
+  mut as int64: <var> = <valor>     # -9223372036854775808 a 9223372036854775807
+
+  mut as uint8: <var> = <valor>     # 0 a 255
+
+  mut as uint16: <var> = <valor>    # 0 a 65535
+
+  mut as uint32: <var> = <valor>    # 0 a 4294967295
+
+  mut as uint64: <var> = <valor>    # 0 a 18446744073709551615'
+pseudocode: 'i : INTEIRO64 = 42   // int8..uint64, com/sem sinal'
+usages:
+- name: Integers com sinal
+  description: Declaration de todos os types integers com sinal.
+  examples:
+  - code: 'mut as int8: byte = -8
+
+      mut as int16: small = -1600
+
+      mut as int32: medium = -32000
+
+      mut as int64: large = -64000'
+- name: Integers sem sinal
+  description: Declaration de todos os types integers sem sinal.
+  examples:
+  - code: 'mut as uint8: u_byte = 8
+
+      mut as uint16: u_small = 1600
+
+      mut as uint32: u_medium = 32000
+
+      mut as uint64: u_large = 64000'
+restrictions:
+- Values fora da range suportada pelo type são rejeitados at compile time (SEM001).
+- Os types genéricos int e uint foram removidos; a especificação exata da width é required.
+- There is no literais com sufixo de type; the type comes from the declaration explícita.
+- A divisão inteira utiliza /i e o resto utiliza /r (/f é reservado para divisão decimal).
+- 'Ver também KW_LITERAL_integer.yaml (literal) — types e literais são files espelhados: TYPES descreve a forma in the declaration,
+  LITERAL descreve a sintaxe do value.'
+errors:
+- code: TYP401
+  mnemonic: EXPECT_INT_GOT_FLOAT
+  severity: Error
+  trigger: Variable or parameter of type integer receives a floating point value (float)
+  message: Expected integer (int), got float
+  hint: Convert float to integer with 'as int64' or declare variable as float64
+  example_bad: 'mut as int64: x = 3.14
+
+    '
+  example_good: 'mut as int64: x = trunc(3.14)
+
+    '
+- code: TYP402
+  mnemonic: EXPECT_INT_GOT_COMPLEX
+  severity: Error
+  trigger: Variable or parameter of type integer receives a complex number
+  message: Expected integer (int), got complex
+  hint: Extract real part with '.real' and convert with 'as int64'
+  example_bad: 'mut as int64: x = 1 + 2i
+
+    '
+  example_good: 'mut as int64: x = trunc((1 + 2i).real)
+
+    '
+- code: TYP403
+  mnemonic: EXPECT_INT_GOT_STRING
+  severity: Error
+  trigger: Variable or parameter of type integer receives a string text
+  message: Expected integer (int), got string
+  hint: Parse string to integer using ConvertStdLib::stringToInt64()
+  example_bad: 'mut as int64: x = "42"
+
+    '
+  example_good: 'mut as int64: x = parse_int("42")
+
+    '
+- code: TYP404
+  mnemonic: EXPECT_INT_GOT_BOOL
+  severity: Error
+  trigger: Variable or parameter of type integer receives a boolean
+  message: Expected integer (int), got bool
+  hint: 'Use conditional check: ''route { b ==> 1; _ ==> 0 }'''
+  example_bad: 'mut as int64: x = true
+
+    '
+  example_good: 'mut as int64: x = true as int64
+
+    '
+- code: SEM301
+  mnemonic: INT_LITERAL_OUT_OF_RANGE
+  severity: Error
+  trigger: Integer literal outside range supported by declared type
+  message: Integer literal value out of range for the specified integer type
+  hint: Use a wider integer type (e.g. int64) or adjust the literal within type limits
+  example_bad: 'mut as int8: x = 300
+
+    '
+  example_good: 'mut as int16: x = 300
+
+    '

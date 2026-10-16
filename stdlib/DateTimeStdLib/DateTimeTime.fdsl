@@ -1,0 +1,140 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Dominio: DateTimeTime
+#L ==============================================================================
+
+contract (DateTimeTimeContract) {
+      op dateTimeCreateTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime
+      op dateTimeCreateTimeFull (as int64: hour_value, as int64: minute_value, as int64: second_value, as int64: millisecond_value, as int64: microsecond_value, as int64: nanosecond_value) as datetime
+      op dateTimeHour (as datetime: value) as int64
+      op dateTimeMinute (as datetime: value) as int64
+      op dateTimeSecond (as datetime: value) as int64
+      op dateTimeMillisecond (as datetime: value) as int64
+      op dateTimeMicrosecond (as datetime: value) as int64
+      op dateTimeNanosecond (as datetime: value) as int64
+      op dateTimeAddHours (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractHours (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMinutes (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMinutes (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddSeconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractSeconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMilliseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMilliseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddMicroseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractMicroseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeAddNanoseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeSubtractNanoseconds (as datetime: value, as int64: amount) as datetime
+      op dateTimeHoursBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMinutesBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeSecondsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMillisecondsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeMicrosecondsBetween (as datetime: left, as datetime: right) as int64
+      op dateTimeNanosecondsBetween (as datetime: left, as datetime: right) as int64
+}
+
+agent (DateTimeStdLib) impl DateTimeTimeContract {
+      #L -- DateTimeTimeContract --------------------------------------
+      op dateTimeCreateTime (as int64: hour_value, as int64: minute_value, as int64: second_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTime(hour_value, minute_value, second_value), "ok")
+      }
+
+      op dateTimeCreateTimeFull (as int64: hour_value, as int64: minute_value, as int64: second_value, as int64: millisecond_value, as int64: microsecond_value, as int64: nanosecond_value) as datetime ==> {
+            emit(nice, stdDateTimeCreateTimeFull(hour_value, minute_value, second_value, millisecond_value, microsecond_value, nanosecond_value), "ok")
+      }
+
+      op dateTimeHour (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeHour(value), "ok")
+      }
+
+      op dateTimeMinute (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMinute(value), "ok")
+      }
+
+      op dateTimeSecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeSecond(value), "ok")
+      }
+
+      op dateTimeMillisecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMillisecond(value), "ok")
+      }
+
+      op dateTimeMicrosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecond(value), "ok")
+      }
+
+      op dateTimeNanosecond (as datetime: value) as int64 ==> {
+            emit(nice, stdDateTimeNanosecond(value), "ok")
+      }
+
+      op dateTimeAddHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, amount), "ok")
+      }
+
+      op dateTimeSubtractHours (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddHours(value, -amount), "ok")
+      }
+
+      op dateTimeAddMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMinutes (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMinutes(value, -amount), "ok")
+      }
+
+      op dateTimeAddSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractSeconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddSeconds(value, -amount), "ok")
+      }
+
+      op dateTimeAddMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMilliseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMilliseconds(value, -amount), "ok")
+      }
+
+      op dateTimeAddMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractMicroseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddMicroseconds(value, -amount), "ok")
+      }
+
+      op dateTimeAddNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, amount), "ok")
+      }
+
+      op dateTimeSubtractNanoseconds (as datetime: value, as int64: amount) as datetime ==> {
+            emit(nice, stdDateTimeAddNanoseconds(value, -amount), "ok")
+      }
+
+      op dateTimeHoursBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeHoursBetween(left, right), "ok")
+      }
+
+      op dateTimeMinutesBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMinutesBetween(left, right), "ok")
+      }
+
+      op dateTimeSecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeSecondsBetween(left, right), "ok")
+      }
+
+      op dateTimeMillisecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMillisecondsBetween(left, right), "ok")
+      }
+
+      op dateTimeMicrosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeMicrosecondsBetween(left, right), "ok")
+      }
+
+      op dateTimeNanosecondsBetween (as datetime: left, as datetime: right) as int64 ==> {
+            emit(nice, stdDateTimeNanosecondsBetween(left, right), "ok")
+      }
+}

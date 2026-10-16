@@ -1,0 +1,11 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ArchiveStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use IoStdLib
+
+use ArchiveManagement.fdsl
+
+agent (ArchiveStdLib) {
+}

@@ -1,0 +1,34 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoPrint
+#L ==============================================================================
+
+contract (IoPrintContract) {
+      op echo (as string: text) as string
+      op printLn (as data: value) as data
+      op printLine (as data: value) as data
+      op printErr (as data: value) as data
+}
+
+agent (IoStdLib) impl IoPrintContract {
+      #L -- IoPrintContract -------------------------------------------
+      op echo (as string: text) as string ==> {
+            print(text)
+            emit(nice, text, "ok")
+      }
+
+      op printLn (as data: value) as data ==> {
+            print(value)
+            emit(nice, value, "ok")
+      }
+
+      op printLine (as data: value) as data ==> {
+            print(value)
+            emit(nice, value, "ok")
+      }
+
+      op printErr (as data: value) as data ==> {
+            stdIoPrintErr(value)
+            emit(nice, value, "ok")
+      }
+}

@@ -1,0 +1,152 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StructStdLib
+#L Dominio: StructCore
+#L ==============================================================================
+
+contract (StructCoreContract) {
+      op structAllocate (as string: name) as data
+      op structFromMap (as string: name, as map: data_map) as data
+      op structGetField (as data: instance, as string: field) as data
+      op structSetField (as data: instance, as string: field, as data: value) as data
+      op structName (as data: instance) as string
+      op structClone (as data: instance) as data
+      op structEquals (as data: a, as data: b) as bool
+}
+
+agent (StructStdLib) impl StructCoreContract {
+      #L StructCoreContract
+      #L ==============================================================================
+
+      op structAllocate (as string: name) as data ==> {
+            mut as list of data: fnames = structFields(name)
+            mut as string: res = name + "("
+            mut as bool: first = true
+            infinite (f in fnames) {
+                  mut as string: sf = "" + f
+                  route {
+                        not first ==> {
+                              res = res + ", "
+                        }
+                  }
+                  res = res + "." + sf + ": "
+                  first = false
+            }
+            res = res + ")"
+            emit(nice, res, "ok")
+      }
+
+      op structFromMap (as string: name, as map: data_map) as data ==> {
+            mut as string: res = name + "("
+            mut as bool: first = true
+            infinite (k in data_map) {
+                  mut as string: sk = "" + k
+                  route {
+                        sk != "__struct__" ==> {
+                              route {
+                                    not first ==> {
+                                          res = res + ", "
+                                    }
+                              }
+                              res = res + "." + sk + ": " + data_map[sk]
+                              first = false
+                        }
+                  }
+            }
+            res = res + ")"
+            emit(nice, res, "ok")
+      }
+
+      op structGetField (as data: instance, as string: field) as data ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as bool: found = false
+            mut as data: val = ""
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  route {
+                        sk == field ==> {
+                              found = true
+                              val = m[sk]
+                              break
+                        }
+                  }
+            }
+            route {
+                  not found ==> {
+                        emit(fail, "", "Campo '" + field + "' nao encontrado na struct")
+                  }
+                  _ ==> {
+                        emit(nice, val, "ok")
+                  }
+            }
+      }
+
+      op structSetField (as data: instance, as string: field, as data: value) as data ==> {
+            mut as bool: is_mut = _isFieldMutable(field)
+            route {
+                  not is_mut ==> {
+                        emit(fail, instance, "Campo imutavel '" + field + "' nao pode ser modificado")
+                  }
+                  _ ==> {
+                        mut as string: sname = _extractStructType(instance)
+                        mut as map: m = _extractStructMap(instance)
+                        m[field] = value
+                        mut as map: updated = map{}
+                        updated["__struct__"] = sname
+                        infinite (k in m) {
+                              mut as string: sk = "" + k
+                              updated[sk] = m[sk]
+                        }
+                        emit(nice, updated, "Campo atualizado com sucesso")
+                  }
+            }
+      }
+
+      op structName (as data: instance) as string ==> {
+            mut as string: sname = _extractStructType(instance)
+            emit(nice, sname, "ok")
+      }
+
+      op structClone (as data: instance) as data ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as string: sname = _extractStructType(instance)
+            mut as map: cloned = map{}
+            cloned["__struct__"] = sname
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  cloned[sk] = m[sk]
+            }
+            emit(nice, cloned, "ok")
+      }
+
+      op structEquals (as data: a, as data: b) as bool ==> {
+            mut as string: name_a = _extractStructType(a)
+            mut as string: name_b = _extractStructType(b)
+            mut as bool: eq = false
+            route {
+                  name_a == name_b and name_a != "" ==> {
+                        mut as map: ma = _extractStructMap(a)
+                        mut as map: mb = _extractStructMap(b)
+                        mut as bool: all_match = true
+                        infinite (k in ma) {
+                              mut as string: sk = "" + k
+                              mut as string: va = "" + ma[sk]
+                              mut as string: vb = "" + mb[sk]
+                              route {
+                                    va != vb ==> {
+                                          all_match = false
+                                          break
+                                    }
+                              }
+                        }
+                        route {
+                              all_match ==> {
+                                    eq = true
+                              }
+                        }
+                  }
+            }
+            emit(nice, eq, "ok")
+      }
+
+      #L ==============================================================================
+}

@@ -1,0 +1,159 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Dominio: FormatToml
+#L ==============================================================================
+
+contract (FormatTomlContract) {
+      op formatParseToml (as string: toml_text) as map
+      op formatStringifyToml (as map: data_map) as string
+      op formatIsValidToml (as string: toml_text) as bool
+
+      #L Aliases
+      op parseToml (as string: toml_text) as map
+      op stringifyToml (as map: data_map) as string
+      op isValidToml (as string: toml_text) as bool
+}
+
+agent (FormatStdLib) impl FormatTomlContract {
+      #L 4. FormatTomlContract
+      #L ==============================================================================
+
+      op formatParseToml (as string: toml_text) as map ==> {
+            mut as map: root = map{}
+            mut as list of string: lines = _fmtSplitLines(toml_text)
+            mut as string: current_section = ""
+            mut as map: current_submap = map{}
+
+            infinite (l in lines) {
+                  mut as string: line = _yamlStripComments(l)
+                  mut as string: trimmed = _fmtTrim(line)
+                  mut as int64: len = _fmtStrLen(trimmed)
+                  route {
+                        len == 0 ==> {
+                              #L Linha vazia
+                        }
+                        len >= 2 and _fmtCharAt(trimmed, 1) == "[" and _fmtCharAt(trimmed, len) == "]" ==> {
+                              route {
+                                    _fmtStrLen(current_section) > 0 ==> {
+                                          root[current_section] = current_submap
+                                    }
+                              }
+                              current_section = trimmed[2 .. len - 1]
+                              current_submap = map{}
+                        }
+                        _fmtContains(trimmed, "=") ==> {
+                              mut as int64: eq_pos = 0
+                              infinite (i in 1 .. len) {
+                                    route {
+                                          _fmtCharAt(trimmed, i) == "=" and eq_pos == 0 ==> { eq_pos = i }
+                                    }
+                              }
+                              mut as string: key = _fmtTrim(trimmed[1 .. eq_pos - 1])
+                              mut as string: val_str = _fmtTrim(trimmed[eq_pos + 1 .. len])
+                              mut as data: val = _yamlResolveCoreSchema(val_str)
+                              route {
+                                    _fmtStrLen(current_section) == 0 ==> {
+                                          root[key] = val
+                                    }
+                                    _fmtStrLen(current_section) > 0 ==> {
+                                          current_submap[key] = val
+                                          root[current_section] = current_submap
+                                    }
+                              }
+                        }
+                  }
+            }
+            route {
+                  _fmtStrLen(current_section) > 0 ==> {
+                        root[current_section] = current_submap
+                  }
+            }
+            emit(nice, root, "ok")
+      }
+
+      op formatStringifyToml (as map: data_map) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (k in data_map) {
+                  mut as string: sval = "" + data_map[k]
+                  mut as int64: len_v = _fmtStrLen(sval)
+                  route {
+                        len_v >= 2 and _fmtCharAt(sval, 1) == "{" and _fmtCharAt(sval, len_v) == "}" ==> {
+                              #L Submapa sera emitido na segunda passada
+                        }
+                        _ ==> {
+                              route {
+                                    not first ==> { res = res + "\n" }
+                                    first ==> { first = false }
+                              }
+                              mut as string: sub_j = formatStringifyJson(data_map[k])
+                              res = res + k + " = " + sub_j
+                        }
+                  }
+            }
+            infinite (k in data_map) {
+                  mut as string: sval = "" + data_map[k]
+                  mut as int64: len_v = _fmtStrLen(sval)
+                  route {
+                        len_v >= 2 and _fmtCharAt(sval, 1) == "{" and _fmtCharAt(sval, len_v) == "}" ==> {
+                              mut as map: subm = data_map[k] as map
+                              route {
+                                    _fmtStrLen(res) > 0 ==> { res = res + "\n\n" }
+                              }
+                              res = res + "[" + k + "]"
+                              infinite (sk in subm) {
+                                    mut as string: sub_v = formatStringifyJson(subm[sk])
+                                    res = res + "\n" + sk + " = " + sub_v
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidToml (as string: toml_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(toml_text)
+            mut as bool: b_false = false
+            route {
+                  len == 0 ==> { emit(nice, b_false, "ok") }
+            }
+            mut as list of string: lines = _fmtSplitLines(toml_text)
+            mut as bool: has_content = false
+            mut as bool: valid = true
+            infinite (l in lines) {
+                  mut as string: trimmed = _fmtTrim(_yamlStripComments(l))
+                  mut as int64: tlen = _fmtStrLen(trimmed)
+                  route {
+                        tlen > 0 ==> {
+                              has_content = true
+                              mut as bool: is_section = _fmtCharAt(trimmed, 1) == "[" and _fmtCharAt(trimmed, tlen) == "]"
+                              mut as bool: is_kv = _fmtContains(trimmed, "=")
+                              route {
+                                    not is_section and not is_kv ==> {
+                                          valid = false
+                                          break
+                                    }
+                              }
+                        }
+                  }
+            }
+            mut as bool: res = (has_content and valid)
+            emit(nice, res, "ok")
+      }
+
+      #L Aliases TOML
+      op parseToml (as string: toml_text) as map ==> {
+            mut as map: r = formatParseToml(toml_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyToml (as map: data_map) as string ==> {
+            mut as string: r = formatStringifyToml(data_map)
+            emit(nice, r, "ok")
+      }
+      op isValidToml (as string: toml_text) as bool ==> {
+            mut as bool: r = formatIsValidToml(toml_text)
+            emit(nice, r, "ok")
+      }
+
+      #L ==============================================================================
+}

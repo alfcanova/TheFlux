@@ -1,0 +1,478 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicFormat
+#L ==============================================================================
+
+contract (SymbolicFormatContract) {
+      op symbolicToTheFluxCode (as string: expression) as string
+      op symbolicStats (as string: expression) as SymbolicStats
+      op symbolicToLaTeX (as string: expression) as string
+      op symbolicToAST (as string: expression) as string
+      op symbolicParseAst (as string: expression) as SymbolicNode
+}
+
+#L ==============================================================================
+#L Agente: SymbolicStdLib
+#L ==============================================================================
+
+agent (SymbolicStdLib) impl SymbolicFormatContract {
+      op symbolicToTheFluxCode (as string: expression) as string ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as string: res = ""
+            mut as int64: idx = 1
+            infinite (t in toks) {
+                  mut as map: tm = t
+                  mut as string: tv = "" + tm["val"]
+                  route {
+                        tv == "/" ==> {
+                              tv = "/f"
+                        }
+                  }
+                  route {
+                        idx == 1 ==> {
+                              res = tv
+                        }
+                        _ ==> {
+                              res = res + " " + tv
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op symbolicVariablesCount (as string: expression) as int64 ==> {
+            mut as list of data: vars = symbolicGetVariables(expression)
+            mut as int64: n_vars = 0
+            infinite (v in vars) {
+                  n_vars = n_vars + 1
+            }
+            emit(nice, n_vars, "ok")
+      }
+
+      op symbolicStats (as string: expression) as SymbolicStats ==> {
+            mut as list of data: toks = _symTokenize(expression)
+            mut as int64: n_nodes = 0
+            infinite (t in toks) {
+                  n_nodes = n_nodes + 1
+            }
+            mut as list of data: vars = symbolicGetVariables(expression)
+            mut as int64: n_vars = 0
+            infinite (v in vars) {
+                  n_vars = n_vars + 1
+            }
+            mut as string: simplified = symbolicSimplify(expression)
+            mut as bool: is_canon = (simplified == expression)
+
+            mut as SymbolicStats: st = SymbolicStats(.node_count: n_nodes, .depth: (n_nodes /i 2) + 1, .variable_count: n_vars, .is_canonical: is_canon)
+            emit(nice, st, "ok")
+      }
+
+      #L ==============================================================================
+      #L Utilitarios Internos de Calculo, Formatacao LaTeX e AST (Fase 2)
+      #L ==============================================================================
+
+      op _symPolyDifferentiate (as list of data: p, as string: var_name) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n_res = 0
+
+            infinite (item in p) {
+                  mut as map: m = item
+                  mut as map: pows = m["p"]
+                  mut as bool: has_var = false
+                  mut as int64: k = 0
+                  infinite (v in pows) {
+                        route {
+                              v == var_name ==> {
+                                    has_var = true
+                                    k = pows[v] as int64
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        has_var and k > 0 ==> {
+                              mut as float64: c = m["c"] as float64
+                              mut as float64: new_c = c * (k as float64)
+                              mut as map: new_pows = map{}
+                              infinite (v2 in pows) {
+                                    route {
+                                          v2 == var_name ==> {
+                                                route {
+                                                      k - 1 > 0 ==> {
+                                                            new_pows[v2] = k - 1
+                                                      }
+                                                }
+                                          }
+                                          _ ==> {
+                                                new_pows[v2] = pows[v2]
+                                          }
+                                    }
+                              }
+                              n_res = n_res + 1
+                              res[n_res] = _symMakeMono(new_c, new_pows)
+                        }
+                  }
+            }
+
+            emit(nice, res, "ok")
+      }
+
+      op _symPolyIntegrate (as list of data: p, as string: var_name) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n_res = 0
+
+            infinite (item in p) {
+                  mut as map: m = item
+                  mut as map: pows = m["p"]
+                  mut as bool: has_var = false
+                  mut as int64: k = 0
+                  infinite (v in pows) {
+                        route {
+                              v == var_name ==> {
+                                    has_var = true
+                                    k = pows[v] as int64
+                                    break
+                              }
+                        }
+                  }
+                  mut as float64: c = m["c"] as float64
+                  route {
+                        has_var ==> {
+                              mut as int64: new_k = k + 1
+                              mut as float64: new_c = c /f (new_k as float64)
+                              mut as map: new_pows = map{}
+                              infinite (v2 in pows) {
+                                    route {
+                                          v2 == var_name ==> {
+                                                new_pows[v2] = new_k
+                                          }
+                                          _ ==> {
+                                                new_pows[v2] = pows[v2]
+                                          }
+                                    }
+                              }
+                              n_res = n_res + 1
+                              res[n_res] = _symMakeMono(new_c, new_pows)
+                        }
+                        _ ==> {
+                              mut as map: new_pows2 = map{}
+                              infinite (v3 in pows) {
+                                    new_pows2[v3] = pows[v3]
+                              }
+                              new_pows2[var_name] = 1
+                              n_res = n_res + 1
+                              res[n_res] = _symMakeMono(c, new_pows2)
+                        }
+                  }
+            }
+
+            emit(nice, res, "ok")
+      }
+
+      op _symExprToLaTeX (as string: expr) as string ==> {
+            mut as list of data: toks = _symTokenize(expr)
+            toks = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(toks)
+
+            mut as list of data: stack = []
+            mut as int64: n_st = 0
+
+            mut as int64: n_rpn = 0
+            infinite (t in rpn) {
+                  n_rpn = n_rpn + 1
+            }
+
+            mut as int64: i = 1
+            infinite (i <= n_rpn) {
+                  mut as map: t = rpn[i]
+                  mut as string: tt = "" + t["type"]
+                  route {
+                        tt == "num" ==> {
+                              mut as string: n_val = "" + t["val"]
+                              mut as map: item = map{"s": n_val, "prec": 99}
+                              n_st = n_st + 1
+                              stack[n_st] = item
+                        }
+                        tt == "var" ==> {
+                              mut as string: v_val = "" + t["val"]
+                              route {
+                                    v_val == "pi" ==> {
+                                          v_val = "\\pi"
+                                    }
+                                    v_val == "theta" ==> {
+                                          v_val = "\\theta"
+                                    }
+                                    v_val == "alpha" ==> {
+                                          v_val = "\\alpha"
+                                    }
+                              }
+                              mut as map: item = map{"s": v_val, "prec": 99}
+                              n_st = n_st + 1
+                              stack[n_st] = item
+                        }
+                        tt == "op" ==> {
+                              mut as map: b = stack[n_st]
+                              mut as map: a = stack[n_st - 1]
+                              n_st = n_st - 1
+                              mut as string: op_val = "" + t["val"]
+                              mut as string: sa = "" + a["s"]
+                              mut as int64: pa = a["prec"] as int64
+                              mut as string: sb = "" + b["s"]
+                              mut as int64: pb = b["prec"] as int64
+
+                              mut as string: res_s = ""
+                              mut as int64: res_p = 2
+
+                              route {
+                                    op_val == "^e" ==> {
+                                          res_p = 4
+                                          route {
+                                                pa < 4 ==> {
+                                                      sa = "\\left(" + sa + "\\right)"
+                                                }
+                                          }
+                                          res_s = sa + "^{" + sb + "}"
+                                    }
+                                    op_val == "/" or op_val == "/f" or op_val == "/i" ==> {
+                                          res_p = 99
+                                          res_s = "\\frac{" + sa + "}{" + sb + "}"
+                                    }
+                                    op_val == "*" ==> {
+                                          res_p = 3
+                                          route {
+                                                pa < 3 ==> {
+                                                      sa = "\\left(" + sa + "\\right)"
+                                                }
+                                          }
+                                          route {
+                                                pb < 3 ==> {
+                                                      sb = "\\left(" + sb + "\\right)"
+                                                }
+                                          }
+                                          res_s = sa + " \\cdot " + sb
+                                    }
+                                    op_val == "+" ==> {
+                                          res_p = 2
+                                          res_s = sa + " + " + sb
+                                    }
+                                    op_val == "-" ==> {
+                                          res_p = 2
+                                          route {
+                                                pb <= 2 ==> {
+                                                      sb = "\\left(" + sb + "\\right)"
+                                                }
+                                          }
+                                          res_s = sa + " - " + sb
+                                    }
+                              }
+
+                              mut as map: new_item = map{"s": res_s, "prec": res_p}
+                              stack[n_st] = new_item
+                        }
+                  }
+                  i = i + 1
+            }
+
+            mut as string: out_latex = ""
+            route {
+                  n_st >= 1 ==> {
+                        mut as map: top = stack[n_st]
+                        out_latex = "" + top["s"]
+                  }
+            }
+            emit(nice, out_latex, "ok")
+      }
+
+      op _symExprToAST (as string: expr) as string ==> {
+            mut as list of data: toks = _symTokenize(expr)
+            toks = _symFixUnaryMinus(toks)
+            mut as list of data: rpn = _symShuntingYard(toks)
+
+            mut as list of data: stack = []
+            mut as int64: n_st = 0
+
+            mut as int64: n_rpn = 0
+            infinite (t in rpn) {
+                  n_rpn = n_rpn + 1
+            }
+
+            mut as int64: i = 1
+            infinite (i <= n_rpn) {
+                  mut as map: t = rpn[i]
+                  mut as string: tt = "" + t["type"]
+                  route {
+                        tt == "num" ==> {
+                              mut as string: v = "" + t["val"]
+                              mut as string: s = "SymbolicNode(type: SymbolicNodeType.NUMBER, value: \"" + v + "\", children: [])"
+                              n_st = n_st + 1
+                              stack[n_st] = s
+                        }
+                        tt == "var" ==> {
+                              mut as string: v = "" + t["val"]
+                              mut as string: s = "SymbolicNode(type: SymbolicNodeType.SYMBOL, value: \"" + v + "\", children: [])"
+                              n_st = n_st + 1
+                              stack[n_st] = s
+                        }
+                        tt == "op" ==> {
+                              mut as string: sb = "" + stack[n_st]
+                              mut as string: sa = "" + stack[n_st - 1]
+                              n_st = n_st - 1
+                              mut as string: op_val = "" + t["val"]
+                              mut as string: node_type = "SymbolicNodeType.ADD"
+                              route {
+                                    op_val == "+" ==> {
+                                          node_type = "SymbolicNodeType.ADD"
+                                    }
+                                    op_val == "-" ==> {
+                                          node_type = "SymbolicNodeType.SUB"
+                                    }
+                                    op_val == "*" ==> {
+                                          node_type = "SymbolicNodeType.MUL"
+                                    }
+                                    op_val == "/" or op_val == "/f" ==> {
+                                          node_type = "SymbolicNodeType.DIV_FLOAT"
+                                    }
+                                    op_val == "/i" ==> {
+                                          node_type = "SymbolicNodeType.DIV_INT"
+                                    }
+                                    op_val == "^e" ==> {
+                                          node_type = "SymbolicNodeType.POW"
+                                    }
+                              }
+                              mut as string: res_node = "SymbolicNode(type: " + node_type + ", value: \"" + op_val + "\", children: [" + sa + ", " + sb + "])"
+                              stack[n_st] = res_node
+                        }
+                  }
+                  i = i + 1
+            }
+
+            mut as string: out_ast = ""
+            route {
+                  n_st >= 1 ==> {
+                        out_ast = "" + stack[n_st]
+                  }
+            }
+            emit(nice, out_ast, "ok")
+      }
+
+      op _symFormatFloat1Dec (as float64: val) as string ==> {
+            mut as float64: v = val
+            route {
+                  _symAbsFloat(v) < 0.000001 ==> {
+                        v = 0.0
+                  }
+            }
+            mut as int64: whole = v as int64
+            mut as float64: frac = _symAbsFloat(v - (whole as float64))
+            mut as int64: dec = ((frac * 10.0) + 0.5) as int64
+            route {
+                  dec >= 10 ==> {
+                        route {
+                              v >= 0.0 ==> {
+                                    whole = whole + 1
+                              }
+                              _ ==> {
+                                    whole = whole - 1
+                              }
+                        }
+                        dec = 0
+                  }
+            }
+            route {
+                  whole == 0 and v < 0.0 ==> {
+                        emit(nice, "-0." + dec, "ok")
+                  }
+            }
+            emit(nice, "" + whole + "." + dec, "ok")
+      }
+
+      op _symFormatComplex (as float64: re, as float64: im) as string ==> {
+            mut as float64: clean_re = re
+            mut as float64: clean_im = im
+            route {
+                  _symAbsFloat(clean_re) < 0.000001 ==> {
+                        clean_re = 0.0
+                  }
+            }
+            route {
+                  _symAbsFloat(clean_im) < 0.000001 ==> {
+                        clean_im = 0.0
+                  }
+            }
+            mut as string: re_s = _symFormatFloat1Dec(clean_re)
+            mut as string: im_s = _symFormatFloat1Dec(clean_im)
+            route {
+                  clean_im >= 0.0 ==> {
+                        emit(nice, re_s + "+" + im_s + "i", "ok")
+                  }
+                  _ ==> {
+                        emit(nice, re_s + im_s + "i", "ok")
+                  }
+            }
+      }
+
+      #L ==============================================================================
+      #L 7. SymbolicCalculusContract (Fase 2)
+      #L ==============================================================================
+
+      op symbolicToLaTeX (as string: expression) as string ==> {
+            mut as int64: eq_idx = stringIndexOf(expression, "=")
+            route {
+                  eq_idx > 0 ==> {
+                        mut as string: left_p = stringTrim(stringSlice(expression, 1, eq_idx - 1))
+                        mut as string: right_p = stringTrim(stringSlice(expression, eq_idx + 1, stringLength(expression)))
+                        mut as string: l_lat = _symExprToLaTeX(left_p)
+                        mut as string: r_lat = _symExprToLaTeX(right_p)
+                        emit(nice, l_lat + " = " + r_lat, "ok")
+                  }
+            }
+            emit(nice, _symExprToLaTeX(expression), "ok")
+      }
+
+      op symbolicToAST (as string: expression) as string ==> {
+            emit(nice, _symExprToAST(expression), "ok")
+      }
+
+      op symbolicParseAst (as string: expression) as SymbolicNode ==> {
+            mut as string: ast_str = _symExprToAST(expression)
+            mut as string: t_name = "EXPR"
+            mut as string: root_val = ""
+            route {
+                  stringContains(ast_str, "SymbolicNodeType.ADD") ==> {
+                        t_name = "ADD"
+                        root_val = "+"
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.SUB") ==> {
+                        t_name = "SUB"
+                        root_val = "-"
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.MUL") ==> {
+                        t_name = "MUL"
+                        root_val = "*"
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.DIV_FLOAT") ==> {
+                        t_name = "DIV_FLOAT"
+                        root_val = "/f"
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.DIV_INT") ==> {
+                        t_name = "DIV_INT"
+                        root_val = "/i"
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.POW") ==> {
+                        t_name = "POW"
+                        root_val = "^e"
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.SYMBOL") ==> {
+                        t_name = "SYMBOL"
+                        root_val = expression
+                  }
+                  stringContains(ast_str, "SymbolicNodeType.NUMBER") ==> {
+                        t_name = "NUMBER"
+                        root_val = expression
+                  }
+            }
+            mut as SymbolicNode: n = SymbolicNode(.type_name: t_name, .value: root_val, .ast_repr: ast_str)
+            emit(nice, n, "ok")
+      }
+}

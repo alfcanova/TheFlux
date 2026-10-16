@@ -1,0 +1,201 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorTransform
+#L ==============================================================================
+
+contract (TensorTransformContract) {
+      op tensorReshape (as map: tensor, as list of data: new_shape) as map
+      op tensorFlatten (as map: tensor) as list of data
+      op tensorSqueeze (as map: tensor) as map
+      op tensorUnsqueeze (as map: tensor, as int64: axis) as map
+      op tensorConcatenate (as map: lhs, as map: rhs, as int64: axis) as map
+}
+
+agent (LinAlgStdLib) impl TensorTransformContract {
+      #L 11. TensorTransformContract - Reshape, Flatten, Squeeze, Unsqueeze, Concat
+      #L ==============================================================================
+
+      op tensorReshape (as map: tensor, as list of data: new_shape) as map ==> {
+            mut as map: c_tensor = tensorContiguous(tensor)
+            mut as int64: new_ndim = 0
+            infinite (x in new_shape) { new_ndim = new_ndim + 1 }
+
+            mut as list of data: strides = []
+            mut as int64: s_idx = 1
+            infinite (s_idx <= new_ndim) {
+                  strides[s_idx] = 0
+                  s_idx = s_idx + 1
+            }
+
+            mut as int64: current_stride = 1
+            mut as int64: i = new_ndim
+            infinite {
+                  route { i < 1 ==> { break } }
+                  mut as int64: dim_size = new_shape[i] as int64
+                  strides[i] = current_stride
+                  current_stride = current_stride * dim_size
+                  i = i - 1
+            }
+
+            c_tensor["ndim"] = new_ndim
+            c_tensor["shape"] = new_shape
+            c_tensor["strides"] = strides
+            emit(nice, c_tensor, "ok")
+      }
+
+      op tensorFlatten (as map: tensor) as list of data ==> {
+            mut as map: c_tensor = tensorContiguous(tensor)
+            mut as list of data: buf = c_tensor["data"] as list of data
+            emit(nice, buf, "ok")
+      }
+
+      op tensorSqueeze (as map: tensor) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as list of data: new_sh = []
+            mut as int64: new_idx = 1
+            infinite (dim in old_sh) {
+                  mut as int64: d = dim as int64
+                  route {
+                        d > 1 ==> {
+                              new_sh[new_idx] = d
+                              new_idx = new_idx + 1
+                        }
+                  }
+            }
+            route {
+                  new_idx == 1 ==> {
+                        new_sh[1] = 1
+                  }
+            }
+            mut as map: res = tensorReshape(tensor, new_sh)
+            emit(nice, res, "ok")
+      }
+
+      op tensorUnsqueeze (as map: tensor, as int64: axis) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as int64: old_ndim = tensor["ndim"] as int64
+            mut as list of data: new_sh = []
+
+            mut as int64: i = 1
+            infinite (i <= (old_ndim + 1)) {
+                  route {
+                        i < axis ==> { new_sh[i] = old_sh[i] }
+                        i == axis ==> { new_sh[i] = 1 }
+                        i > axis ==> { new_sh[i] = old_sh[i - 1] }
+                  }
+                  i = i + 1
+            }
+            mut as map: res = tensorReshape(tensor, new_sh)
+            emit(nice, res, "ok")
+      }
+
+      op tensorConcatenate (as map: lhs, as map: rhs, as int64: axis) as map ==> {
+            mut as list of data: sh_l = lhs["shape"] as list of data
+            mut as list of data: sh_r = rhs["shape"] as list of data
+            mut as int64: ndim = lhs["ndim"] as int64
+
+            mut as list of data: out_sh = []
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  route {
+                        i == axis ==> {
+                              out_sh[i] = (sh_l[i] as int64) + (sh_r[i] as int64)
+                        }
+                        i != axis ==> {
+                              out_sh[i] = sh_l[i]
+                        }
+                  }
+                  i = i + 1
+            }
+
+            mut as map: out = tensorNew(out_sh)
+
+            #L Copia lhs
+            mut as int64: total_l = 1
+            i = 1
+            infinite (i <= ndim) {
+                  total_l = total_l * (sh_l[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total_l) {
+                  mut as float64: v = tensorGetAt(lhs, coords)
+                  out = tensorSetAt(out, coords, v)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (sh_l[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (sh_l[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+
+            #L Copia rhs com deslocamento no eixo especificado
+            mut as int64: total_r = 1
+            i = 1
+            infinite (i <= ndim) {
+                  total_r = total_r * (sh_r[i] as int64)
+                  i = i + 1
+            }
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            idx = 1
+            infinite (idx <= total_r) {
+                  mut as float64: v = tensorGetAt(rhs, coords)
+                  mut as list of data: dst_coords = []
+                  mut as int64: d_i = 1
+                  infinite (d_i <= ndim) {
+                        route {
+                              d_i == axis ==> {
+                                    dst_coords[d_i] = (coords[d_i] as int64) + (sh_l[axis] as int64)
+                              }
+                              d_i != axis ==> {
+                                    dst_coords[d_i] = coords[d_i]
+                              }
+                        }
+                        d_i = d_i + 1
+                  }
+                  out = tensorSetAt(out, dst_coords, v)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (sh_r[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (sh_r[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

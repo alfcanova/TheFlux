@@ -1,0 +1,106 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicValidation
+#L ==============================================================================
+
+contract (SymbolicValidationContract) {
+      op symbolicAreEqual (as string: expr1, as string: expr2) as bool
+      op symbolicIsPolynomial (as string: expression, as string: variable) as bool
+      op symbolicIsLinear (as string: expression, as string: variable) as bool
+      op symbolicHasVariable (as string: expression, as string: variable) as bool
+      op symbolicIsValidExpression (as string: expression) as bool
+}
+
+agent (SymbolicStdLib) impl SymbolicValidationContract {
+      op symbolicAreEqual (as string: expr1, as string: expr2) as bool ==> {
+            mut as string: diff_expr = "(" + expr1 + ") - (" + expr2 + ")"
+            mut as string: simp = symbolicSimplify(diff_expr)
+            route {
+                  simp == "0" ==> {
+                        emit(nice, true, "ok")
+                  }
+            }
+
+            #L Teste numerico em multiplos pontos (Schwartz-Zippel)
+            mut as list of data: v1 = symbolicGetVariables(expr1)
+            mut as list of data: v2 = symbolicGetVariables(expr2)
+            mut as map: sample1 = map{}
+            mut as map: sample2 = map{}
+            infinite (x in v1) {
+                  sample1[x] = 2.0
+                  sample2[x] = 5.0
+            }
+            infinite (x in v2) {
+                  sample1[x] = 2.0
+                  sample2[x] = 5.0
+            }
+
+            mut as float64: eval1a = symbolicEvaluate(expr1, sample1)
+            mut as float64: eval2a = symbolicEvaluate(expr2, sample1)
+            mut as float64: eval1b = symbolicEvaluate(expr1, sample2)
+            mut as float64: eval2b = symbolicEvaluate(expr2, sample2)
+
+            mut as bool: match_a = (_symAbsFloat(eval1a - eval2a) < 0.000000001)
+            mut as bool: match_b = (_symAbsFloat(eval1b - eval2b) < 0.000000001)
+            emit(nice, match_a and match_b, "ok")
+      }
+
+      op symbolicIsPolynomial (as string: expression, as string: variable) as bool ==> {
+            route {
+                  not _symValidateStrict(expression) ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+            mut as list of data: toks = _symTokenize(expression)
+            mut as int64: n = 0
+            infinite (t in toks) { n = n + 1 }
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  mut as map: tm = toks[i]
+                  route {
+                        tm["type"] == "op" and (tm["val"] == "/" or tm["val"] == "/i" or tm["val"] == "/f") ==> {
+                              route {
+                                    i + 1 <= n ==> {
+                                          mut as map: next_t = toks[i + 1]
+                                          route {
+                                                next_t["type"] == "var" and next_t["val"] == variable ==> {
+                                                      emit(nice, false, "ok")
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  i = i + 1
+            }
+            emit(nice, true, "ok")
+      }
+
+      op symbolicIsLinear (as string: expression, as string: variable) as bool ==> {
+            mut as int64: deg = symbolicDegree(expression, variable)
+            emit(nice, deg == 1, "ok")
+      }
+
+      op symbolicHasVariable (as string: expression, as string: variable) as bool ==> {
+            mut as list of data: vars = symbolicGetVariables(expression)
+            mut as bool: has = false
+            infinite (v in vars) {
+                  route {
+                        v == variable ==> {
+                              has = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, has, "ok")
+      }
+
+      op symbolicIsValidExpression (as string: expression) as bool ==> {
+            emit(nice, _symValidateStrict(expression), "ok")
+      }
+
+      #L ==============================================================================
+      #L 6. SymbolicFormatContract (Fase 1)
+      #L ==============================================================================
+
+}

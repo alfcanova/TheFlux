@@ -1,0 +1,12 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RandomStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use RandomGenerator.fdsl
+use RandomDistribution.fdsl
+use RandomSequence.fdsl
+use RandomUtility.fdsl
+
+agent (RandomStdLib) {
+}

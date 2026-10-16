@@ -1,0 +1,14 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use ConvertNumeric.fdsl
+use ConvertBase.fdsl
+use ConvertEncoding.fdsl
+use ConvertParsing.fdsl
+use ConvertComplex.fdsl
+use ConvertString.fdsl
+
+agent (ConvertStdLib) {
+}

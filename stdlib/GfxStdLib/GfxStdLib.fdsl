@@ -1,0 +1,17 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use GfxConstants.fdsl
+use GfxState.fdsl
+use GfxColor.fdsl
+use GfxPrimitives.fdsl
+use GfxCollision.fdsl
+use GfxTexture.fdsl
+use GfxCamera.fdsl
+use GfxOpticsPhysics.fdsl
+use GfxInput.fdsl
+
+agent (GfxStdLib) {
+}

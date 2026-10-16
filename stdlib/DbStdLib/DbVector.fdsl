@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Dominio: DbVector
+#L ==============================================================================
+
+contract (DbVectorContract) {
+      op dbVectorOpen (as string: path, as int64: dimensions, as string: metric) as data
+      op dbVectorInsert (as data: connection, as int64: id, as list of data: embedding, as string: metadata) as bool
+      op dbVectorSearch (as data: connection, as list of data: query_vector, as int64: top_k) as list of data
+      op dbVectorDelete (as data: connection, as int64: id) as bool
+      op dbVectorCount (as data: connection) as int64
+      op dbVectorClose (as data: connection) as bool
+}
+
+agent (DbStdLib) impl DbVectorContract {
+      #L -- DbVectorContract ------------------------------------------
+      op dbVectorOpen (as string: path, as int64: dimensions, as string: metric) as data ==> {
+            emit(nice, stdDbVectorOpen(path, dimensions, metric), "ok")
+      }
+
+      op dbVectorInsert (as data: connection, as int64: id, as list of data: embedding, as string: metadata) as bool ==> {
+            emit(nice, stdDbVectorInsert(connection, id, embedding, metadata), "ok")
+      }
+
+      op dbVectorSearch (as data: connection, as list of data: query_vector, as int64: top_k) as list of data ==> {
+            emit(nice, stdDbVectorSearch(connection, query_vector, top_k), "ok")
+      }
+
+      op dbVectorDelete (as data: connection, as int64: id) as bool ==> {
+            emit(nice, stdDbVectorDelete(connection, id), "ok")
+      }
+
+      op dbVectorCount (as data: connection) as int64 ==> {
+            emit(nice, stdDbVectorCount(connection), "ok")
+      }
+
+      op dbVectorClose (as data: connection) as bool ==> {
+            emit(nice, stdDbVectorClose(connection), "ok")
+      }
+}

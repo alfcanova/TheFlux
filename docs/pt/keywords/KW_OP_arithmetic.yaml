@@ -1,0 +1,124 @@
+keyword: +, -, *, /f, /i, /r, ^e, ^r
+category: Operador Aritmético
+description: Operadores aritméticos da linguagem TheFlux. Diferencia divisão decimal (/f), divisão inteira (/i) e resto de
+  divisão (/r), assim como exponenciação (^e) e radiciação (^r). Os operadores seguem a precedência matemática padrão.
+syntax: '<expr> + <expr>    # Adição
+
+  <expr> - <expr>    # Subtração
+
+  <expr> * <expr>    # Multiplicação
+
+  <expr> /f <expr>   # Divisão decimal (resultado float)
+
+  <expr> /i <expr>   # Divisão inteira (resultado int)
+
+  <expr> /r <expr>   # Resto da divisão (módulo)
+
+  <expr> ^e <expr>   # Exponenciação (potência)
+
+  <expr> ^r <expr>   # Radiciação (raiz)'
+pseudocode: r := a + b - c * d /f e   // + - * /f /i /r ^e ^r
+usages:
+- name: Operações básicas
+  description: Soma, subtração e multiplicação.
+  examples:
+  - code: 'mut as int64: soma= 2 + 3
+
+      mut as int64: sub= 10 - 4
+
+      mut as int64: mult= 6 * 7'
+- name: Divisão especializada
+  description: Três formas de divisão para diferentes necessidades.
+  examples:
+  - code: 'mut as int64: div_int= 7 /i 2     # 3 (divisão inteira)
+
+      mut as float64: div_dec= 7 /f 2   # 3.5 (divisão decimal)
+
+      mut as int64: resto= 7 /r 2       # 1 (resto da divisão)'
+- name: Potência e raiz
+  description: Exponenciação e radiciação como operadores infixos.
+  examples:
+  - code: 'mut as int64: pot= 2 ^e 3         # 8 (2³)
+
+      mut as float64: raiz= 27 ^r 3     # 3.0 (raiz cúbica de 27)'
+restrictions:
+- /i requer operandos inteiros e retorna inteiro (truncado em direção a zero).
+- /f converte operandos para float antes da divisão.
+- /r é o operador de módulo (resto da divisão inteira).
+- '^e é exponenciação: base^e expoente.'
+- '^r é radiciação: base^r indice_raiz (ex: 27^r3 = raiz cúbica).'
+errors:
+- code: "RT701"
+  mnemonic: "DIVISION_BY_ZERO"
+  severity: "Error"
+  trigger: "Tentativa de divisão (/i ou /f) ou resto (/r) onde o divisor é zero"
+  message: "Divisão por zero em tempo de execução"
+  hint: "Adicione uma verificação condicional ('route { divisor == 0 ==> ... }') antes da operação de divisão"
+  example_bad: |
+    mut as int64: x = 10 /i 0
+  example_good: |
+    route {
+      divisor == 0 ==> { print("erro: zero") }
+      _ ==> { mut as int64: x = 10 /i divisor }
+    }
+- code: "RT706"
+  mnemonic: "MATH_DOMAIN_LOG"
+  severity: "Error"
+  trigger: "Cálculo de logaritmo (log64, log10_64, log2_64) onde o argumento é menor ou igual a zero"
+  message: "Argumento fora do domínio de logaritmo: esperado x > 0"
+  hint: "Assegure que o valor passado para o logaritmo seja estritamente positivo (x > 0.0)"
+  example_bad: |
+    use MathStdLib as M
+    mut as float64: l = log64(0.0)
+  example_good: |
+    use MathStdLib as M
+    route {
+      x <= 0.0 ==> { print("invalido") }
+      _ ==> { mut as float64: l = log64(x) }
+    }
+- code: "RT707"
+  mnemonic: "MATH_DOMAIN_SQRT"
+  severity: "Error"
+  trigger: "Cálculo de raiz quadrada ou raiz de índice par (^r 2, squareRoot64) onde o radicando é negativo"
+  message: "Radicando negativo em raiz par: esperado x >= 0 para números reais"
+  hint: "Verifique se o radicando é não-negativo (x >= 0.0) antes de calcular a raiz, ou utilize números complexos"
+  example_bad: |
+    use MathStdLib as M
+    mut as float64: r = squareRoot64(-4.0)
+  example_good: |
+    use MathStdLib as M
+    route {
+      x < 0.0 ==> { print("invalido") }
+      _ ==> { mut as float64: r = squareRoot64(x) }
+    }
+- code: "RT708"
+  mnemonic: "MATH_DOMAIN_TRIG"
+  severity: "Error"
+  trigger: "Cálculo de função trigonométrica inversa (asin, acos) com argumento fora do intervalo [-1.0, 1.0]"
+  message: "Argumento fora do domínio trigonométrico inverso: esperado -1.0 <= x <= 1.0"
+  hint: "Limite o argumento ao intervalo [-1.0, 1.0] antes de chamar asin ou acos"
+  example_bad: |
+    use MathStdLib as M
+    mut as float64: a = asin64(2.0)
+  example_good: |
+    use MathStdLib as M
+    route {
+      (x < -1.0) or (x > 1.0) ==> { print("invalido") }
+      _ ==> { mut as float64: a = asin64(x) }
+    }
+- code: "RT709"
+  mnemonic: "MATH_POWER_UNDEFINED"
+  severity: "Error"
+  trigger: "Cálculo de exponenciação (^e ou powerFloat64) com base zero e expoente menor ou igual a zero"
+  message: "Potência indefinida para base zero e expoente não-positivo"
+  hint: "Evite elevar zero a expoentes menores ou iguais a zero (0^0 ou 0^(-k))"
+  example_bad: |
+    use MathStdLib as M
+    mut as float64: p = powerFloat64(0.0, -1.0)
+  example_good: |
+    use MathStdLib as M
+    route {
+      (b == 0.0) and (e <= 0.0) ==> { print("indefinido") }
+      _ ==> { mut as float64: p = powerFloat64(b, e) }
+    }
+

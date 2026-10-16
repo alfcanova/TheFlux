@@ -1,0 +1,25 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FileSignatureStdLib
+#L Dominio: FileFormatSignature
+#L ==============================================================================
+
+contract (FileFormatSignatureContract) {
+      op fileMagicBytes (as string: path, as int64: num_bytes) as string
+      op fileDetectType (as string: path) as string
+      op fileIsBinary (as string: path) as bool
+}
+
+agent (FileSignatureStdLib) impl FileFormatSignatureContract {
+      #L -- FileFormatSignatureContract -------------------------------
+      op fileMagicBytes (as string: path, as int64: num_bytes) as string ==> {
+            emit(nice, stdFileMagicBytes(path, num_bytes), "ok")
+      }
+
+      op fileDetectType (as string: path) as string ==> {
+            emit(nice, stdFileDetectType(path), "ok")
+      }
+
+      op fileIsBinary (as string: path) as bool ==> {
+            emit(nice, stdFileIsBinary(path), "ok")
+      }
+}

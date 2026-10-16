@@ -1,0 +1,89 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StructStdLib
+#L Dominio: StructConversion
+#L ==============================================================================
+
+contract (StructConversionContract) {
+      op structToMap (as data: instance) as map
+      op structEntries (as data: instance) as list of data
+      op structToString (as data: instance) as string
+      op structDiff (as data: a, as data: b) as map
+}
+
+agent (StructStdLib) impl StructConversionContract {
+      #L StructConversionContract
+      #L ==============================================================================
+
+      op structToMap (as data: instance) as map ==> {
+            mut as map: m = _extractStructMap(instance)
+            emit(nice, m, "ok")
+      }
+
+      op structEntries (as data: instance) as list of data ==> {
+            mut as map: m = _extractStructMap(instance)
+            mut as list of data: entries = []
+            mut as int64: sz = 0
+            infinite (k in m) {
+                  mut as string: sk = "" + k
+                  mut as list of data: pair = [sk, m[sk]]
+                  sz = sz + 1
+                  entries[sz] = pair
+            }
+            emit(nice, entries, "ok")
+      }
+
+      op structToString (as data: instance) as string ==> {
+            mut as string: text = "" + instance
+            mut as string: res = text
+            mut as bool: is_map = false
+            infinite (ch in text) {
+                  route {
+                        ch == "{" ==> {
+                              is_map = true
+                              break
+                        }
+                        _ ==> {
+                              break
+                        }
+                  }
+            }
+            route {
+                  is_map ==> {
+                        mut as string: sname = _extractStructType(instance)
+                        mut as map: m = _extractStructMap(instance)
+                        mut as string: out = sname + "("
+                        mut as bool: first = true
+                        infinite (k in m) {
+                              mut as string: sk = "" + k
+                              route {
+                                    not first ==> {
+                                          out = out + ", "
+                                    }
+                              }
+                              out = out + "." + sk + ": " + m[sk]
+                              first = false
+                        }
+                        out = out + ")"
+                        res = out
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op structDiff (as data: a, as data: b) as map ==> {
+            mut as map: ma = _extractStructMap(a)
+            mut as map: mb = _extractStructMap(b)
+            mut as map: diff = map{}
+            infinite (k in ma) {
+                  mut as string: sk = "" + k
+                  mut as string: va = "" + ma[sk]
+                  mut as string: vb = "" + mb[sk]
+                  route {
+                        va != vb ==> {
+                              diff[sk] = va + " -> " + vb
+                        }
+                  }
+            }
+            emit(nice, diff, "ok")
+      }
+}

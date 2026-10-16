@@ -1,0 +1,78 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotTheme
+#L ==============================================================================
+
+contract (PlotThemeContract) {
+      op plotThemeDark () as map
+      op plotThemeLight () as map
+      op plotThemeScientific () as map
+      op plotGetColorMapRgb (as int64: cmap, as float64: t) as list of int64
+}
+
+agent (GraphPlotStdLib) impl PlotThemeContract {
+      #L 10. PlotThemeContract
+      #L =====================================================================
+
+      op plotThemeDark () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [25, 25, 30, 255]
+            t["grid"] = [50, 50, 60, 255]
+            t["axis"] = [180, 180, 190, 255]
+            t["text"] = [230, 230, 240, 255]
+            emit(nice, t, "ok")
+      }
+
+      op plotThemeLight () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [255, 255, 255, 255]
+            t["grid"] = [230, 230, 235, 255]
+            t["axis"] = [80, 80, 90, 255]
+            t["text"] = [30, 30, 40, 255]
+            emit(nice, t, "ok")
+      }
+
+      op plotThemeScientific () as map ==> {
+            mut as map: t = map{}
+            t["bg"] = [248, 249, 250, 255]
+            t["grid"] = [220, 225, 230, 255]
+            t["axis"] = [30, 40, 50, 255]
+            t["text"] = [20, 25, 35, 255]
+            emit(nice, t, "ok")
+      }
+
+      op plotGetColorMapRgb (as int64: cmap, as float64: t) as list of int64 ==> {
+            mut as float64: factor = t
+            route {
+                  factor < 0.0 ==> { factor = 0.0 }
+                  factor > 1.0 ==> { factor = 1.0 }
+            }
+
+            mut as int64: r = (factor * 255.0) as int64
+            mut as int64: g = ((1.0 - factor) * 200.0) as int64
+            mut as int64: b = 255 - r
+
+            route {
+                  cmap == 1 ==> { #L VIRIDIS
+                        r = (68.0 + factor * (253.0 - 68.0)) as int64
+                        g = (1.0 + factor * (231.0 - 1.0)) as int64
+                        b = (84.0 + (1.0 - factor) * (153.0 - 84.0)) as int64
+                  }
+                  cmap == 2 ==> { #L PLASMA
+                        r = (13.0 + factor * (240.0 - 13.0)) as int64
+                        g = (8.0 + factor * (249.0 - 8.0)) as int64
+                        b = (135.0 + (1.0 - factor) * (100.0)) as int64
+                  }
+                  cmap == 5 ==> { #L COOLWARM
+                        r = (59.0 + factor * (180.0 - 59.0) + factor * 70.0) as int64
+                        g = (76.0 + (1.0 - factor) * 100.0) as int64
+                        b = (192.0 - factor * 140.0) as int64
+                  }
+            }
+
+            mut as list of int64: col = [r, g, b, 255]
+            emit(nice, col, "ok")
+      }
+
+      #L =====================================================================
+}

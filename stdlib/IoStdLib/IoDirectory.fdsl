@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoDirectory
+#L ==============================================================================
+
+contract (IoDirectoryContract) {
+      op dirExists (as string: path) as bool
+      op createDir (as string: path) as bool
+      op removeDir (as string: path) as bool
+      op listDir (as string: path) as list of data
+}
+
+agent (IoStdLib) impl IoDirectoryContract {
+      #L -- IoDirectoryContract ---------------------------------------
+      op dirExists (as string: path) as bool ==> {
+            emit(nice, stdIoDirExists(path), "ok")
+      }
+
+      op createDir (as string: path) as bool ==> {
+            emit(nice, stdIoCreateDir(path), "ok")
+      }
+
+      op removeDir (as string: path) as bool ==> {
+            emit(nice, stdIoRemoveDir(path), "ok")
+      }
+
+      op listDir (as string: path) as list of data ==> {
+            emit(nice, stdIoListDir(path), "ok")
+      }
+}

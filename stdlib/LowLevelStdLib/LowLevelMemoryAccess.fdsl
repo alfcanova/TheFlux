@@ -1,0 +1,155 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelMemoryAccess
+#L ==============================================================================
+
+contract (LowLevelMemoryAccessContract) {
+      op lowMemoryInit (as int64: size_bytes) as map
+      op lowMemoryPeekByte (as map: mem, as int64: address) as int64
+      op lowMemoryPokeByte (as map: mem, as int64: address, as int64: value) as map
+      op lowMemoryPeekHWord (as map: mem, as int64: address) as int64
+      op lowMemoryPokeHWord (as map: mem, as int64: address, as int64: value) as map
+      op lowMemoryPeekWord (as map: mem, as int64: address) as int64
+      op lowMemoryPokeWord (as map: mem, as int64: address, as int64: value) as map
+      op lowMemoryPeekDWord (as map: mem, as int64: address) as int64
+      op lowMemoryPokeDWord (as map: mem, as int64: address, as int64: value) as map
+      op lowByteGet (as int64: value, as int64: byte_index) as int64
+      op lowByteSet (as int64: value, as int64: byte_index, as int64: byte_val) as int64
+      op lowHWordGet (as int64: value, as int64: hword_index) as int64
+      op lowWordGet (as int64: value, as int64: word_index) as int64
+      op lowMakeHWord (as int64: b0, as int64: b1) as int64
+      op lowMakeWord (as int64: b0, as int64: b1, as int64: b2, as int64: b3) as int64
+      op lowMakeDWord (as int64: w0, as int64: w1) as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelMemoryAccessContract {
+      #L LowLevelMemoryAccessContract (Memoria Virtual e MMIO)
+      #L =====================================================================
+
+      op lowMemoryInit (as int64: size_bytes) as map ==> {
+            mut as map: m = map{}
+            m["size"] = size_bytes
+            emit(nice, m, "ok")
+      }
+
+      op lowMemoryPeekByte (as map: mem, as int64: address) as int64 ==> {
+            mut as string: k = "" + address
+            mut as int64: val = 0
+            route {
+                  _memHasKey(mem, k) ==> {
+                        val = mem[k] as int64
+                  }
+            }
+            emit(nice, val & 255, "ok")
+      }
+
+      op lowMemoryPokeByte (as map: mem, as int64: address, as int64: value) as map ==> {
+            mut as string: k = "" + address
+            mem[k] = value & 255
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPokeHWord (as map: mem, as int64: address, as int64: value) as map ==> {
+            mut as int64: b0 = value & 255
+            mut as int64: b1 = (value >>> 8) & 255
+            mem["" + address] = b0
+            mem["" + (address + 1)] = b1
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPeekHWord (as map: mem, as int64: address) as int64 ==> {
+            mut as int64: b0 = lowMemoryPeekByte(mem, address)
+            mut as int64: b1 = lowMemoryPeekByte(mem, address + 1)
+            mut as int64: res = b0 | (b1 << 8)
+            emit(nice, res, "ok")
+      }
+
+      op lowMemoryPokeWord (as map: mem, as int64: address, as int64: value) as map ==> {
+            mut as int64: b0 = value & 255
+            mut as int64: b1 = (value >>> 8) & 255
+            mut as int64: b2 = (value >>> 16) & 255
+            mut as int64: b3 = (value >>> 24) & 255
+            mem["" + address] = b0
+            mem["" + (address + 1)] = b1
+            mem["" + (address + 2)] = b2
+            mem["" + (address + 3)] = b3
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPeekWord (as map: mem, as int64: address) as int64 ==> {
+            mut as int64: b0 = lowMemoryPeekByte(mem, address)
+            mut as int64: b1 = lowMemoryPeekByte(mem, address + 1)
+            mut as int64: b2 = lowMemoryPeekByte(mem, address + 2)
+            mut as int64: b3 = lowMemoryPeekByte(mem, address + 3)
+            mut as int64: res = b0 | (b1 << 8) | (b2 << 16) | (b3 << 24)
+            emit(nice, res, "ok")
+      }
+
+      op lowMemoryPokeDWord (as map: mem, as int64: address, as int64: value) as map ==> {
+            infinite (i in 0 .. 7) {
+                  mut as int64: b = (value >>> (i * 8)) & 255
+                  mem["" + (address + i)] = b
+            }
+            emit(nice, mem, "ok")
+      }
+
+      op lowMemoryPeekDWord (as map: mem, as int64: address) as int64 ==> {
+            mut as int64: res = 0
+            infinite (i in 0 .. 7) {
+                  mut as int64: b = lowMemoryPeekByte(mem, address + i)
+                  res = res | (b << (i * 8))
+            }
+            emit(nice, res, "ok")
+      }
+
+      op lowByteGet (as int64: value, as int64: byte_index) as int64 ==> {
+            route {
+                  byte_index < 1 or byte_index > 8 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = (byte_index - 1) * 8
+            emit(nice, (value >>> shift) & 255, "ok")
+      }
+
+      op lowByteSet (as int64: value, as int64: byte_index, as int64: byte_val) as int64 ==> {
+            route {
+                  byte_index < 1 or byte_index > 8 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: shift = (byte_index - 1) * 8
+            mut as int64: mask = 255 << shift
+            mut as int64: clean = value & (~mask)
+            mut as int64: ins = (byte_val & 255) << shift
+            emit(nice, clean | ins, "ok")
+      }
+
+      op lowHWordGet (as int64: value, as int64: hword_index) as int64 ==> {
+            route {
+                  hword_index < 1 or hword_index > 4 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = (hword_index - 1) * 16
+            emit(nice, (value >>> shift) & 65535, "ok")
+      }
+
+      op lowWordGet (as int64: value, as int64: word_index) as int64 ==> {
+            route {
+                  word_index < 1 or word_index > 2 ==> { emit(nice, 0, "ok") }
+            }
+            mut as int64: shift = (word_index - 1) * 32
+            emit(nice, (value >>> shift) & 4294967295, "ok")
+      }
+
+      op lowMakeHWord (as int64: b0, as int64: b1) as int64 ==> {
+            emit(nice, (b0 & 255) | ((b1 & 255) << 8), "ok")
+      }
+
+      op lowMakeWord (as int64: b0, as int64: b1, as int64: b2, as int64: b3) as int64 ==> {
+            mut as int64: res = (b0 & 255) | ((b1 & 255) << 8) | ((b2 & 255) << 16) | ((b3 & 255) << 24)
+            emit(nice, res, "ok")
+      }
+
+      op lowMakeDWord (as int64: w0, as int64: w1) as int64 ==> {
+            mut as int64: res = (w0 & 4294967295) | ((w1 & 4294967295) << 32)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

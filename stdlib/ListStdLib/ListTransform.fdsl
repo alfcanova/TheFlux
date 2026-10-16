@@ -1,0 +1,256 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListTransform
+#L ==============================================================================
+
+contract (ListTransformContract) {
+      op listSort (as list of data: items) as list of data
+      op listSortAscending (as list of data: items) as list of data
+      op listSortDescending (as list of data: items) as list of data
+      op listReverse (as list of data: items) as list of data
+      op listRotateLeft (as list of data: items, as int64: n) as list of data
+      op listRotateRight (as list of data: items, as int64: n) as list of data
+      op listFlatten (as list of data: items) as list of data
+      op listPartition (as list of data: items, as int64: size) as list of data
+      op listZip (as list of data: left, as list of data: right) as list of data
+      op listUnzip (as list of data: pairs) as list of data
+}
+
+agent (ListStdLib) impl ListTransformContract {
+      #L -- ListTransformContract -------------------------------------
+      op listSort (as list of data: items) as list of data ==> {
+            emit(nice, listSortAscending(items), "ok")
+      }
+
+      op listSortAscending (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  mut as int64: rlen = 0
+                  infinite (k in res) { rlen = rlen + 1 }
+                  res[rlen + 1] = x
+            }
+            mut as int64: n = 0
+            infinite (x in res) {
+                  n = n + 1
+            }
+            route {
+                  n > 1 ==> {
+                        infinite (i in 1 .. n) {
+                              mut as int64: limit = n - i
+                              route {
+                                    limit >= 1 ==> {
+                                          infinite (j in 1 .. limit) {
+                                                route {
+                                                      res[j] > res[j + 1] ==> {
+                                                            mut as data: temp = res[j]
+                                                            res[j] = res[j + 1]
+                                                            res[j + 1] = temp
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listSortDescending (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  mut as int64: rlen = 0
+                  infinite (k in res) { rlen = rlen + 1 }
+                  res[rlen + 1] = x
+            }
+            mut as int64: n = 0
+            infinite (x in res) {
+                  n = n + 1
+            }
+            route {
+                  n > 1 ==> {
+                        infinite (i in 1 .. n) {
+                              mut as int64: limit = n - i
+                              route {
+                                    limit >= 1 ==> {
+                                          infinite (j in 1 .. limit) {
+                                                route {
+                                                      res[j] < res[j + 1] ==> {
+                                                            mut as data: temp = res[j]
+                                                            res[j] = res[j + 1]
+                                                            res[j + 1] = temp
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listReverse (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n = 0
+            infinite (x in items) {
+                  n = n + 1
+            }
+            route {
+                  n > 0 ==> {
+                        infinite (i in n .. 1) {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = items[i]
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRotateLeft (as list of data: items, as int64: n) as list of data ==> {
+            mut as int64: total = listLength(items)
+            route {
+                  total <= 1 or n <= 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as int64: shift = n /r total
+            route {
+                  shift == 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as list of data: head = items[(shift + 1)..total]
+            mut as list of data: tail = items[1..shift]
+            emit(nice, listAppend(head, tail), "ok")
+      }
+
+      op listRotateRight (as list of data: items, as int64: n) as list of data ==> {
+            mut as int64: total = listLength(items)
+            route {
+                  total <= 1 or n <= 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as int64: shift = n /r total
+            route {
+                  shift == 0 ==> {
+                        emit(nice, items, "ok")
+                  }
+            }
+            mut as list of data: tail = items[(total - shift + 1)..total]
+            mut as list of data: head = items[1..(total - shift)]
+            emit(nice, listAppend(tail, head), "ok")
+      }
+
+      op listFlatten (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  match (x) {
+                        [..sub] ==> {
+                              infinite (y in sub) {
+                                    mut as int64: rlen = 0
+                                    infinite (k in res) { rlen = rlen + 1 }
+                                    res[rlen + 1] = y
+                              }
+                        }
+                        _ ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listPartition (as list of data: items, as int64: size) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  size <= 0 ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as list of data: current_chunk = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  mut as int64: clen = 0
+                  infinite (k in current_chunk) { clen = clen + 1 }
+                  current_chunk[clen + 1] = x
+                  count = count + 1
+                  route {
+                        count == size ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = current_chunk
+                              current_chunk = []
+                              count = 0
+                        }
+                  }
+            }
+            route {
+                  count > 0 ==> {
+                        mut as int64: rlen2 = 0
+                        infinite (k in res) { rlen2 = rlen2 + 1 }
+                        res[rlen2 + 1] = current_chunk
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listZip (as list of data: left, as list of data: right) as list of data ==> {
+            mut as int64: n1 = 0
+            infinite (x in left) { n1 = n1 + 1 }
+            mut as int64: n2 = 0
+            infinite (x in right) { n2 = n2 + 1 }
+            mut as int64: min_len = n1
+            route {
+                  n2 < min_len ==> {
+                        min_len = n2
+                  }
+            }
+            mut as list of data: res = []
+            route {
+                  min_len > 0 ==> {
+                        infinite (i in 1 .. min_len) {
+                              mut as list of data: pair = [left[i], right[i]]
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = pair
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listUnzip (as list of data: pairs) as list of data ==> {
+            mut as list of data: left_list = []
+            mut as list of data: right_list = []
+            infinite (p in pairs) {
+                  match (p) {
+                        [k, v] ==> {
+                              mut as int64: l1 = 0
+                              infinite (i in left_list) { l1 = l1 + 1 }
+                              left_list[l1 + 1] = k
+
+                              mut as int64: l2 = 0
+                              infinite (j in right_list) { l2 = l2 + 1 }
+                              right_list[l2 + 1] = v
+                        }
+                        [..pair] ==> {
+                              mut as int64: l1 = 0
+                              infinite (i in left_list) { l1 = l1 + 1 }
+                              left_list[l1 + 1] = pair[1]
+
+                              mut as int64: l2 = 0
+                              infinite (j in right_list) { l2 = l2 + 1 }
+                              right_list[l2 + 1] = pair[2]
+                        }
+                        _ ==> none
+                  }
+            }
+            mut as list of data: res = [left_list, right_list]
+            emit(nice, res, "ok")
+      }
+}

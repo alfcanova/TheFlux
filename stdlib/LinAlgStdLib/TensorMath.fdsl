@@ -1,0 +1,125 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorMath
+#L ==============================================================================
+
+contract (TensorMathContract) {
+      op tensorSumAll (as map: tensor) as float64
+      op tensorMeanAll (as map: tensor) as float64
+      op tensorMinAll (as map: tensor) as float64
+      op tensorMaxAll (as map: tensor) as float64
+      op tensorAbs (as map: tensor) as map
+      op tensorNeg (as map: tensor) as map
+      op tensorSqrtElementwise (as map: tensor) as map
+      op tensorPowerScalar (as map: tensor, as int64: exponent) as map
+}
+
+agent (LinAlgStdLib) impl TensorMathContract {
+      #L 16. TensorMathContract - Reducoes Globais e Funcoes Elementwise Unarias
+      #L ==============================================================================
+
+      op tensorSumAll (as map: tensor) as float64 ==> {
+            mut as list of data: buf = tensor["data"] as list of data
+            mut as float64: acc = 0.0
+            infinite (x in buf) {
+                  acc = acc + (x as float64)
+            }
+            emit(nice, acc, "ok")
+      }
+
+      op tensorMeanAll (as map: tensor) as float64 ==> {
+            mut as list of data: buf = tensor["data"] as list of data
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            route {
+                  len == 0 ==> { emit(nice, 0.0, "ok") }
+            }
+            mut as float64: sum = tensorSumAll(tensor)
+            emit(nice, sum /f (len as float64), "ok")
+      }
+
+      op tensorMinAll (as map: tensor) as float64 ==> {
+            mut as list of data: buf = tensor["data"] as list of data
+            mut as float64: min_v = 999999999999.0
+            infinite (x in buf) {
+                  mut as float64: v = x as float64
+                  route { v < min_v ==> { min_v = v } }
+            }
+            emit(nice, min_v, "ok")
+      }
+
+      op tensorMaxAll (as map: tensor) as float64 ==> {
+            mut as list of data: buf = tensor["data"] as list of data
+            mut as float64: max_v = -999999999999.0
+            infinite (x in buf) {
+                  mut as float64: v = x as float64
+                  route { v > max_v ==> { max_v = v } }
+            }
+            emit(nice, max_v, "ok")
+      }
+
+      op tensorAbs (as map: tensor) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            mut as list of data: buf = _listClone(tensor["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as float64: v = buf[i] as float64
+                  route { v < 0.0 ==> { v = 0.0 - v } }
+                  buf[i] = v
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      op tensorNeg (as map: tensor) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            mut as list of data: buf = _listClone(tensor["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  buf[i] = 0.0 - (buf[i] as float64)
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      op tensorSqrtElementwise (as map: tensor) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            mut as list of data: buf = _listClone(tensor["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  buf[i] = _sqrt(buf[i] as float64)
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      op tensorPowerScalar (as map: tensor, as int64: exponent) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            mut as list of data: buf = _listClone(tensor["data"] as list of data)
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as float64: base = buf[i] as float64
+                  mut as float64: res = 1.0
+                  mut as int64: p = 1
+                  infinite (p <= exponent) {
+                        res = res * base
+                        p = p + 1
+                  }
+                  buf[i] = res
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+}

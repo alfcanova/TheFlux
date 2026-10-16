@@ -1,0 +1,205 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: MatrixDecomposition
+#L ==============================================================================
+
+contract (MatrixDecompositionContract) {
+      op matrixLU (as map: matrix) as list of data
+      op matrixSolveLU (as map: L, as map: U, as list of data: P, as list of data: b) as list of data
+      op matrixDeterminant (as map: matrix) as float64
+      op matrixInverse (as map: matrix) as map
+}
+
+agent (LinAlgStdLib) impl MatrixDecompositionContract {
+      #L 3. MatrixDecompositionContract - Algoritmos Numericos Estaveis
+      #L ==============================================================================
+
+      op matrixLU (as map: matrix) as list of data ==> {
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as map: L = tensorNew([n, n])
+            mut as map: U = _mapClone(matrix)
+            U["data"] = _listClone(matrix["data"] as list of data)
+            mut as list of data: P = []
+
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  L = tensorSetAt(L, [i, i], 1.0)
+                  P[i] = i
+                  i = i + 1
+            }
+
+            mut as int64: j = 1
+            infinite (j <= n) {
+                  mut as int64: pivot_row = j
+                  mut as float64: max_val = 0.0
+                  mut as int64: pr = j
+                  infinite (pr <= n) {
+                        mut as float64: cur = tensorGetAt(U, [pr, j])
+                        route { cur < 0.0 ==> { cur = 0.0 - cur } }
+                        route {
+                              cur > max_val ==> {
+                                    max_val = cur
+                                    pivot_row = pr
+                              }
+                        }
+                        pr = pr + 1
+                  }
+
+                  route {
+                        pivot_row != j ==> {
+                              mut as int64: tmp_p = P[j] as int64
+                              P[j] = P[pivot_row]
+                              P[pivot_row] = tmp_p
+
+                              mut as int64: col = 1
+                              infinite (col <= n) {
+                                    mut as float64: tmp_u = tensorGetAt(U, [j, col])
+                                    U = tensorSetAt(U, [j, col], tensorGetAt(U, [pivot_row, col]))
+                                    U = tensorSetAt(U, [pivot_row, col], tmp_u)
+
+                                    route {
+                                          col < j ==> {
+                                                mut as float64: tmp_l = tensorGetAt(L, [j, col])
+                                                L = tensorSetAt(L, [j, col], tensorGetAt(L, [pivot_row, col]))
+                                                L = tensorSetAt(L, [pivot_row, col], tmp_l)
+                                          }
+                                    }
+                                    col = col + 1
+                              }
+                        }
+                  }
+
+                  mut as int64: row = j + 1
+                  infinite (row <= n) {
+                        mut as float64: u_jj = tensorGetAt(U, [j, j])
+                        route {
+                              u_jj != 0.0 ==> {
+                                    mut as float64: factor = tensorGetAt(U, [row, j]) /f u_jj
+                                    L = tensorSetAt(L, [row, j], factor)
+
+                                    mut as int64: c = j
+                                    infinite (c <= n) {
+                                          mut as float64: u_val = tensorGetAt(U, [row, c]) - factor * tensorGetAt(U, [j, c])
+                                          U = tensorSetAt(U, [row, c], u_val)
+                                          c = c + 1
+                                    }
+                              }
+                        }
+                        row = row + 1
+                  }
+                  j = j + 1
+            }
+            emit(nice, [L, U, P], "ok")
+      }
+
+      op matrixSolveLU (as map: L, as map: U, as list of data: P, as list of data: b) as list of data ==> {
+            mut as list of data: sh = L["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+
+            mut as list of data: pb = []
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  mut as int64: p_idx = P[i] as int64
+                  pb[i] = b[p_idx]
+                  i = i + 1
+            }
+
+            mut as list of data: y = []
+            i = 1
+            infinite (i <= n) {
+                  mut as float64: sum = 0.0
+                  mut as int64: j = 1
+                  infinite (j < i) {
+                        sum = sum + tensorGetAt(L, [i, j]) * (y[j] as float64)
+                        j = j + 1
+                  }
+                  y[i] = (pb[i] as float64) - sum
+                  i = i + 1
+            }
+
+            mut as list of data: x = []
+            mut as int64: k_init = 1
+            infinite (k_init <= n) {
+                  x[k_init] = 0.0
+                  k_init = k_init + 1
+            }
+
+            i = n
+            infinite {
+                  route { i < 1 ==> { break } }
+                  mut as float64: sum = 0.0
+                  mut as int64: j = i + 1
+                  infinite (j <= n) {
+                        sum = sum + tensorGetAt(U, [i, j]) * (x[j] as float64)
+                        j = j + 1
+                  }
+                  x[i] = ((y[i] as float64) - sum) /f tensorGetAt(U, [i, i])
+                  i = i - 1
+            }
+            emit(nice, x, "ok")
+      }
+
+      op matrixDeterminant (as map: matrix) as float64 ==> {
+            mut as list of data: lu_decomp = matrixLU(matrix)
+            mut as map: U = lu_decomp[2] as map
+            mut as list of data: P = lu_decomp[3] as list of data
+
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as float64: det = 1.0
+
+            mut as int64: i = 1
+            infinite (i <= n) {
+                  det = det * tensorGetAt(U, [i, i])
+                  i = i + 1
+            }
+
+            mut as int64: inversions = 0
+            i = 1
+            infinite (i <= n) {
+                  mut as int64: j = i + 1
+                  infinite (j <= n) {
+                        route { (P[i] as int64) > (P[j] as int64) ==> { inversions = inversions + 1 } }
+                        j = j + 1
+                  }
+                  i = i + 1
+            }
+            route { (inversions /r 2) != 0 ==> { det = 0.0 - det } }
+            emit(nice, det, "ok")
+      }
+
+      op matrixInverse (as map: matrix) as map ==> {
+            mut as list of data: lu_decomp = matrixLU(matrix)
+            mut as map: L = lu_decomp[1] as map
+            mut as map: U = lu_decomp[2] as map
+            mut as list of data: P = lu_decomp[3] as list of data
+
+            mut as list of data: sh = matrix["shape"] as list of data
+            mut as int64: n = sh[1] as int64
+            mut as map: inv = tensorNew([n, n])
+
+            mut as int64: col = 1
+            infinite (col <= n) {
+                  mut as list of data: e_col = []
+                  mut as int64: row = 1
+                  infinite (row <= n) {
+                        route { row == col ==> { e_col[row] = 1.0 } }
+                        route { row != col ==> { e_col[row] = 0.0 } }
+                        row = row + 1
+                  }
+
+                  mut as list of data: x_col = matrixSolveLU(L, U, P, e_col)
+
+                  row = 1
+                  infinite (row <= n) {
+                        inv = tensorSetAt(inv, [row, col], x_col[row] as float64)
+                        row = row + 1
+                  }
+                  col = col + 1
+            }
+            emit(nice, inv, "ok")
+      }
+
+      #L ==============================================================================
+}

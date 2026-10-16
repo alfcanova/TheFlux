@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DslStdLib
+#L Dominio: DslAst
+#L ==============================================================================
+
+contract (DslAstContract) {
+      op dslGenerateAst (as data: parser, as string: dsl_code) as map
+      op dslDumpAst (as map: ast) as string
+      op dslFindAstNodes (as map: ast, as string: node_type) as list of data
+      op dslTransformAst (as map: ast, as map: transform_rules) as map
+}
+
+agent (DslStdLib) impl DslAstContract {
+      #L -- DslAstContract ---------------------------------------------
+      op dslGenerateAst (as data: parser, as string: dsl_code) as map ==> {
+            emit(nice, stdDslGenerateAst(parser, dsl_code), "ok")
+      }
+
+      op dslDumpAst (as map: ast) as string ==> {
+            emit(nice, stdDslDumpAst(ast), "ok")
+      }
+
+      op dslFindAstNodes (as map: ast, as string: node_type) as list of data ==> {
+            emit(nice, stdDslFindAstNodes(ast, node_type), "ok")
+      }
+
+      op dslTransformAst (as map: ast, as map: transform_rules) as map ==> {
+            emit(nice, stdDslTransformAst(ast, transform_rules), "ok")
+      }
+}

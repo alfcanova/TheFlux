@@ -1,0 +1,767 @@
+contract (SpecialFunctionsContract) {
+      op errorFunction64 (as float64: value) as float64
+      op errorFunction32 (as float32: value) as float32
+      op errorFunction16 (as float16: value) as float16
+      op gammaFunction64 (as float64: value) as float64
+      op gammaFunction32 (as float32: value) as float32
+      op gammaFunction16 (as float16: value) as float16
+      op erfc64 (as float64: value) as float64
+      op erfc32 (as float32: value) as float32
+      op erfc16 (as float16: value) as float16
+      op erfinv64 (as float64: value) as float64
+      op erfinv32 (as float32: value) as float32
+      op erfinv16 (as float16: value) as float16
+      op logGamma64 (as float64: value) as float64
+      op logGamma32 (as float32: value) as float32
+      op logGamma16 (as float16: value) as float16
+      op digamma64 (as float64: value) as float64
+      op digamma32 (as float32: value) as float32
+      op digamma16 (as float16: value) as float16
+      op sigmoid64 (as float64: value) as float64
+      op sigmoid32 (as float32: value) as float32
+      op sigmoid16 (as float16: value) as float16
+      op normalCdf64 (as float64: value) as float64
+      op normalCdf32 (as float32: value) as float32
+      op normalCdf16 (as float16: value) as float16
+      op besselJ0_64 (as float64: value) as float64
+      op besselJ0_32 (as float32: value) as float32
+      op besselJ0_16 (as float16: value) as float16
+      op besselJ1_64 (as float64: value) as float64
+      op besselJ1_32 (as float32: value) as float32
+      op besselJ1_16 (as float16: value) as float16
+      op ulp64 (as float64: value) as float64
+      op ulp32 (as float32: value) as float32
+      op ulp16 (as float16: value) as float16
+      op fract64 (as float64: value) as float64
+      op fract32 (as float32: value) as float32
+      op fract16 (as float16: value) as float16
+      op wrapAngle64 (as float64: value) as float64
+      op wrapAngle32 (as float32: value) as float32
+      op wrapAngle16 (as float16: value) as float16
+      op beta64 (as float64: a, as float64: b) as float64
+      op beta32 (as float32: a, as float32: b) as float32
+      op beta16 (as float16: a, as float16: b) as float16
+      op logBeta64 (as float64: a, as float64: b) as float64
+      op logBeta32 (as float32: a, as float32: b) as float32
+      op logBeta16 (as float16: a, as float16: b) as float16
+      op fdim64 (as float64: a, as float64: b) as float64
+      op fdim32 (as float32: a, as float32: b) as float32
+      op fdim16 (as float16: a, as float16: b) as float16
+      op step64 (as float64: a, as float64: b) as float64
+      op step32 (as float32: a, as float32: b) as float32
+      op step16 (as float16: a, as float16: b) as float16
+      op isCloseTo64 (as float64: a, as float64: b) as bool
+      op isCloseTo32 (as float32: a, as float32: b) as bool
+      op isCloseTo16 (as float16: a, as float16: b) as bool
+      op signbit64 (as float64: value) as bool
+      op signbit32 (as float32: value) as bool
+      op signbit16 (as float16: value) as bool
+      op copySign64 (as float64: magnitude, as float64: sign_source) as float64
+      op copySign32 (as float32: magnitude, as float32: sign_source) as float32
+      op copySign16 (as float16: magnitude, as float16: sign_source) as float16
+      op nextRepresentable64 (as float64: magnitude, as float64: sign_source) as float64
+      op nextRepresentable32 (as float32: magnitude, as float32: sign_source) as float32
+      op nextRepresentable16 (as float16: magnitude, as float16: sign_source) as float16
+      op fusedMultiplyAdd64 (as float64: a, as float64: b, as float64: c) as float64
+      op fusedMultiplyAdd32 (as float32: a, as float32: b, as float32: c) as float32
+      op fusedMultiplyAdd16 (as float16: a, as float16: b, as float16: c) as float16
+      op ldexp64 (as float64: x, as int64: exp_val) as float64
+      op ldexp32 (as float32: x, as int32: exp_val) as float32
+      op ldexp16 (as float16: x, as int16: exp_val) as float16
+      op smoothstep64 (as float64: edge0, as float64: edge1, as float64: x) as float64
+      op smoothstep32 (as float32: edge0, as float32: edge1, as float32: x) as float32
+      op smoothstep16 (as float16: edge0, as float16: edge1, as float16: x) as float16
+      op smootherstep64 (as float64: edge0, as float64: edge1, as float64: x) as float64
+      op smootherstep32 (as float32: edge0, as float32: edge1, as float32: x) as float32
+      op smootherstep16 (as float16: edge0, as float16: edge1, as float16: x) as float16
+      op inverseLinearInterpolation64 (as float64: a, as float64: b, as float64: val) as float64
+      op inverseLinearInterpolation32 (as float32: a, as float32: b, as float32: val) as float32
+      op inverseLinearInterpolation16 (as float16: a, as float16: b, as float16: val) as float16
+      op mapRange64 (as float64: val, as float64: in_min, as float64: in_max, as float64: out_min, as float64: out_max) as float64
+      op mapRange32 (as float32: val, as float32: in_min, as float32: in_max, as float32: out_min, as float32: out_max) as float32
+      op mapRange16 (as float16: val, as float16: in_min, as float16: in_max, as float16: out_min, as float16: out_max) as float16
+}
+
+agent (MathStdLib) impl SpecialFunctionsContract {
+      op errorFunction64 (as float64: value) as float64 ==> {
+            mut as float64: x = value
+            mut as float64: sign = 1.0
+            route {
+                  x < 0.0 ==> {
+                        sign = -1.0
+                        x = 0.0 - x
+                  }
+            }
+            mut as float64: p = 0.3275911
+            mut as float64: t = 1.0 /f (1.0 + p * x)
+            mut as float64: a1 = 0.254829592
+            mut as float64: a2 = -0.284496736
+            mut as float64: a3 = 1.421413741
+            mut as float64: a4 = -1.453152027
+            mut as float64: a5 = 1.061405429
+            mut as float64: poly = t * (a1 + t * (a2 + t * (a3 + t * (a4 + t * a5))))
+            mut as float64: res = sign * (1.0 - poly * (exp64(0.0 - x * x)).val)
+            emit(nice, res, "ok")
+      }
+
+      op errorFunction32 (as float32: value) as float32 ==> {
+            mut as float32: res = (errorFunction64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op errorFunction16 (as float16: value) as float16 ==> {
+            mut as float16: res = (errorFunction64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op gammaFunction64 (as float64: value) as float64 ==> {
+            mut as float64: z = value
+            route {
+                  z < 0.5 ==> {
+                        mut as float64: pi_val = 3.14159265358979323846264338327
+                        mut as float64: sin_pi_z = (sin64(pi_val * z)).val
+                        mut as float64: gamma_1_minus_z = (gammaFunction64(1.0 - z)).val
+                        mut as float64: res = pi_val /f (sin_pi_z * gamma_1_minus_z)
+                        emit(nice, res, "ok")
+                  }
+            }
+            z = z - 1.0
+            mut as float64: x = 0.99999999999980993 + (676.5203681218851 /f (z + 1.0)) - (1259.1392167224028 /f (z + 2.0)) + (771.32342877765313 /f (z + 3.0)) - (176.61502916214059 /f (z + 4.0)) + (12.507343278686905 /f (z + 5.0)) - (0.138571095836526 /f (z + 6.0)) + (9.9843695780195716e-6 /f (z + 7.0)) + (1.5056327351493116e-7 /f (z + 8.0))
+            mut as float64: t = z + 7.5
+            mut as float64: sqrt2pi = 2.5066282746310005
+            mut as float64: res = sqrt2pi * (t ^e (z + 0.5)) * (exp64(0.0 - t)).val * x
+            emit(nice, res, "ok")
+      }
+
+      op gammaFunction32 (as float32: value) as float32 ==> {
+            mut as float32: res = (gammaFunction64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op gammaFunction16 (as float16: value) as float16 ==> {
+            mut as float16: res = (gammaFunction64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op isCloseTo64 (as float64: a, as float64: b) as bool ==> {
+            mut as float64: diff = (absoluteFloat64(a - b)).val
+            mut as float64: max_ab = (maximumFloat64((absoluteFloat64(a)).val, (absoluteFloat64(b)).val)).val
+            mut as float64: tol = 1.0e-9 + 1.0e-9 * max_ab
+            mut as bool: res = diff <= tol
+            emit(nice, res, "ok")
+      }
+
+      op isCloseTo32 (as float32: a, as float32: b) as bool ==> {
+            mut as bool: res = (isCloseTo64(a as float64, b as float64)).val
+            emit(nice, res, "ok")
+      }
+      op isCloseTo16 (as float16: a, as float16: b) as bool ==> {
+            mut as bool: res = (isCloseTo64(a as float64, b as float64)).val
+            emit(nice, res, "ok")
+      }
+
+      op copySign64 (as float64: magnitude, as float64: sign_source) as float64 ==> {
+            mut as float64: mag = (absoluteFloat64(magnitude)).val
+            route {
+                  sign_source < 0.0 ==> {
+                        mut as float64: neg_mag = 0.0 - mag
+                        emit(nice, neg_mag, "ok")
+                  }
+            }
+            emit(nice, mag, "ok")
+      }
+
+      op copySign32 (as float32: magnitude, as float32: sign_source) as float32 ==> {
+            mut as float32: res = (copySign64(magnitude as float64, sign_source as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op copySign16 (as float16: magnitude, as float16: sign_source) as float16 ==> {
+            mut as float16: res = (copySign64(magnitude as float64, sign_source as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op nextRepresentable64 (as float64: from_val, as float64: to_val) as float64 ==> {
+            route {
+                  from_val == to_val ==> {
+                        emit(nice, to_val, "ok")
+                  }
+                  from_val != to_val ==> {
+                        mut as float64: eps = 2.220446049250313e-16
+                        mut as float64: mag = (absoluteFloat64(from_val)).val
+                        mut as float64: step_v = eps * mag
+                        route {
+                              step_v == 0.0 ==> {
+                                    step_v = 5.0e-324
+                              }
+                        }
+                        route {
+                              to_val > from_val ==> {
+                                    mut as float64: res_pos = from_val + step_v
+                                    emit(nice, res_pos, "ok")
+                              }
+                              to_val < from_val ==> {
+                                    mut as float64: res_neg = from_val - step_v
+                                    emit(nice, res_neg, "ok")
+                              }
+                        }
+                        emit(nice, from_val, "ok")
+                  }
+            }
+            emit(nice, from_val, "ok")
+      }
+
+      op nextRepresentable32 (as float32: from_val, as float32: to_val) as float32 ==> {
+            mut as float32: res = (nextRepresentable64(from_val as float64, to_val as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op nextRepresentable16 (as float16: from_val, as float16: to_val) as float16 ==> {
+            mut as float16: res = (nextRepresentable64(from_val as float64, to_val as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op fusedMultiplyAdd64 (as float64: a, as float64: b, as float64: c) as float64 ==> {
+            mut as float64: factor = 134217729.0
+            mut as float64: ca = factor * a
+            mut as float64: a_hi = ca - (ca - a)
+            mut as float64: a_lo = a - a_hi
+            mut as float64: cb = factor * b
+            mut as float64: b_hi = cb - (cb - b)
+            mut as float64: b_lo = b - b_hi
+            mut as float64: p = a * b
+            mut as float64: p_err = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo
+            mut as float64: s = p + c
+            mut as float64: s_err = (p - (s - c)) + (c - (s - p))
+            mut as float64: res = s + (p_err + s_err)
+            emit(nice, res, "ok")
+      }
+
+      op fusedMultiplyAdd32 (as float32: a, as float32: b, as float32: c) as float32 ==> {
+            mut as float32: res = (fusedMultiplyAdd64(a as float64, b as float64, c as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op fusedMultiplyAdd16 (as float16: a, as float16: b, as float16: c) as float16 ==> {
+            mut as float16: res = (fusedMultiplyAdd64(a as float64, b as float64, c as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op erfc64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value < 0.0 ==> {
+                        mut as float64: res = 2.0 - (erfc64(0.0 - value)).val
+                        emit(nice, res, "ok")
+                  }
+                  value >= 0.0 ==> {
+                        mut as float64: p = 0.3275911
+                        mut as float64: t = 1.0 /f (1.0 + p * value)
+                        mut as float64: poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))))
+                        mut as float64: res = poly * (exp64(0.0 - value * value)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op erfc32 (as float32: value) as float32 ==> {
+            mut as float32: res = (erfc64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op erfc16 (as float16: value) as float16 ==> {
+            mut as float16: res = (erfc64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op erfinv64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (value <= -1.0) or (value >= 1.0) ==> {
+                        emit(fail, zero_val, "dominio de erfinv: (-1, 1)")
+                  }
+                  (value > -1.0) and (value < 1.0) ==> {
+                        mut as float64: a = 0.147
+                        mut as float64: ln_term = (log64(1.0 - value * value)).val
+                        mut as float64: term1 = 2.0 /f (3.14159265358979323846264338327 * a) + ln_term /f 2.0
+                        mut as float64: term2 = ln_term /f a
+                        mut as float64: sq = (squareRoot64(term1 * term1 - term2)).val
+                        mut as float64: inside = sq - term1
+                        mut as float64: res = (squareRoot64(inside)).val
+                        route {
+                              value < 0.0 ==> {
+                                    res = 0.0 - res
+                              }
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op erfinv32 (as float32: value) as float32 ==> {
+            mut as float32: res = (erfinv64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op erfinv16 (as float16: value) as float16 ==> {
+            mut as float16: res = (erfinv64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op logGamma64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value <= 0.0 ==> {
+                        emit(fail, zero_val, "dominio de logGamma: (0, inf)")
+                  }
+                  value > 0.0 ==> {
+                        mut as float64: z = value
+                        route {
+                              z < 0.5 ==> {
+                                    mut as float64: pi_val = 3.14159265358979323846264338327
+                                    mut as float64: ln_pi = 1.1447298858494002
+                                    mut as float64: ln_sin = (log64((sin64(pi_val * z)).val)).val
+                                    mut as float64: lg1 = (logGamma64(1.0 - z)).val
+                                    mut as float64: res = ln_pi - ln_sin - lg1
+                                    emit(nice, res, "ok")
+                              }
+                        }
+                        z = z - 1.0
+                        mut as float64: x = 0.99999999999980993 + (676.5203681218851 /f (z + 1.0)) - (1259.1392167224028 /f (z + 2.0)) + (771.32342877765313 /f (z + 3.0)) - (176.61502916214059 /f (z + 4.0)) + (12.507343278686905 /f (z + 5.0)) - (0.138571095836526 /f (z + 6.0)) + (9.9843695780195716e-6 /f (z + 7.0)) + (1.5056327351493116e-7 /f (z + 8.0))
+                        mut as float64: t = z + 7.5
+                        mut as float64: ln_sqrt2pi = 0.9189385332046727
+                        mut as float64: res = ln_sqrt2pi + (z + 0.5) * (log64(t)).val - t + (log64(x)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op logGamma32 (as float32: value) as float32 ==> {
+            mut as float32: res = (logGamma64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op logGamma16 (as float16: value) as float16 ==> {
+            mut as float16: res = (logGamma64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op digamma64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value <= 0.0 ==> {
+                        emit(fail, zero_val, "dominio de digamma: (0, inf)")
+                  }
+                  value > 0.0 ==> {
+                        mut as float64: x = value
+                        mut as float64: res = 0.0
+                        infinite {
+                              route {
+                                    x >= 6.0 ==> {
+                                          break
+                                    }
+                              }
+                              res = res - 1.0 /f x
+                              x = x + 1.0
+                        }
+                        mut as float64: inv_x = 1.0 /f x
+                        mut as float64: inv_x2 = inv_x * inv_x
+                        res = res + (log64(x)).val - 0.5 * inv_x - inv_x2 * (0.08333333333333333 - inv_x2 * (0.008333333333333333 - inv_x2 * 0.003968253968253968))
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op digamma32 (as float32: value) as float32 ==> {
+            mut as float32: res = (digamma64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op digamma16 (as float16: value) as float16 ==> {
+            mut as float16: res = (digamma64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op beta64 (as float64: a, as float64: b) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (a <= 0.0) or (b <= 0.0) ==> {
+                        emit(fail, zero_val, "dominio de beta: a > 0 e b > 0")
+                  }
+                  (a > 0.0) and (b > 0.0) ==> {
+                        mut as float64: res = (exp64((logBeta64(a, b)).val)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op beta32 (as float32: a, as float32: b) as float32 ==> {
+            mut as float32: res = (beta64(a as float64, b as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op beta16 (as float16: a, as float16: b) as float16 ==> {
+            mut as float16: res = (beta64(a as float64, b as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op logBeta64 (as float64: a, as float64: b) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (a <= 0.0) or (b <= 0.0) ==> {
+                        emit(fail, zero_val, "dominio de logBeta: a > 0 e b > 0")
+                  }
+                  (a > 0.0) and (b > 0.0) ==> {
+                        mut as float64: lga = (logGamma64(a)).val
+                        mut as float64: lgb = (logGamma64(b)).val
+                        mut as float64: lgab = (logGamma64(a + b)).val
+                        mut as float64: res = lga + lgb - lgab
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op logBeta32 (as float32: a, as float32: b) as float32 ==> {
+            mut as float32: res = (logBeta64(a as float64, b as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op logBeta16 (as float16: a, as float16: b) as float16 ==> {
+            mut as float16: res = (logBeta64(a as float64, b as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op sigmoid64 (as float64: value) as float64 ==> {
+            route {
+                  value >= 0.0 ==> {
+                        mut as float64: res = 1.0 /f (1.0 + (exp64(0.0 - value)).val)
+                        emit(nice, res, "ok")
+                  }
+                  value < 0.0 ==> {
+                        mut as float64: z = (exp64(value)).val
+                        mut as float64: res = z /f (1.0 + z)
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op sigmoid32 (as float32: value) as float32 ==> {
+            mut as float32: res = (sigmoid64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op sigmoid16 (as float16: value) as float16 ==> {
+            mut as float16: res = (sigmoid64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op normalCdf64 (as float64: value) as float64 ==> {
+            mut as float64: res = 0.5 * (1.0 + (errorFunction64(value /f 1.41421356237309514547462185874)).val)
+            emit(nice, res, "ok")
+      }
+      op normalCdf32 (as float32: value) as float32 ==> {
+            mut as float32: res = (normalCdf64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op normalCdf16 (as float16: value) as float16 ==> {
+            mut as float16: res = (normalCdf64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op besselJ0_64 (as float64: value) as float64 ==> {
+            mut as float64: ax = (absoluteFloat64(value)).val
+            route {
+                  ax < 3.75 ==> {
+                        mut as float64: y = (value /f 3.75) * (value /f 3.75)
+                        mut as float64: ans = 1.0 + y * (-2.2499997 + y * (1.2656208 + y * (-0.3163866 + y * (0.0444479 - y * 0.0039444))))
+                        emit(nice, ans, "ok")
+                  }
+            }
+            mut as float64: y = 3.75 /f ax
+            mut as float64: f0 = 0.79788456 + y * (-0.00000077 + y * (-0.00552740 + y * (0.00009512 + y * 0.00137237)))
+            mut as float64: theta0 = ax - 0.785398163397448278999490867136 + y * (-0.04166397 + y * (-0.00003954 + y * 0.00262573))
+            mut as float64: res = (f0 /f (squareRoot64(ax)).val) * (cos64(theta0)).val
+            emit(nice, res, "ok")
+      }
+
+      op besselJ0_32 (as float32: value) as float32 ==> {
+            mut as float32: res = (besselJ0_64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op besselJ0_16 (as float16: value) as float16 ==> {
+            mut as float16: res = (besselJ0_64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op besselJ1_64 (as float64: value) as float64 ==> {
+            mut as float64: ax = (absoluteFloat64(value)).val
+            route {
+                  ax < 3.75 ==> {
+                        mut as float64: y = (value /f 3.75) * (value /f 3.75)
+                        mut as float64: ans = value * (0.5 + y * (-0.56249985 + y * (0.21093573 + y * (-0.03954289 + y * (0.00443319 - y * 0.00031761)))))
+                        emit(nice, ans, "ok")
+                  }
+            }
+            mut as float64: y = 3.75 /f ax
+            mut as float64: f1 = 0.79788456 + y * (0.00000156 + y * (0.01659667 + y * (0.00017105 - y * 0.00249511)))
+            mut as float64: theta1 = ax - 2.35619449 + y * (0.04166397 + y * (-0.00003954 - y * 0.00262573))
+            mut as float64: ans = (f1 /f (squareRoot64(ax)).val) * (cos64(theta1)).val
+            route {
+                  value < 0.0 ==> {
+                        ans = 0.0 - ans
+                  }
+            }
+            emit(nice, ans, "ok")
+      }
+
+      op besselJ1_32 (as float32: value) as float32 ==> {
+            mut as float32: res = (besselJ1_64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op besselJ1_16 (as float16: value) as float16 ==> {
+            mut as float16: res = (besselJ1_64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op ldexp64 (as float64: x, as int64: exp_val) as float64 ==> {
+            mut as float64: res = x * (2.0 ^e (exp_val as float64))
+            emit(nice, res, "ok")
+      }
+      op ldexp32 (as float32: x, as int32: exp_val) as float32 ==> {
+            mut as float32: res = (ldexp64(x as float64, exp_val as int64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op ldexp16 (as float16: x, as int16: exp_val) as float16 ==> {
+            mut as float16: res = (ldexp64(x as float64, exp_val as int64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op fdim64 (as float64: a, as float64: b) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  a > b ==> {
+                        mut as float64: diff = a - b
+                        emit(nice, diff, "ok")
+                  }
+                  a <= b ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op fdim32 (as float32: a, as float32: b) as float32 ==> {
+            mut as float32: res = (fdim64(a as float64, b as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op fdim16 (as float16: a, as float16: b) as float16 ==> {
+            mut as float16: res = (fdim64(a as float64, b as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op step64 (as float64: edge, as float64: x) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            mut as float64: one_val = 1.0
+            route {
+                  x < edge ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  x >= edge ==> {
+                        emit(nice, one_val, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op step32 (as float32: edge, as float32: x) as float32 ==> {
+            mut as float32: res = (step64(edge as float64, x as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op step16 (as float16: edge, as float16: x) as float16 ==> {
+            mut as float16: res = (step64(edge as float64, x as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op ulp64 (as float64: value) as float64 ==> {
+            mut as float64: zero_res = 5.0e-324
+            route {
+                  value == 0.0 ==> {
+                        emit(nice, zero_res, "ok")
+                  }
+                  value != 0.0 ==> {
+                        mut as float64: abs_v = (absoluteFloat64(value)).val
+                        mut as float64: lg = (log2_64(abs_v)).val
+                        mut as int64: exp_int = (floor64(lg)).val - 52
+                        mut as float64: res = 2.0 ^e (exp_int as float64)
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_res, "ok")
+      }
+
+      op ulp32 (as float32: value) as float32 ==> {
+            mut as float32: zero_res = 1.4e-45 as float32
+            route {
+                  value == (0.0 as float32) ==> {
+                        emit(nice, zero_res, "ok")
+                  }
+                  value != (0.0 as float32) ==> {
+                        mut as float64: abs_v = (absoluteFloat64(value as float64)).val
+                        mut as float64: lg = (log2_64(abs_v)).val
+                        mut as int64: exp_int = (floor64(lg)).val - 23
+                        mut as float32: res = (2.0 ^e (exp_int as float64)) as float32
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_res, "ok")
+      }
+
+      op ulp16 (as float16: value) as float16 ==> {
+            mut as float16: zero_res = 5.96e-8 as float16
+            route {
+                  value == (0.0 as float16) ==> {
+                        emit(nice, zero_res, "ok")
+                  }
+                  value != (0.0 as float16) ==> {
+                        mut as float64: abs_v = (absoluteFloat64(value as float64)).val
+                        mut as float64: lg = (log2_64(abs_v)).val
+                        mut as int64: exp_int = (floor64(lg)).val - 10
+                        mut as float16: res = (2.0 ^e (exp_int as float64)) as float16
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_res, "ok")
+      }
+
+      op fract64 (as float64: value) as float64 ==> {
+            mut as float64: res = value - ((floor64(value)).val as float64)
+            emit(nice, res, "ok")
+      }
+      op fract32 (as float32: value) as float32 ==> {
+            mut as float32: res = (fract64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op fract16 (as float16: value) as float16 ==> {
+            mut as float16: res = (fract64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op wrapAngle64 (as float64: value) as float64 ==> {
+            mut as float64: tau_v = 6.28318530717958623199592693708
+            mut as float64: pi_v = 3.14159265358979323846264338327
+            mut as float64: rem = value - ((floor64((value + pi_v) /f tau_v)).val as float64) * tau_v
+            emit(nice, rem, "ok")
+      }
+
+      op wrapAngle32 (as float32: value) as float32 ==> {
+            mut as float32: res = (wrapAngle64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op wrapAngle16 (as float16: value) as float16 ==> {
+            mut as float16: res = (wrapAngle64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op signbit64 (as float64: value) as bool ==> {
+            mut as bool: res = (copySign64(1.0, value)).val < 0.0
+            emit(nice, res, "ok")
+      }
+      op signbit32 (as float32: value) as bool ==> {
+            mut as bool: res = (signbit64(value as float64)).val
+            emit(nice, res, "ok")
+      }
+      op signbit16 (as float16: value) as bool ==> {
+            mut as bool: res = (signbit64(value as float64)).val
+            emit(nice, res, "ok")
+      }
+
+      op smoothstep64 (as float64: edge0, as float64: edge1, as float64: x) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  edge0 == edge1 ==> {
+                        emit(fail, zero_val, "smoothstep requer edge0 != edge1")
+                  }
+                  edge0 != edge1 ==> {
+                        mut as float64: t = (constrain64((x - edge0) /f (edge1 - edge0), 0.0, 1.0)).val
+                        mut as float64: res = t * t * (3.0 - 2.0 * t)
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op smoothstep32 (as float32: edge0, as float32: edge1, as float32: x) as float32 ==> {
+            mut as float32: res = (smoothstep64(edge0 as float64, edge1 as float64, x as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op smoothstep16 (as float16: edge0, as float16: edge1, as float16: x) as float16 ==> {
+            mut as float16: res = (smoothstep64(edge0 as float64, edge1 as float64, x as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op smootherstep64 (as float64: edge0, as float64: edge1, as float64: x) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  edge0 == edge1 ==> {
+                        emit(fail, zero_val, "smootherstep requer edge0 != edge1")
+                  }
+                  edge0 != edge1 ==> {
+                        mut as float64: t = (constrain64((x - edge0) /f (edge1 - edge0), 0.0, 1.0)).val
+                        mut as float64: res = t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op smootherstep32 (as float32: edge0, as float32: edge1, as float32: x) as float32 ==> {
+            mut as float32: res = (smootherstep64(edge0 as float64, edge1 as float64, x as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op smootherstep16 (as float16: edge0, as float16: edge1, as float16: x) as float16 ==> {
+            mut as float16: res = (smootherstep64(edge0 as float64, edge1 as float64, x as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op inverseLinearInterpolation64 (as float64: a, as float64: b, as float64: val) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  a == b ==> {
+                        emit(fail, zero_val, "interpolacao linear inversa requer a != b")
+                  }
+                  a != b ==> {
+                        mut as float64: res = (val - a) /f (b - a)
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op inverseLinearInterpolation32 (as float32: a, as float32: b, as float32: val) as float32 ==> {
+            mut as float32: res = (inverseLinearInterpolation64(a as float64, b as float64, val as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op inverseLinearInterpolation16 (as float16: a, as float16: b, as float16: val) as float16 ==> {
+            mut as float16: res = (inverseLinearInterpolation64(a as float64, b as float64, val as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op mapRange64 (as float64: val, as float64: in_min, as float64: in_max, as float64: out_min, as float64: out_max) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  in_min == in_max ==> {
+                        emit(fail, zero_val, "mapRange requer in_min != in_max")
+                  }
+                  in_min != in_max ==> {
+                        mut as float64: norm = (val - in_min) /f (in_max - in_min)
+                        mut as float64: res = out_min + norm * (out_max - out_min)
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op mapRange32 (as float32: val, as float32: in_min, as float32: in_max, as float32: out_min, as float32: out_max) as float32 ==> {
+            mut as float32: res = (mapRange64(val as float64, in_min as float64, in_max as float64, out_min as float64, out_max as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op mapRange16 (as float16: val, as float16: in_min, as float16: in_max, as float16: out_min, as float16: out_max) as float16 ==> {
+            mut as float16: res = (mapRange64(val as float64, in_min as float64, in_max as float64, out_min as float64, out_max as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+}

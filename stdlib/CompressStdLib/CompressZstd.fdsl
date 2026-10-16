@@ -1,0 +1,56 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressZstd
+#L ==============================================================================
+
+contract (CompressZstdContract) {
+      op compressZstd (as string: input_data) as string
+      op compressZstdLevel (as string: input_data, as int64: level) as string
+      op decompressZstd (as string: compressed_data) as string
+      op decompressZstdSafe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsZstd (as string: compressed_data) as bool
+      op compressZstdFrameSize (as string: compressed_data) as int64
+}
+
+agent (CompressStdLib) impl CompressZstdContract {
+      #L -- CompressZstdContract ---------------------------------------
+      op compressZstd (as string: input_data) as string ==> {
+            emit(nice, stdCompressZstd(input_data), "ok")
+      }
+
+      op compressZstdLevel (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressZstdLevel(input_data, level), "ok")
+      }
+
+      op decompressZstd (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressZstd(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao zstd")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressZstdSafe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressZstdSafe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao zstd")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsZstd (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsZstd(compressed_data), "ok")
+      }
+
+      op compressZstdFrameSize (as string: compressed_data) as int64 ==> {
+            emit(nice, stdCompressZstdFrameSize(compressed_data), "ok")
+      }
+}

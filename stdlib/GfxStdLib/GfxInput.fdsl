@@ -1,0 +1,68 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxInput
+#L ==============================================================================
+
+contract (GfxInputContract) {
+      op gfxInputNew () as map
+      op gfxSetInputState (as map: input_state, as string: key_name, as bool: is_down) as map
+      op gfxPollInput (as map: input_state, as string: key_name) as bool
+      op gfxSetMousePosition (as map: input_state, as int64: x, as int64: y) as map
+      op gfxGetMouseX (as map: input_state) as int64
+      op gfxGetMouseY (as map: input_state) as int64
+}
+
+agent (GfxStdLib) impl GfxInputContract {
+      #L 9. GfxInputContract
+      #L =====================================================================
+
+      op gfxInputNew () as map ==> {
+            mut as map: inp = map{}
+            inp["mouse_x"] = 0
+            inp["mouse_y"] = 0
+            emit(nice, inp, "ok")
+      }
+
+      op gfxSetInputState (as map: input_state, as string: key_name, as bool: is_down) as map ==> {
+            mut as string: k = "k_" + key_name
+            input_state[k] = is_down
+            emit(nice, input_state, "ok")
+      }
+
+      op gfxPollInput (as map: input_state, as string: key_name) as bool ==> {
+            mut as string: k = "k_" + key_name
+            mut as bool: down = false
+            route {
+                  _mapHasKey(input_state, k) ==> {
+                        down = input_state[k] == true
+                  }
+            }
+            emit(nice, down, "ok")
+      }
+
+      op gfxSetMousePosition (as map: input_state, as int64: x, as int64: y) as map ==> {
+            input_state["mouse_x"] = x
+            input_state["mouse_y"] = y
+            emit(nice, input_state, "ok")
+      }
+
+      op gfxGetMouseX (as map: input_state) as int64 ==> {
+            mut as int64: mx = 0
+            route {
+                  _mapHasKey(input_state, "mouse_x") ==> {
+                        mx = input_state["mouse_x"] as int64
+                  }
+            }
+            emit(nice, mx, "ok")
+      }
+
+      op gfxGetMouseY (as map: input_state) as int64 ==> {
+            mut as int64: my = 0
+            route {
+                  _mapHasKey(input_state, "mouse_y") ==> {
+                        my = input_state["mouse_y"] as int64
+                  }
+            }
+            emit(nice, my, "ok")
+      }
+}

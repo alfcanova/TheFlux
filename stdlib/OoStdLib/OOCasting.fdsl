@@ -1,0 +1,65 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OoStdLib
+#L Dominio: OOCasting
+#L ==============================================================================
+
+contract (OOCastingContract) {
+      op ooCastToContract (as data: struct_instance, as string: contract_name) as data
+      op ooDowncast (as data: interface_object, as string: target_struct_name) as data
+      op ooCanDowncast (as data: interface_object, as string: target_struct_name) as bool
+      op ooUnwrap (as data: interface_object) as data
+}
+
+agent (OoStdLib) impl OOCastingContract {
+      #L OOCastingContract
+      #L ==============================================================================
+
+      op ooCastToContract (as data: struct_instance, as string: contract_name) as data ==> {
+            mut as string: tname = _extractStructType(struct_instance)
+            mut as map: obj = map{}
+            obj["__contract__"] = contract_name
+            obj["__type__"] = tname
+            obj["__data__"] = struct_instance
+            obj["__valid__"] = true
+            emit(nice, obj, "ok")
+      }
+
+      op ooDowncast (as data: interface_object, as string: target_struct_name) as data ==> {
+            route {
+                  interface_object["__valid__"] != true ==> {
+                        emit(fail, {}, "Objeto polimorfico invalido ou descartado")
+                  }
+                  interface_object["__type__"] != target_struct_name ==> {
+                        emit(fail, {}, "Downcast incompativel: esperado " + target_struct_name + ", encontrado " + interface_object["__type__"])
+                  }
+                  _ ==> {
+                        mut as data: original_data = interface_object["__data__"]
+                        emit(nice, original_data, "Downcast realizado com sucesso")
+                  }
+            }
+      }
+
+      op ooCanDowncast (as data: interface_object, as string: target_struct_name) as bool ==> {
+            mut as bool: can = false
+            route {
+                  interface_object["__valid__"] == true and interface_object["__type__"] == target_struct_name ==> {
+                        can = true
+                  }
+            }
+            emit(nice, can, "ok")
+      }
+
+      op ooUnwrap (as data: interface_object) as data ==> {
+            route {
+                  interface_object["__valid__"] != true ==> {
+                        emit(fail, {}, "Objeto polimorfico invalido ou descartado")
+                  }
+                  _ ==> {
+                        mut as data: original_data = interface_object["__data__"]
+                        emit(nice, original_data, "Unwrap realizado com sucesso")
+                  }
+            }
+      }
+
+      #L ==============================================================================
+}

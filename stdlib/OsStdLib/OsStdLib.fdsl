@@ -1,0 +1,12 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OsStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use OsEnv.fdsl
+use OsInfo.fdsl
+use OsProcess.fdsl
+use OsSystem.fdsl
+
+agent (OsStdLib) {
+}

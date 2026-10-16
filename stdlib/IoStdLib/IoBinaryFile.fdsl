@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoBinaryFile
+#L ==============================================================================
+
+contract (IoBinaryFileContract) {
+      op readBinaryFile (as string: path) as string
+      op writeBinaryFile (as string: path, as string: content) as string
+      op readHexFile (as string: path) as string
+      op writeHexFile (as string: path, as string: hex_content) as string
+      op readBase64File (as string: path) as string
+      op writeBase64File (as string: path, as string: b64_content) as string
+}
+
+agent (IoStdLib) impl IoBinaryFileContract {
+      #L -- IoBinaryFileContract --------------------------------------
+      op readBinaryFile (as string: path) as string ==> {
+            emit(nice, stdIoReadBinaryFile(path), "ok")
+      }
+
+      op writeBinaryFile (as string: path, as string: content) as string ==> {
+            emit(nice, stdIoWriteBinaryFile(path, content), "ok")
+      }
+
+      op readHexFile (as string: path) as string ==> {
+            emit(nice, stdIoReadHexFile(path), "ok")
+      }
+
+      op writeHexFile (as string: path, as string: hex_content) as string ==> {
+            emit(nice, stdIoWriteHexFile(path, hex_content), "ok")
+      }
+
+      op readBase64File (as string: path) as string ==> {
+            emit(nice, stdIoReadBase64File(path), "ok")
+      }
+
+      op writeBase64File (as string: path, as string: b64_content) as string ==> {
+            emit(nice, stdIoWriteBase64File(path, b64_content), "ok")
+      }
+}

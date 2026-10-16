@@ -1,0 +1,61 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressGzip
+#L ==============================================================================
+
+contract (CompressGzipContract) {
+      op compressGzip (as string: input_data) as string
+      op compressGzipLevel (as string: input_data, as int64: level) as string
+      op decompressGzip (as string: compressed_data) as string
+      op decompressGzipSafe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsGzip (as string: compressed_data) as bool
+      op compressGzipCrc32 (as string: compressed_data) as int64
+      op compressGzipTimestamp (as string: compressed_data) as int64
+}
+
+agent (CompressStdLib) impl CompressGzipContract {
+      #L -- CompressGzipContract ---------------------------------------
+      op compressGzip (as string: input_data) as string ==> {
+            emit(nice, stdCompressGzip(input_data), "ok")
+      }
+
+      op compressGzipLevel (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressGzipLevel(input_data, level), "ok")
+      }
+
+      op decompressGzip (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressGzip(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao gzip")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressGzipSafe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressGzipSafe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao gzip")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsGzip (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsGzip(compressed_data), "ok")
+      }
+
+      op compressGzipCrc32 (as string: compressed_data) as int64 ==> {
+            emit(nice, stdCompressGzipCrc32(compressed_data), "ok")
+      }
+
+      op compressGzipTimestamp (as string: compressed_data) as int64 ==> {
+            emit(nice, stdCompressGzipTimestamp(compressed_data), "ok")
+      }
+}

@@ -1,0 +1,179 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringBasic
+#L ==============================================================================
+
+contract (StringBasicContract) {
+      op stringLength (as string: text) as int64
+      op stringIsEmpty (as string: text) as bool
+      op stringIsNotEmpty (as string: text) as bool
+      op stringContains (as string: text, as string: needle) as bool
+      op stringContainsAny (as string: text, as list of data: needles) as bool
+      op stringContainsAll (as string: text, as list of data: needles) as bool
+      op stringClearAll (as string: text) as string
+      op stringSingleton (as string: char) as string
+      op stringSingletonInt (as int64: value) as string
+      op stringSingletonString (as string: value) as string
+      op stringClone (as string: text) as string
+      op stringToList (as string: text) as list of data
+      op stringToSet (as string: text) as set of data
+      op stringToMap (as string: text) as map
+      op stringToString (as string: text) as string
+      op stringFromList (as list of data: chars) as string
+      op stringFromSet (as set of data: chars) as string
+      op stringFromString (as string: text) as string
+}
+
+agent (StringStdLib) impl StringBasicContract {
+      #L -- StringBasicContract ---------------------------------------
+      op stringLength (as string: text) as int64 ==> {
+            mut as int64: count = 0
+            infinite (c in text) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op stringIsEmpty (as string: text) as bool ==> {
+            mut as bool: empty = true
+            infinite (c in text) {
+                  empty = false
+                  break
+            }
+            emit(nice, empty, "ok")
+      }
+
+      op stringIsNotEmpty (as string: text) as bool ==> {
+            mut as bool: empty = true
+            infinite (c in text) {
+                  empty = false
+                  break
+            }
+            emit(nice, not empty, "ok")
+      }
+
+      op stringContains (as string: text, as string: needle) as bool ==> {
+            mut as int64: idx = stringIndexOf(text, needle)
+            emit(nice, idx > 0, "ok")
+      }
+
+      op stringContainsAny (as string: text, as list of data: needles) as bool ==> {
+            mut as bool: found_any = false
+            infinite (n in needles) {
+                  mut as int64: idx = stringIndexOf(text, "" + n)
+                  route {
+                        idx > 0 ==> {
+                              found_any = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found_any, "ok")
+      }
+
+      op stringContainsAll (as string: text, as list of data: needles) as bool ==> {
+            mut as bool: all_found = true
+            infinite (n in needles) {
+                  mut as int64: idx = stringIndexOf(text, "" + n)
+                  route {
+                        idx <= 0 ==> {
+                              all_found = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, all_found, "ok")
+      }
+
+      op stringClearAll (as string: text) as string ==> {
+            mut as string: res = ""
+            emit(nice, res, "ok")
+      }
+
+      op stringSingleton (as string: char) as string ==> {
+            mut as string: res = char
+            emit(nice, res, "ok")
+      }
+
+      op stringSingletonInt (as int64: value) as string ==> {
+            mut as string: res = "" + value
+            emit(nice, res, "ok")
+      }
+
+      op stringSingletonString (as string: value) as string ==> {
+            mut as string: res = "" + value
+            emit(nice, res, "ok")
+      }
+
+      op stringClone (as string: text) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  res = res + c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringToList (as string: text) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (c in text) {
+                  count = count + 1
+                  res[count] = c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringFromList (as list of data: chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in chars) {
+                  res = res + c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringFromSet (as set of data: chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in chars) {
+                  res = res + c
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringFromString (as string: text) as string ==> {
+            emit(nice, stringClone(text), "ok")
+      }
+
+      op stringToSet (as string: text) as set of data ==> {
+            emit(nice, stdCollectionToSet(stringToList(text)), "ok")
+      }
+
+      op stringToMap (as string: text) as map ==> {
+            mut as map: m = map{}
+            mut as list of data: pairs = stringSplit(text, ",")
+            infinite (p in pairs) {
+                  mut as string: entry = stringTrim("" + p)
+                  mut as int64: sep_idx = stringIndexOf(entry, ":")
+                  route {
+                        sep_idx <= 0 ==> {
+                              sep_idx = stringIndexOf(entry, "=")
+                        }
+                  }
+                  route {
+                        sep_idx > 0 ==> {
+                              mut as string: k = stringTrim(stringTake(entry, sep_idx - 1))
+                              mut as string: v = stringTrim(stringDrop(entry, sep_idx))
+                              route {
+                                    stringLength(k) > 0 ==> {
+                                          m[k] = v
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, m, "ok")
+      }
+
+      op stringToString (as string: text) as string ==> {
+            emit(nice, stringClone(text), "ok")
+      }
+}

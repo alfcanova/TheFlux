@@ -1,0 +1,28 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiWidgetSlider
+#L ==============================================================================
+
+contract (GuiWidgetSliderContract) {
+      op guiSliderFloat (as map: ctx, as string: label, as float64: val, as float64: min_val, as float64: max_val) as list of data
+      op guiSliderInt (as map: ctx, as string: label, as int64: val, as int64: min_val, as int64: max_val) as list of data
+}
+
+agent (GuiStdLib) impl GuiWidgetSliderContract {
+      #L 8. GuiWidgetSliderContract
+      #L =====================================================================
+
+      op guiSliderFloat (as map: ctx, as string: label, as float64: val, as float64: min_val, as float64: max_val) as list of data ==> {
+            mut as float64: clamped = _clampFloat(val, min_val, max_val)
+            mut as map: new_ctx = _advanceWidget(ctx, 200, 20)
+            emit(nice, [new_ctx, clamped], "ok")
+      }
+
+      op guiSliderInt (as map: ctx, as string: label, as int64: val, as int64: min_val, as int64: max_val) as list of data ==> {
+            mut as int64: clamped = _clampInt(val, min_val, max_val)
+            mut as map: new_ctx = _advanceWidget(ctx, 200, 20)
+            emit(nice, [new_ctx, clamped], "ok")
+      }
+
+      #L =====================================================================
+}

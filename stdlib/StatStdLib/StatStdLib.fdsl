@@ -1,0 +1,18 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use MathStdLib
+
+use StatCentralTendency.fdsl
+use StatDispersion.fdsl
+use StatOrderAndQuantiles.fdsl
+use StatShape.fdsl
+use StatCorrelation.fdsl
+use StatDistribution.fdsl
+use StatInference.fdsl
+use StatSummary.fdsl
+
+agent (StatStdLib) {
+}

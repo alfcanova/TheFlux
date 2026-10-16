@@ -23,12 +23,18 @@ class Diagnostic:
     column: int
     message: str
     related: list[SourceLocation] = field(default_factory=list)
+    mnemonic: str | None = None
+    hint: str | None = None
 
 
 class DiagnosticFormatter:
     @staticmethod
     def format(d: Diagnostic, file: str = "<unknown>") -> str:
-        base = f"{file}:{d.line},{d.column} -> [{d.code}]: {d.message}"
+        mnem = f" - {d.mnemonic}" if d.mnemonic else ""
+        loc = f" (linha {d.line}, coluna {d.column})" if (d.line > 0 or d.column > 0) else ""
+        base = f"{file}:{d.line},{d.column} -> [{d.code}{mnem}]: {d.message}{loc}"
+        if d.hint:
+            base += f"\n  💡 Dica: {d.hint}"
         for rel in d.related:
             rf = rel.file or file
             base += f"\n  --> {rf}:{rel.line},{rel.column}"

@@ -1,0 +1,43 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SimdStdLib
+#L Dominio: SimdVectorReduction
+#L ==============================================================================
+
+contract (SimdVectorReductionContract) {
+      op simdDotProductF32 (as list of data: a, as list of data: b) as float32
+      op simdDotProductF64 (as list of data: a, as list of data: b) as float64
+      op simdVectorSumF32 (as list of data: a) as float32
+      op simdVectorSumF64 (as list of data: a) as float64
+
+      #L Aliases universais
+      op simdDotProduct (as list of data: a, as list of data: b) as float64
+      op simdVectorSum (as list of data: a) as float64
+}
+
+agent (SimdStdLib) impl SimdVectorReductionContract {
+      #L -- SimdVectorReductionContract --------------------------------
+      op simdDotProductF32 (as list of data: a, as list of data: b) as float32 ==> {
+            emit(nice, stdSimdDotProductF32(a, b), "ok")
+      }
+
+      op simdDotProductF64 (as list of data: a, as list of data: b) as float64 ==> {
+            emit(nice, stdSimdDotProductF64(a, b), "ok")
+      }
+
+      op simdVectorSumF32 (as list of data: a) as float32 ==> {
+            emit(nice, stdSimdVectorSumF32(a), "ok")
+      }
+
+      op simdVectorSumF64 (as list of data: a) as float64 ==> {
+            emit(nice, stdSimdVectorSumF64(a), "ok")
+      }
+
+      #L Aliases
+      op simdDotProduct (as list of data: a, as list of data: b) as float64 ==> {
+            emit(nice, stdSimdDotProductF64(a, b), "ok")
+      }
+
+      op simdVectorSum (as list of data: a) as float64 ==> {
+            emit(nice, stdSimdVectorSumF64(a), "ok")
+      }
+}

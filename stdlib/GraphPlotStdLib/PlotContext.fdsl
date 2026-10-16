@@ -1,0 +1,167 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotContext
+#L ==============================================================================
+
+contract (PlotContextContract) {
+      op plotCreate (as int64: width, as int64: height, as string: title) as map
+      op plotClose (as map: ctx) as map
+      op plotSetViewport (as map: ctx, as int64: x, as int64: y, as int64: w, as int64: h) as map
+      op plotSetMargins (as map: ctx, as int64: top, as int64: right, as int64: bottom, as int64: left) as map
+      op plotSetCoordSystem (as map: ctx, as int64: coord_sys) as map
+      op plotSetCamera (as map: ctx, as int64: cam_type, as float64: fov) as map
+      op plotSetScaleType (as map: ctx, as int64: scale_type) as map
+      op plotSetColorMap (as map: ctx, as int64: cmap) as map
+      op plotShowAxes (as map: ctx, as bool: show) as map
+      op plotShowGrid (as map: ctx, as bool: show) as map
+      op plotShowLegend (as map: ctx, as bool: show) as map
+      op plotBindWindow (as map: ctx, as int64: win_id) as map
+      op plotGetWindow (as map: ctx) as int64
+}
+
+agent (GraphPlotStdLib) impl PlotContextContract {
+
+
+      #L =====================================================================
+      #L Funcoes Auxiliares Internas
+      #L =====================================================================
+
+      op _listLen (as list of data: l) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in l) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+
+      op _addLayer (as map: ctx, as map: layer) as map ==> {
+            mut as list of data: layers = ctx["layers"] as list of data
+            mut as int64: count = (ctx["items_count"] as int64) + 1
+            layers[count] = layer
+            ctx["layers"] = layers
+            ctx["items_count"] = count
+            emit(nice, ctx, "ok")
+      }
+
+      #L =====================================================================
+      #L 1. PlotContextContract
+      #L =====================================================================
+
+      op plotCreate (as int64: width, as int64: height, as string: title) as map ==> {
+            mut as int64: win_id = gfxWindowCreate(width, height, title)
+            mut as map: p = map{}
+            p["width"] = width
+            p["height"] = height
+            p["title"] = title
+            p["vp_x"] = 0
+            p["vp_y"] = 0
+            p["vp_w"] = width
+            p["vp_h"] = height
+            p["margin_top"] = 40
+            p["margin_right"] = 40
+            p["margin_bottom"] = 50
+            p["margin_left"] = 60
+            p["coord_sys"] = 1 #L CARTESIAN_2D
+            p["cam_type"] = 1  #L PERSPECTIVE
+            p["cam_fov"] = 45.0
+            p["cam_pitch"] = 30.0
+            p["cam_yaw"] = -45.0
+            p["cam_dist"] = 3.5
+            p["scale_type"] = 1 #L LINEAR
+            p["colormap"] = 1   #L VIRIDIS
+            p["show_axes"] = true
+            p["show_grid"] = true
+            p["show_legend"] = true
+            p["native_win"] = win_id
+            p["layers"] = []
+            p["items_count"] = 0
+            
+            mut as map: gctx = gfxInitContext(width, height, title)
+            gctx = gfxBindNativeWindow(gctx, win_id)
+            p["gfx_ctx"] = gctx
+            emit(nice, p, "ok")
+      }
+
+      op plotClose (as map: ctx) as map ==> {
+            route {
+                  ctx["native_win"] as int64 > 0 ==> {
+                        mut as int64: wid = ctx["native_win"] as int64
+                        mut as bool: closed = gfxWindowClose(wid)
+                  }
+            }
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetViewport (as map: ctx, as int64: x, as int64: y, as int64: w, as int64: h) as map ==> {
+            ctx["vp_x"] = x
+            ctx["vp_y"] = y
+            ctx["vp_w"] = w
+            ctx["vp_h"] = h
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetMargins (as map: ctx, as int64: top, as int64: right, as int64: bottom, as int64: left) as map ==> {
+            ctx["margin_top"] = top
+            ctx["margin_right"] = right
+            ctx["margin_bottom"] = bottom
+            ctx["margin_left"] = left
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetCoordSystem (as map: ctx, as int64: coord_sys) as map ==> {
+            ctx["coord_sys"] = coord_sys
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetCamera (as map: ctx, as int64: cam_type, as float64: fov) as map ==> {
+            ctx["cam_type"] = cam_type
+            ctx["cam_fov"] = fov
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetScaleType (as map: ctx, as int64: scale_type) as map ==> {
+            ctx["scale_type"] = scale_type
+            emit(nice, ctx, "ok")
+      }
+
+      op plotSetColorMap (as map: ctx, as int64: cmap) as map ==> {
+            ctx["colormap"] = cmap
+            emit(nice, ctx, "ok")
+      }
+
+      op plotShowAxes (as map: ctx, as bool: show) as map ==> {
+            ctx["show_axes"] = show
+            emit(nice, ctx, "ok")
+      }
+
+      op plotShowGrid (as map: ctx, as bool: show) as map ==> {
+            ctx["show_grid"] = show
+            emit(nice, ctx, "ok")
+      }
+
+      op plotShowLegend (as map: ctx, as bool: show) as map ==> {
+            ctx["show_legend"] = show
+            emit(nice, ctx, "ok")
+      }
+
+      op plotBindWindow (as map: ctx, as int64: win_id) as map ==> {
+            mut as int64: old_win = ctx["native_win"] as int64
+            route {
+                  old_win > 0 and old_win != win_id ==> {
+                        mut as bool: closed_old = gfxWindowClose(old_win)
+                  }
+            }
+            ctx["native_win"] = win_id
+            mut as map: gctx = ctx["gfx_ctx"] as map
+            gctx = gfxBindNativeWindow(gctx, win_id)
+            ctx["gfx_ctx"] = gctx
+            emit(nice, ctx, "ok")
+      }
+
+      op plotGetWindow (as map: ctx) as int64 ==> {
+            mut as int64: win_id = ctx["native_win"] as int64
+            emit(nice, win_id, "ok")
+      }
+
+      #L =====================================================================
+}

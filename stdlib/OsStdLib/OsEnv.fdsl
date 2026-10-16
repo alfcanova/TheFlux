@@ -1,0 +1,72 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OsStdLib
+#L Dominio: OsEnv
+#L ==============================================================================
+
+contract (OsEnvContract) {
+      op osGetEnv (as string: name) as string
+      op osGetEnvOrDefault (as string: name, as string: default_value) as string
+      op osSetEnv (as string: name, as string: value) as bool
+      op osHasEnv (as string: name) as bool
+      op osUnsetEnv (as string: name) as bool
+      op osListEnv () as list of data
+
+      #L Aliases
+      op getEnv (as string: name) as string
+      op getEnvOrDefault (as string: name, as string: default_value) as string
+      op setEnv (as string: name, as string: value) as bool
+      op hasEnv (as string: name) as bool
+      op unsetEnv (as string: name) as bool
+      op listEnv () as list of data
+}
+
+agent (OsStdLib) impl OsEnvContract {
+      #L -- OsEnvContract ---------------------------------------------
+      op osGetEnv (as string: name) as string ==> {
+            emit(nice, stdOsGetEnv(name), "ok")
+      }
+
+      op osGetEnvOrDefault (as string: name, as string: default_value) as string ==> {
+            emit(nice, stdOsGetEnvOrDefault(name, default_value), "ok")
+      }
+
+      op osSetEnv (as string: name, as string: value) as bool ==> {
+            emit(nice, stdOsSetEnv(name, value), "ok")
+      }
+
+      op osHasEnv (as string: name) as bool ==> {
+            emit(nice, stdOsHasEnv(name), "ok")
+      }
+
+      op osUnsetEnv (as string: name) as bool ==> {
+            emit(nice, stdOsUnsetEnv(name), "ok")
+      }
+
+      op osListEnv () as list of data ==> {
+            emit(nice, stdOsListEnv(), "ok")
+      }
+
+      op getEnv (as string: name) as string ==> {
+            emit(nice, stdOsGetEnv(name), "ok")
+      }
+
+      op getEnvOrDefault (as string: name, as string: default_value) as string ==> {
+            emit(nice, stdOsGetEnvOrDefault(name, default_value), "ok")
+      }
+
+      op setEnv (as string: name, as string: value) as bool ==> {
+            emit(nice, stdOsSetEnv(name, value), "ok")
+      }
+
+      op hasEnv (as string: name) as bool ==> {
+            emit(nice, stdOsHasEnv(name), "ok")
+      }
+
+      op unsetEnv (as string: name) as bool ==> {
+            emit(nice, stdOsUnsetEnv(name), "ok")
+      }
+
+      op listEnv () as list of data ==> {
+            emit(nice, stdOsListEnv(), "ok")
+      }
+}

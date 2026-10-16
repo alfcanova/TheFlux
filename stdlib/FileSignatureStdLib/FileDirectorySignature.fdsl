@@ -1,0 +1,75 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FileSignatureStdLib
+#L Dominio: FileDirectorySignature
+#L ==============================================================================
+
+contract (FileDirectorySignatureContract) {
+      op fileSignDirectory (as string: dir_path) as list of data
+      op fileFilterAndSign (as string: dir_path, as string: extension) as list of data
+      op fileCreateManifest (as string: dir_path) as string
+      op fileChecksumManifest (as string: manifest_content) as string
+}
+
+agent (FileSignatureStdLib) impl FileDirectorySignatureContract {
+      #L -- FileDirectorySignatureContract ----------------------------
+      op fileSignDirectory (as string: dir_path) as list of data ==> {
+            mut as list of data: entries = listDir(dir_path)
+            mut as list of data: result = []
+            infinite (name in entries) {
+                  mut as string: full_path = pathJoin(dir_path, name as string)
+                  route {
+                        fileExists(full_path) == true ==> {
+                              mut as string: h = stdFileSha256(full_path)
+                              mut as string: item = (name as string) + ": " + h
+                              mut as int64: rlen = 0
+                              infinite (k in result) { rlen = rlen + 1 }
+                              result[rlen + 1] = item
+                        }
+                  }
+            }
+            emit(nice, result, "ok")
+      }
+
+      op fileFilterAndSign (as string: dir_path, as string: extension) as list of data ==> {
+            mut as list of data: entries = listDir(dir_path)
+            mut as list of data: result = []
+            infinite (name in entries) {
+                  mut as string: ext = pathExtension(name as string)
+                  route {
+                        ext == extension or ("." + ext) == extension ==> {
+                              mut as string: full_path = pathJoin(dir_path, name as string)
+                              route {
+                                    fileExists(full_path) == true ==> {
+                                          mut as string: h = stdFileSha256(full_path)
+                                          mut as string: item = (name as string) + ": " + h
+                                          mut as int64: rlen = 0
+                                          infinite (k in result) { rlen = rlen + 1 }
+                                          result[rlen + 1] = item
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, result, "ok")
+      }
+
+      op fileCreateManifest (as string: dir_path) as string ==> {
+            mut as list of data: entries = listDir(dir_path)
+            mut as string: manifest = ""
+            infinite (name in entries) {
+                  mut as string: full_path = pathJoin(dir_path, name as string)
+                  route {
+                        fileExists(full_path) == true ==> {
+                              mut as string: h = stdFileSha256(full_path)
+                              manifest = manifest + h + "  " + (name as string) + "\n"
+                        }
+                  }
+            }
+            emit(nice, manifest, "ok")
+      }
+
+      op fileChecksumManifest (as string: manifest_content) as string ==> {
+            mut as string: h = hashSha256(manifest_content)
+            emit(nice, h, "ok")
+      }
+}

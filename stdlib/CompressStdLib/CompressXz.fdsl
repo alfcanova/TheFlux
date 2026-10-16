@@ -1,0 +1,87 @@
+#L ==============================================================================
+#L TheFlux Standard Library: CompressStdLib
+#L Dominio: CompressXz
+#L ==============================================================================
+
+contract (CompressXzContract) {
+      op compressLzma2 (as string: input_data) as string
+      op compressLzma2Level (as string: input_data, as int64: level) as string
+      op decompressLzma2 (as string: compressed_data) as string
+      op decompressLzma2Safe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressXz (as string: input_data) as string
+      op compressXzLevel (as string: input_data, as int64: level) as string
+      op decompressXz (as string: compressed_data) as string
+      op decompressXzSafe (as string: compressed_data, as DecompressQuota: quota) as string
+      op compressIsXz (as string: compressed_data) as bool
+}
+
+agent (CompressStdLib) impl CompressXzContract {
+      #L -- CompressXzContract -----------------------------------------
+      op compressLzma2 (as string: input_data) as string ==> {
+            emit(nice, stdCompressLzma2(input_data), "ok")
+      }
+
+      op compressLzma2Level (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressLzma2Level(input_data, level), "ok")
+      }
+
+      op decompressLzma2 (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressLzma2(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao lzma2")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressLzma2Safe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressLzma2Safe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao lzma2")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressXz (as string: input_data) as string ==> {
+            emit(nice, stdCompressXz(input_data), "ok")
+      }
+
+      op compressXzLevel (as string: input_data, as int64: level) as string ==> {
+            emit(nice, stdCompressXzLevel(input_data, level), "ok")
+      }
+
+      op decompressXz (as string: compressed_data) as string ==> {
+            mut as string: res = stdDecompressXz(compressed_data)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "erro na descompressao xz")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op decompressXzSafe (as string: compressed_data, as DecompressQuota: quota) as string ==> {
+            mut as string: res = stdDecompressXzSafe(compressed_data, quota)
+            route {
+                  res == "" ==> {
+                        emit(fail, "", "quota de seguranca excedida na descompressao xz")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op compressIsXz (as string: compressed_data) as bool ==> {
+            emit(nice, stdCompressIsXz(compressed_data), "ok")
+      }
+}

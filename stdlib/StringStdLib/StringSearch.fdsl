@@ -1,0 +1,142 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringSearch
+#L ==============================================================================
+
+contract (StringSearchContract) {
+      op stringContains (as string: text, as string: needle) as bool
+      op stringContainsAny (as string: text, as list of data: needles) as bool
+      op stringContainsAll (as string: text, as list of data: needles) as bool
+      op stringStartsWith (as string: text, as string: prefix) as bool
+      op stringEndsWith (as string: text, as string: suffix) as bool
+      op stringIndexOf (as string: text, as string: needle) as int64
+      op stringLastIndexOf (as string: text, as string: needle) as int64
+      op stringCount (as string: text, as string: needle) as int64
+}
+
+agent (StringStdLib) impl StringSearchContract {
+      #L -- StringSearchContract --------------------------------------
+      op stringStartsWith (as string: text, as string: prefix) as bool ==> {
+            mut as int64: len_p = stringLength(prefix)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_p == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_p > len_t ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            imut as string: sub = text[1..len_p]
+            emit(nice, sub == prefix, "ok")
+      }
+
+      op stringEndsWith (as string: text, as string: suffix) as bool ==> {
+            mut as int64: len_s = stringLength(suffix)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_s == 0 ==> {
+                        mut as bool: t = true
+                        emit(nice, t, "ok")
+                  }
+                  len_s > len_t ==> {
+                        mut as bool: f = false
+                        emit(nice, f, "ok")
+                  }
+            }
+            mut as int64: start = len_t - len_s + 1
+            imut as string: sub = text[start..len_t]
+            emit(nice, sub == suffix, "ok")
+      }
+
+      op stringIndexOf (as string: text, as string: needle) as int64 ==> {
+            mut as int64: len_n = stringLength(needle)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_n == 0 ==> {
+                        mut as int64: one = 1
+                        emit(nice, one, "ok")
+                  }
+                  len_n > len_t ==> {
+                        mut as int64: neg = -1
+                        emit(nice, neg, "ok")
+                  }
+            }
+            mut as int64: max_start = len_t - len_n + 1
+            mut as int64: found_idx = -1
+            infinite (i in 1 .. max_start) {
+                  mut as int64: end_i = i + len_n - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == needle ==> {
+                              found_idx = i
+                              break
+                        }
+                  }
+            }
+            emit(nice, found_idx, "ok")
+      }
+
+      op stringLastIndexOf (as string: text, as string: needle) as int64 ==> {
+            mut as int64: len_n = stringLength(needle)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_n == 0 ==> {
+                        mut as int64: res_pos = len_t + 1
+                        emit(nice, res_pos, "ok")
+                  }
+                  len_n > len_t ==> {
+                        mut as int64: neg = -1
+                        emit(nice, neg, "ok")
+                  }
+            }
+            mut as int64: max_start = len_t - len_n + 1
+            mut as int64: found_idx = -1
+            infinite (i in max_start .. 1) {
+                  mut as int64: end_i = i + len_n - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == needle ==> {
+                              found_idx = i
+                              break
+                        }
+                  }
+            }
+            emit(nice, found_idx, "ok")
+      }
+
+      op stringCount (as string: text, as string: needle) as int64 ==> {
+            mut as int64: len_n = stringLength(needle)
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_n == 0 or len_n > len_t ==> {
+                        mut as int64: zero = 0
+                        emit(nice, zero, "ok")
+                  }
+            }
+            mut as int64: count = 0
+            mut as int64: i = 1
+            mut as int64: max_i = len_t - len_n + 1
+            infinite {
+                  route {
+                        i > max_i ==> {
+                              break
+                        }
+                  }
+                  mut as int64: end_i = i + len_n - 1
+                  imut as string: sub = text[i..end_i]
+                  route {
+                        sub == needle ==> {
+                              count = count + 1
+                              i = i + len_n
+                        }
+                        sub != needle ==> {
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, count, "ok")
+      }
+}

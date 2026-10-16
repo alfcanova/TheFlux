@@ -1,0 +1,350 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatCentralTendency
+#L ==============================================================================
+
+contract (StatCentralTendencyContract) {
+      op statMean (as list of data: data_points) as float64
+      op statWeightedMean (as list of data: data_points, as list of data: weights) as float64
+      op statGeometricMean (as list of data: data_points) as float64
+      op statHarmonicMean (as list of data: data_points) as float64
+      op statMedian (as list of data: data_points) as float64
+      op statMedianLow (as list of data: data_points) as float64
+      op statMedianHigh (as list of data: data_points) as float64
+      op statMode (as list of data: data_points) as float64
+      op statMultimode (as list of data: data_points) as list of data
+      op statTrimmedMean (as list of data: data_points, as float64: cut_proportion) as float64
+}
+
+agent (StatStdLib) impl StatCentralTendencyContract {
+
+      #L ==============================================================================
+      #L Utilitarios Internos
+      #L ==============================================================================
+
+      op _statLen (as list of data: items) as int64 ==> {
+            mut as int64: n = 0
+            infinite (x in items) {
+                  n = n + 1
+            }
+            emit(nice, n, "ok")
+      }
+
+      op _statAbs (as float64: val) as float64 ==> {
+            route {
+                  val < 0.0 ==> {
+                        emit(nice, 0.0 - val, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, val, "ok")
+                  }
+            }
+      }
+
+      op _statSort (as list of data: items) as list of data ==> {
+            mut as list of data: res = []
+            infinite (x in items) {
+                  res[_statLen(res) + 1] = x as float64
+            }
+            mut as int64: n = 0
+            infinite (x in res) {
+                  n = n + 1
+            }
+            route {
+                  n > 1 ==> {
+                        infinite (i in 1 .. n) {
+                              mut as int64: limit = n - i
+                              route {
+                                    limit >= 1 ==> {
+                                          infinite (j in 1 .. limit) {
+                                                mut as float64: left = res[j] as float64
+                                                mut as float64: right = res[j + 1] as float64
+                                                route {
+                                                      left > right ==> {
+                                                            res[j] = right
+                                                            res[j + 1] = left
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+      #L 1. StatCentralTendencyContract
+      #L ==============================================================================
+
+      op statMean (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: sum = 0.0
+            infinite (x in data_points) {
+                  sum = sum + (x as float64)
+            }
+            emit(nice, sum /f (n as float64), "ok")
+      }
+
+      op statWeightedMean (as list of data: data_points, as list of data: weights) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: sum_w_val = 0.0
+            mut as float64: sum_w = 0.0
+            infinite (i in 1 .. n) {
+                  mut as float64: v = data_points[i] as float64
+                  mut as float64: w = weights[i] as float64
+                  sum_w_val = sum_w_val + (v * w)
+                  sum_w = sum_w + w
+            }
+            route {
+                  sum_w == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, sum_w_val /f sum_w, "ok")
+      }
+
+      op statGeometricMean (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: log_sum = 0.0
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  route {
+                        v <= 0.0 ==> {
+                              emit(nice, 0.0, "ok")
+                        }
+                  }
+                  log_sum = log_sum + log64(v)
+            }
+            mut as float64: mean_log = log_sum /f (n as float64)
+            emit(nice, exp64(mean_log), "ok")
+      }
+
+      op statHarmonicMean (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: inv_sum = 0.0
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  route {
+                        v == 0.0 ==> {
+                              emit(nice, 0.0, "ok")
+                        }
+                  }
+                  inv_sum = inv_sum + (1.0 /f v)
+            }
+            route {
+                  inv_sum == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, (n as float64) /f inv_sum, "ok")
+      }
+
+      op statMedian (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as list of data: sorted = _statSort(data_points)
+            mut as int64: rem = n /r 2
+            route {
+                  rem == 1 ==> {
+                        mut as int64: mid = (n + 1) /i 2
+                        emit(nice, sorted[mid] as float64, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: mid_l = n /i 2
+                        mut as int64: mid_r = mid_l + 1
+                        mut as float64: v_l = sorted[mid_l] as float64
+                        mut as float64: v_r = sorted[mid_r] as float64
+                        emit(nice, (v_l + v_r) /f 2.0, "ok")
+                  }
+            }
+      }
+
+      op statMedianLow (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as list of data: sorted = _statSort(data_points)
+            mut as int64: rem = n /r 2
+            route {
+                  rem == 1 ==> {
+                        mut as int64: mid = (n + 1) /i 2
+                        emit(nice, sorted[mid] as float64, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: mid_l = n /i 2
+                        emit(nice, sorted[mid_l] as float64, "ok")
+                  }
+            }
+      }
+
+      op statMedianHigh (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as list of data: sorted = _statSort(data_points)
+            mut as int64: rem = n /r 2
+            route {
+                  rem == 1 ==> {
+                        mut as int64: mid = (n + 1) /i 2
+                        emit(nice, sorted[mid] as float64, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: mid_r = (n /i 2) + 1
+                        emit(nice, sorted[mid_r] as float64, "ok")
+                  }
+            }
+      }
+
+      op statMode (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: best_val = data_points[1] as float64
+            mut as int64: max_count = 0
+
+            infinite (i in 1 .. n) {
+                  mut as float64: target = data_points[i] as float64
+                  mut as int64: count = 0
+                  infinite (j in 1 .. n) {
+                        route {
+                              (data_points[j] as float64) == target ==> {
+                                    count = count + 1
+                              }
+                        }
+                  }
+                  route {
+                        count > max_count ==> {
+                              max_count = count
+                              best_val = target
+                        }
+                  }
+            }
+            emit(nice, best_val, "ok")
+      }
+
+      op statMultimode (as list of data: data_points) as list of data ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        mut as list of data: empty_res = []
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as int64: max_count = 0
+            infinite (i in 1 .. n) {
+                  mut as float64: target = data_points[i] as float64
+                  mut as int64: count = 0
+                  infinite (j in 1 .. n) {
+                        route {
+                              (data_points[j] as float64) == target ==> {
+                                    count = count + 1
+                              }
+                        }
+                  }
+                  route {
+                        count > max_count ==> {
+                              max_count = count
+                        }
+                  }
+            }
+
+            mut as list of data: modes = []
+            infinite (i in 1 .. n) {
+                  mut as float64: target = data_points[i] as float64
+                  mut as int64: count = 0
+                  infinite (j in 1 .. n) {
+                        route {
+                              (data_points[j] as float64) == target ==> {
+                                    count = count + 1
+                              }
+                        }
+                  }
+                  route {
+                        count == max_count ==> {
+                              mut as bool: already = false
+                              infinite (m in modes) {
+                                    route {
+                                          (m as float64) == target ==> {
+                                                already = true
+                                          }
+                                    }
+                              }
+                              route {
+                                    already == false ==> {
+                                          modes[_statLen(modes) + 1] = target
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, modes, "ok")
+      }
+
+      op statTrimmedMean (as list of data: data_points, as float64: cut_proportion) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as list of data: sorted = _statSort(data_points)
+            mut as float64: k_flt = (n as float64) * cut_proportion
+            mut as int64: k = k_flt as int64
+            mut as int64: start_idx = k + 1
+            mut as int64: end_idx = n - k
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, statMedian(data_points), "ok")
+                  }
+            }
+            mut as float64: sum = 0.0
+            mut as int64: count = 0
+            infinite (i in start_idx .. end_idx) {
+                  sum = sum + (sorted[i] as float64)
+                  count = count + 1
+            }
+            route {
+                  count == 0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, sum /f (count as float64), "ok")
+      }
+
+      #L ==============================================================================
+}

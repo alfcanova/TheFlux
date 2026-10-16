@@ -1,0 +1,72 @@
+keyword: True, False
+category: Literal Booleano
+description: 'Literais booleanos. A forma canônica é PascalCase: True e False. Apenas essas duas formas são aceitas como literais;
+  qualquer outra capitalização (true, false, TRUE, FALSE) não é alias e lexa como identificador, causando erro de variável
+  indefinida.'
+syntax: True | False
+pseudocode: 'verdadeiro := True
+
+  falso      := False'
+usages:
+- name: Forma canônica
+  description: As únicas formas aceitas.
+  examples:
+  - code: 'mut as bool: ativo= True
+
+      mut as bool: completo= False'
+- name: Uso em route
+  description: Booleanos como condição direta de route.
+  examples:
+  - code: 'route { True --> { print("Sempre executa") } }
+
+      route { False --> { print("Nunca executa") } }'
+- name: Padrão em dataflow
+  description: Booleanos em padrões de dataflow (-->/==>).
+  examples:
+  - code: route { True ==> { print("OK") } }
+restrictions:
+- Apenas True e False são literais booleanos válidos.
+- 'true, false, TRUE, FALSE não são aliases: lexam como IDENTIFIER e geram erro de variável indefinida (ou tipo indefinido).'
+- Booleanos são do tipo bool.
+errors:
+- code: "TYP441"
+  mnemonic: "EXPECT_BOOL_GOT_INT"
+  severity: "Error"
+  trigger: "Uma variável ou expressão condicional booleana recebe um número inteiro"
+  message: "A expressão esperava um booleano (bool) e recebeu um número inteiro"
+  hint: "Compare explicitamente o inteiro contra zero (ex: 'x != 0') ou converta com cast"
+  example_bad: |
+    mut as bool: b = 1
+  example_good: |
+    mut as bool: b = (1 != 0)
+- code: "TYP442"
+  mnemonic: "EXPECT_BOOL_GOT_STRING"
+  severity: "Error"
+  trigger: "Uma variável ou expressão condicional booleana recebe uma string"
+  message: "A expressão esperava um booleano (bool) e recebeu texto (string)"
+  hint: "Compare o texto explicitamente (ex: 's == \"True\"')"
+  example_bad: |
+    mut as bool: b = "True"
+  example_good: |
+    mut as bool: b = ("True" == "True")
+- code: "TYP443"
+  mnemonic: "EXPECT_BOOL_GOT_FLOAT"
+  severity: "Error"
+  trigger: "Uma variável ou expressão condicional booleana recebe um número decimal"
+  message: "A expressão esperava um booleano (bool) e recebeu um número decimal (float)"
+  hint: "Compare explicitamente o decimal contra zero (ex: 'f != 0.0')"
+  example_bad: |
+    mut as bool: b = 0.0
+  example_good: |
+    mut as bool: b = (0.0 != 0.0)
+- code: "LEX010"
+  mnemonic: "BOOL_INVALID_LITERAL_CASING"
+  severity: "Error"
+  trigger: "Uso de literal booleano em minúsculo ou caixa alta (true, false, TRUE, FALSE)"
+  message: "Literais booleanos no TheFlux devem usar PascalCase ('True' ou 'False')"
+  hint: "Utilize 'True' ou 'False' com a primeira letra maiúscula"
+  example_bad: |
+    mut as bool: ativo = true
+  example_good: |
+    mut as bool: ativo = True
+

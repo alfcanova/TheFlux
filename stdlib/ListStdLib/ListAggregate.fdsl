@@ -1,0 +1,113 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListAggregate
+#L ==============================================================================
+
+contract (ListAggregateContract) {
+      op listMin (as list of data: items) as data
+      op listMax (as list of data: items) as data
+      op listSum (as list of data: items) as data
+      op listProduct (as list of data: items) as data
+      op listAverage (as list of data: items) as float64
+      op listCountValues (as list of data: items, as data: value) as int64
+}
+
+agent (ListStdLib) impl ListAggregateContract {
+      #L -- ListAggregateContract -------------------------------------
+      op listMin (as list of data: items) as data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as data: min_val = items[1]
+            infinite (x in items) {
+                  route {
+                        x < min_val ==> {
+                              min_val = x
+                        }
+                  }
+            }
+            imut as data: res = min_val
+            emit(nice, res, "ok")
+      }
+
+      op listMax (as list of data: items) as data ==> {
+            mut as int64: total = 0
+            infinite (x in items) { total = total + 1 }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as data: max_val = items[1]
+            infinite (x in items) {
+                  route {
+                        x > max_val ==> {
+                              max_val = x
+                        }
+                  }
+            }
+            imut as data: res = max_val
+            emit(nice, res, "ok")
+      }
+
+      op listSum (as list of data: items) as data ==> {
+            mut as data: acc = 0
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              acc = x
+                              first = false
+                        }
+                        not first ==> {
+                              acc = acc + x
+                        }
+                  }
+            }
+            imut as data: res = acc
+            emit(nice, res, "ok")
+      }
+
+      op listProduct (as list of data: items) as data ==> {
+            mut as data: acc = 1
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              acc = x
+                              first = false
+                        }
+                        not first ==> {
+                              acc = acc * x
+                        }
+                  }
+            }
+            imut as data: res = acc
+            emit(nice, res, "ok")
+      }
+
+      op listAverage (as list of data: items) as float64 ==> {
+            mut as int64: count = 0
+            mut as float64: sum_val = 0.0
+            infinite (x in items) {
+                  count = count + 1
+                  sum_val = sum_val + (x as float64)
+            }
+            route {
+                  count == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as float64: avg = sum_val /f (count as float64)
+            imut as float64: res = avg
+            emit(nice, res, "ok")
+      }
+
+      op listCountValues (as list of data: items, as data: value) as int64 ==> {
+            emit(nice, listCount(items, value), "ok")
+      }
+}

@@ -1,0 +1,110 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapTransform
+#L ==============================================================================
+
+contract (MapTransformContract) {
+      op mapMerge (as map: left, as map: right) as map
+      op mapInvert (as map: record) as map
+      op mapZip (as list of data: keys, as list of data: values) as map
+      op mapFilterKeys (as map: record, as list of data: allowed_keys) as map
+      op mapOmitKeys (as map: record, as list of data: omitted_keys) as map
+}
+
+agent (MapStdLib) impl MapTransformContract {
+      #L 7. MapTransformContract (5 operacoes)
+      #L ==============================================================================
+      op mapMerge (as map: left, as map: right) as map ==> {
+            mut as map: m = map{}
+            infinite (k in left) {
+                  m[k] = left[k]
+            }
+            infinite (k in right) {
+                  m[k] = right[k]
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapInvert (as map: record) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as string: sk = "" + record[k]
+                  m[sk] = k
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapZip (as list of data: keys, as list of data: values) as map ==> {
+            mut as map: m = map{}
+            mut as int64: klen = 0
+            infinite (k in keys) {
+                  klen = klen + 1
+            }
+            mut as int64: vlen = 0
+            infinite (v in values) {
+                  vlen = vlen + 1
+            }
+            mut as int64: limit = klen
+            route {
+                  vlen < limit ==> {
+                        limit = vlen
+                  }
+            }
+            mut as int64: idx = 1
+            infinite (idx <= limit) {
+                  mut as string: kstr = "" + keys[idx]
+                  m[kstr] = values[idx]
+                  idx = idx + 1
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapFilterKeys (as map: record, as list of data: allowed_keys) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: allowed = false
+                  infinite (ak in allowed_keys) {
+                        route {
+                              k == ak ==> {
+                                    allowed = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        allowed ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op mapOmitKeys (as map: record, as list of data: omitted_keys) as map ==> {
+            mut as map: m = map{}
+            infinite (k in record) {
+                  mut as bool: omit = false
+                  infinite (ok in omitted_keys) {
+                        route {
+                              k == ok ==> {
+                                    omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not omit ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

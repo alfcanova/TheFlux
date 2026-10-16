@@ -1,0 +1,51 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FileSignatureStdLib
+#L Dominio: FileHashSignature
+#L ==============================================================================
+
+contract (FileHashSignatureContract) {
+      op fileSha256 (as string: path) as string
+      op fileMd5 (as string: path) as string
+      op fileSha1 (as string: path) as string
+      op fileCrc32 (as string: path) as int64
+      op fileVerifySha256 (as string: path, as string: expected_hash) as bool
+      op fileVerifyMd5 (as string: path, as string: expected_hash) as bool
+      op fileVerifyHash (as string: path, as string: expected_hash) as bool
+}
+
+agent (FileSignatureStdLib) impl FileHashSignatureContract {
+
+      #L -- FileHashSignatureContract ---------------------------------
+      op fileSha256 (as string: path) as string ==> {
+            emit(nice, stdFileSha256(path), "ok")
+      }
+
+      op fileMd5 (as string: path) as string ==> {
+            emit(nice, stdFileMd5(path), "ok")
+      }
+
+      op fileSha1 (as string: path) as string ==> {
+            emit(nice, stdFileSha1(path), "ok")
+      }
+
+      op fileCrc32 (as string: path) as int64 ==> {
+            emit(nice, stdFileCrc32(path), "ok")
+      }
+
+      op fileVerifySha256 (as string: path, as string: expected_hash) as bool ==> {
+            mut as string: actual = stdFileSha256(path)
+            emit(nice, actual == expected_hash, "ok")
+      }
+
+      op fileVerifyMd5 (as string: path, as string: expected_hash) as bool ==> {
+            mut as string: actual = stdFileMd5(path)
+            emit(nice, actual == expected_hash, "ok")
+      }
+
+      op fileVerifyHash (as string: path, as string: expected_hash) as bool ==> {
+            mut as string: actual_sha = stdFileSha256(path)
+            mut as string: actual_md5 = stdFileMd5(path)
+            mut as bool: is_matched = (actual_sha == expected_hash) or (actual_md5 == expected_hash)
+            emit(nice, is_matched, "ok")
+      }
+}

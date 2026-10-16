@@ -1,0 +1,75 @@
+#L ==============================================================================
+#L TheFlux Standard Library: NativeGfxStdLib
+#L Dominio: NativeGfxDraw
+#L ==============================================================================
+
+contract (NativeGfxDrawContract) {
+      op nativeGfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawLine (as int64: win_id, as int64: x1, as int64: y1, as int64: x2, as int64: y2, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool
+      op nativeGfxDrawText (as int64: win_id, as int64: x, as int64: y, as string: text, as int64: r, as int64: g, as int64: b) as bool
+
+      op gfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool
+      op gfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool
+      op gfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool
+}
+
+agent (NativeGfxStdLib) impl NativeGfxDrawContract {
+      #L 2. NativeGfxDrawContract
+      #L =====================================================================
+
+      op nativeGfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxClear(win_id, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillRect(win_id, x, y, w, h, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawRect(win_id, x, y, w, h, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawLine (as int64: win_id, as int64: x1, as int64: y1, as int64: x2, as int64: y2, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawLine(win_id, x1, y1, x2, y2, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawCircle(win_id, cx, cy, radius, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillCircle(win_id, cx, cy, radius, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op nativeGfxDrawText (as int64: win_id, as int64: x, as int64: y, as string: text, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxDrawText(win_id, x, y, text, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op gfxClear (as int64: win_id, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxClear(win_id, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op gfxFillRect (as int64: win_id, as int64: x, as int64: y, as int64: w, as int64: h, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillRect(win_id, x, y, w, h, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      op gfxFillCircle (as int64: win_id, as int64: cx, as int64: cy, as int64: radius, as int64: r, as int64: g, as int64: b) as bool ==> {
+            mut as bool: res = stdGfxFillCircle(win_id, cx, cy, radius, r, g, b)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

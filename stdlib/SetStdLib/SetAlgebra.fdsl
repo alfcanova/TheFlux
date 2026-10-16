@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetAlgebra
+#L ==============================================================================
+
+contract (SetAlgebraContract) {
+      op setUnion (as set of data: lhs, as set of data: rhs) as set of data
+      op setIntersect (as set of data: lhs, as set of data: rhs) as set of data
+      op setDifference (as set of data: lhs, as set of data: rhs) as set of data
+      op setSymmetricDifference (as set of data: lhs, as set of data: rhs) as set of data
+}
+
+agent (SetStdLib) impl SetAlgebraContract {
+      #L -- SetAlgebraContract ----------------------------------------
+      op setUnion (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetUnion(lhs, rhs), "ok")
+      }
+
+      op setIntersect (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetIntersect(lhs, rhs), "ok")
+      }
+
+      op setDifference (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetDifference(lhs, rhs), "ok")
+      }
+
+      op setSymmetricDifference (as set of data: lhs, as set of data: rhs) as set of data ==> {
+            emit(nice, stdSetSymmetricDifference(lhs, rhs), "ok")
+      }
+}

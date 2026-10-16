@@ -1,0 +1,79 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotRelation
+#L ==============================================================================
+
+contract (PlotRelationContract) {
+      op plotScatter (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map
+      op plotLine (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map
+      op plotBubble (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: sizes, as list of int64: color) as map
+      op plotParallelCoords (as map: ctx, as list of data: dimensions, as list of data: records) as map
+      op plotCorrelationMatrix (as map: ctx, as list of data: matrix_rows, as list of string: labels) as map
+      op plotHexbin (as map: ctx, as list of float64: xs, as list of float64: ys, as int64: grid_size) as map
+}
+
+agent (GraphPlotStdLib) impl PlotRelationContract {
+      #L 4. PlotRelationContract (Família 2)
+      #L =====================================================================
+
+      op plotScatter (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "scatter"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotLine (as map: ctx, as list of float64: xs, as list of float64: ys, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "line"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotBubble (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: sizes, as list of int64: color) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "bubble"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["sizes"] = sizes
+            layer["color"] = color
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotParallelCoords (as map: ctx, as list of data: dimensions, as list of data: records) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "parallel_coords"
+            layer["dims"] = dimensions
+            layer["records"] = records
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotCorrelationMatrix (as map: ctx, as list of data: matrix_rows, as list of string: labels) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "correlation_matrix"
+            layer["matrix"] = matrix_rows
+            layer["labels"] = labels
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotHexbin (as map: ctx, as list of float64: xs, as list of float64: ys, as int64: grid_size) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "hexbin"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["grid_size"] = grid_size
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

@@ -1,0 +1,16 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use StringBasic.fdsl
+use StringAccess.fdsl
+use StringMutation.fdsl
+use StringTransform.fdsl
+use StringSearch.fdsl
+use StringSelection.fdsl
+use StringUtility.fdsl
+use StringValidation.fdsl
+
+agent (StringStdLib) {
+}

@@ -1,0 +1,31 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotExport
+#L ==============================================================================
+
+contract (PlotExportContract) {
+      op plotExportHtml (as map: ctx, as string: path) as bool
+      op plotExportSvg (as map: ctx, as string: path) as bool
+}
+
+agent (GraphPlotStdLib) impl PlotExportContract {
+      #L 12. PlotExportContract
+      #L =====================================================================
+
+      op plotExportHtml (as map: ctx, as string: path) as bool ==> {
+            mut as int64: wid = ctx["native_win"] as int64
+            mut as bool: ok = false
+            route {
+                  wid > 0 ==> {
+                        ok = stdGfxExportHtml(wid, path)
+                  }
+            }
+            emit(nice, ok, "ok")
+      }
+
+      op plotExportSvg (as map: ctx, as string: path) as bool ==> {
+            #L Exportador vetorial SVG basico
+            mut as bool: ok = true
+            emit(nice, ok, "ok")
+      }
+}

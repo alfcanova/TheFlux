@@ -1,0 +1,118 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatInference
+#L ==============================================================================
+
+contract (StatInferenceContract) {
+      op statStandardErrorOfMean (as list of data: data_points) as float64
+      op statConfidenceIntervalMean (as list of data: data_points, as float64: confidence_level) as list of data
+      op statZTestOneSample (as list of data: data_points, as float64: null_mean) as float64
+      op statTTestOneSample (as list of data: data_points, as float64: null_mean) as list of data
+      op statTTestTwoSample (as list of data: sample1, as list of data: sample2) as list of data
+      op statChiSquareGoF (as list of data: observed, as list of data: expected) as list of data
+}
+
+agent (StatStdLib) impl StatInferenceContract {
+      #L 7. StatInferenceContract
+      #L ==============================================================================
+
+      op statStandardErrorOfMean (as list of data: data_points) as float64 ==> {
+            mut as int64: n = _statLen(data_points)
+            route {
+                  n <= 1 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            mut as float64: s = statStdDevSample(data_points)
+            mut as float64: sqrt_n = (n as float64) ^r 2
+            emit(nice, s /f sqrt_n, "ok")
+      }
+
+      op statConfidenceIntervalMean (as list of data: data_points, as float64: confidence_level) as list of data ==> {
+            mut as float64: mu = statMean(data_points)
+            mut as float64: se = statStandardErrorOfMean(data_points)
+            mut as float64: alpha = 1.0 - confidence_level
+            mut as float64: p = 1.0 - (alpha /f 2.0)
+            mut as float64: z = statNormalInvCdf(p, 0.0, 1.0)
+            mut as float64: margin = z * se
+            mut as list of data: ci = [mu - margin, mu + margin]
+            emit(nice, ci, "ok")
+      }
+
+      op statZTestOneSample (as list of data: data_points, as float64: null_mean) as float64 ==> {
+            mut as float64: mu = statMean(data_points)
+            mut as float64: se = statStandardErrorOfMean(data_points)
+            route {
+                  se == 0.0 ==> {
+                        emit(nice, 0.0, "ok")
+                  }
+            }
+            emit(nice, (mu - null_mean) /f se, "ok")
+      }
+
+      op statTTestOneSample (as list of data: data_points, as float64: null_mean) as list of data ==> {
+            mut as int64: n = _statLen(data_points)
+            mut as float64: t = statZTestOneSample(data_points, null_mean)
+            mut as float64: df = (n - 1) as float64
+            mut as list of data: res = [t, df]
+            emit(nice, res, "ok")
+      }
+
+      op statTTestTwoSample (as list of data: sample1, as list of data: sample2) as list of data ==> {
+            mut as int64: n1 = _statLen(sample1)
+            mut as int64: n2 = _statLen(sample2)
+            route {
+                  n1 <= 1 or n2 <= 1 ==> {
+                        mut as list of data: empty_res = [0.0, 0.0]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as float64: m1 = statMean(sample1)
+            mut as float64: m2 = statMean(sample2)
+            mut as float64: v1 = statVarianceSample(sample1)
+            mut as float64: v2 = statVarianceSample(sample2)
+
+            mut as float64: df1 = (n1 - 1) as float64
+            mut as float64: df2 = (n2 - 1) as float64
+            mut as float64: total_df = df1 + df2
+
+            mut as float64: s_pooled_sq = ((df1 * v1) + (df2 * v2)) /f total_df
+            mut as float64: inv_n = (1.0 /f (n1 as float64)) + (1.0 /f (n2 as float64))
+            mut as float64: se_t = (s_pooled_sq * inv_n) ^r 2
+
+            mut as float64: t = 0.0
+            route {
+                  se_t > 0.0 ==> {
+                        t = (m1 - m2) /f se_t
+                  }
+            }
+            mut as list of data: res = [t, total_df]
+            emit(nice, res, "ok")
+      }
+
+      op statChiSquareGoF (as list of data: observed, as list of data: expected) as list of data ==> {
+            mut as int64: n = _statLen(observed)
+            route {
+                  n == 0 ==> {
+                        mut as list of data: empty_res = [0.0, 0.0]
+                        emit(nice, empty_res, "ok")
+                  }
+            }
+            mut as float64: chi2 = 0.0
+            infinite (i in 1 .. n) {
+                  mut as float64: o = observed[i] as float64
+                  mut as float64: e = expected[i] as float64
+                  route {
+                        e > 0.0 ==> {
+                              mut as float64: diff = o - e
+                              chi2 = chi2 + ((diff * diff) /f e)
+                        }
+                  }
+            }
+            mut as float64: df = (n - 1) as float64
+            mut as list of data: res = [chi2, df]
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

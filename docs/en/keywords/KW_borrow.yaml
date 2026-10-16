@@ -1,0 +1,99 @@
+keyword: borrow
+category: Ownership
+description: Borrowing the values of an identifier without transferring its ownership. borrow() é immutable — multiple simultaneous
+  borrows are allowed. borrow_mut() é exclusive — blocks other borrows, moves, and external writes.
+syntax: 'borrow(<identificador>)
+
+  borrow_mut(<identificador>)
+
+  '
+pseudocode: 'x  ← 42
+
+  leitura := EMPRESTAR(x)      // emprestimo imutavel, compartilhado
+
+  outra   := EMPRESTAR(x)      // permitido: varias leituras simultaneas
+
+  escrita := EMPRESTAR_MUT(x)  // exclusivo: bloqueia outros emprestimos'
+usages:
+- name: Borrow immutable múltiplo
+  description: Multiple simultaneous immutable borrows are allowed.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r1 = borrow(x)
+
+      mut as int64: r2 = borrow(x)
+
+      print(r1 + r2)
+
+      '
+- name: Borrow mutable exclusive
+  description: borrow_mut() blocks other borrows, moves, and writes externas.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: ref = borrow_mut(x)
+
+      ref = 100
+
+      print(ref)
+
+      '
+- name: Value original preservado
+  description: Operations on references do not modify the original value.
+  examples:
+  - code: 'mut as int64: x = 42
+
+      mut as int64: r = borrow(x)
+
+      print(r)
+
+      print(x)
+
+      '
+restrictions:
+- 'borrow() immutable: múltiplos simultâneos OK.'
+- 'borrow_mut() exclusive: blocks other borrows, moves, and writes.'
+- Reading a variable under borrow_mut via a different reference → errorr.
+- Reassigning ref via borrow_mut() is allowed.
+errors:
+- code: OWN503
+  mnemonic: USE_AFTER_MOVE
+  severity: Error
+  trigger: Reading or using a variable after its ownership was transferred via move
+  message: Use of moved value; variable has transferred ownership and can no longer be accessed
+  hint: Borrow reference with 'borrow' or clone object instead of moving it
+  example_bad: 'mut as string: a = "dado"
+
+    mut as string: b = move(a)
+
+    print(a)
+
+    '
+  example_good: 'mut as string: a = "dado"
+
+    mut as string: b = borrow(a)
+
+    print(a)
+
+    '
+- code: OWN504
+  mnemonic: MUTABLE_BORROW_CONFLICT
+  severity: Error
+  trigger: 'Conflicting borrow: attempting to access or borrow variable while active mutable borrow exists'
+  message: 'Mutable borrow conflict: variable already borrowed exclusively'
+  hint: Release or end the scope of the mutable borrow before accessing the original variable
+  example_bad: 'mut as int64: x = 10
+
+    mut as int64: r1 = borrow_mut(x)
+
+    mut as int64: r2 = borrow(x)
+
+    '
+  example_good: 'mut as int64: x = 10
+
+    mut as int64: r1 = borrow(x)
+
+    mut as int64: r2 = borrow(x)
+
+    '

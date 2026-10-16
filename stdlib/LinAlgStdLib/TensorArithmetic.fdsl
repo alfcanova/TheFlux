@@ -1,0 +1,183 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorArithmetic
+#L ==============================================================================
+
+contract (TensorArithmeticContract) {
+      op tensorAddElementwise (as map: lhs, as map: rhs) as map
+      op tensorMulScalar (as map: tensor, as float64: scalar) as map
+      op tensorMatMul2D (as map: lhs, as map: rhs) as map
+      op tensorBatchedMatMul (as map: lhs, as map: rhs) as map
+}
+
+agent (LinAlgStdLib) impl TensorArithmeticContract {
+      #L 2. TensorArithmeticContract - Loops Otimizados e Multiplicacao IKJ
+      #L ==============================================================================
+
+      op tensorAddElementwise (as map: lhs, as map: rhs) as map ==> {
+            mut as int64: ndim = lhs["ndim"] as int64
+            route {
+                  ndim == 2 ==> {
+                        mut as list of data: l_sh = lhs["shape"] as list of data
+                        mut as map: out = tensorNew(l_sh)
+
+                        mut as int64: r = 1
+                        infinite (r <= (l_sh[1] as int64)) {
+                              mut as int64: c = 1
+                              infinite (c <= (l_sh[2] as int64)) {
+                                    mut as float64: v1 = tensorGetAt(lhs, [r, c])
+
+                                    mut as int64: r_rhs = r
+                                    mut as int64: c_rhs = c
+                                    mut as list of data: r_sh = rhs["shape"] as list of data
+                                    route { (r_sh[1] as int64) == 1 ==> { r_rhs = 1 } }
+                                    route { (r_sh[2] as int64) == 1 ==> { c_rhs = 1 } }
+
+                                    mut as float64: v2 = tensorGetAt(rhs, [r_rhs, c_rhs])
+                                    out = tensorSetAt(out, [r, c], v1 + v2)
+                                    c = c + 1
+                              }
+                              r = r + 1
+                        }
+                        emit(nice, out, "ok")
+                  }
+            }
+
+            #L Suporte N-D Generico (ex: Tensores 3x3x3)
+            mut as list of data: l_sh = lhs["shape"] as list of data
+            mut as map: out = tensorNew(l_sh)
+            mut as int64: total = 1
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  total = total * (l_sh[i] as int64)
+                  i = i + 1
+            }
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total) {
+                  mut as float64: v1 = tensorGetAt(lhs, coords)
+                  mut as float64: v2 = tensorGetAt(rhs, coords)
+                  out = tensorSetAt(out, coords, v1 + v2)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (l_sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (l_sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorMulScalar (as map: tensor, as float64: scalar) as map ==> {
+            mut as map: out = _mapClone(tensor)
+            mut as list of data: buf = _listClone(tensor["data"] as list of data)
+            mut as int64: i = 1
+            mut as int64: len = 0
+            infinite (x in buf) { len = len + 1 }
+            infinite (i <= len) {
+                  buf[i] = (buf[i] as float64) * scalar
+                  i = i + 1
+            }
+            out["data"] = buf
+            emit(nice, out, "ok")
+      }
+
+      op tensorMatMul2D (as map: lhs, as map: rhs) as map ==> {
+            mut as list of data: sh1 = lhs["shape"] as list of data
+            mut as list of data: sh2 = rhs["shape"] as list of data
+
+            mut as int64: m = sh1[1] as int64
+            mut as int64: k_dim = sh1[2] as int64
+            mut as int64: n = sh2[2] as int64
+
+            mut as map: out = tensorNew([m, n])
+
+            mut as int64: i = 1
+            infinite (i <= m) {
+                  mut as int64: k = 1
+                  infinite (k <= k_dim) {
+                        mut as float64: lhs_val = tensorGetAt(lhs, [i, k])
+                        route {
+                              lhs_val != 0.0 ==> {
+                                    mut as int64: j = 1
+                                    infinite (j <= n) {
+                                          mut as float64: current_dst = tensorGetAt(out, [i, j])
+                                          mut as float64: rhs_val = tensorGetAt(rhs, [k, j])
+                                          out = tensorSetAt(out, [i, j], current_dst + lhs_val * rhs_val)
+                                          j = j + 1
+                                    }
+                              }
+                        }
+                        k = k + 1
+                  }
+                  i = i + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      op tensorBatchedMatMul (as map: lhs, as map: rhs) as map ==> {
+            mut as list of data: sh1 = lhs["shape"] as list of data
+            mut as list of data: sh2 = rhs["shape"] as list of data
+            mut as int64: batches = sh1[1] as int64
+
+            mut as map: out = tensorNew([batches, sh1[2], sh2[3]])
+
+            mut as int64: b = 1
+            infinite (b <= batches) {
+                  mut as map: sub_lhs = tensorNew([sh1[2], sh1[3]])
+                  mut as map: sub_rhs = tensorNew([sh2[2], sh2[3]])
+
+                  mut as int64: r = 1
+                  infinite (r <= (sh1[2] as int64)) {
+                        mut as int64: c = 1
+                        infinite (c <= (sh1[3] as int64)) {
+                              sub_lhs = tensorSetAt(sub_lhs, [r, c], tensorGetAt(lhs, [b, r, c]))
+                              c = c + 1
+                        }
+                        r = r + 1
+                  }
+
+                  r = 1
+                  infinite (r <= (sh2[2] as int64)) {
+                        mut as int64: c = 1
+                        infinite (c <= (sh2[3] as int64)) {
+                              sub_rhs = tensorSetAt(sub_rhs, [r, c], tensorGetAt(rhs, [b, r, c]))
+                              c = c + 1
+                        }
+                        r = r + 1
+                  }
+
+                  mut as map: sub_res = tensorMatMul2D(sub_lhs, sub_rhs)
+
+                  r = 1
+                  infinite (r <= (sh1[2] as int64)) {
+                        mut as int64: c = 1
+                        infinite (c <= (sh2[3] as int64)) {
+                              out = tensorSetAt(out, [b, r, c], tensorGetAt(sub_res, [r, c]))
+                              c = c + 1
+                        }
+                        r = r + 1
+                  }
+                  b = b + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

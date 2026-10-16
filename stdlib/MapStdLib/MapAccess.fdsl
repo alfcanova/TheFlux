@@ -1,0 +1,174 @@
+#L ==============================================================================
+#L TheFlux Standard Library: MapStdLib
+#L Dominio: MapAccess
+#L ==============================================================================
+
+contract (MapAccessContract) {
+      op mapGet (as map: record, as string: key) as data
+      op mapGetOrDefault (as map: record, as string: key, as data: default_value) as data
+      op mapGetFirst (as map: record) as list of data
+      op mapGetAt (as map: record, as int64: index) as list of data
+      op mapGetLast (as map: record) as list of data
+      op mapGetLeft (as map: record, as int64: n) as map
+      op mapGetRight (as map: record, as int64: n) as map
+      op mapGetCenter (as map: record, as int64: n) as map
+      op mapSlice (as map: record, as int64: start, as int64: end) as map
+      op mapKeys (as map: record) as list of data
+      op mapValues (as map: record) as list of data
+      op mapEntries (as map: record) as list of data
+}
+
+agent (MapStdLib) impl MapAccessContract {
+      #L 2. MapAccessContract (12 operacoes)
+      #L ==============================================================================
+      op mapGet (as map: record, as string: key) as data ==> {
+            imut as data: res = record[key]
+            emit(nice, res, "ok")
+      }
+
+      op mapGetOrDefault (as map: record, as string: key, as data: default_value) as data ==> {
+            mut as bool: found = false
+            infinite (k in record) {
+                  route {
+                        k == key ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            mut as data: val = default_value
+            route {
+                  found ==> {
+                        val = record[key]
+                  }
+            }
+            imut as data: res = val
+            emit(nice, res, "ok")
+      }
+
+      op mapGetFirst (as map: record) as list of data ==> {
+            mut as list of data: res = []
+            infinite (k in record) {
+                  res = [k, record[k]]
+                  break
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapGetAt (as map: record, as int64: index) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: curr = 0
+            infinite (k in record) {
+                  curr = curr + 1
+                  route {
+                        curr == index ==> {
+                              res = [k, record[k]]
+                              break
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapGetLast (as map: record) as list of data ==> {
+            mut as list of data: res = []
+            infinite (k in record) {
+                  res = [k, record[k]]
+            }
+            emit(nice, res, "ok")
+      }
+
+      op mapGetLeft (as map: record, as int64: n) as map ==> {
+            emit(nice, mapTake(record, n), "ok")
+      }
+
+      op mapGetRight (as map: record, as int64: n) as map ==> {
+            emit(nice, mapTakeLast(record, n), "ok")
+      }
+
+      op mapGetCenter (as map: record, as int64: n) as map ==> {
+            mut as int64: total = mapLength(record)
+            route {
+                  total == 0 or n < 0 ==> {
+                        emit(nice, map{}, "ok")
+                  }
+            }
+            mut as int64: start_idx = 1
+            mut as int64: end_idx = total
+            mut as int64: is_odd = total /r 2
+            route {
+                  is_odd == 1 ==> {
+                        mut as int64: c_idx = (total + 1) /i 2
+                        start_idx = c_idx - n
+                        end_idx = c_idx + n
+                  }
+                  is_odd == 0 ==> {
+                        mut as int64: c1_idx = total /i 2
+                        mut as int64: c2_idx = c1_idx + 1
+                        start_idx = c1_idx - n
+                        end_idx = c2_idx + n
+                  }
+            }
+            route {
+                  start_idx < 1 ==> { start_idx = 1 }
+            }
+            route {
+                  end_idx > total ==> { end_idx = total }
+            }
+            route {
+                  start_idx > end_idx ==> {
+                        emit(nice, map{}, "ok")
+                  }
+            }
+            emit(nice, mapSlice(record, start_idx, end_idx), "ok")
+      }
+
+      op mapSlice (as map: record, as int64: start, as int64: end) as map ==> {
+            mut as map: m = map{}
+            mut as int64: curr = 0
+            infinite (k in record) {
+                  curr = curr + 1
+                  route {
+                        curr >= start and curr <= end ==> {
+                              m[k] = record[k]
+                        }
+                  }
+            }
+            emit(nice, m, "ok")
+      }
+
+      op mapKeys (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = k
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapValues (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = record[k]
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      op mapEntries (as map: record) as list of data ==> {
+            mut as list of data: l = []
+            mut as int64: rlen = 0
+            infinite (k in record) {
+                  rlen = rlen + 1
+                  l[rlen] = [k, record[k]]
+            }
+            imut as list of data: res = l
+            emit(nice, res, "ok")
+      }
+
+      #L ==============================================================================
+}

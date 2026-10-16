@@ -1,0 +1,83 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GfxStdLib
+#L Dominio: GfxOpticsPhysics
+#L ==============================================================================
+
+contract (GfxOpticsPhysicsContract) {
+      op gfxFresnelSchlick (as float64: cos_theta, as float64: f0) as float64
+      op gfxLightAttenuation (as float64: distance, as float64: constant_term, as float64: linear_term, as float64: quadratic_term) as float64
+      op gfxKelvinToRgb (as float64: kelvin) as list of int64
+      op gfxLuminance (as list of int64: color) as float64
+}
+
+agent (GfxStdLib) impl GfxOpticsPhysicsContract {
+      #L 8. GfxOpticsPhysicsContract
+      #L =====================================================================
+
+      op gfxFresnelSchlick (as float64: cos_theta, as float64: f0) as float64 ==> {
+            mut as float64: c = _clampFloat(cos_theta, 0.0, 1.0)
+            mut as float64: one_minus_c = 1.0 - c
+            mut as float64: p2 = one_minus_c * one_minus_c
+            mut as float64: p4 = p2 * p2
+            mut as float64: p5 = p4 * one_minus_c
+            mut as float64: res = f0 + (1.0 - f0) * p5
+            emit(nice, res, "ok")
+      }
+
+      op gfxLightAttenuation (as float64: distance, as float64: constant_term, as float64: linear_term, as float64: quadratic_term) as float64 ==> {
+            mut as float64: d = distance
+            route {
+                  d < 0.0 ==> { d = 0.0 - d }
+            }
+            mut as float64: denom = constant_term + linear_term * d + quadratic_term * d * d
+            route {
+                  denom <= 0.0 ==> { emit(nice, 1.0, "ok") }
+            }
+            emit(nice, 1.0 /f denom, "ok")
+      }
+
+      op gfxKelvinToRgb (as float64: kelvin) as list of int64 ==> {
+            #L Lookup com interpolacao linear para espectro de corpo negro
+            mut as float64: k = kelvin
+            route {
+                  k <= 1850.0 ==> {
+                        #L Vela ~1850K
+                        emit(nice, [255, 125, 18, 255], "ok")
+                  }
+                  k <= 2800.0 ==> {
+                        #L Tungstenio ~2800K
+                        emit(nice, [255, 166, 87, 255], "ok")
+                  }
+                  k <= 4000.0 ==> {
+                        #L Fluorescente quente
+                        emit(nice, [255, 209, 163, 255], "ok")
+                  }
+                  k <= 5500.0 ==> {
+                        #L Sol pleno meio da manha
+                        emit(nice, [255, 237, 222, 255], "ok")
+                  }
+                  k <= 6504.0 ==> {
+                        #L Padrao D65 Meio-dia
+                        emit(nice, [255, 255, 255, 255], "ok")
+                  }
+                  k <= 8000.0 ==> {
+                        #L Céu azul claro
+                        emit(nice, [205, 222, 255, 255], "ok")
+                  }
+                  _ ==> {
+                        #L Céu azul profundo (>= 10000K)
+                        emit(nice, [181, 205, 255, 255], "ok")
+                  }
+            }
+      }
+
+      op gfxLuminance (as list of int64: color) as float64 ==> {
+            mut as float64: r = (color[1] as float64) /f 255.0
+            mut as float64: g = (color[2] as float64) /f 255.0
+            mut as float64: b = (color[3] as float64) /f 255.0
+            mut as float64: lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            emit(nice, lum, "ok")
+      }
+
+      #L =====================================================================
+}

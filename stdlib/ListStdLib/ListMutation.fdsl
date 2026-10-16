@@ -1,0 +1,257 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListMutation
+#L ==============================================================================
+
+contract (ListMutationContract) {
+      op listPushFront (as list of data: items, as data: item) as list of data
+      op listPushBack (as list of data: items, as data: item) as list of data
+      op listPrepend (as list of data: items, as list of data: other) as list of data
+      op listAppend (as list of data: items, as list of data: other) as list of data
+      op listInsertFirst (as list of data: items, as data: item) as list of data
+      op listInsertAt (as list of data: items, as int64: index, as data: item) as list of data
+      op listInsertLast (as list of data: items, as data: item) as list of data
+      op listInsertAll (as list of data: items, as int64: index, as list of data: other) as list of data
+      op listRemoveFirst (as list of data: items) as list of data
+      op listRemoveAt (as list of data: items, as int64: index) as list of data
+      op listRemoveLast (as list of data: items) as list of data
+      op listRemove (as list of data: items, as data: item) as list of data
+      op listRemoveAll (as list of data: items, as data: item) as list of data
+}
+
+agent (ListStdLib) impl ListMutationContract {
+      #L -- ListMutationContract --------------------------------------
+      op listPushFront (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = [item]
+            infinite (x in items) {
+                  mut as int64: n = 0
+                  infinite (k in res) { n = n + 1 }
+                  res[n + 1] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listPushBack (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  count = count + 1
+                  res[count] = x
+            }
+            count = count + 1
+            res[count] = item
+            emit(nice, res, "ok")
+      }
+
+      op listPrepend (as list of data: items, as list of data: other) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in other) {
+                  count = count + 1
+                  res[count] = x
+            }
+            infinite (x in items) {
+                  count = count + 1
+                  res[count] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listAppend (as list of data: items, as list of data: other) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  count = count + 1
+                  res[count] = x
+            }
+            infinite (x in other) {
+                  count = count + 1
+                  res[count] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listInsertFirst (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = [item]
+            infinite (x in items) {
+                  mut as int64: n = 0
+                  infinite (k in res) { n = n + 1 }
+                  res[n + 1] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listInsertAt (as list of data: items, as int64: index, as data: item) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  index < 1 or index > (total + 1) ==> {
+                        mut as data: trigger_err = items[index]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr == index ==> {
+                              mut as int64: rlen1 = 0
+                              infinite (k in res) { rlen1 = rlen1 + 1 }
+                              res[rlen1 + 1] = item
+                        }
+                  }
+                  mut as int64: rlen2 = 0
+                  infinite (k in res) { rlen2 = rlen2 + 1 }
+                  res[rlen2 + 1] = x
+                  curr = curr + 1
+            }
+            route {
+                  index == (total + 1) ==> {
+                        mut as int64: rlen3 = 0
+                        infinite (k in res) { rlen3 = rlen3 + 1 }
+                        res[rlen3 + 1] = item
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listInsertLast (as list of data: items, as data: item) as list of data ==> {
+            emit(nice, listPushBack(items, item), "ok")
+      }
+
+      op listInsertAll (as list of data: items, as int64: index, as list of data: other) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr == index ==> {
+                              infinite (o in other) {
+                                    count = count + 1
+                                    res[count] = o
+                              }
+                        }
+                  }
+                  count = count + 1
+                  res[count] = x
+                  curr = curr + 1
+            }
+            route {
+                  index > count ==> {
+                        infinite (o in other) {
+                              count = count + 1
+                              res[count] = o
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveFirst (as list of data: items) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr > 1 ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveAt (as list of data: items, as int64: index) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  index < 1 or index > total ==> {
+                        mut as data: trigger_err = items[index]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr != index ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveLast (as list of data: items) as list of data ==> {
+            mut as int64: total = 0
+            infinite (x in items) {
+                  total = total + 1
+            }
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = items[1]
+                  }
+            }
+            mut as list of data: res = []
+            mut as int64: curr = 1
+            infinite (x in items) {
+                  route {
+                        curr < total ==> {
+                              mut as int64: rlen = 0
+                              infinite (k in res) { rlen = rlen + 1 }
+                              res[rlen + 1] = x
+                        }
+                  }
+                  curr = curr + 1
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemove (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            mut as bool: removed = false
+            infinite (x in items) {
+                  route {
+                        not removed and x == item ==> {
+                              removed = true
+                        }
+                        removed or x != item ==> {
+                              count = count + 1
+                              res[count] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listRemoveAll (as list of data: items, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: count = 0
+            infinite (x in items) {
+                  route {
+                        x != item ==> {
+                              count = count + 1
+                              res[count] = x
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

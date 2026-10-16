@@ -1,0 +1,186 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FsmStdLib
+#L Dominio: FsmDefinition
+#L ==============================================================================
+
+contract (FsmDefinitionContract) {
+      op fsmCreate (as map: config) as map
+      op fsmValidate (as map: fsm_instance) as bool
+      op fsmInitialState (as map: fsm_instance) as string
+      op fsmFinalStates (as map: fsm_instance) as list of data
+      op fsmStates (as map: fsm_instance) as list of data
+      op fsmEvents (as map: fsm_instance) as list of data
+}
+
+agent (FsmStdLib) impl FsmDefinitionContract {
+      #L 1. FsmDefinitionContract
+      #L ==============================================================================
+
+      op fsmCreate (as map: config) as map ==> {
+            mut as map: res = map{}
+            mut as string: init_st = ""
+            route {
+                  "initial" in config ==> {
+                        init_st = "" + config["initial"]
+                  }
+            }
+            res["initial"] = init_st
+
+            mut as list of data: finals_list = []
+            route {
+                  "finals" in config ==> {
+                        finals_list = config["finals"] as list of data
+                  }
+            }
+            res["finals"] = finals_list
+
+            mut as map: trans_map = map{}
+            route {
+                  "transitions" in config ==> {
+                        trans_map = config["transitions"] as map
+                  }
+            }
+            res["transitions"] = trans_map
+
+            mut as list of data: sts_list = []
+            route {
+                  "states" in config ==> {
+                        sts_list = config["states"] as list of data
+                  }
+                  _ ==> {
+                        route {
+                              init_st != "" ==> {
+                                    sts_list = _listPushUnique(sts_list, init_st)
+                              }
+                        }
+                        infinite (s in trans_map) {
+                              sts_list = _listPushUnique(sts_list, "" + s)
+                              mut as map: evs = trans_map[s] as map
+                              infinite (ev in evs) {
+                                    sts_list = _listPushUnique(sts_list, "" + evs[ev])
+                              }
+                        }
+                        infinite (f in finals_list) {
+                              sts_list = _listPushUnique(sts_list, "" + f)
+                        }
+                  }
+            }
+            res["states"] = sts_list
+            emit(nice, res, "ok")
+      }
+
+      op fsmValidate (as map: fsm_instance) as bool ==> {
+            mut as bool: valid = true
+            mut as string: init_st = fsmInitialState(fsm_instance)
+            mut as list of data: sts = fsmStates(fsm_instance)
+
+            route {
+                  init_st == "" ==> {
+                        valid = false
+                  }
+            }
+
+            mut as bool: init_in_states = _listContains(sts, init_st)
+            route {
+                  not init_in_states ==> {
+                        valid = false
+                  }
+            }
+
+            mut as list of data: finals = fsmFinalStates(fsm_instance)
+            infinite (f in finals) {
+                  mut as bool: f_in_states = _listContains(sts, "" + f)
+                  route {
+                        not f_in_states ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+
+            mut as map: trans = map{}
+            route {
+                  "transitions" in fsm_instance ==> {
+                        trans = fsm_instance["transitions"] as map
+                  }
+            }
+            infinite (s in trans) {
+                  mut as bool: s_in_states = _listContains(sts, "" + s)
+                  route {
+                        not s_in_states ==> {
+                              valid = false
+                              break
+                        }
+                  }
+                  mut as map: ev_map = trans[s] as map
+                  infinite (ev in ev_map) {
+                        mut as string: tgt = "" + ev_map[ev]
+                        mut as bool: tgt_in_states = _listContains(sts, tgt)
+                        route {
+                              not tgt_in_states ==> {
+                                    valid = false
+                                    break
+                              }
+                        }
+                  }
+            }
+
+            route {
+                  valid ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(fail, false, "FSM estruturalmente invalida")
+                  }
+            }
+      }
+
+      op fsmInitialState (as map: fsm_instance) as string ==> {
+            mut as string: res = ""
+            route {
+                  "initial" in fsm_instance ==> {
+                        res = "" + fsm_instance["initial"]
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op fsmFinalStates (as map: fsm_instance) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  "finals" in fsm_instance ==> {
+                        res = fsm_instance["finals"] as list of data
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op fsmStates (as map: fsm_instance) as list of data ==> {
+            mut as list of data: res = []
+            route {
+                  "states" in fsm_instance ==> {
+                        res = fsm_instance["states"] as list of data
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op fsmEvents (as map: fsm_instance) as list of data ==> {
+            mut as list of data: events = []
+            mut as map: trans = map{}
+            route {
+                  "transitions" in fsm_instance ==> {
+                        trans = fsm_instance["transitions"] as map
+                  }
+            }
+            infinite (s in trans) {
+                  mut as map: event_map = trans[s] as map
+                  infinite (ev in event_map) {
+                        events = _listPushUnique(events, "" + ev)
+                  }
+            }
+            emit(nice, events, "ok")
+      }
+
+      #L ==============================================================================
+}

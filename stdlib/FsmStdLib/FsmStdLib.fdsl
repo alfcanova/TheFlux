@@ -1,0 +1,63 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FsmStdLib
+#L Arquivo Agregador Mestre e Operacoes Utilitarias Compartilhadas
+#L ==============================================================================
+
+#L --- Modulos de Dominio ---
+use FsmDefinition.fdsl
+use FsmQuery.fdsl
+use FsmExecution.fdsl
+use FsmAudit.fdsl
+use FsmExport.fdsl
+
+agent (FsmStdLib) {
+
+      #L ==============================================================================
+      #L Utilitarios Internos de Listas e Estados Compartilhados (_list*)
+      #L ==============================================================================
+
+      op _listContains (as list of data: lst, as string: item) as bool ==> {
+            mut as bool: found = false
+            infinite (x in lst) {
+                  mut as string: s = "" + x
+                  route {
+                        s == item ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      op _listPushBack (as list of data: lst, as data: item) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: n = 0
+            infinite (x in lst) {
+                  n = n + 1
+                  res[n] = x
+            }
+            n = n + 1
+            res[n] = item
+            emit(nice, res, "ok")
+      }
+
+      op _listPushUnique (as list of data: lst, as string: item) as list of data ==> {
+            mut as bool: exists = _listContains(lst, item)
+            route {
+                  exists ==> {
+                        emit(nice, lst, "ok")
+                  }
+            }
+            mut as list of data: res = _listPushBack(lst, item)
+            emit(nice, res, "ok")
+      }
+
+      op _listLength (as list of data: lst) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in lst) {
+                  count = count + 1
+            }
+            emit(nice, count, "ok")
+      }
+}

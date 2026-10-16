@@ -1,0 +1,144 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LowLevelStdLib
+#L Dominio: LowLevelShiftRotate
+#L ==============================================================================
+
+contract (LowLevelShiftRotateContract) {
+      op lowShiftLeft (as int64: value, as int64: bits) as int64
+      op lowShiftRight (as int64: value, as int64: bits) as int64
+      op lowShiftRightLogical (as int64: value, as int64: bits) as int64
+      op lowRotateLeft (as int64: value, as int64: bits, as int64: width) as int64
+      op lowRotateRight (as int64: value, as int64: bits, as int64: width) as int64
+      op lowRotateLeft64 (as int64: value, as int64: bits) as int64
+      op lowRotateRight64 (as int64: value, as int64: bits) as int64
+      op lowRotateLeft32 (as int64: value, as int64: bits) as int64
+      op lowRotateRight32 (as int64: value, as int64: bits) as int64
+}
+
+agent (LowLevelStdLib) impl LowLevelShiftRotateContract {
+      #L LowLevelShiftRotateContract
+      #L =====================================================================
+
+      op lowShiftLeft (as int64: value, as int64: bits) as int64 ==> {
+            route {
+                  bits <= 0 ==> { emit(nice, value, "ok") }
+                  bits >= 64 ==> { emit(nice, 0, "ok") }
+            }
+            emit(nice, value << bits, "ok")
+      }
+
+      op lowShiftRight (as int64: value, as int64: bits) as int64 ==> {
+            route {
+                  bits <= 0 ==> { emit(nice, value, "ok") }
+                  bits >= 64 ==> {
+                        route {
+                              value < 0 ==> { emit(nice, -1, "ok") }
+                              _ ==> { emit(nice, 0, "ok") }
+                        }
+                  }
+            }
+            emit(nice, value >> bits, "ok")
+      }
+
+      op lowShiftRightLogical (as int64: value, as int64: bits) as int64 ==> {
+            route {
+                  bits <= 0 ==> { emit(nice, value, "ok") }
+                  bits >= 64 ==> { emit(nice, 0, "ok") }
+            }
+            emit(nice, value >>> bits, "ok")
+      }
+
+      op lowRotateLeft64 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: s = bits /r 64
+            route {
+                  s < 0 ==> { s = s + 64 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: res = (value << s) | (value >>> (64 - s))
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateRight64 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: s = bits /r 64
+            route {
+                  s < 0 ==> { s = s + 64 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, value, "ok") }
+            }
+            mut as int64: res = (value >>> s) | (value << (64 - s))
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateLeft32 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: v32 = value & 4294967295
+            mut as int64: s = bits /r 32
+            route {
+                  s < 0 ==> { s = s + 32 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, v32, "ok") }
+            }
+            mut as int64: res = ((v32 << s) | (v32 >>> (32 - s))) & 4294967295
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateRight32 (as int64: value, as int64: bits) as int64 ==> {
+            mut as int64: v32 = value & 4294967295
+            mut as int64: s = bits /r 32
+            route {
+                  s < 0 ==> { s = s + 32 }
+            }
+            route {
+                  s == 0 ==> { emit(nice, v32, "ok") }
+            }
+            mut as int64: res = ((v32 >>> s) | (v32 << (32 - s))) & 4294967295
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateLeft (as int64: value, as int64: bits, as int64: width) as int64 ==> {
+            route {
+                  width == 64 ==> { emit(nice, lowRotateLeft64(value, bits), "ok") }
+                  width == 32 ==> { emit(nice, lowRotateLeft32(value, bits), "ok") }
+            }
+            mut as int64: mask = 255
+            route {
+                  width == 16 ==> { mask = 65535 }
+            }
+            mut as int64: vw = value & mask
+            mut as int64: s = bits /r width
+            route {
+                  s < 0 ==> { s = s + width }
+            }
+            route {
+                  s == 0 ==> { emit(nice, vw, "ok") }
+            }
+            mut as int64: res = ((vw << s) | (vw >>> (width - s))) & mask
+            emit(nice, res, "ok")
+      }
+
+      op lowRotateRight (as int64: value, as int64: bits, as int64: width) as int64 ==> {
+            route {
+                  width == 64 ==> { emit(nice, lowRotateRight64(value, bits), "ok") }
+                  width == 32 ==> { emit(nice, lowRotateRight32(value, bits), "ok") }
+            }
+            mut as int64: mask = 255
+            route {
+                  width == 16 ==> { mask = 65535 }
+            }
+            mut as int64: vw = value & mask
+            mut as int64: s = bits /r width
+            route {
+                  s < 0 ==> { s = s + width }
+            }
+            route {
+                  s == 0 ==> { emit(nice, vw, "ok") }
+            }
+            mut as int64: res = ((vw >>> s) | (vw << (width - s))) & mask
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

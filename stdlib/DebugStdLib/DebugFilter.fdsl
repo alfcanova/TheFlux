@@ -1,0 +1,39 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugFilter
+#L ==============================================================================
+
+contract (DebugFilterContract) {
+      op debugLevelShouldLog (as int64: current_level, as int64: message_level) as bool
+      op debugLevelName (as int64: level) as string
+      op debugTagMatches (as string: active_tags, as string: target_tag) as bool
+}
+
+agent (DebugStdLib) impl DebugFilterContract {
+      #L 9. DebugFilterContract
+      #L ==============================================================================
+      op debugLevelShouldLog (as int64: current_level, as int64: message_level) as bool ==> {
+            emit(nice, current_level >= message_level, "ok")
+      }
+
+      op debugLevelName (as int64: level) as string ==> {
+            route {
+                  level == 1 ==> { emit(nice, "ERROR", "ok") }
+                  level == 2 ==> { emit(nice, "WARN", "ok") }
+                  level == 3 ==> { emit(nice, "INFO", "ok") }
+                  level == 4 ==> { emit(nice, "DEBUG", "ok") }
+                  _ ==> { emit(nice, "UNKNOWN", "ok") }
+            }
+      }
+
+      op debugTagMatches (as string: active_tags, as string: target_tag) as bool ==> {
+            route {
+                  active_tags == "*" or active_tags == target_tag ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+}

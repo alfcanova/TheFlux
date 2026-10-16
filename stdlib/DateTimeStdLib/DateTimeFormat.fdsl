@@ -1,0 +1,60 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DateTimeStdLib
+#L Dominio: DateTimeFormat
+#L ==============================================================================
+
+contract (DateTimeFormatContract) {
+      op dateTimeEpoch () as datetime
+      op dateTimeNow () as datetime
+      op dateTimeToday () as datetime
+      op dateTimeTime () as datetime
+      op dateTimeNowFormatted () as string
+      op dateTimeFormatDuration (as int64: duration_ns) as string
+      op dateTimeParseIso (as string: text) as datetime
+      op dateTimeToIso (as datetime: value) as string
+      op dateTimeToString (as datetime: value) as string
+      op dateTimeFormat (as datetime: value, as string: pattern) as string
+}
+
+agent (DateTimeStdLib) impl DateTimeFormatContract {
+      #L -- DateTimeFormatContract ------------------------------------
+      op dateTimeEpoch () as datetime ==> {
+            emit(nice, 1970-01-01T00:00:00.000000000Z, "ok")
+      }
+
+      op dateTimeNow () as datetime ==> {
+            emit(nice, stdDateTimeNow(), "ok")
+      }
+
+      op dateTimeToday () as datetime ==> {
+            emit(nice, stdDateTimeToday(), "ok")
+      }
+
+      op dateTimeTime () as datetime ==> {
+            emit(nice, stdDateTimeTime(), "ok")
+      }
+
+      op dateTimeNowFormatted () as string ==> {
+            emit(nice, stdGetCurrentTimeNsString(), "ok")
+      }
+
+      op dateTimeFormatDuration (as int64: duration_ns) as string ==> {
+            emit(nice, stdFormatDurationNs(duration_ns), "ok")
+      }
+
+      op dateTimeParseIso (as string: text) as datetime ==> {
+            emit(nice, stdDateTimeParseIso(text), "ok")
+      }
+
+      op dateTimeToIso (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op dateTimeToString (as datetime: value) as string ==> {
+            emit(nice, stdDateTimeToIso(value), "ok")
+      }
+
+      op dateTimeFormat (as datetime: value, as string: pattern) as string ==> {
+            emit(nice, stdDateTimeFormat(value, pattern), "ok")
+      }
+}

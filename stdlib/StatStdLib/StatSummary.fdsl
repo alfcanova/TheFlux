@@ -1,0 +1,170 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StatStdLib
+#L Dominio: StatSummary
+#L ==============================================================================
+
+contract (StatSummaryContract) {
+      op statFiveNumberSummary (as list of data: data_points) as list of data
+      op statDetectOutliersIqr (as list of data: data_points, as float64: multiplier) as list of data
+      op statFrequencyTable (as list of data: data_points) as map
+      op statHistogramBins (as list of data: data_points, as int64: bin_count) as list of data
+      op statHistogramCounts (as list of data: data_points, as list of data: bins) as list of data
+      op statDescribe (as list of data: data_points) as map
+}
+
+agent (StatStdLib) impl StatSummaryContract {
+      #L 8. StatSummaryContract
+      #L ==============================================================================
+
+      op statFiveNumberSummary (as list of data: data_points) as list of data ==> {
+            mut as float64: mn = statMin(data_points)
+            mut as float64: q1 = statQuantile(data_points, 0.25)
+            mut as float64: med = statMedian(data_points)
+            mut as float64: q3 = statQuantile(data_points, 0.75)
+            mut as float64: mx = statMax(data_points)
+            mut as list of data: res = [mn, q1, med, q3, mx]
+            emit(nice, res, "ok")
+      }
+
+      op statDetectOutliersIqr (as list of data: data_points, as float64: multiplier) as list of data ==> {
+            mut as float64: q1 = statQuantile(data_points, 0.25)
+            mut as float64: q3 = statQuantile(data_points, 0.75)
+            mut as float64: iqr = q3 - q1
+            mut as float64: lower_fence = q1 - (multiplier * iqr)
+            mut as float64: upper_fence = q3 + (multiplier * iqr)
+
+            mut as list of data: outliers = []
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  route {
+                        v < lower_fence or v > upper_fence ==> {
+                              outliers[_statLen(outliers) + 1] = v
+                        }
+                  }
+            }
+            emit(nice, outliers, "ok")
+      }
+
+      op statFrequencyTable (as list of data: data_points) as map ==> {
+            mut as map: freq = map{}
+            mut as list of data: seen_keys = []
+            infinite (x in data_points) {
+                  mut as string: k = "" + (x as float64)
+                  mut as bool: found = false
+                  infinite (sk in seen_keys) {
+                        route {
+                              (sk as string) == k ==> {
+                                    found = true
+                              }
+                        }
+                  }
+                  route {
+                        found == false ==> {
+                              freq[k] = 1
+                              mut as int64: sklen = 0
+                              infinite (s in seen_keys) { sklen = sklen + 1 }
+                              seen_keys[sklen + 1] = k
+                        }
+                        _ ==> {
+                              freq[k] = (freq[k] as int64) + 1
+                        }
+                  }
+            }
+            emit(nice, freq, "ok")
+      }
+
+      op statHistogramBins (as list of data: data_points, as int64: bin_count) as list of data ==> {
+            mut as list of data: bins = []
+            route {
+                  bin_count <= 0 ==> {
+                        emit(nice, bins, "ok")
+                  }
+            }
+            mut as float64: mn = statMin(data_points)
+            mut as float64: mx = statMax(data_points)
+            mut as float64: width = (mx - mn) /f (bin_count as float64)
+
+            infinite (i in 0 .. bin_count) {
+                  mut as float64: b_edge = mn + ((i as float64) * width)
+                  bins[_statLen(bins) + 1] = b_edge
+            }
+            emit(nice, bins, "ok")
+      }
+
+      op statHistogramCounts (as list of data: data_points, as list of data: bins) as list of data ==> {
+            mut as int64: num_edges = _statLen(bins)
+            mut as list of data: counts = []
+            route {
+                  num_edges <= 1 ==> {
+                        emit(nice, counts, "ok")
+                  }
+            }
+            mut as int64: num_bins = num_edges - 1
+            infinite (i in 1 .. num_bins) {
+                  counts[_statLen(counts) + 1] = 0
+            }
+
+            infinite (x in data_points) {
+                  mut as float64: v = x as float64
+                  infinite (b in 1 .. num_bins) {
+                        mut as float64: left = bins[b] as float64
+                        mut as float64: right = bins[b + 1] as float64
+                        route {
+                              b == num_bins ==> {
+                                    route {
+                                          v >= left and v <= right ==> {
+                                                counts[b] = (counts[b] as int64) + 1
+                                                break
+                                          }
+                                    }
+                              }
+                              _ ==> {
+                                    route {
+                                          v >= left and v < right ==> {
+                                                counts[b] = (counts[b] as int64) + 1
+                                                break
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, counts, "ok")
+      }
+
+      op statDescribe (as list of data: data_points) as map ==> {
+            mut as map: desc = map{}
+            mut as int64: n = _statLen(data_points)
+            desc["count"] = n as float64
+            route {
+                  n == 0 ==> {
+                        desc["mean"] = 0.0
+                        desc["std_dev"] = 0.0
+                        desc["min"] = 0.0
+                        desc["q1"] = 0.0
+                        desc["median"] = 0.0
+                        desc["q3"] = 0.0
+                        desc["max"] = 0.0
+                        desc["iqr"] = 0.0
+                        desc["skewness"] = 0.0
+                        emit(nice, desc, "ok")
+                  }
+            }
+            mut as float64: mn = statMin(data_points)
+            mut as float64: mx = statMax(data_points)
+            mut as float64: q1 = statQuantile(data_points, 0.25)
+            mut as float64: med = statMedian(data_points)
+            mut as float64: q3 = statQuantile(data_points, 0.75)
+
+            desc["mean"] = statMean(data_points)
+            desc["std_dev"] = statStdDevSample(data_points)
+            desc["min"] = mn
+            desc["q1"] = q1
+            desc["median"] = med
+            desc["q3"] = q3
+            desc["max"] = mx
+            desc["iqr"] = q3 - q1
+            desc["skewness"] = statSkewnessSample(data_points)
+            emit(nice, desc, "ok")
+      }
+}

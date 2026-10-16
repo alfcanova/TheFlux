@@ -1,0 +1,353 @@
+contract (CombinatoricsContract) {
+      op factorial64 (as int64: value) as int64
+      op factorial32 (as int32: value) as int32
+      op factorial16 (as int16: value) as int16
+      op arrangements64 (as int64: n, as int64: k) as int64
+      op arrangements32 (as int32: n, as int32: k) as int32
+      op arrangements16 (as int16: n, as int16: k) as int16
+      op arrangementsWithRepetition64 (as int64: n, as int64: k) as int64
+      op arrangementsWithRepetition32 (as int32: n, as int32: k) as int32
+      op arrangementsWithRepetition16 (as int16: n, as int16: k) as int16
+      op combinations64 (as int64: n, as int64: k) as int64
+      op combinations32 (as int32: n, as int32: k) as int32
+      op combinations16 (as int16: n, as int16: k) as int16
+      op combinationsWithRepetition64 (as int64: n, as int64: k) as int64
+      op combinationsWithRepetition32 (as int32: n, as int32: k) as int32
+      op combinationsWithRepetition16 (as int16: n, as int16: k) as int16
+      op permutations64 (as int64: n, as int64: k) as int64
+      op permutations32 (as int32: n, as int32: k) as int32
+      op permutations16 (as int16: n, as int16: k) as int16
+      op permutationsWithRepetition64 (as int64: n, as int64: k) as int64
+      op permutationsWithRepetition32 (as int32: n, as int32: k) as int32
+      op permutationsWithRepetition16 (as int16: n, as int16: k) as int16
+      op greatestCommonDivisor64 (as int64: n, as int64: k) as int64
+      op greatestCommonDivisor32 (as int32: n, as int32: k) as int32
+      op greatestCommonDivisor16 (as int16: n, as int16: k) as int16
+      op leastCommonMultiple64 (as int64: n, as int64: k) as int64
+      op leastCommonMultiple32 (as int32: n, as int32: k) as int32
+      op leastCommonMultiple16 (as int16: n, as int16: k) as int16
+}
+
+agent (MathStdLib) impl CombinatoricsContract {
+      op factorial64 (as int64: value) as int64 ==> {
+            mut as int64: zero_val = 0
+            mut as int64: one_val = 1
+            route {
+                  value < 0 ==> {
+                        emit(fail, zero_val, "fatorial indefinido para inteiros negativos")
+                  }
+                  (value == 0) or (value == 1) ==> {
+                        emit(nice, one_val, "ok")
+                  }
+                  value > 1 ==> {
+                        mut as int64: res = 1
+                        mut as int64: i = 2
+                        infinite {
+                              route {
+                                    i > value ==> {
+                                          break
+                                    }
+                              }
+                              res = res * i
+                              i = i + 1
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, one_val, "ok")
+      }
+
+      op factorial32 (as int32: value) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  value < (0 as int32) ==> {
+                        emit(fail, zero_val, "fatorial indefinido para inteiros negativos")
+                  }
+            }
+            mut as int32: res = (factorial64(value as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+
+      op factorial16 (as int16: value) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  value < (0 as int16) ==> {
+                        emit(fail, zero_val, "fatorial indefinido para inteiros negativos")
+                  }
+            }
+            mut as int16: res = (factorial64(value as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op arrangements64 (as int64: n, as int64: k) as int64 ==> {
+            mut as int64: zero_val = 0
+            mut as int64: one_val = 1
+            route {
+                  (n < 0) or (k < 0) or (k > n) ==> {
+                        emit(fail, zero_val, "arranjo requer 0 <= k <= n")
+                  }
+                  k == 0 ==> {
+                        emit(nice, one_val, "ok")
+                  }
+                  (k > 0) and (k <= n) ==> {
+                        mut as int64: res = 1
+                        mut as int64: i = n - k + 1
+                        infinite {
+                              route {
+                                    i > n ==> {
+                                          break
+                                    }
+                              }
+                              res = res * i
+                              i = i + 1
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, one_val, "ok")
+      }
+
+      op arrangements32 (as int32: n, as int32: k) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  (n < (0 as int32)) or (k < (0 as int32)) or (k > n) ==> {
+                        emit(fail, zero_val, "arranjo requer 0 <= k <= n")
+                  }
+            }
+            mut as int32: res = (arrangements64(n as int64, k as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+
+      op arrangements16 (as int16: n, as int16: k) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  (n < (0 as int16)) or (k < (0 as int16)) or (k > n) ==> {
+                        emit(fail, zero_val, "arranjo requer 0 <= k <= n")
+                  }
+            }
+            mut as int16: res = (arrangements64(n as int64, k as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op arrangementsWithRepetition64 (as int64: n, as int64: k) as int64 ==> {
+            mut as int64: zero_val = 0
+            mut as int64: one_val = 1
+            route {
+                  (n < 0) or (k < 0) ==> {
+                        emit(fail, zero_val, "arranjo com repeticao requer n >= 0 e k >= 0")
+                  }
+                  k == 0 ==> {
+                        emit(nice, one_val, "ok")
+                  }
+                  k > 0 ==> {
+                        mut as int64: res = 1
+                        mut as int64: i = 1
+                        infinite {
+                              route {
+                                    i > k ==> {
+                                          break
+                                    }
+                              }
+                              res = res * n
+                              i = i + 1
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, one_val, "ok")
+      }
+
+      op arrangementsWithRepetition32 (as int32: n, as int32: k) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  (n < (0 as int32)) or (k < (0 as int32)) or (k > n) ==> {
+                        emit(fail, zero_val, "arranjo com repeticao requer n >= 0 e k >= 0")
+                  }
+            }
+            mut as int32: res = (arrangementsWithRepetition64(n as int64, k as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+
+      op arrangementsWithRepetition16 (as int16: n, as int16: k) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  (n < (0 as int16)) or (k < (0 as int16)) or (k > n) ==> {
+                        emit(fail, zero_val, "arranjo com repeticao requer n >= 0 e k >= 0")
+                  }
+            }
+            mut as int16: res = (arrangementsWithRepetition64(n as int64, k as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op combinations64 (as int64: n, as int64: k) as int64 ==> {
+            mut as int64: zero_val = 0
+            mut as int64: one_val = 1
+            route {
+                  (n < 0) or (k < 0) or (k > n) ==> {
+                        emit(fail, zero_val, "combinacoes requerem 0 <= k <= n")
+                  }
+                  (k == 0) or (k == n) ==> {
+                        emit(nice, one_val, "ok")
+                  }
+                  (k > 0) and (k < n) ==> {
+                        mut as int64: k_eff = k
+                        route {
+                              k_eff > (n - k_eff) ==> {
+                                    k_eff = n - k_eff
+                              }
+                        }
+                        mut as int64: res = 1
+                        mut as int64: i = 1
+                        infinite {
+                              route {
+                                    i > k_eff ==> {
+                                          break
+                                    }
+                              }
+                              res = (res * (n - i + 1)) /i i
+                              i = i + 1
+                        }
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, one_val, "ok")
+      }
+
+      op combinations32 (as int32: n, as int32: k) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  (n < (0 as int32)) or (k < (0 as int32)) or (k > n) ==> {
+                        emit(fail, zero_val, "combinacoes requerem 0 <= k <= n")
+                  }
+            }
+            mut as int32: res = (combinations64(n as int64, k as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+
+      op combinations16 (as int16: n, as int16: k) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  (n < (0 as int16)) or (k < (0 as int16)) or (k > n) ==> {
+                        emit(fail, zero_val, "combinacoes requerem 0 <= k <= n")
+                  }
+            }
+            mut as int16: res = (combinations64(n as int64, k as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op combinationsWithRepetition64 (as int64: n, as int64: k) as int64 ==> {
+            mut as int64: zero_val = 0
+            mut as int64: one_val = 1
+            route {
+                  (n <= 0) or (k < 0) ==> {
+                        emit(fail, zero_val, "combinacao com repeticao requer n >= 1 e k >= 0")
+                  }
+                  k == 0 ==> {
+                        emit(nice, one_val, "ok")
+                  }
+                  (n > 0) and (k > 0) ==> {
+                        mut as int64: res = (combinations64(n + k - 1, k)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, one_val, "ok")
+      }
+
+      op combinationsWithRepetition32 (as int32: n, as int32: k) as int32 ==> {
+            mut as int32: zero_val = 0 as int32
+            route {
+                  (n <= (0 as int32)) or (k < (0 as int32)) ==> {
+                        emit(fail, zero_val, "combinacao com repeticao requer n >= 1 e k >= 0")
+                  }
+            }
+            mut as int32: res = (combinationsWithRepetition64(n as int64, k as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+
+      op combinationsWithRepetition16 (as int16: n, as int16: k) as int16 ==> {
+            mut as int16: zero_val = 0 as int16
+            route {
+                  (n <= (0 as int16)) or (k < (0 as int16)) ==> {
+                        emit(fail, zero_val, "combinacao com repeticao requer n >= 1 e k >= 0")
+                  }
+            }
+            mut as int16: res = (combinationsWithRepetition64(n as int64, k as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op permutations64 (as int64: n, as int64: k) as int64 ==> {
+            mut as int64: res = (arrangements64(n, k)).val
+            emit(nice, res, "ok")
+      }
+      op permutations32 (as int32: n, as int32: k) as int32 ==> {
+            mut as int32: res = (arrangements32(n, k)).val as int32
+            emit(nice, res, "ok")
+      }
+      op permutations16 (as int16: n, as int16: k) as int16 ==> {
+            mut as int16: res = (arrangements16(n, k)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op permutationsWithRepetition64 (as int64: n, as int64: k) as int64 ==> {
+            mut as int64: res = (combinations64(n, k)).val
+            emit(nice, res, "ok")
+      }
+      op permutationsWithRepetition32 (as int32: n, as int32: k) as int32 ==> {
+            mut as int32: res = (combinations32(n, k)).val as int32
+            emit(nice, res, "ok")
+      }
+      op permutationsWithRepetition16 (as int16: n, as int16: k) as int16 ==> {
+            mut as int16: res = (combinations16(n, k)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op greatestCommonDivisor64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: a = (absolute64(left)).val
+            mut as int64: b = (absolute64(right)).val
+            infinite {
+                  route {
+                        b == 0 ==> {
+                              break
+                        }
+                  }
+                  mut as int64: temp = b
+                  b = a /r b
+                  a = temp
+            }
+            emit(nice, a, "ok")
+      }
+
+      op greatestCommonDivisor32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: res = (greatestCommonDivisor64(left as int64, right as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+      op greatestCommonDivisor16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: res = (greatestCommonDivisor64(left as int64, right as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+
+      op leastCommonMultiple64 (as int64: left, as int64: right) as int64 ==> {
+            mut as int64: zero_val = 0
+            route {
+                  (left == 0) or (right == 0) ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  (left != 0) and (right != 0) ==> {
+                        mut as int64: gcd_val = (greatestCommonDivisor64(left, right)).val
+                        mut as int64: prod = (absolute64(left * right)).val
+                        mut as int64: res = prod /i gcd_val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op leastCommonMultiple32 (as int32: left, as int32: right) as int32 ==> {
+            mut as int32: res = (leastCommonMultiple64(left as int64, right as int64)).val as int32
+            emit(nice, res, "ok")
+      }
+      op leastCommonMultiple16 (as int16: left, as int16: right) as int16 ==> {
+            mut as int16: res = (leastCommonMultiple64(left as int64, right as int64)).val as int16
+            emit(nice, res, "ok")
+      }
+}

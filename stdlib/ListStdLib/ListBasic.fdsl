@@ -1,0 +1,200 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ListStdLib
+#L Dominio: ListBasic
+#L ==============================================================================
+
+contract (ListBasicContract) {
+      op listLength (as list of data: value) as int64
+      op listIsEmpty (as list of data: value) as bool
+      op listIsNotEmpty (as list of data: value) as bool
+      op listContains (as list of data: value, as data: item) as bool
+      op listContainsAny (as list of data: value, as list of data: items) as bool
+      op listContainsAll (as list of data: items, as list of data: subset) as bool
+      op listClearAll (as list of data: value) as list of data
+      op listSingleton (as data: value) as list of data
+      op listSingletonInt (as int64: value) as list of data
+      op listSingletonString (as string: value) as list of data
+      op listClone (as list of data: value) as list of data
+      op listToList (as data: value) as list of data
+      op listToSet (as data: value) as set of data
+      op listToMap (as list of data: value) as map
+      op listToString (as list of data: value) as string
+      op listFromList (as list of data: items) as list of data
+      op listFromSet (as set of data: items) as list of data
+      op listFromString (as string: text) as list of data
+}
+
+agent (ListStdLib) impl ListBasicContract {
+      #L -- ListBasicContract -----------------------------------------
+      op listLength (as list of data: value) as int64 ==> {
+            mut as int64: count = 0
+            infinite (x in value) {
+                  count = count + 1
+            }
+            imut as int64: res = count
+            emit(nice, res, "ok")
+      }
+
+      op listIsEmpty (as list of data: value) as bool ==> {
+            mut as bool: empty = true
+            infinite (x in value) {
+                  empty = false
+                  break
+            }
+            imut as bool: res = empty
+            emit(nice, res, "ok")
+      }
+
+      op listIsNotEmpty (as list of data: value) as bool ==> {
+            mut as bool: empty = true
+            infinite (x in value) {
+                  empty = false
+                  break
+            }
+            imut as bool: res = not empty
+            emit(nice, res, "ok")
+      }
+
+      op listContains (as list of data: value, as data: item) as bool ==> {
+            mut as bool: found = false
+            infinite (x in value) {
+                  route {
+                        x == item ==> {
+                              found = true
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found
+            emit(nice, res, "ok")
+      }
+
+      op listContainsAny (as list of data: value, as list of data: items) as bool ==> {
+            mut as bool: found_any = false
+            infinite (it in items) {
+                  infinite (x in value) {
+                        route {
+                              x == it ==> {
+                                    found_any = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        found_any ==> {
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = found_any
+            emit(nice, res, "ok")
+      }
+
+      op listContainsAll (as list of data: items, as list of data: subset) as bool ==> {
+            mut as bool: all_found = true
+            infinite (sub in subset) {
+                  mut as bool: found = false
+                  infinite (x in items) {
+                        route {
+                              x == sub ==> {
+                                    found = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not found ==> {
+                              all_found = false
+                              break
+                        }
+                  }
+            }
+            imut as bool: res = all_found
+            emit(nice, res, "ok")
+      }
+
+      op listClearAll (as list of data: value) as list of data ==> {
+            mut as list of data: res = []
+            emit(nice, res, "ok")
+      }
+
+      op listSingleton (as data: value) as list of data ==> {
+            mut as list of data: res = [value]
+            emit(nice, res, "ok")
+      }
+
+      op listSingletonInt (as int64: value) as list of data ==> {
+            mut as list of data: res = [value]
+            emit(nice, res, "ok")
+      }
+
+      op listSingletonString (as string: value) as list of data ==> {
+            mut as list of data: res = [value]
+            emit(nice, res, "ok")
+      }
+
+      op listClone (as list of data: value) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in value) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listToList (as data: value) as list of data ==> {
+            imut as list of data: res = value as list of data
+            emit(nice, res, "ok")
+      }
+
+      op listToSet (as data: value) as set of data ==> {
+            imut as set of data: res = value as set of data
+            emit(nice, res, "ok")
+      }
+
+      op listToMap (as list of data: value) as map ==> {
+            mut as map: m = map{}
+            infinite (p in value) {
+                  match (p) {
+                        [k, v] ==> {
+                              m[k] = v
+                        }
+                        [..pair] ==> {
+                              m[pair[1]] = pair[2]
+                        }
+                        _ ==> none
+                  }
+            }
+            imut as map: res = m
+            emit(nice, res, "ok")
+      }
+
+      op listToString (as list of data: value) as string ==> {
+            emit(nice, listJoin(value, ", "), "ok")
+      }
+
+      op listFromList (as list of data: items) as list of data ==> {
+            emit(nice, listClone(items), "ok")
+      }
+
+      op listFromSet (as set of data: items) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (x in items) {
+                  rlen = rlen + 1
+                  res[rlen] = x
+            }
+            emit(nice, res, "ok")
+      }
+
+      op listFromString (as string: text) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: rlen = 0
+            infinite (c in text) {
+                  rlen = rlen + 1
+                  res[rlen] = c
+            }
+            emit(nice, res, "ok")
+      }
+}

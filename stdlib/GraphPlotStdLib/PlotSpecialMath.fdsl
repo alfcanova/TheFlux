@@ -1,0 +1,76 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GraphPlotStdLib
+#L Dominio: PlotSpecialMath
+#L ==============================================================================
+
+contract (PlotSpecialMathContract) {
+      op plotParametric2D (as map: ctx, as list of float64: xs, as list of float64: ys) as map
+      op plotParametric3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map
+      op plotBifurcation (as map: ctx, as float64: r_min, as float64: r_max, as int64: n_points) as map
+      op plotPhaseSpace (as map: ctx, as list of float64: qs, as list of float64: ps) as map
+      op plotNetworkGraph (as map: ctx, as list of data: nodes, as list of data: edges) as map
+      op plotVenn (as map: ctx, as int64: set_count, as list of float64: subset_sizes) as map
+}
+
+agent (GraphPlotStdLib) impl PlotSpecialMathContract {
+      #L 8. PlotSpecialMathContract (Família 6)
+      #L =====================================================================
+
+      op plotParametric2D (as map: ctx, as list of float64: xs, as list of float64: ys) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "parametric2d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotParametric3D (as map: ctx, as list of float64: xs, as list of float64: ys, as list of float64: zs) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "parametric3d"
+            layer["xs"] = xs
+            layer["ys"] = ys
+            layer["zs"] = zs
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotBifurcation (as map: ctx, as float64: r_min, as float64: r_max, as int64: n_points) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "bifurcation"
+            layer["rmin"] = r_min
+            layer["rmax"] = r_max
+            layer["npts"] = n_points
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotPhaseSpace (as map: ctx, as list of float64: qs, as list of float64: ps) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "phasespace"
+            layer["qs"] = qs
+            layer["ps"] = ps
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotNetworkGraph (as map: ctx, as list of data: nodes, as list of data: edges) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "network_graph"
+            layer["nodes"] = nodes
+            layer["edges"] = edges
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      op plotVenn (as map: ctx, as int64: set_count, as list of float64: subset_sizes) as map ==> {
+            mut as map: layer = map{}
+            layer["type"] = "venn"
+            layer["sets"] = set_count
+            layer["sizes"] = subset_sizes
+            mut as map: res = _addLayer(ctx, layer)
+            emit(nice, res, "ok")
+      }
+
+      #L =====================================================================
+}

@@ -1,0 +1,92 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysKinematics
+#L ==============================================================================
+
+contract (PhysKinematicsContract) {
+      op physVelocity (as float64: v0, as float64: a, as float64: t) as float64
+      op physDisplacement (as float64: s0, as float64: v0, as float64: a, as float64: t) as float64
+      op physTorricelli (as float64: v0, as float64: a, as float64: delta_s) as float64
+      op physAverageSpeed (as float64: distance, as float64: time) as float64
+      op physCircularAngularVelocity (as float64: angle_rad, as float64: time) as float64
+      op physCircularLinearVelocity (as float64: omega, as float64: radius) as float64
+      op physCentripetalAcceleration (as float64: velocity, as float64: radius) as float64
+      op physSimpleHarmonicPeriod (as float64: mass, as float64: spring_k) as float64
+      op physPendulumPeriod (as float64: length, as float64: gravity) as float64
+}
+
+agent (PhysStdLib) impl PhysKinematicsContract {
+      #L PhysKinematicsContract (Cinematica)
+      #L =====================================================================
+      op physVelocity (as float64: v0, as float64: a, as float64: t) as float64 ==> {
+            mut as float64: v = v0 + (a * t)
+            emit(nice, v, "ok")
+      }
+      op physDisplacement (as float64: s0, as float64: v0, as float64: a, as float64: t) as float64 ==> {
+            mut as float64: s = s0 + (v0 * t) + (0.5 * a * (t * t))
+            emit(nice, s, "ok")
+      }
+      op physTorricelli (as float64: v0, as float64: a, as float64: delta_s) as float64 ==> {
+            mut as float64: v2 = (v0 * v0) + (2.0 * a * delta_s)
+            route {
+                  v2 < 0.0 ==> {
+                        emit(fail, 0.0, "velocidade imaginaria em Torricelli")
+                  }
+            }
+            mut as float64: v = v2 ^e 0.5
+            emit(nice, v, "ok")
+      }
+      op physAverageSpeed (as float64: distance, as float64: time) as float64 ==> {
+            route {
+                  time == 0.0 ==> {
+                        emit(fail, 0.0, "tempo zero em velocidade media")
+                  }
+            }
+            mut as float64: v = distance /f time
+            emit(nice, v, "ok")
+      }
+      op physCircularAngularVelocity (as float64: angle_rad, as float64: time) as float64 ==> {
+            route {
+                  time == 0.0 ==> {
+                        emit(fail, 0.0, "tempo zero em velocidade angular")
+                  }
+            }
+            mut as float64: w = angle_rad /f time
+            emit(nice, w, "ok")
+      }
+      op physCircularLinearVelocity (as float64: omega, as float64: radius) as float64 ==> {
+            mut as float64: v = omega * radius
+            emit(nice, v, "ok")
+      }
+      op physCentripetalAcceleration (as float64: velocity, as float64: radius) as float64 ==> {
+            route {
+                  radius == 0.0 ==> {
+                        emit(fail, 0.0, "raio zero em aceleracao centripeta")
+                  }
+            }
+            mut as float64: ac = (velocity * velocity) /f radius
+            emit(nice, ac, "ok")
+      }
+      op physSimpleHarmonicPeriod (as float64: mass, as float64: spring_k) as float64 ==> {
+            route {
+                  spring_k <= 0.0 or mass <= 0.0 ==> {
+                        emit(fail, 0.0, "massa ou constante elastica invalida no MHS")
+                  }
+            }
+            mut as float64: ratio = mass /f spring_k
+            mut as float64: t = (2.0 * C_PI) * (ratio ^e 0.5)
+            emit(nice, t, "ok")
+      }
+      op physPendulumPeriod (as float64: length, as float64: gravity) as float64 ==> {
+            route {
+                  gravity <= 0.0 or length <= 0.0 ==> {
+                        emit(fail, 0.0, "comprimento ou gravidade invalida no pendulo")
+                  }
+            }
+            mut as float64: ratio = length /f gravity
+            mut as float64: t = (2.0 * C_PI) * (ratio ^e 0.5)
+            emit(nice, t, "ok")
+      }
+
+      #L =====================================================================
+}

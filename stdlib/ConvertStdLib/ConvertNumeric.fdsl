@@ -1,0 +1,222 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ConvertStdLib
+#L Dominio: ConvertNumeric
+#L ==============================================================================
+
+contract (ConvertNumericContract) {
+      op convertIntToFloat (as int64: value) as float64
+      op convertFloatToInt (as float64: value) as int64
+      op convertBoolToInt (as bool: value) as int64
+      op convertIntToBool (as int64: value) as bool
+      op convertIntToInt8 (as int64: value) as int8
+      op convertIntToInt8OrDefault (as int64: value, as int8: default) as int8
+      op convertIntToUint8 (as int64: value) as uint8
+      op convertIntToUint8OrDefault (as int64: value, as uint8: default) as uint8
+      op convertIntToInt16 (as int64: value) as int16
+      op convertIntToInt16OrDefault (as int64: value, as int16: default) as int16
+      op convertIntToUint16 (as int64: value) as uint16
+      op convertIntToUint16OrDefault (as int64: value, as uint16: default) as uint16
+      op convertIntToInt32 (as int64: value) as int32
+      op convertIntToInt32OrDefault (as int64: value, as int32: default) as int32
+      op convertIntToUint32 (as int64: value) as uint32
+      op convertIntToUint32OrDefault (as int64: value, as uint32: default) as uint32
+      op convertIntToInt64 (as data: value) as int64
+      op convertIntToUint64 (as data: value) as uint64
+      op convertFloatToFloat16 (as float64: value) as float16
+      op convertFloatToFloat32 (as float64: value) as float32
+      op convertFloatToFloat64 (as float64: value) as float64
+      op convertCastToInt8 (as int64: value) as int8
+      op convertCastToUint8 (as int64: value) as uint8
+      op convertCastToInt16 (as int64: value) as int16
+      op convertCastToUint16 (as int64: value) as uint16
+      op convertCastToInt32 (as int64: value) as int32
+      op convertCastToUint32 (as int64: value) as uint32
+      op convertCastToInt64 (as int32: value) as int64
+      op convertCastToUint64 (as int64: value) as uint64
+      op convertCastToFloat16 (as float64: value) as float16
+      op convertCastToFloat32 (as float64: value) as float32
+      op convertCastToFloat64 (as float64: value) as float64
+      op convertCastToBf16E8M7 (as float32: value) as bf16_e8m7
+      op convertCastToTf32E8M10 (as float32: value) as tf32_e8m10
+      op convertCastToFp8E4M3 (as float32: value) as fp8_e4m3
+      op convertCastToFp8E4M3OrDefault (as float32: value, as fp8_e4m3: default) as fp8_e4m3
+      op convertCastToFp8E5M2 (as float32: value) as fp8_e5m2
+}
+
+agent (ConvertStdLib) impl ConvertNumericContract {
+      #L 1. ConvertNumericContract
+      #L ==============================================================================
+      op convertIntToFloat (as int64: value) as float64 ==> {
+            emit(nice, value as float64, "ok")
+      }
+
+      op convertFloatToInt (as float64: value) as int64 ==> {
+            emit(nice, value as int64, "ok")
+      }
+
+      op convertBoolToInt (as bool: value) as int64 ==> {
+            route {
+                  value ==> { emit(nice, 1, "ok") }
+            }
+            emit(nice, 0, "ok")
+      }
+
+      op convertIntToBool (as int64: value) as bool ==> {
+            emit(nice, value != 0, "ok")
+      }
+
+      op convertIntToInt8 (as int64: value) as int8 ==> {
+            emit(nice, value as int8, "ok")
+      }
+
+      op convertIntToInt8OrDefault (as int64: value, as int8: default) as int8 ==> {
+            route {
+                  value < -128 or value > 127 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as int8, "ok")
+      }
+
+      op convertIntToUint8 (as int64: value) as uint8 ==> {
+            emit(nice, value as uint8, "ok")
+      }
+
+      op convertIntToUint8OrDefault (as int64: value, as uint8: default) as uint8 ==> {
+            route {
+                  value < 0 or value > 255 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as uint8, "ok")
+      }
+
+      op convertIntToInt16 (as int64: value) as int16 ==> {
+            emit(nice, value as int16, "ok")
+      }
+
+      op convertIntToInt16OrDefault (as int64: value, as int16: default) as int16 ==> {
+            route {
+                  value < -32768 or value > 32767 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as int16, "ok")
+      }
+
+      op convertIntToUint16 (as int64: value) as uint16 ==> {
+            emit(nice, value as uint16, "ok")
+      }
+
+      op convertIntToUint16OrDefault (as int64: value, as uint16: default) as uint16 ==> {
+            route {
+                  value < 0 or value > 65535 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as uint16, "ok")
+      }
+
+      op convertIntToInt32 (as int64: value) as int32 ==> {
+            emit(nice, value as int32, "ok")
+      }
+
+      op convertIntToInt32OrDefault (as int64: value, as int32: default) as int32 ==> {
+            route {
+                  value < -2147483648 or value > 2147483647 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as int32, "ok")
+      }
+
+      op convertIntToUint32 (as int64: value) as uint32 ==> {
+            emit(nice, value as uint32, "ok")
+      }
+
+      op convertIntToUint32OrDefault (as int64: value, as uint32: default) as uint32 ==> {
+            route {
+                  value < 0 or value > 4294967295 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as uint32, "ok")
+      }
+
+      op convertIntToInt64 (as data: value) as int64 ==> {
+            emit(nice, value as int64, "ok")
+      }
+
+      op convertIntToUint64 (as data: value) as uint64 ==> {
+            emit(nice, value as uint64, "ok")
+      }
+
+      op convertFloatToFloat16 (as float64: value) as float16 ==> {
+            emit(nice, value as float16, "ok")
+      }
+
+      op convertFloatToFloat32 (as float64: value) as float32 ==> {
+            emit(nice, value as float32, "ok")
+      }
+
+      op convertFloatToFloat64 (as float64: value) as float64 ==> {
+            emit(nice, value as float64, "ok")
+      }
+
+      op convertCastToInt8 (as int64: value) as int8 ==> {
+            emit(nice, value as int8, "ok")
+      }
+
+      op convertCastToUint8 (as int64: value) as uint8 ==> {
+            emit(nice, value as uint8, "ok")
+      }
+
+      op convertCastToInt16 (as int64: value) as int16 ==> {
+            emit(nice, value as int16, "ok")
+      }
+
+      op convertCastToUint16 (as int64: value) as uint16 ==> {
+            emit(nice, value as uint16, "ok")
+      }
+
+      op convertCastToInt32 (as int64: value) as int32 ==> {
+            emit(nice, value as int32, "ok")
+      }
+
+      op convertCastToUint32 (as int64: value) as uint32 ==> {
+            emit(nice, value as uint32, "ok")
+      }
+
+      op convertCastToInt64 (as int32: value) as int64 ==> {
+            emit(nice, value as int64, "ok")
+      }
+
+      op convertCastToUint64 (as int64: value) as uint64 ==> {
+            emit(nice, value as uint64, "ok")
+      }
+
+      op convertCastToFloat16 (as float64: value) as float16 ==> {
+            emit(nice, value as float16, "ok")
+      }
+
+      op convertCastToFloat32 (as float64: value) as float32 ==> {
+            emit(nice, value as float32, "ok")
+      }
+
+      op convertCastToFloat64 (as float64: value) as float64 ==> {
+            emit(nice, value as float64, "ok")
+      }
+
+      op convertCastToBf16E8M7 (as float32: value) as bf16_e8m7 ==> {
+            emit(nice, value as bf16_e8m7, "ok")
+      }
+
+      op convertCastToTf32E8M10 (as float32: value) as tf32_e8m10 ==> {
+            emit(nice, value as tf32_e8m10, "ok")
+      }
+
+      op convertCastToFp8E4M3 (as float32: value) as fp8_e4m3 ==> {
+            emit(nice, value as fp8_e4m3, "ok")
+      }
+
+      op convertCastToFp8E4M3OrDefault (as float32: value, as fp8_e4m3: default) as fp8_e4m3 ==> {
+            route {
+                  value < -448.0 or value > 448.0 ==> { emit(nice, default, "ok") }
+            }
+            emit(nice, value as fp8_e4m3, "ok")
+      }
+
+      op convertCastToFp8E5M2 (as float32: value) as fp8_e5m2 ==> {
+            emit(nice, value as fp8_e5m2, "ok")
+      }
+
+      #L ==============================================================================
+}

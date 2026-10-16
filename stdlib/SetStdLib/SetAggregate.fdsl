@@ -1,0 +1,93 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetAggregate
+#L ==============================================================================
+
+contract (SetAggregateContract) {
+      op setMin (as set of data: items) as data
+      op setMax (as set of data: items) as data
+      op setSum (as set of data: items) as data
+      op setProduct (as set of data: items) as data
+      op setAverage (as set of data: items) as float64
+      op setCountValues (as set of data: items, as data: value) as int64
+}
+
+agent (SetStdLib) impl SetAggregateContract {
+      #L -- SetAggregateContract --------------------------------------
+      op setMin (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: total = stdCollectionLength(l)
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = l[0]
+                  }
+            }
+            mut as data: min_val = l[1]
+            infinite (x in l) {
+                  route {
+                        x < min_val ==> {
+                              min_val = x
+                        }
+                  }
+            }
+            emit(nice, min_val, "ok")
+      }
+
+      op setMax (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: total = stdCollectionLength(l)
+            route {
+                  total == 0 ==> {
+                        mut as data: trigger_err = l[0]
+                  }
+            }
+            mut as data: max_val = l[1]
+            infinite (x in l) {
+                  route {
+                        x > max_val ==> {
+                              max_val = x
+                        }
+                  }
+            }
+            emit(nice, max_val, "ok")
+      }
+
+      op setSum (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as data: acc = 0
+            infinite (x in l) {
+                  acc = acc + x
+            }
+            emit(nice, acc, "ok")
+      }
+
+      op setProduct (as set of data: items) as data ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as data: acc = 1
+            infinite (x in l) {
+                  acc = acc * x
+            }
+            emit(nice, acc, "ok")
+      }
+
+      op setAverage (as set of data: items) as float64 ==> {
+            mut as list of data: l = stdSetToList(items)
+            mut as int64: count = 0
+            mut as float64: sum_val = 0.0
+            infinite (x in l) {
+                  count = count + 1
+                  sum_val = sum_val + (x as float64)
+            }
+            route {
+                  count == 0 ==> {
+                        mut as data: trigger_err = l[0]
+                  }
+            }
+            mut as float64: avg = sum_val /f (count as float64)
+            emit(nice, avg, "ok")
+      }
+
+      op setCountValues (as set of data: items, as data: value) as int64 ==> {
+            emit(nice, setCount(items, value), "ok")
+      }
+}

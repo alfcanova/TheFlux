@@ -1,6 +1,6 @@
 /* TheFlux LLVM runtime: typed stdin input with type re-prompt.
  *
- * Mirrors the behaviour documented in docs/keywords/KW_input.yaml:
+ * Mirrors the behaviour documented in docs/pt/keywords/KW_input.yaml:
  *   - reads a line from stdin after an optional prompt
  *   - validates the value against the declared Flux type (after Enter)
  *   - on mismatch, re-prompts and writes "Digite um <tipo>" in gray

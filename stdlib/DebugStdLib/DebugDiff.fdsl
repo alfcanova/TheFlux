@@ -1,0 +1,104 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugDiff
+#L ==============================================================================
+
+contract (DebugDiffContract) {
+      op debugDiffString (as string: actual, as string: expected) as string
+      op debugDiffList (as list of data: actual, as list of data: expected) as string
+      op debugDiffCount (as list of data: a, as list of data: b) as int64
+}
+
+agent (DebugStdLib) impl DebugDiffContract {
+      #L 6. DebugDiffContract
+      #L ==============================================================================
+      op debugDiffString (as string: actual, as string: expected) as string ==> {
+            route {
+                  actual == expected ==> {
+                        emit(nice, "[DIFF:MATCH] Strings identicas", "ok")
+                  }
+                  _ ==> {
+                        mut as int64: la = 0
+                        infinite (c in actual) { la = la + 1 }
+                        mut as int64: le = 0
+                        infinite (c in expected) { le = le + 1 }
+                        mut as int64: min_len = la
+                        route { le < min_len ==> { min_len = le } }
+                        mut as int64: diff_idx = 0
+                        mut as int64: i = 1
+                        infinite (i <= min_len and diff_idx == 0) {
+                              route {
+                                    actual[i] != expected[i] ==> {
+                                          diff_idx = i
+                                    }
+                              }
+                              i = i + 1
+                        }
+                        route {
+                              diff_idx > 0 ==> {
+                                    emit(nice, "[DIFF:MISMATCH] Divergencia no indice " + diff_idx + ": esperado '" + expected[diff_idx] + "' mas obteve '" + actual[diff_idx] + "'", "ok")
+                              }
+                              _ ==> {
+                                    emit(nice, "[DIFF:LENGTH] Tamanhos divergentes: esperado " + le + " caracteres, obtido " + la, "ok")
+                              }
+                        }
+                  }
+            }
+      }
+
+      op debugDiffList (as list of data: actual, as list of data: expected) as string ==> {
+            mut as int64: la = 0
+            infinite (x in actual) { la = la + 1 }
+            mut as int64: le = 0
+            infinite (x in expected) { le = le + 1 }
+            route {
+                  la != le ==> {
+                        emit(nice, "[DIFF:LIST_LENGTH] Tamanhos divergentes: esperado " + le + " itens, obtido " + la, "ok")
+                  }
+                  _ ==> {
+                        mut as int64: diff_idx = 0
+                        mut as int64: i = 1
+                        infinite (i <= la and diff_idx == 0) {
+                              route {
+                                    actual[i] != expected[i] ==> {
+                                          diff_idx = i
+                                    }
+                              }
+                              i = i + 1
+                        }
+                        route {
+                              diff_idx > 0 ==> {
+                                    emit(nice, "[DIFF:LIST_MISMATCH] Divergencia no item " + diff_idx + ": esperado '" + expected[diff_idx] + "' mas obteve '" + actual[diff_idx] + "'", "ok")
+                              }
+                              _ ==> {
+                                    emit(nice, "[DIFF:MATCH] Listas identicas (" + la + " itens)", "ok")
+                              }
+                        }
+                  }
+            }
+      }
+
+      op debugDiffCount (as list of data: a, as list of data: b) as int64 ==> {
+            mut as int64: la = 0
+            infinite (x in a) { la = la + 1 }
+            mut as int64: lb = 0
+            infinite (x in b) { lb = lb + 1 }
+            mut as int64: min_len = la
+            route { lb < min_len ==> { min_len = lb } }
+            mut as int64: diffs = 0
+            mut as int64: i = 1
+            infinite (i <= min_len) {
+                  route {
+                        a[i] != b[i] ==> { diffs = diffs + 1 }
+                  }
+                  i = i + 1
+            }
+            route {
+                  la > lb ==> { diffs = diffs + (la - lb) }
+                  lb > la ==> { diffs = diffs + (lb - la) }
+            }
+            emit(nice, diffs, "ok")
+      }
+
+      #L ==============================================================================
+}

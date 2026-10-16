@@ -1,0 +1,43 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SimdStdLib
+#L Dominio: SimdMask
+#L ==============================================================================
+
+contract (SimdMaskContract) {
+      op simdVectorClampF32 (as list of data: a, as float32: min_v, as float32: max_v) as list of data
+      op simdVectorClampF64 (as list of data: a, as float64: min_v, as float64: max_v) as list of data
+      op simdSelectF32 (as list of data: mask, as list of data: a, as list of data: b) as list of data
+      op simdSelectF64 (as list of data: mask, as list of data: a, as list of data: b) as list of data
+
+      #L Aliases universais
+      op simdVectorClamp (as list of data: a, as float64: min_v, as float64: max_v) as list of data
+      op simdSelect (as list of data: mask, as list of data: a, as list of data: b) as list of data
+}
+
+agent (SimdStdLib) impl SimdMaskContract {
+      #L -- SimdMaskContract -------------------------------------------
+      op simdVectorClampF32 (as list of data: a, as float32: min_v, as float32: max_v) as list of data ==> {
+            emit(nice, stdSimdVectorClampF32(a, min_v, max_v), "ok")
+      }
+
+      op simdVectorClampF64 (as list of data: a, as float64: min_v, as float64: max_v) as list of data ==> {
+            emit(nice, stdSimdVectorClampF64(a, min_v, max_v), "ok")
+      }
+
+      op simdSelectF32 (as list of data: mask, as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdSelectF32(mask, a, b), "ok")
+      }
+
+      op simdSelectF64 (as list of data: mask, as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdSelectF64(mask, a, b), "ok")
+      }
+
+      #L Aliases
+      op simdVectorClamp (as list of data: a, as float64: min_v, as float64: max_v) as list of data ==> {
+            emit(nice, stdSimdVectorClampF64(a, min_v, max_v), "ok")
+      }
+
+      op simdSelect (as list of data: mask, as list of data: a, as list of data: b) as list of data ==> {
+            emit(nice, stdSimdSelectF64(mask, a, b), "ok")
+      }
+}

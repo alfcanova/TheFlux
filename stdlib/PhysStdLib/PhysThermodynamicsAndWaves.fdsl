@@ -1,0 +1,79 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysThermodynamicsAndWaves
+#L ==============================================================================
+
+contract (PhysThermodynamicsAndWavesContract) {
+      op physCelsiusToKelvin (as float64: celsius) as float64
+      op physKelvinToCelsius (as float64: kelvin) as float64
+      op physCelsiusToFahrenheit (as float64: celsius) as float64
+      op physFahrenheitToCelsius (as float64: fahrenheit) as float64
+      op physIdealGasPressure (as float64: moles, as float64: kelvin, as float64: volume) as float64
+      op physSensibleHeat (as float64: mass, as float64: specific_heat, as float64: delta_temp) as float64
+      op physLatentHeat (as float64: mass, as float64: latent_heat) as float64
+      op physWaveSpeed (as float64: frequency, as float64: wavelength) as float64
+      op physWaveFrequency (as float64: speed, as float64: wavelength) as float64
+      op physWavePeriod (as float64: frequency) as float64
+}
+
+agent (PhysStdLib) impl PhysThermodynamicsAndWavesContract {
+      #L PhysThermodynamicsAndWavesContract (Termodinamica e Ondas)
+      #L =====================================================================
+      op physCelsiusToKelvin (as float64: celsius) as float64 ==> {
+            mut as float64: k = celsius + 273.15
+            emit(nice, k, "ok")
+      }
+      op physKelvinToCelsius (as float64: kelvin) as float64 ==> {
+            mut as float64: c = kelvin - 273.15
+            emit(nice, c, "ok")
+      }
+      op physCelsiusToFahrenheit (as float64: celsius) as float64 ==> {
+            mut as float64: f = (celsius * 1.8) + 32.0
+            emit(nice, f, "ok")
+      }
+      op physFahrenheitToCelsius (as float64: fahrenheit) as float64 ==> {
+            mut as float64: c = (fahrenheit - 32.0) /f 1.8
+            emit(nice, c, "ok")
+      }
+      op physIdealGasPressure (as float64: moles, as float64: kelvin, as float64: volume) as float64 ==> {
+            route {
+                  volume <= 0.0 ==> {
+                        emit(fail, 0.0, "volume invalido no gas ideal")
+                  }
+            }
+            mut as float64: p = (moles * C_GAS_CONST * kelvin) /f volume
+            emit(nice, p, "ok")
+      }
+      op physSensibleHeat (as float64: mass, as float64: specific_heat, as float64: delta_temp) as float64 ==> {
+            mut as float64: q = mass * specific_heat * delta_temp
+            emit(nice, q, "ok")
+      }
+      op physLatentHeat (as float64: mass, as float64: latent_heat) as float64 ==> {
+            mut as float64: q = mass * latent_heat
+            emit(nice, q, "ok")
+      }
+      op physWaveSpeed (as float64: frequency, as float64: wavelength) as float64 ==> {
+            mut as float64: v = frequency * wavelength
+            emit(nice, v, "ok")
+      }
+      op physWaveFrequency (as float64: speed, as float64: wavelength) as float64 ==> {
+            route {
+                  wavelength <= 0.0 ==> {
+                        emit(fail, 0.0, "comprimento de onda invalido")
+                  }
+            }
+            mut as float64: f = speed /f wavelength
+            emit(nice, f, "ok")
+      }
+      op physWavePeriod (as float64: frequency) as float64 ==> {
+            route {
+                  frequency <= 0.0 ==> {
+                        emit(fail, 0.0, "frequencia invalida para periodo")
+                  }
+            }
+            mut as float64: t = 1.0 /f frequency
+            emit(nice, t, "ok")
+      }
+
+      #L =====================================================================
+}

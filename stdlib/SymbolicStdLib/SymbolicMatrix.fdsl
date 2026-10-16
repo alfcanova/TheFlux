@@ -1,0 +1,113 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SymbolicStdLib
+#L Dominio: SymbolicMatrix
+#L ==============================================================================
+
+contract (SymbolicMatrixContract) {
+      op symbolicMatrixDeterminant (as list of data: matrix_rows) as string
+      op symbolicMatrixJacobian (as list of data: expressions, as list of data: variables) as list of data
+      op symbolicMatrixHessian (as string: expression, as list of data: variables) as list of data
+}
+
+agent (SymbolicStdLib) impl SymbolicMatrixContract {
+      op symbolicMatrixDeterminant (as list of data: matrix_rows) as string ==> {
+            mut as int64: n = 0
+            infinite (r in matrix_rows) {
+                  n = n + 1
+            }
+            route {
+                  n == 1 ==> {
+                        mut as list of data: r1 = matrix_rows[1]
+                        mut as string: val1 = "" + r1[1]
+                        emit(nice, symbolicSimplify(val1), "ok")
+                  }
+                  n == 2 ==> {
+                        mut as list of data: r1 = matrix_rows[1]
+                        mut as list of data: r2 = matrix_rows[2]
+                        mut as string: a = "" + r1[1]
+                        mut as string: b = "" + r1[2]
+                        mut as string: c = "" + r2[1]
+                        mut as string: d = "" + r2[2]
+                        mut as string: det_expr = "(" + a + ") * (" + d + ") - (" + b + ") * (" + c + ")"
+                        emit(nice, symbolicSimplify(det_expr), "ok")
+                  }
+                  n == 3 ==> {
+                        mut as list of data: r1 = matrix_rows[1]
+                        mut as list of data: r2 = matrix_rows[2]
+                        mut as list of data: r3 = matrix_rows[3]
+                        mut as string: a1 = "" + r1[1]
+                        mut as string: a2 = "" + r1[2]
+                        mut as string: a3 = "" + r1[3]
+                        mut as string: b1 = "" + r2[1]
+                        mut as string: b2 = "" + r2[2]
+                        mut as string: b3 = "" + r2[3]
+                        mut as string: c1 = "" + r3[1]
+                        mut as string: c2 = "" + r3[2]
+                        mut as string: c3 = "" + r3[3]
+                        mut as string: det_expr = "(" + a1 + ") * ((" + b2 + ") * (" + c3 + ") - (" + b3 + ") * (" + c2 + ")) - (" + a2 + ") * ((" + b1 + ") * (" + c3 + ") - (" + b3 + ") * (" + c1 + ")) + (" + a3 + ") * ((" + b1 + ") * (" + c2 + ") - (" + b2 + ") * (" + c1 + "))"
+                        emit(nice, symbolicSimplify(det_expr), "ok")
+                  }
+            }
+            emit(nice, "0", "ok")
+      }
+
+      op symbolicMatrixJacobian (as list of data: expressions, as list of data: variables) as list of data ==> {
+            mut as int64: n_e = 0
+            infinite (e in expressions) {
+                  n_e = n_e + 1
+            }
+            mut as int64: n_v = 0
+            infinite (v in variables) {
+                  n_v = n_v + 1
+            }
+            mut as list of data: jac = []
+            mut as int64: i = 1
+            infinite (i <= n_e) {
+                  mut as string: expr_i = "" + expressions[i]
+                  mut as list of data: row_i = []
+                  mut as int64: j = 1
+                  infinite (j <= n_v) {
+                        mut as string: var_j = "" + variables[j]
+                        row_i[j] = symbolicDifferentiate(expr_i, var_j)
+                        j = j + 1
+                  }
+                  jac[i] = row_i
+                  i = i + 1
+            }
+            emit(nice, jac, "ok")
+      }
+
+      op symbolicMatrixHessian (as string: expression, as list of data: variables) as list of data ==> {
+            mut as int64: n_v = 0
+            infinite (v in variables) {
+                  n_v = n_v + 1
+            }
+            mut as list of data: d1 = []
+            mut as int64: k = 1
+            infinite (k <= n_v) {
+                  mut as string: var_k = "" + variables[k]
+                  d1[k] = symbolicDifferentiate(expression, var_k)
+                  k = k + 1
+            }
+            mut as list of data: hess = []
+            mut as int64: i = 1
+            infinite (i <= n_v) {
+                  mut as string: d1_i = "" + d1[i]
+                  mut as list of data: row_i = []
+                  mut as int64: j = 1
+                  infinite (j <= n_v) {
+                        mut as string: var_j = "" + variables[j]
+                        row_i[j] = symbolicDifferentiate(d1_i, var_j)
+                        j = j + 1
+                  }
+                  hess[i] = row_i
+                  i = i + 1
+            }
+            emit(nice, hess, "ok")
+      }
+
+      #L ==============================================================================
+      #L 9. SymbolicTransformContract (Fase 2)
+      #L ==============================================================================
+
+}

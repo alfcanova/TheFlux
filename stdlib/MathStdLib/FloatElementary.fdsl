@@ -1,0 +1,317 @@
+contract (FloatElementaryContract) {
+      op absolute64 (as int64: value) as int64
+      op absolute32 (as int32: value) as int32
+      op absolute16 (as int16: value) as int16
+      op minimum64 (as int64: left, as int64: right) as int64
+      op minimum32 (as int32: left, as int32: right) as int32
+      op minimum16 (as int16: left, as int16: right) as int16
+      op maximum64 (as int64: left, as int64: right) as int64
+      op maximum32 (as int32: left, as int32: right) as int32
+      op maximum16 (as int16: left, as int16: right) as int16
+      op absoluteFloat64 (as float64: value) as float64
+      op absoluteFloat32 (as float32: value) as float32
+      op absoluteFloat16 (as float16: value) as float16
+      op signal64 (as float64: value) as int64
+      op signal32 (as float32: value) as int64
+      op signal16 (as float16: value) as int64
+      op minimumFloat64 (as float64: left, as float64: right) as float64
+      op minimumFloat32 (as float32: left, as float32: right) as float32
+      op minimumFloat16 (as float16: left, as float16: right) as float16
+      op maximumFloat64 (as float64: left, as float64: right) as float64
+      op maximumFloat32 (as float32: left, as float32: right) as float32
+      op maximumFloat16 (as float16: left, as float16: right) as float16
+      op constrain64 (as float64: val, as float64: min_val, as float64: max_val) as float64
+      op constrain32 (as float32: val, as float32: min_val, as float32: max_val) as float32
+      op constrain16 (as float16: val, as float16: min_val, as float16: max_val) as float16
+      op linearInterpolation64 (as float64: start, as float64: stop, as float64: factor) as float64
+      op linearInterpolation32 (as float32: start, as float32: stop, as float32: factor) as float32
+      op linearInterpolation16 (as float16: start, as float16: stop, as float16: factor) as float16
+}
+
+agent (MathStdLib) impl FloatElementaryContract {
+      op absolute64 (as int64: value) as int64 ==> {
+            route {
+                  value >= 0 ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < 0 ==> {
+                        mut as int64: neg = 0 - value
+                        emit(nice, neg, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op absolute32 (as int32: value) as int32 ==> {
+            route {
+                  value >= (0 as int32) ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < (0 as int32) ==> {
+                        mut as int32: neg = (0 as int32) - value
+                        emit(nice, neg, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op absolute16 (as int16: value) as int16 ==> {
+            route {
+                  value >= (0 as int16) ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < (0 as int16) ==> {
+                        mut as int16: neg = (0 as int16) - value
+                        emit(nice, neg, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op absoluteFloat64 (as float64: value) as float64 ==> {
+            route {
+                  value >= 0.0 ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < 0.0 ==> {
+                        mut as float64: neg = 0.0 - value
+                        emit(nice, neg, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op absoluteFloat32 (as float32: value) as float32 ==> {
+            route {
+                  value >= (0.0 as float32) ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < (0.0 as float32) ==> {
+                        mut as float32: neg = (0.0 as float32) - value
+                        emit(nice, neg, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op absoluteFloat16 (as float16: value) as float16 ==> {
+            route {
+                  value >= (0.0 as float16) ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < (0.0 as float16) ==> {
+                        mut as float16: neg = (0.0 as float16) - value
+                        emit(nice, neg, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op signal64 (as float64: value) as int64 ==> {
+            mut as int64: pos_one = 1
+            mut as int64: neg_one = -1
+            mut as int64: zero_val = 0
+            route {
+                  value > 0.0 ==> {
+                        emit(nice, pos_one, "ok")
+                  }
+                  value < 0.0 ==> {
+                        emit(nice, neg_one, "ok")
+                  }
+                  value == 0.0 ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op signal32 (as float32: value) as int64 ==> {
+            mut as int64: res = (signal64(value as float64)).val
+            emit(nice, res, "ok")
+      }
+      op signal16 (as float16: value) as int64 ==> {
+            mut as int64: res = (signal64(value as float64)).val
+            emit(nice, res, "ok")
+      }
+
+      op minimum64 (as int64: left, as int64: right) as int64 ==> {
+            route {
+                  left <= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left > right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op minimum32 (as int32: left, as int32: right) as int32 ==> {
+            route {
+                  left <= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left > right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op minimum16 (as int16: left, as int16: right) as int16 ==> {
+            route {
+                  left <= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left > right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op maximum64 (as int64: left, as int64: right) as int64 ==> {
+            route {
+                  left >= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left < right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op maximum32 (as int32: left, as int32: right) as int32 ==> {
+            route {
+                  left >= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left < right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op maximum16 (as int16: left, as int16: right) as int16 ==> {
+            route {
+                  left >= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left < right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op minimumFloat64 (as float64: left, as float64: right) as float64 ==> {
+            route {
+                  left <= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left > right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op minimumFloat32 (as float32: left, as float32: right) as float32 ==> {
+            route {
+                  left <= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left > right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op minimumFloat16 (as float16: left, as float16: right) as float16 ==> {
+            route {
+                  left <= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left > right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op maximumFloat64 (as float64: left, as float64: right) as float64 ==> {
+            route {
+                  left >= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left < right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op maximumFloat32 (as float32: left, as float32: right) as float32 ==> {
+            route {
+                  left >= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left < right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op maximumFloat16 (as float16: left, as float16: right) as float16 ==> {
+            route {
+                  left >= right ==> {
+                        emit(nice, left, "ok")
+                  }
+                  left < right ==> {
+                        emit(nice, right, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op constrain64 (as float64: val, as float64: min_val, as float64: max_val) as float64 ==> {
+            route {
+                  val < min_val ==> {
+                        emit(nice, min_val, "ok")
+                  }
+                  val > max_val ==> {
+                        emit(nice, max_val, "ok")
+                  }
+                  (val >= min_val) and (val <= max_val) ==> {
+                        emit(nice, val, "ok")
+                  }
+            }
+            emit(nice, val, "ok")
+      }
+
+      op constrain32 (as float32: val, as float32: min_val, as float32: max_val) as float32 ==> {
+            mut as float32: res = (constrain64(val as float64, min_val as float64, max_val as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op constrain16 (as float16: val, as float16: min_val, as float16: max_val) as float16 ==> {
+            mut as float16: res = (constrain64(val as float64, min_val as float64, max_val as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op linearInterpolation64 (as float64: start, as float64: stop, as float64: factor) as float64 ==> {
+            mut as float64: res = start + (stop - start) * factor
+            emit(nice, res, "ok")
+      }
+      op linearInterpolation32 (as float32: start, as float32: stop, as float32: factor) as float32 ==> {
+            mut as float32: res = (linearInterpolation64(start as float64, stop as float64, factor as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op linearInterpolation16 (as float16: start, as float16: stop, as float16: factor) as float16 ==> {
+            mut as float16: res = (linearInterpolation64(start as float64, stop as float64, factor as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+}

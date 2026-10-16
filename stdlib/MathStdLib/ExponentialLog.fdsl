@@ -1,0 +1,460 @@
+contract (ExponentialLogContract) {
+      op powerFloat64 (as float64: base_val, as float64: exponent_val) as float64
+      op powerFloat32 (as float32: base_val, as float32: exponent_val) as float32
+      op powerFloat16 (as float16: base_val, as float16: exponent_val) as float16
+      op exp64 (as float64: value) as float64
+      op exp32 (as float32: value) as float32
+      op exp16 (as float16: value) as float16
+      op log64 (as float64: value) as float64
+      op log32 (as float32: value) as float32
+      op log16 (as float16: value) as float16
+      op log2_64 (as float64: value) as float64
+      op log2_32 (as float32: value) as float32
+      op log2_16 (as float16: value) as float16
+      op log10_64 (as float64: value) as float64
+      op log10_32 (as float32: value) as float32
+      op log10_16 (as float16: value) as float16
+      op expm164 (as float64: value) as float64
+      op expm132 (as float32: value) as float32
+      op expm116 (as float16: value) as float16
+      op log1p64 (as float64: value) as float64
+      op log1p32 (as float32: value) as float32
+      op log1p16 (as float16: value) as float16
+      op exp2_64 (as float64: value) as float64
+      op exp2_32 (as float32: value) as float32
+      op exp2_16 (as float16: value) as float16
+      op exp10_64 (as float64: value) as float64
+      op exp10_32 (as float32: value) as float32
+      op exp10_16 (as float16: value) as float16
+      op softplus64 (as float64: value) as float64
+      op softplus32 (as float32: value) as float32
+      op softplus16 (as float16: value) as float16
+      op logAddExp64 (as float64: left, as float64: right) as float64
+      op logAddExp32 (as float32: left, as float32: right) as float32
+      op logAddExp16 (as float16: left, as float16: right) as float16
+}
+
+agent (MathStdLib) impl ExponentialLogContract {
+      op powerFloat64 (as float64: base_val, as float64: exponent_val) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  (base_val == 0.0) and (exponent_val > 0.0) ==> {
+                        emit(nice, zero_val, "ok")
+                  }
+                  (base_val == 0.0) and (exponent_val <= 0.0) ==> {
+                        emit(fail, zero_val, "potencia indefinida para base zero e expoente nao-positivo")
+                  }
+                  base_val > 0.0 ==> {
+                        mut as float64: res = base_val ^e exponent_val
+                        emit(nice, res, "ok")
+                  }
+                  base_val < 0.0 ==> {
+                        mut as int64: exp_int = exponent_val as int64
+                        route {
+                              exponent_val == (exp_int as float64) ==> {
+                                    mut as float64: abs_res = (0.0 - base_val) ^e exponent_val
+                                    route {
+                                          (exp_int /r 2) != 0 ==> {
+                                                abs_res = 0.0 - abs_res
+                                          }
+                                    }
+                                    emit(nice, abs_res, "ok")
+                              }
+                        }
+                        emit(fail, zero_val, "base negativa com expoente nao-inteiro")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op powerFloat32 (as float32: base_val, as float32: exponent_val) as float32 ==> {
+            mut as float32: res = (powerFloat64(base_val as float64, exponent_val as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op powerFloat16 (as float16: base_val, as float16: exponent_val) as float16 ==> {
+            mut as float16: res = (powerFloat64(base_val as float64, exponent_val as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op exp64 (as float64: value) as float64 ==> {
+            mut as float64: v = value
+            mut as float64: log2e = 1.44269504088896340735992468100
+            mut as float64: ln2_hi = 0.6931471803691238
+            mut as float64: ln2_lo = 1.9082149292705877e-10
+            mut as float64: v_scaled = v * log2e
+            mut as int64: ki = 0
+            route {
+                  v_scaled >= 0.0 ==> {
+                        mut as float64: v2 = v_scaled + 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 < 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i - 1
+                              }
+                        }
+                        ki = i
+                  }
+                  v_scaled < 0.0 ==> {
+                        mut as float64: v2 = v_scaled - 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 > 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i + 1
+                              }
+                        }
+                        ki = i
+                  }
+            }
+            mut as float64: kd = ki as float64
+            mut as float64: r = (v - kd * ln2_hi) - kd * ln2_lo
+            mut as float64: poly = r * (1.0 + r * (0.5 + r * (0.16666666666666666 + r * (0.041666666666666664 + r * (0.008333333333333333 + r * (0.001388888888888889 + r * (0.0001984126984126984 + r * (0.0000248015873015873 + r * (0.000002755731922398589 + r * (2.755731922398589e-7 + r * (2.5052108385441719e-8 + r * (2.0876756987868099e-9 + r * (1.6059043836821614e-10 + r * (1.1470745597729724e-11 + r * 7.647163731819816e-13))))))))))))))
+            mut as float64: res = (1.0 + poly) * (2.0 ^e kd)
+            emit(nice, res, "ok")
+      }
+
+      op exp32 (as float32: value) as float32 ==> {
+            mut as float64: v = value as float64
+            mut as float64: log2e = 1.44269504088896340735992468100
+            mut as float64: ln2_hi = 0.6931471803691238
+            mut as float64: ln2_lo = 1.9082149292705877e-10
+            mut as float64: v_scaled = v * log2e
+            mut as int64: ki = 0
+            route {
+                  v_scaled >= 0.0 ==> {
+                        mut as float64: v2 = v_scaled + 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 < 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i - 1
+                              }
+                        }
+                        ki = i
+                  }
+                  v_scaled < 0.0 ==> {
+                        mut as float64: v2 = v_scaled - 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 > 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i + 1
+                              }
+                        }
+                        ki = i
+                  }
+            }
+            mut as float64: kd = ki as float64
+            mut as float64: r = (v - kd * ln2_hi) - kd * ln2_lo
+            mut as float64: poly = r * (1.0 + r * (0.5 + r * (0.16666666666666666 + r * (0.041666666666666664 + r * (0.008333333333333333 + r * (0.001388888888888889 + r * (0.0001984126984126984 + r * (0.0000248015873015873 + r * (0.000002755731922398589 + r * 2.755731922398589e-7)))))))))
+            mut as float32: res = ((1.0 + poly) * (2.0 ^e kd)) as float32
+            emit(nice, res, "ok")
+      }
+
+      op exp16 (as float16: value) as float16 ==> {
+            mut as float64: v = value as float64
+            mut as float64: log2e = 1.44269504088896340735992468100
+            mut as float64: ln2_hi = 0.6931471803691238
+            mut as float64: ln2_lo = 1.9082149292705877e-10
+            mut as float64: v_scaled = v * log2e
+            mut as int64: ki = 0
+            route {
+                  v_scaled >= 0.0 ==> {
+                        mut as float64: v2 = v_scaled + 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 < 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i - 1
+                              }
+                        }
+                        ki = i
+                  }
+                  v_scaled < 0.0 ==> {
+                        mut as float64: v2 = v_scaled - 0.5
+                        mut as int64: i = v2 as int64
+                        route {
+                              (v2 > 0.0) and (v2 != (i as float64)) ==> {
+                                    i = i + 1
+                              }
+                        }
+                        ki = i
+                  }
+            }
+            mut as float64: kd = ki as float64
+            mut as float64: r = (v - kd * ln2_hi) - kd * ln2_lo
+            mut as float64: poly = r * (1.0 + r * (0.5 + r * (0.16666666666666666 + r * 0.041666666666666664)))
+            mut as float16: res = ((1.0 + poly) * (2.0 ^e kd)) as float16
+            emit(nice, res, "ok")
+      }
+
+      op log64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value <= 0.0 ==> {
+                        emit(fail, zero_val, "dominio do logaritmo natural: (0, inf)")
+                  }
+                  value > 0.0 ==> {
+                        mut as float64: x = value
+                        mut as int64: k = 0
+                        infinite {
+                              route {
+                                    x >= 2.0 ==> {
+                                          x = x /f 2.0
+                                          k = k + 1
+                                    }
+                                    x < 1.0 ==> {
+                                          x = x * 2.0
+                                          k = k - 1
+                                    }
+                                    (x >= 1.0) and (x < 2.0) ==> {
+                                          break
+                                    }
+                              }
+                        }
+                        mut as float64: z = (x - 1.0) /f (x + 1.0)
+                        mut as float64: z2 = z * z
+                        mut as float64: poly = z * (2.0 + z2 * (0.6666666666666666 + z2 * (0.4 + z2 * (0.2857142857142857 + z2 * (0.2222222222222222 + z2 * (0.18181818181818182 + z2 * (0.15384615384615385 + z2 * (0.13333333333333333 + z2 * (0.11764705882352941 + z2 * (0.10526315789473684 + z2 * 0.09523809523809523))))))))))
+                        mut as float64: ln2 = 0.693147180559945286226763982996
+                        mut as float64: res = poly + (k as float64) * ln2
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op log32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  value <= (0.0 as float32) ==> {
+                        emit(fail, zero_val, "dominio do logaritmo natural: (0, inf)")
+                  }
+            }
+            mut as float32: res = (log64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op log16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  value <= (0.0 as float16) ==> {
+                        emit(fail, zero_val, "dominio do logaritmo natural: (0, inf)")
+                  }
+            }
+            mut as float16: res = (log64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op log2_64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value <= 0.0 ==> {
+                        emit(fail, zero_val, "dominio de log2: (0, inf)")
+                  }
+                  value > 0.0 ==> {
+                        mut as float64: inv_ln2 = 1.44269504088896340735992468100
+                        mut as float64: res = (log64(value)).val * inv_ln2
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op log2_32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  value <= (0.0 as float32) ==> {
+                        emit(fail, zero_val, "dominio de log2: (0, inf)")
+                  }
+            }
+            mut as float32: res = (log2_64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op log2_16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  value <= (0.0 as float16) ==> {
+                        emit(fail, zero_val, "dominio de log2: (0, inf)")
+                  }
+            }
+            mut as float16: res = (log2_64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op log10_64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value <= 0.0 ==> {
+                        emit(fail, zero_val, "dominio de log10: (0, inf)")
+                  }
+                  value > 0.0 ==> {
+                        mut as float64: inv_ln10 = 0.434294481903251827651128929574
+                        mut as float64: res = (log64(value)).val * inv_ln10
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op log10_32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  value <= (0.0 as float32) ==> {
+                        emit(fail, zero_val, "dominio de log10: (0, inf)")
+                  }
+            }
+            mut as float32: res = (log10_64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op log10_16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  value <= (0.0 as float16) ==> {
+                        emit(fail, zero_val, "dominio de log10: (0, inf)")
+                  }
+            }
+            mut as float16: res = (log10_64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op expm164 (as float64: value) as float64 ==> {
+            mut as float64: abs_v = (absoluteFloat64(value)).val
+            route {
+                  abs_v < 1.0e-5 ==> {
+                        mut as float64: poly = value * (1.0 + value * (0.5 + value * (0.16666666666666666 + value * (0.041666666666666664 + value * 0.008333333333333333))))
+                        emit(nice, poly, "ok")
+                  }
+            }
+            mut as float64: res = (exp64(value)).val - 1.0
+            emit(nice, res, "ok")
+      }
+
+      op expm132 (as float32: value) as float32 ==> {
+            mut as float32: res = (expm164(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op expm116 (as float16: value) as float16 ==> {
+            mut as float16: res = (expm164(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op log1p64 (as float64: value) as float64 ==> {
+            mut as float64: zero_val = 0.0
+            route {
+                  value <= -1.0 ==> {
+                        emit(fail, zero_val, "dominio de log1p: (-1, inf)")
+                  }
+                  value > -1.0 ==> {
+                        mut as float64: abs_v = (absoluteFloat64(value)).val
+                        route {
+                              abs_v < 1.0e-5 ==> {
+                                    mut as float64: poly = value * (1.0 - value * (0.5 - value * (0.3333333333333333 - value * (0.25 - value * 0.2))))
+                                    emit(nice, poly, "ok")
+                              }
+                        }
+                        mut as float64: u = 1.0 + value
+                        mut as float64: ln_u = (log64(u)).val
+                        mut as float64: res = ln_u - ((u - 1.0) - value) /f u
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, zero_val, "ok")
+      }
+
+      op log1p32 (as float32: value) as float32 ==> {
+            mut as float32: zero_val = 0.0 as float32
+            route {
+                  value <= (-1.0 as float32) ==> {
+                        emit(fail, zero_val, "dominio de log1p: (-1, inf)")
+                  }
+            }
+            mut as float32: res = (log1p64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+
+      op log1p16 (as float16: value) as float16 ==> {
+            mut as float16: zero_val = 0.0 as float16
+            route {
+                  value <= (-1.0 as float16) ==> {
+                        emit(fail, zero_val, "dominio de log1p: (-1, inf)")
+                  }
+            }
+            mut as float16: res = (log1p64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op exp2_64 (as float64: value) as float64 ==> {
+            mut as float64: res = (exp64(value * 0.693147180559945286226763982996)).val
+            emit(nice, res, "ok")
+      }
+      op exp2_32 (as float32: value) as float32 ==> {
+            mut as float32: res = (exp2_64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op exp2_16 (as float16: value) as float16 ==> {
+            mut as float16: res = (exp2_64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op exp10_64 (as float64: value) as float64 ==> {
+            mut as float64: res = (exp64(value * 2.30258509299404590109361379291)).val
+            emit(nice, res, "ok")
+      }
+      op exp10_32 (as float32: value) as float32 ==> {
+            mut as float32: res = (exp10_64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op exp10_16 (as float16: value) as float16 ==> {
+            mut as float16: res = (exp10_64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op softplus64 (as float64: value) as float64 ==> {
+            route {
+                  value > 30.0 ==> {
+                        emit(nice, value, "ok")
+                  }
+                  value < -30.0 ==> {
+                        mut as float64: res = (exp64(value)).val
+                        emit(nice, res, "ok")
+                  }
+                  (value >= -30.0) and (value <= 30.0) ==> {
+                        mut as float64: res = (log1p64((exp64(value)).val)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op softplus32 (as float32: value) as float32 ==> {
+            mut as float32: res = (softplus64(value as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op softplus16 (as float16: value) as float16 ==> {
+            mut as float16: res = (softplus64(value as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+
+      op logAddExp64 (as float64: left, as float64: right) as float64 ==> {
+            route {
+                  left == right ==> {
+                        mut as float64: res = left + 0.693147180559945286226763982996
+                        emit(nice, res, "ok")
+                  }
+                  left != right ==> {
+                        mut as float64: max_v = (maximumFloat64(left, right)).val
+                        mut as float64: min_v = (minimumFloat64(left, right)).val
+                        mut as float64: res = max_v + (log1p64((exp64(min_v - max_v)).val)).val
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, left, "ok")
+      }
+
+      op logAddExp32 (as float32: left, as float32: right) as float32 ==> {
+            mut as float32: res = (logAddExp64(left as float64, right as float64)).val as float32
+            emit(nice, res, "ok")
+      }
+      op logAddExp16 (as float16: left, as float16: right) as float16 ==> {
+            mut as float16: res = (logAddExp64(left as float64, right as float64)).val as float16
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,58 @@
+#L ==============================================================================
+#L TheFlux Standard Library: ThreadStdLib
+#L Dominio: ThreadLifecycle
+#L ==============================================================================
+
+contract (ThreadLifecycleContract) {
+      op threadSpawn (as string: agent_name, as string: op_name, as data: payload) as int64
+      op threadJoin (as int64: thread_id) as data
+      op threadIsAlive (as int64: thread_id) as bool
+      op threadCurrentId () as int64
+      op threadDetach (as int64: thread_id) as bool
+
+      #L Aliases
+      op spawnTask (as string: agent_name, as string: op_name, as data: payload) as int64
+      op joinTask (as int64: thread_id) as data
+      op isAlive (as int64: thread_id) as bool
+      op currentThreadId () as int64
+}
+
+agent (ThreadStdLib) impl ThreadLifecycleContract {
+      #L -- ThreadLifecycleContract -----------------------------------
+      op threadSpawn (as string: agent_name, as string: op_name, as data: payload) as int64 ==> {
+            emit(nice, stdThreadSpawn(agent_name, op_name, payload), "ok")
+      }
+
+      op threadJoin (as int64: thread_id) as data ==> {
+            emit(nice, stdThreadJoin(thread_id), "ok")
+      }
+
+      op threadIsAlive (as int64: thread_id) as bool ==> {
+            emit(nice, stdThreadIsAlive(thread_id), "ok")
+      }
+
+      op threadCurrentId () as int64 ==> {
+            emit(nice, stdThreadCurrentId(), "ok")
+      }
+
+      op threadDetach (as int64: thread_id) as bool ==> {
+            emit(nice, stdThreadDetach(thread_id), "ok")
+      }
+
+      #L Aliases
+      op spawnTask (as string: agent_name, as string: op_name, as data: payload) as int64 ==> {
+            emit(nice, stdThreadSpawn(agent_name, op_name, payload), "ok")
+      }
+
+      op joinTask (as int64: thread_id) as data ==> {
+            emit(nice, stdThreadJoin(thread_id), "ok")
+      }
+
+      op isAlive (as int64: thread_id) as bool ==> {
+            emit(nice, stdThreadIsAlive(thread_id), "ok")
+      }
+
+      op currentThreadId () as int64 ==> {
+            emit(nice, stdThreadCurrentId(), "ok")
+      }
+}

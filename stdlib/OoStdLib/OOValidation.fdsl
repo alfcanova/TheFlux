@@ -1,0 +1,138 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OoStdLib
+#L Dominio: OOValidation
+#L ==============================================================================
+
+contract (OOValidationContract) {
+      op ooImplements (as data: struct_instance, as string: contract_name) as bool
+      op ooImplementsAll (as data: struct_instance, as list of data: contract_names) as bool
+      op ooHasMethod (as data: target, as string: method_name) as bool
+      op ooIsInstance (as data: target, as string: struct_name) as bool
+      op ooValidateContract (as data: interface_object) as bool
+      op ooIsValid (as data: interface_object) as bool
+      op ooEquals (as data: a, as data: b) as bool
+      op ooIsObject (as data: instance) as bool
+}
+
+agent (OoStdLib) impl OOValidationContract {
+
+
+      #L ==============================================================================
+      #L Funcoes Auxiliares Internas
+      #L ==============================================================================
+
+      op _extractStructType (as data: instance) as string ==> {
+            mut as string: text = "" + instance
+            mut as string: tname = ""
+            infinite (ch in text) {
+                  route {
+                        ch == "(" or ch == "{" or ch == " " ==> {
+                              break
+                        }
+                        _ ==> {
+                              tname = tname + ch
+                        }
+                  }
+            }
+            emit(nice, tname, "ok")
+      }
+
+      #L ==============================================================================
+      #L OOValidationContract
+      #L ==============================================================================
+
+      op ooImplements (as data: struct_instance, as string: contract_name) as bool ==> {
+            mut as string: tname = _extractStructType(struct_instance)
+            mut as bool: res = false
+            route {
+                  tname != "" and contract_name != "" ==> {
+                        res = true
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op ooImplementsAll (as data: struct_instance, as list of data: contract_names) as bool ==> {
+            mut as bool: all_valid = true
+            route {
+                  contract_names == [] ==> {
+                        all_valid = false
+                  }
+            }
+            infinite (c in contract_names) {
+                  mut as string: cname = "" + c
+                  route {
+                        cname == "" ==> {
+                              all_valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, all_valid, "ok")
+      }
+
+      op ooHasMethod (as data: target, as string: method_name) as bool ==> {
+            mut as bool: found = false
+            route {
+                  method_name != "" ==> {
+                        found = true
+                  }
+            }
+            emit(nice, found, "ok")
+      }
+
+      op ooIsInstance (as data: target, as string: struct_name) as bool ==> {
+            mut as string: actual_type = _extractStructType(target)
+            route {
+                  actual_type == "map" or actual_type == "data" ==> {
+                        actual_type = "" + target["__type__"]
+                  }
+            }
+            mut as bool: matches = (actual_type == struct_name)
+            emit(nice, matches, "ok")
+      }
+
+      op ooValidateContract (as data: interface_object) as bool ==> {
+            mut as bool: valid = false
+            route {
+                  interface_object["__valid__"] == true and interface_object["__contract__"] != "" ==> {
+                        valid = true
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      op ooIsValid (as data: interface_object) as bool ==> {
+            mut as bool: valid = (interface_object["__valid__"] == true)
+            emit(nice, valid, "ok")
+      }
+
+      op ooEquals (as data: a, as data: b) as bool ==> {
+            mut as bool: same_contract = (a["__contract__"] == b["__contract__"])
+            mut as bool: same_type = (a["__type__"] == b["__type__"])
+            mut as string: sa = "" + a["__data__"]
+            mut as string: sb = "" + b["__data__"]
+            mut as bool: same_data = (sa == sb)
+            mut as bool: eq = (same_contract and same_type and same_data)
+            emit(nice, eq, "ok")
+      }
+
+      op ooIsObject (as data: instance) as bool ==> {
+            mut as string: tname = _extractStructType(instance)
+            mut as bool: is_obj = false
+            route {
+                  tname == "" or tname == "map" ==> {
+                        mut as string: c = "" + instance["__contract__"]
+                        mut as string: t = "" + instance["__type__"]
+                        route {
+                              c != "" and t != "" ==> {
+                                    is_obj = true
+                              }
+                        }
+                  }
+            }
+            emit(nice, is_obj, "ok")
+      }
+
+      #L ==============================================================================
+}

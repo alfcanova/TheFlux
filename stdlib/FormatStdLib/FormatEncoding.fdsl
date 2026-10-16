@@ -1,0 +1,289 @@
+#L ==============================================================================
+#L TheFlux Standard Library: FormatStdLib
+#L Dominio: FormatEncoding
+#L ==============================================================================
+
+contract (FormatEncodingContract) {
+      op formatEncodeBase64 (as string: text) as string
+      op formatDecodeBase64 (as string: b64_text) as string
+      op formatIsValidBase64 (as string: b64_text) as bool
+      op formatParseQueryString (as string: query_text) as map
+      op formatStringifyQueryString (as map: params) as string
+
+      #L Aliases
+      op encodeBase64 (as string: text) as string
+      op decodeBase64 (as string: b64_text) as string
+      op isValidBase64 (as string: b64_text) as bool
+      op parseQueryString (as string: query_text) as map
+      op stringifyQueryString (as map: params) as string
+}
+
+agent (FormatStdLib) impl FormatEncodingContract {
+      #L 5. FormatEncodingContract (Base64 RFC 4648 & Query String)
+      #L ==============================================================================
+
+      op _fmtOrd (as string: ch) as int64 ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as int64: c35 = 35
+            mut as int64: c10 = 10
+            mut as int64: c9 = 9
+            mut as int64: c13 = 13
+            route {
+                  ch == "#" ==> { emit(nice, c35, "ok") }
+                  ch == "\n" ==> { emit(nice, c10, "ok") }
+                  ch == "\t" ==> { emit(nice, c9, "ok") }
+                  ch == "\r" ==> { emit(nice, c13, "ok") }
+            }
+            mut as int64: idx = 1
+            mut as int64: found_code = 0
+            infinite (c in ascii_table) {
+                  route {
+                        c == ch and found_code == 0 ==> {
+                              mut as int64: code_val = 31 + idx
+                              route {
+                                    code_val >= 35 ==> { code_val = code_val + 1 }
+                              }
+                              found_code = code_val
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_code, "ok")
+      }
+
+      op _fmtChr (as int64: code) as string ==> {
+            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as string: ch_hash = "#"
+            mut as string: ch_nl = "\n"
+            mut as string: ch_tab = "\t"
+            mut as string: ch_cr = "\r"
+            mut as string: empty = ""
+            route {
+                  code == 35 ==> { emit(nice, ch_hash, "ok") }
+                  code == 10 ==> { emit(nice, ch_nl, "ok") }
+                  code == 9 ==> { emit(nice, ch_tab, "ok") }
+                  code == 13 ==> { emit(nice, ch_cr, "ok") }
+                  code >= 32 and code <= 126 ==> {
+                        mut as int64: pos = code - 31
+                        route {
+                              code > 35 ==> { pos = pos - 1 }
+                        }
+                        mut as string: res = ascii_table[pos]
+                        emit(nice, res, "ok")
+                  }
+            }
+            emit(nice, empty, "ok")
+      }
+
+      op _b64CharToVal (as string: ch) as int64 ==> {
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            mut as int64: idx = 1
+            mut as int64: found_val = 0
+            infinite (c in b64_table) {
+                  route {
+                        c == ch ==> { found_val = idx - 1 }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, found_val, "ok")
+      }
+
+      op formatEncodeBase64 (as string: text) as string ==> {
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            mut as int64: len = _fmtStrLen(text)
+            mut as string: empty = ""
+            route {
+                  len == 0 ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as int64: b1 = _fmtOrd(_fmtCharAt(text, i))
+                  mut as int64: b2 = 0
+                  mut as int64: b3 = 0
+                  mut as int64: chunk_size = 1
+                  route {
+                        i + 1 <= len ==> {
+                              b2 = _fmtOrd(_fmtCharAt(text, i + 1))
+                              chunk_size = 2
+                        }
+                  }
+                  route {
+                        i + 2 <= len ==> {
+                              b3 = _fmtOrd(_fmtCharAt(text, i + 2))
+                              chunk_size = 3
+                        }
+                  }
+                  mut as int64: n = (b1 * 65536) + (b2 * 256) + b3
+                  mut as int64: idx1 = ((n /i 262144) /r 64) + 1
+                  mut as int64: idx2 = ((n /i 4096) /r 64) + 1
+                  mut as int64: idx3 = ((n /i 64) /r 64) + 1
+                  mut as int64: idx4 = (n /r 64) + 1
+
+                  res = res + b64_table[idx1] + b64_table[idx2]
+                  route {
+                        chunk_size == 1 ==> { res = res + "==" }
+                        chunk_size == 2 ==> { res = res + b64_table[idx3] + "=" }
+                        chunk_size == 3 ==> { res = res + b64_table[idx3] + b64_table[idx4] }
+                  }
+                  i = i + 3
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatDecodeBase64 (as string: b64_text) as string ==> {
+            mut as int64: len = _fmtStrLen(b64_text)
+            mut as string: empty = ""
+            route {
+                  len == 0 or (len /r 4 != 0) ==> { emit(nice, empty, "ok") }
+            }
+            mut as string: res = ""
+            mut as int64: i = 1
+            infinite (i <= len) {
+                  mut as string: ch1 = _fmtCharAt(b64_text, i)
+                  mut as string: ch2 = _fmtCharAt(b64_text, i + 1)
+                  mut as string: ch3 = _fmtCharAt(b64_text, i + 2)
+                  mut as string: ch4 = _fmtCharAt(b64_text, i + 3)
+                  mut as bool: pad2 = (ch3 == "=")
+                  mut as bool: pad3 = (ch4 == "=")
+
+                  mut as int64: v1 = _b64CharToVal(ch1)
+                  mut as int64: v2 = _b64CharToVal(ch2)
+                  mut as int64: v3 = 0
+                  mut as int64: v4 = 0
+                  route {
+                        not pad2 ==> { v3 = _b64CharToVal(ch3) }
+                  }
+                  route {
+                        not pad3 ==> { v4 = _b64CharToVal(ch4) }
+                  }
+                  mut as int64: n = (v1 * 262144) + (v2 * 4096) + (v3 * 64) + v4
+                  mut as int64: b1 = (n /i 65536) /r 256
+                  mut as int64: b2 = (n /i 256) /r 256
+                  mut as int64: b3 = n /r 256
+                  res = res + _fmtChr(b1)
+                  route {
+                        not pad2 ==> { res = res + _fmtChr(b2) }
+                  }
+                  route {
+                        not pad3 ==> { res = res + _fmtChr(b3) }
+                  }
+                  i = i + 4
+            }
+            emit(nice, res, "ok")
+      }
+
+      op formatIsValidBase64 (as string: b64_text) as bool ==> {
+            mut as int64: len = _fmtStrLen(b64_text)
+            mut as bool: b_false = false
+            route {
+                  len == 0 or (len /r 4 != 0) ==> { emit(nice, b_false, "ok") }
+            }
+            mut as string: b64_table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+            mut as bool: valid = true
+            infinite (c in b64_text) {
+                  route {
+                        not _fmtContains(b64_table, c) ==> {
+                              valid = false
+                              break
+                        }
+                  }
+            }
+            emit(nice, valid, "ok")
+      }
+
+      op formatParseQueryString (as string: query_text) as map ==> {
+            mut as map: params = map{}
+            mut as string: text = query_text
+            mut as int64: len = _fmtStrLen(text)
+            route {
+                  len == 0 ==> { emit(nice, params, "ok") }
+                  _fmtCharAt(text, 1) == "?" ==> {
+                        text = text[2 .. len]
+                        len = len - 1
+                  }
+            }
+            mut as string: pair = ""
+            infinite (i in 1 .. len) {
+                  mut as string: c = _fmtCharAt(text, i)
+                  route {
+                        c == "&" ==> {
+                              route {
+                                    _fmtContains(pair, "=") ==> {
+                                          mut as int64: plen = _fmtStrLen(pair)
+                                          mut as int64: eq_idx = 0
+                                          infinite (pi in 1 .. plen) {
+                                                route {
+                                                      _fmtCharAt(pair, pi) == "=" and eq_idx == 0 ==> { eq_idx = pi }
+                                                }
+                                          }
+                                          mut as string: k = pair[1 .. eq_idx - 1]
+                                          mut as string: v = ""
+                                          route {
+                                                eq_idx < plen ==> { v = pair[eq_idx + 1 .. plen] }
+                                          }
+                                          params[k] = v
+                                    }
+                              }
+                              pair = ""
+                        }
+                        c != "&" ==> {
+                              pair = pair + c
+                        }
+                  }
+            }
+            route {
+                  _fmtContains(pair, "=") ==> {
+                        mut as int64: plen = _fmtStrLen(pair)
+                        mut as int64: eq_idx = 0
+                        infinite (pi in 1 .. plen) {
+                              route {
+                                    _fmtCharAt(pair, pi) == "=" and eq_idx == 0 ==> { eq_idx = pi }
+                              }
+                        }
+                        mut as string: k = pair[1 .. eq_idx - 1]
+                        mut as string: v = ""
+                        route {
+                              eq_idx < plen ==> { v = pair[eq_idx + 1 .. plen] }
+                        }
+                        params[k] = v
+                  }
+            }
+            emit(nice, params, "ok")
+      }
+
+      op formatStringifyQueryString (as map: params) as string ==> {
+            mut as string: res = ""
+            mut as bool: first = true
+            infinite (k in params) {
+                  route {
+                        not first ==> { res = res + "&" }
+                        first ==> { first = false }
+                  }
+                  res = res + k + "=" + params[k]
+            }
+            emit(nice, res, "ok")
+      }
+
+      #L Aliases Encoding
+      op encodeBase64 (as string: text) as string ==> {
+            mut as string: r = formatEncodeBase64(text)
+            emit(nice, r, "ok")
+      }
+      op decodeBase64 (as string: b64_text) as string ==> {
+            mut as string: r = formatDecodeBase64(b64_text)
+            emit(nice, r, "ok")
+      }
+      op isValidBase64 (as string: b64_text) as bool ==> {
+            mut as bool: r = formatIsValidBase64(b64_text)
+            emit(nice, r, "ok")
+      }
+      op parseQueryString (as string: query_text) as map ==> {
+            mut as map: r = formatParseQueryString(query_text)
+            emit(nice, r, "ok")
+      }
+      op stringifyQueryString (as map: params) as string ==> {
+            mut as string: r = formatStringifyQueryString(params)
+            emit(nice, r, "ok")
+      }
+}

@@ -1,3 +1,5 @@
+## 📦 Programas Regulares de Execução
+
 ### Tabela de conformidade — página 1
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
@@ -538,13 +540,40 @@
 | ExampleOfUseThreadStdLib_ThreadSyncContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseThreadStdLib_ThreadSystemContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
--   IN : ✅  360 of  360 — ✅
--   VM : ✅  360 of  360 — ✅
--  VMR : ✅  360 of  360 — ✅
-- LLVM : ✅  360 of  360 — ✅
--  WAT : ✅  360 of  360 — ✅
-- WASM : ✅  360 of  360 — ✅
--  ALL : ✅ 2160 of 2160 — ✅
+## 🧪 Tabela de Conformidade — Testes de Diagnósticos e Erros (Negativos)
+
+> Testes de validação de diagnósticos estáticos canônicos e operações matemáticas de erro em runtime.
+
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfError_IMP201_ModuleNotFound.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_LEX001_InvalidHashComment.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_OWN501_CannotMutateImmutable.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_OWN505_CollectionCannotBeImmutable.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_RT701_DivisionByZero.flux                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_RT706_MathLogDomain.flux                             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_RT707_MathSqrtNegative.flux                          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_SEM303_UndefinedIdentifier.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_SYN100_UnexpectedToken.flux                          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_SYN150_TensorRequiresShape.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_SYN160_ListRequiresOfType.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_SYN161_SetRequiresOfType.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_TYP401_ExpectIntGotFloat.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_TYP402_ExpectIntGotComplex.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_TYP411_ExpectComplexGotInt.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfError_TYP413_ExpectComplexGotString.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+
+### Resumo de Conformidade:
+
+-    POSITIVOS : ✅  360 of  360 — ✅
+-  DIAGNÓSTICO : ✅   16 of   16 — ✅
+-           IN : ✅  376 of  376 — ✅
+-           VM : ✅  376 of  376 — ✅
+-          VMR : ✅  376 of  376 — ✅
+-         LLVM : ✅  376 of  376 — ✅
+-          WAT : ✅  376 of  376 — ✅
+-         WASM : ✅  376 of  376 — ✅
+-  TOTAL GERAL : ✅ 2256 of 2256 — ✅
 
 ### Regressão:
 

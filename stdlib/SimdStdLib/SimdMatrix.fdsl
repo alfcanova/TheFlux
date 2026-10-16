@@ -1,0 +1,28 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SimdStdLib
+#L Dominio: SimdMatrix
+#L ==============================================================================
+
+contract (SimdMatrixContract) {
+      op simdMatrixMul2DF32 (as map: lhs, as map: rhs) as map
+      op simdMatrixMul2DF64 (as map: lhs, as map: rhs) as map
+
+      #L Aliases universais
+      op simdMatrixMul2D (as map: lhs, as map: rhs) as map
+}
+
+agent (SimdStdLib) impl SimdMatrixContract {
+      #L -- SimdMatrixContract -----------------------------------------
+      op simdMatrixMul2DF32 (as map: lhs, as map: rhs) as map ==> {
+            emit(nice, stdSimdMatrixMul2DF32(lhs, rhs), "ok")
+      }
+
+      op simdMatrixMul2DF64 (as map: lhs, as map: rhs) as map ==> {
+            emit(nice, stdSimdMatrixMul2DF64(lhs, rhs), "ok")
+      }
+
+      #L Aliases
+      op simdMatrixMul2D (as map: lhs, as map: rhs) as map ==> {
+            emit(nice, stdSimdMatrixMul2DF64(lhs, rhs), "ok")
+      }
+}

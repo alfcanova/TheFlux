@@ -1,0 +1,22 @@
+#L ==============================================================================
+#L TheFlux Standard Library: IoStdLib
+#L Dominio: IoInput
+#L ==============================================================================
+
+contract (IoInputContract) {
+      op readLn (as string: prompt) as string
+      op readLine (as string: prompt) as string
+}
+
+agent (IoStdLib) impl IoInputContract {
+      #L -- IoInputContract -------------------------------------------
+      op readLn (as string: prompt) as string ==> {
+            mut as string: line = input(prompt)
+            emit(nice, line, "ok")
+      }
+
+      op readLine (as string: prompt) as string ==> {
+            mut as string: line = input(prompt)
+            emit(nice, line, "ok")
+      }
+}

@@ -1,0 +1,34 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DebugStdLib
+#L Dominio: DebugPipeline
+#L ==============================================================================
+
+contract (DebugPipelineContract) {
+      op debugTap (as data: value, as string: step_name) as data
+      op debugTapIf (as data: value, as bool: condition, as string: tag) as data
+      op debugCounterTap (as data: value, as int64: counter) as int64
+}
+
+agent (DebugStdLib) impl DebugPipelineContract {
+      #L 7. DebugPipelineContract
+      #L ==============================================================================
+      op debugTap (as data: value, as string: step_name) as data ==> {
+            println("[TAP] [" + step_name + "]: " + value)
+            emit(nice, value, "ok")
+      }
+
+      op debugTapIf (as data: value, as bool: condition, as string: tag) as data ==> {
+            route {
+                  condition ==> {
+                        println("[TAP:COND] [" + tag + "]: " + value)
+                  }
+            }
+            emit(nice, value, "ok")
+      }
+
+      op debugCounterTap (as data: value, as int64: counter) as int64 ==> {
+            emit(nice, counter + 1, "ok")
+      }
+
+      #L ==============================================================================
+}

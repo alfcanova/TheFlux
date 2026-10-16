@@ -1,0 +1,114 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringUtility
+#L ==============================================================================
+
+contract (StringUtilityContract) {
+      op stringCompare (as string: left, as string: right) as int64
+      op stringEqualsIgnoreCase (as string: left, as string: right) as bool
+      op stringSplit (as string: text, as string: separator) as list of data
+      op stringJoin (as list of data: items, as string: separator) as string
+}
+
+agent (StringStdLib) impl StringUtilityContract {
+      #L -- StringUtilityContract -------------------------------------
+      op stringCompare (as string: left, as string: right) as int64 ==> {
+            route {
+                  left == right ==> {
+                        mut as int64: eq = 0
+                        emit(nice, eq, "ok")
+                  }
+                  left < right ==> {
+                        mut as int64: lt = -1
+                        emit(nice, lt, "ok")
+                  }
+                  left > right ==> {
+                        mut as int64: gt = 1
+                        emit(nice, gt, "ok")
+                  }
+            }
+      }
+
+      op stringEqualsIgnoreCase (as string: left, as string: right) as bool ==> {
+            imut as string: l_low = stringLower(left)
+            imut as string: r_low = stringLower(right)
+            emit(nice, l_low == r_low, "ok")
+      }
+
+      op stringSplit (as string: text, as string: separator) as list of data ==> {
+            mut as list of data: res = []
+            mut as int64: len_t = stringLength(text)
+            mut as int64: len_s = stringLength(separator)
+            route {
+                  len_s == 0 ==> {
+                        mut as int64: i = 1
+                        infinite (c in text) {
+                              res[i] = c
+                              i = i + 1
+                        }
+                        emit(nice, res, "ok")
+                  }
+                  len_t == 0 ==> {
+                        res[1] = ""
+                        emit(nice, res, "ok")
+                  }
+            }
+            mut as int64: count = 0
+            mut as int64: start = 1
+            infinite {
+                  mut as int64: rem_len = len_t - start + 1
+                  route {
+                        rem_len < len_s ==> {
+                              count = count + 1
+                              res[count] = text[start..len_t]
+                              break
+                        }
+                  }
+                  mut as string: rem = text[start..len_t]
+                  mut as int64: next_rel = stringIndexOf(rem, separator)
+                  route {
+                        next_rel <= 0 ==> {
+                              count = count + 1
+                              res[count] = text[start..len_t]
+                              break
+                        }
+                  }
+                  mut as int64: sep_pos = start + next_rel - 1
+                  mut as string: part = ""
+                  route {
+                        sep_pos > start ==> {
+                              part = text[start..(sep_pos - 1)]
+                        }
+                  }
+                  count = count + 1
+                  res[count] = part
+                  start = sep_pos + len_s
+                  route {
+                        start > len_t ==> {
+                              count = count + 1
+                              res[count] = ""
+                              break
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringJoin (as list of data: items, as string: separator) as string ==> {
+            mut as string: text = ""
+            mut as bool: first = true
+            infinite (x in items) {
+                  route {
+                        first ==> {
+                              text = "" + x
+                              first = false
+                        }
+                        not first ==> {
+                              text = text + separator + x
+                        }
+                  }
+            }
+            imut as string: res = text
+            emit(nice, res, "ok")
+      }
+}

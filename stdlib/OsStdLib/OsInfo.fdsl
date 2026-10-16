@@ -1,0 +1,109 @@
+#L ==============================================================================
+#L TheFlux Standard Library: OsStdLib
+#L Dominio: OsInfo
+#L ==============================================================================
+
+contract (OsInfoContract) {
+      op osPlatform () as string
+      op osArch () as string
+      op osFamily () as string
+      op osHostname () as string
+      op osLineSeparator () as string
+      op osPathSeparator () as string
+      op osDirSeparator () as string
+      op osIsWindows () as bool
+      op osIsLinux () as bool
+      op osIsDarwin () as bool
+      op osInfoSummary () as string
+
+      #L Aliases
+      op platform () as string
+      op arch () as string
+      op family () as string
+      op hostname () as string
+      op lineSeparator () as string
+      op pathSeparator () as string
+      op dirSeparator () as string
+}
+
+agent (OsStdLib) impl OsInfoContract {
+      #L -- OsInfoContract --------------------------------------------
+      op osPlatform () as string ==> {
+            emit(nice, stdOsPlatform(), "ok")
+      }
+
+      op osArch () as string ==> {
+            emit(nice, stdOsArch(), "ok")
+      }
+
+      op osFamily () as string ==> {
+            emit(nice, stdOsFamily(), "ok")
+      }
+
+      op osHostname () as string ==> {
+            emit(nice, stdOsHostname(), "ok")
+      }
+
+      op osLineSeparator () as string ==> {
+            emit(nice, stdOsLineSeparator(), "ok")
+      }
+
+      op osPathSeparator () as string ==> {
+            emit(nice, stdOsPathSeparator(), "ok")
+      }
+
+      op osDirSeparator () as string ==> {
+            emit(nice, stdOsDirSeparator(), "ok")
+      }
+
+      op osIsWindows () as bool ==> {
+            mut as string: p = stdOsPlatform()
+            emit(nice, p == "windows", "ok")
+      }
+
+      op osIsLinux () as bool ==> {
+            mut as string: p = stdOsPlatform()
+            emit(nice, p == "linux", "ok")
+      }
+
+      op osIsDarwin () as bool ==> {
+            mut as string: p = stdOsPlatform()
+            emit(nice, p == "darwin", "ok")
+      }
+
+      op osInfoSummary () as string ==> {
+            mut as string: p = stdOsPlatform()
+            mut as string: a = stdOsArch()
+            mut as string: f = stdOsFamily()
+            mut as string: h = stdOsHostname()
+            emit(nice, "Platform=" + p + "; Arch=" + a + "; Family=" + f + "; Host=" + h, "ok")
+      }
+
+      op platform () as string ==> {
+            emit(nice, stdOsPlatform(), "ok")
+      }
+
+      op arch () as string ==> {
+            emit(nice, stdOsArch(), "ok")
+      }
+
+      op family () as string ==> {
+            emit(nice, stdOsFamily(), "ok")
+      }
+
+      op hostname () as string ==> {
+            emit(nice, stdOsHostname(), "ok")
+      }
+
+      op lineSeparator () as string ==> {
+            emit(nice, stdOsLineSeparator(), "ok")
+      }
+
+      op pathSeparator () as string ==> {
+            emit(nice, stdOsPathSeparator(), "ok")
+      }
+
+      op dirSeparator () as string ==> {
+            emit(nice, stdOsDirSeparator(), "ok")
+      }
+}

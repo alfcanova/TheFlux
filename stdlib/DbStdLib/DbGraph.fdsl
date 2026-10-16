@@ -1,0 +1,40 @@
+#L ==============================================================================
+#L TheFlux Standard Library: DbStdLib
+#L Dominio: DbGraph
+#L ==============================================================================
+
+contract (DbGraphContract) {
+      op dbGraphOpen (as string: path) as data
+      op dbGraphExecute (as data: connection, as string: cypher) as bool
+      op dbGraphQuery (as data: connection, as string: cypher) as list of data
+      op dbGraphNodeCount (as data: connection, as string: node_table) as int64
+      op dbGraphRelCount (as data: connection, as string: rel_table) as int64
+      op dbGraphClose (as data: connection) as bool
+}
+
+agent (DbStdLib) impl DbGraphContract {
+      #L -- DbGraphContract -------------------------------------------
+      op dbGraphOpen (as string: path) as data ==> {
+            emit(nice, stdDbGraphOpen(path), "ok")
+      }
+
+      op dbGraphExecute (as data: connection, as string: cypher) as bool ==> {
+            emit(nice, stdDbGraphExecute(connection, cypher), "ok")
+      }
+
+      op dbGraphQuery (as data: connection, as string: cypher) as list of data ==> {
+            emit(nice, stdDbGraphQuery(connection, cypher), "ok")
+      }
+
+      op dbGraphNodeCount (as data: connection, as string: node_table) as int64 ==> {
+            emit(nice, stdDbGraphNodeCount(connection, node_table), "ok")
+      }
+
+      op dbGraphRelCount (as data: connection, as string: rel_table) as int64 ==> {
+            emit(nice, stdDbGraphRelCount(connection, rel_table), "ok")
+      }
+
+      op dbGraphClose (as data: connection) as bool ==> {
+            emit(nice, stdDbGraphClose(connection), "ok")
+      }
+}

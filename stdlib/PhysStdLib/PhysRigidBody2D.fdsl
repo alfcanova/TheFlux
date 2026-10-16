@@ -1,0 +1,465 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysRigidBody2D
+#L ==============================================================================
+
+contract (PhysRigidBody2DContract) {
+      op physCreateWorld (as list of data: gravity, as float64: damping) as map
+      op physCreateBodyCircle (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: radius) as map
+      op physCreateBodyBox (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: width, as float64: height) as map
+      op physApplyForce (as map: body, as list of data: force) as map
+      op physApplyImpulse (as map: body, as list of data: impulse) as map
+      op physSetMaterial (as map: body, as float64: restitution, as float64: friction) as map
+      op physCheckCollision (as map: body_a, as map: body_b) as bool
+      op physResolveCollision (as map: body_a, as map: body_b) as list of data
+      op physStepSimulation (as map: world, as list of data: bodies, as float64: delta_time) as list of data
+      op physRaycast (as list of data: bodies, as list of data: origin, as list of data: direction, as float64: max_dist) as map
+}
+
+agent (PhysStdLib) impl PhysRigidBody2DContract {
+      #L PhysRigidBody2DContract (Motor de Simulacao 2D Reativo)
+      #L =====================================================================
+      op physCreateWorld (as list of data: gravity, as float64: damping) as map ==> {
+            mut as float64: gx = gravity[1] as float64
+            mut as float64: gy = gravity[2] as float64
+            mut as map: w = map{}
+            w["gx"] = gx
+            w["gy"] = gy
+            w["damping"] = damping
+            emit(nice, w, "ok")
+      }
+
+      op physCreateBodyCircle (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: radius) as map ==> {
+            mut as float64: px = pos[1] as float64
+            mut as float64: py = pos[2] as float64
+            mut as float64: vx = vel[1] as float64
+            mut as float64: vy = vel[2] as float64
+            mut as map: b = map{}
+            b["id"] = id
+            b["type"] = "circle"
+            b["mass"] = mass
+            b["px"] = px
+            b["py"] = py
+            b["vx"] = vx
+            b["vy"] = vy
+            b["fx"] = 0.0
+            b["fy"] = 0.0
+            b["radius"] = radius
+            b["width"] = 0.0
+            b["height"] = 0.0
+            b["restitution"] = 1.0
+            b["friction"] = 0.0
+            emit(nice, b, "ok")
+      }
+
+      op physCreateBodyBox (as float64: id, as float64: mass, as list of data: pos, as list of data: vel, as float64: width, as float64: height) as map ==> {
+            mut as float64: px = pos[1] as float64
+            mut as float64: py = pos[2] as float64
+            mut as float64: vx = vel[1] as float64
+            mut as float64: vy = vel[2] as float64
+            mut as map: b = map{}
+            b["id"] = id
+            b["type"] = "box"
+            b["mass"] = mass
+            b["px"] = px
+            b["py"] = py
+            b["vx"] = vx
+            b["vy"] = vy
+            b["fx"] = 0.0
+            b["fy"] = 0.0
+            b["radius"] = 0.0
+            b["width"] = width
+            b["height"] = height
+            b["restitution"] = 1.0
+            b["friction"] = 0.0
+            emit(nice, b, "ok")
+      }
+
+      op physApplyForce (as map: body, as list of data: force) as map ==> {
+            mut as float64: fx = force[1] as float64
+            mut as float64: fy = force[2] as float64
+            mut as float64: cur_fx = body["fx"] as float64
+            mut as float64: cur_fy = body["fy"] as float64
+            mut as map: updated = map{}
+            updated["id"] = body["id"] as float64
+            updated["type"] = body["type"] as string
+            updated["mass"] = body["mass"] as float64
+            updated["px"] = body["px"] as float64
+            updated["py"] = body["py"] as float64
+            updated["vx"] = body["vx"] as float64
+            updated["vy"] = body["vy"] as float64
+            updated["fx"] = cur_fx + fx
+            updated["fy"] = cur_fy + fy
+            updated["radius"] = body["radius"] as float64
+            updated["width"] = body["width"] as float64
+            updated["height"] = body["height"] as float64
+            updated["restitution"] = body["restitution"] as float64
+            updated["friction"] = body["friction"] as float64
+            emit(nice, updated, "ok")
+      }
+
+      op physApplyImpulse (as map: body, as list of data: impulse) as map ==> {
+            mut as float64: ix = impulse[1] as float64
+            mut as float64: iy = impulse[2] as float64
+            mut as float64: m = body["mass"] as float64
+            route {
+                  m <= 0.0 ==> {
+                        emit(nice, body, "ok")
+                  }
+            }
+            mut as float64: cur_vx = body["vx"] as float64
+            mut as float64: cur_vy = body["vy"] as float64
+            mut as map: updated = map{}
+            updated["id"] = body["id"] as float64
+            updated["type"] = body["type"] as string
+            updated["mass"] = m
+            updated["px"] = body["px"] as float64
+            updated["py"] = body["py"] as float64
+            updated["vx"] = cur_vx + (ix /f m)
+            updated["vy"] = cur_vy + (iy /f m)
+            updated["fx"] = body["fx"] as float64
+            updated["fy"] = body["fy"] as float64
+            updated["radius"] = body["radius"] as float64
+            updated["width"] = body["width"] as float64
+            updated["height"] = body["height"] as float64
+            updated["restitution"] = body["restitution"] as float64
+            updated["friction"] = body["friction"] as float64
+            emit(nice, updated, "ok")
+      }
+
+      op physSetMaterial (as map: body, as float64: restitution, as float64: friction) as map ==> {
+            mut as map: updated = map{}
+            updated["id"] = body["id"] as float64
+            updated["type"] = body["type"] as string
+            updated["mass"] = body["mass"] as float64
+            updated["px"] = body["px"] as float64
+            updated["py"] = body["py"] as float64
+            updated["vx"] = body["vx"] as float64
+            updated["vy"] = body["vy"] as float64
+            updated["fx"] = body["fx"] as float64
+            updated["fy"] = body["fy"] as float64
+            updated["radius"] = body["radius"] as float64
+            updated["width"] = body["width"] as float64
+            updated["height"] = body["height"] as float64
+            updated["restitution"] = restitution
+            updated["friction"] = friction
+            emit(nice, updated, "ok")
+      }
+
+      op physCheckCollision (as map: body_a, as map: body_b) as bool ==> {
+            mut as string: type_a = body_a["type"] as string
+            mut as string: type_b = body_b["type"] as string
+            mut as float64: ax = body_a["px"] as float64
+            mut as float64: ay = body_a["py"] as float64
+            mut as float64: bx = body_b["px"] as float64
+            mut as float64: by = body_b["py"] as float64
+
+            #L 1. Circulo com Circulo
+            route {
+                  type_a == "circle" and type_b == "circle" ==> {
+                        mut as float64: ra = body_a["radius"] as float64
+                        mut as float64: rb = body_b["radius"] as float64
+                        mut as float64: dx = bx - ax
+                        mut as float64: dy = by - ay
+                        mut as float64: dist_sq = (dx * dx) + (dy * dy)
+                        mut as float64: r_sum = ra + rb
+                        mut as bool: collided = dist_sq <= (r_sum * r_sum)
+                        emit(nice, collided, "ok")
+                  }
+            }
+
+            #L 2. Caixa com Caixa (AABB)
+            route {
+                  type_a == "box" and type_b == "box" ==> {
+                        mut as float64: wa2 = (body_a["width"] as float64) * 0.5
+                        mut as float64: ha2 = (body_a["height"] as float64) * 0.5
+                        mut as float64: wb2 = (body_b["width"] as float64) * 0.5
+                        mut as float64: hb2 = (body_b["height"] as float64) * 0.5
+
+                        mut as float64: diff_x = bx - ax
+                        route { diff_x < 0.0 ==> { diff_x = 0.0 - diff_x } }
+                        mut as float64: diff_y = by - ay
+                        route { diff_y < 0.0 ==> { diff_y = 0.0 - diff_y } }
+
+                        mut as bool: collided = (diff_x <= (wa2 + wb2)) and (diff_y <= (ha2 + hb2))
+                        emit(nice, collided, "ok")
+                  }
+            }
+
+            #L 3. Circulo com Caixa (ou Caixa com Circulo)
+            mut as float64: cx = ax
+            mut as float64: cy = ay
+            mut as float64: cr = 0.0
+            mut as float64: rect_x = bx
+            mut as float64: rect_y = by
+            mut as float64: rw2 = 0.0
+            mut as float64: rh2 = 0.0
+
+            route {
+                  type_a == "circle" and type_b == "box" ==> {
+                        cx = ax
+                        cy = ay
+                        cr = body_a["radius"] as float64
+                        rect_x = bx
+                        rect_y = by
+                        rw2 = (body_b["width"] as float64) * 0.5
+                        rh2 = (body_b["height"] as float64) * 0.5
+                  }
+                  type_a == "box" and type_b == "circle" ==> {
+                        cx = bx
+                        cy = by
+                        cr = body_b["radius"] as float64
+                        rect_x = ax
+                        rect_y = ay
+                        rw2 = (body_a["width"] as float64) * 0.5
+                        rh2 = (body_a["height"] as float64) * 0.5
+                  }
+            }
+
+            mut as float64: min_x = rect_x - rw2
+            mut as float64: max_x = rect_x + rw2
+            mut as float64: min_y = rect_y - rh2
+            mut as float64: max_y = rect_y + rh2
+
+            mut as float64: closest_x = cx
+            route {
+                  closest_x < min_x ==> { closest_x = min_x }
+                  closest_x > max_x ==> { closest_x = max_x }
+            }
+            mut as float64: closest_y = cy
+            route {
+                  closest_y < min_y ==> { closest_y = min_y }
+                  closest_y > max_y ==> { closest_y = max_y }
+            }
+
+            mut as float64: d_cx = cx - closest_x
+            mut as float64: d_cy = cy - closest_y
+            mut as float64: c_dist_sq = (d_cx * d_cx) + (d_cy * d_cy)
+            mut as bool: c_hit = c_dist_sq <= (cr * cr)
+            emit(nice, c_hit, "ok")
+      }
+
+      op physResolveCollision (as map: body_a, as map: body_b) as list of data ==> {
+            mut as float64: m1 = body_a["mass"] as float64
+            mut as float64: m2 = body_b["mass"] as float64
+            mut as float64: e1 = body_a["restitution"] as float64
+            mut as float64: e2 = body_b["restitution"] as float64
+            mut as float64: e = (e1 + e2) * 0.5
+
+            mut as float64: ax = body_a["px"] as float64
+            mut as float64: ay = body_a["py"] as float64
+            mut as float64: bx = body_b["px"] as float64
+            mut as float64: by = body_b["py"] as float64
+
+            mut as float64: nx = bx - ax
+            mut as float64: ny = by - ay
+            mut as float64: nlen_sq = (nx * nx) + (ny * ny)
+            route {
+                  nlen_sq == 0.0 ==> {
+                        nx = 1.0
+                        ny = 0.0
+                        nlen_sq = 1.0
+                  }
+            }
+            mut as float64: nlen = nlen_sq ^e 0.5
+            nx = nx /f nlen
+            ny = ny /f nlen
+
+            mut as float64: v1x = body_a["vx"] as float64
+            mut as float64: v1y = body_a["vy"] as float64
+            mut as float64: v2x = body_b["vx"] as float64
+            mut as float64: v2y = body_b["vy"] as float64
+
+            #L Velocidades ao longo da normal
+            mut as float64: u1 = (v1x * nx) + (v1y * ny)
+            mut as float64: u2 = (v2x * nx) + (v2y * ny)
+
+            #L Momento unidimensional com restituicao
+            mut as float64: total_m = m1 + m2
+            mut as float64: new_u1 = ((m1 * u1) + (m2 * u2) - (m2 * e * (u1 - u2))) /f total_m
+            mut as float64: new_u2 = ((m1 * u1) + (m2 * u2) + (m1 * e * (u1 - u2))) /f total_m
+
+            mut as float64: delta_u1 = new_u1 - u1
+            mut as float64: delta_u2 = new_u2 - u2
+
+            mut as map: res_a = map{}
+            res_a["id"] = body_a["id"] as float64
+            res_a["type"] = body_a["type"] as string
+            res_a["mass"] = m1
+            res_a["px"] = ax
+            res_a["py"] = ay
+            res_a["vx"] = v1x + (delta_u1 * nx)
+            res_a["vy"] = v1y + (delta_u1 * ny)
+            res_a["fx"] = body_a["fx"] as float64
+            res_a["fy"] = body_a["fy"] as float64
+            res_a["radius"] = body_a["radius"] as float64
+            res_a["width"] = body_a["width"] as float64
+            res_a["height"] = body_a["height"] as float64
+            res_a["restitution"] = e1
+            res_a["friction"] = body_a["friction"] as float64
+
+            mut as map: res_b = map{}
+            res_b["id"] = body_b["id"] as float64
+            res_b["type"] = body_b["type"] as string
+            res_b["mass"] = m2
+            res_b["px"] = bx
+            res_b["py"] = by
+            res_b["vx"] = v2x + (delta_u2 * nx)
+            res_b["vy"] = v2y + (delta_u2 * ny)
+            res_b["fx"] = body_b["fx"] as float64
+            res_b["fy"] = body_b["fy"] as float64
+            res_b["radius"] = body_b["radius"] as float64
+            res_b["width"] = body_b["width"] as float64
+            res_b["height"] = body_b["height"] as float64
+            res_b["restitution"] = e2
+            res_b["friction"] = body_b["friction"] as float64
+
+            mut as list of data: result = [res_a, res_b]
+            emit(nice, result, "ok")
+      }
+
+      op physStepSimulation (as map: world, as list of data: bodies, as float64: delta_time) as list of data ==> {
+            mut as float64: gx = world["gx"] as float64
+            mut as float64: gy = world["gy"] as float64
+            mut as float64: damping = world["damping"] as float64
+
+            mut as list of data: updated_bodies = []
+            mut as int64: body_count = 0
+            infinite (body in bodies) {
+                  mut as map: b = body as map
+                  mut as float64: m = b["mass"] as float64
+
+                  mut as float64: px = b["px"] as float64
+                  mut as float64: py = b["py"] as float64
+                  mut as float64: vx = b["vx"] as float64
+                  mut as float64: vy = b["vy"] as float64
+                  mut as float64: fx = b["fx"] as float64
+                  mut as float64: fy = b["fy"] as float64
+
+                  mut as float64: ax = gx
+                  mut as float64: ay = gy
+
+                  route {
+                        m > 0.0 ==> {
+                              ax = ax + (fx /f m)
+                              ay = ay + (fy /f m)
+                        }
+                  }
+
+                  #L Integracao de Euler semi-implicito
+                  mut as float64: new_vx = (vx + (ax * delta_time)) * (1.0 - (damping * delta_time))
+                  mut as float64: new_vy = (vy + (ay * delta_time)) * (1.0 - (damping * delta_time))
+                  mut as float64: new_px = px + (new_vx * delta_time)
+                  mut as float64: new_py = py + (new_vy * delta_time)
+
+                  mut as map: next_body = map{}
+                  next_body["id"] = b["id"] as float64
+                  next_body["type"] = b["type"] as string
+                  next_body["mass"] = m
+                  next_body["px"] = new_px
+                  next_body["py"] = new_py
+                  next_body["vx"] = new_vx
+                  next_body["vy"] = new_vy
+                  next_body["fx"] = 0.0
+                  next_body["fy"] = 0.0
+                  next_body["radius"] = b["radius"] as float64
+                  next_body["width"] = b["width"] as float64
+                  next_body["height"] = b["height"] as float64
+                  next_body["restitution"] = b["restitution"] as float64
+                  next_body["friction"] = b["friction"] as float64
+
+                  body_count = body_count + 1
+                  updated_bodies[body_count] = next_body
+            }
+
+            emit(nice, updated_bodies, "ok")
+      }
+
+      op physRaycast (as list of data: bodies, as list of data: origin, as list of data: direction, as float64: max_dist) as map ==> {
+            mut as float64: ox = origin[1] as float64
+            mut as float64: oy = origin[2] as float64
+            mut as float64: dx = direction[1] as float64
+            mut as float64: dy = direction[2] as float64
+
+            #L Normalizar direcao do raio
+            mut as float64: dlen_sq = (dx * dx) + (dy * dy)
+            route {
+                  dlen_sq == 0.0 ==> {
+                        mut as map: miss = map{}
+                        miss["hit"] = false
+                        miss["body_id"] = -1.0
+                        miss["distance"] = max_dist
+                        miss["hit_x"] = ox
+                        miss["hit_y"] = oy
+                        emit(nice, miss, "ok")
+                  }
+            }
+            mut as float64: dlen = dlen_sq ^e 0.5
+            dx = dx /f dlen
+            dy = dy /f dlen
+
+            mut as float64: closest_t = max_dist + 1.0
+            mut as float64: hit_id = -1.0
+            mut as float64: hit_x = ox
+            mut as float64: hit_y = oy
+            mut as bool: has_hit = false
+
+            infinite (body in bodies) {
+                  mut as map: b = body as map
+                  mut as string: btype = b["type"] as string
+                  mut as float64: cx = b["px"] as float64
+                  mut as float64: cy = b["py"] as float64
+
+                  #L Interseccao Raio com Circulo
+                  route {
+                        btype == "circle" ==> {
+                              mut as float64: cr = b["radius"] as float64
+                              mut as float64: ex = cx - ox
+                              mut as float64: ey = cy - oy
+                              mut as float64: tca = (ex * dx) + (ey * dy)
+                              route {
+                                    tca >= 0.0 ==> {
+                                          mut as float64: d2 = ((ex * ex) + (ey * ey)) - (tca * tca)
+                                          mut as float64: r2 = cr * cr
+                                          route {
+                                                d2 <= r2 ==> {
+                                                      mut as float64: thc = (r2 - d2) ^e 0.5
+                                                      mut as float64: t0 = tca - thc
+                                                      route {
+                                                            t0 >= 0.0 and t0 <= max_dist and t0 < closest_t ==> {
+                                                                  closest_t = t0
+                                                                  hit_id = b["id"] as float64
+                                                                  hit_x = ox + (dx * t0)
+                                                                  hit_y = oy + (dy * t0)
+                                                                  has_hit = true
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            route {
+                  has_hit ==> {
+                        mut as map: hit_res = map{}
+                        hit_res["hit"] = true
+                        hit_res["body_id"] = hit_id
+                        hit_res["distance"] = closest_t
+                        hit_res["hit_x"] = hit_x
+                        hit_res["hit_y"] = hit_y
+                        emit(nice, hit_res, "ok")
+                  }
+            }
+
+            mut as map: default_miss = map{}
+            default_miss["hit"] = false
+            default_miss["body_id"] = -1.0
+            default_miss["distance"] = max_dist
+            default_miss["hit_x"] = ox + (dx * max_dist)
+            default_miss["hit_y"] = oy + (dy * max_dist)
+            emit(nice, default_miss, "ok")
+      }
+}

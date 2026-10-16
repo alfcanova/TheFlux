@@ -1,0 +1,64 @@
+#L ==============================================================================
+#L TheFlux Standard Library: PhysStdLib
+#L Dominio: PhysDynamics
+#L ==============================================================================
+
+contract (PhysDynamicsContract) {
+      op physForce (as float64: mass, as float64: acceleration) as float64
+      op physAcceleration (as float64: force, as float64: mass) as float64
+      op physWeight (as float64: mass, as float64: gravity) as float64
+      op physFrictionForce (as float64: normal_force, as float64: friction_coeff) as float64
+      op physHookeForce (as float64: spring_k, as float64: displacement) as float64
+      op physCentripetalForce (as float64: mass, as float64: velocity, as float64: radius) as float64
+      op physMomentum (as float64: mass, as float64: velocity) as float64
+      op physImpulse (as float64: force, as float64: delta_time) as float64
+}
+
+agent (PhysStdLib) impl PhysDynamicsContract {
+      #L PhysDynamicsContract (Dinamica e Forcas)
+      #L =====================================================================
+      op physForce (as float64: mass, as float64: acceleration) as float64 ==> {
+            mut as float64: f = mass * acceleration
+            emit(nice, f, "ok")
+      }
+      op physAcceleration (as float64: force, as float64: mass) as float64 ==> {
+            route {
+                  mass == 0.0 ==> {
+                        emit(fail, 0.0, "massa zero em aceleracao")
+                  }
+            }
+            mut as float64: a = force /f mass
+            emit(nice, a, "ok")
+      }
+      op physWeight (as float64: mass, as float64: gravity) as float64 ==> {
+            mut as float64: p = mass * gravity
+            emit(nice, p, "ok")
+      }
+      op physFrictionForce (as float64: normal_force, as float64: friction_coeff) as float64 ==> {
+            mut as float64: f = normal_force * friction_coeff
+            emit(nice, f, "ok")
+      }
+      op physHookeForce (as float64: spring_k, as float64: displacement) as float64 ==> {
+            mut as float64: f = (0.0 - spring_k) * displacement
+            emit(nice, f, "ok")
+      }
+      op physCentripetalForce (as float64: mass, as float64: velocity, as float64: radius) as float64 ==> {
+            route {
+                  radius == 0.0 ==> {
+                        emit(fail, 0.0, "raio zero em forca centripeta")
+                  }
+            }
+            mut as float64: fc = (mass * (velocity * velocity)) /f radius
+            emit(nice, fc, "ok")
+      }
+      op physMomentum (as float64: mass, as float64: velocity) as float64 ==> {
+            mut as float64: p = mass * velocity
+            emit(nice, p, "ok")
+      }
+      op physImpulse (as float64: force, as float64: delta_time) as float64 ==> {
+            mut as float64: j = force * delta_time
+            emit(nice, j, "ok")
+      }
+
+      #L =====================================================================
+}

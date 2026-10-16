@@ -1,0 +1,184 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Dominio: TensorStrides
+#L ==============================================================================
+
+contract (TensorStridesContract) {
+      op tensorNewWithStrides (as list of data: shape, as list of data: strides, as int64: offset, as list of data: data_buffer) as map
+      op tensorAsStrided (as map: tensor, as list of data: new_shape, as list of data: new_strides, as int64: new_offset) as map
+      op tensorSliceView (as map: tensor, as list of data: starts, as list of data: ends, as list of data: steps) as map
+      op tensorBroadcastTo (as map: tensor, as list of data: target_shape) as map
+      op tensorIsContiguous (as map: tensor) as bool
+      op tensorContiguous (as map: tensor) as map
+}
+
+agent (LinAlgStdLib) impl TensorStridesContract {
+      #L 7. TensorStridesContract - Manipulacao Avancada de Strides e Geometria
+      #L ==============================================================================
+
+      op tensorNewWithStrides (as list of data: shape, as list of data: strides, as int64: offset, as list of data: data_buffer) as map ==> {
+            mut as int64: ndim = 0
+            infinite (x in shape) { ndim = ndim + 1 }
+
+            mut as map: tensor = map{}
+            tensor["ndim"] = ndim
+            tensor["shape"] = shape
+            tensor["strides"] = strides
+            tensor["offset"] = offset
+            tensor["data"] = data_buffer
+
+            emit(nice, tensor, "ok")
+      }
+
+      op tensorAsStrided (as map: tensor, as list of data: new_shape, as list of data: new_strides, as int64: new_offset) as map ==> {
+            mut as map: t = _mapClone(tensor)
+            mut as int64: ndim = 0
+            infinite (x in new_shape) { ndim = ndim + 1 }
+
+            t["ndim"] = ndim
+            t["shape"] = new_shape
+            t["strides"] = new_strides
+            t["offset"] = new_offset
+
+            emit(nice, t, "ok")
+      }
+
+      op tensorSliceView (as map: tensor, as list of data: starts, as list of data: ends, as list of data: steps) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as list of data: old_st = tensor["strides"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+            mut as int64: new_offset = tensor["offset"] as int64
+
+            mut as list of data: new_sh = []
+            mut as list of data: new_st = []
+
+            mut as int64: k = 1
+            infinite (k <= ndim) {
+                  mut as int64: st_k = starts[k] as int64
+                  mut as int64: en_k = ends[k] as int64
+                  mut as int64: step_k = steps[k] as int64
+
+                  new_offset = new_offset + (st_k - 1) * (old_st[k] as int64)
+                  mut as int64: dim_size = (en_k - st_k) /i step_k + 1
+                  new_sh[k] = dim_size
+                  new_st[k] = (old_st[k] as int64) * step_k
+                  k = k + 1
+            }
+
+            mut as map: t = _mapClone(tensor)
+            t["shape"] = new_sh
+            t["strides"] = new_st
+            t["offset"] = new_offset
+
+            emit(nice, t, "ok")
+      }
+
+      op tensorBroadcastTo (as map: tensor, as list of data: target_shape) as map ==> {
+            mut as list of data: old_sh = tensor["shape"] as list of data
+            mut as list of data: old_st = tensor["strides"] as list of data
+
+            mut as int64: target_ndim = 0
+            infinite (x in target_shape) { target_ndim = target_ndim + 1 }
+
+            mut as list of data: new_st = []
+            mut as int64: k = 1
+            infinite (k <= target_ndim) {
+                  mut as int64: cur_dim = old_sh[k] as int64
+                  mut as int64: tgt_dim = target_shape[k] as int64
+                  route {
+                        cur_dim == 1 and tgt_dim > 1 ==> {
+                              new_st[k] = 0
+                        }
+                        _ ==> {
+                              new_st[k] = old_st[k] as int64
+                        }
+                  }
+                  k = k + 1
+            }
+
+            mut as map: t = _mapClone(tensor)
+            t["ndim"] = target_ndim
+            t["shape"] = target_shape
+            t["strides"] = new_st
+
+            emit(nice, t, "ok")
+      }
+
+      op tensorIsContiguous (as map: tensor) as bool ==> {
+            mut as list of data: sh = tensor["shape"] as list of data
+            mut as list of data: st = tensor["strides"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+
+            mut as int64: expected_stride = 1
+            mut as int64: k = ndim
+            mut as bool: contiguous = true
+
+            infinite {
+                  route { k < 1 ==> { break } }
+                  route {
+                        (st[k] as int64) != expected_stride ==> {
+                              contiguous = false
+                              break
+                        }
+                  }
+                  expected_stride = expected_stride * (sh[k] as int64)
+                  k = k - 1
+            }
+
+            emit(nice, contiguous, "ok")
+      }
+
+      op tensorContiguous (as map: tensor) as map ==> {
+            mut as bool: is_c = tensorIsContiguous(tensor)
+            mut as int64: off = tensor["offset"] as int64
+            route {
+                  is_c and off == 1 ==> {
+                        mut as map: cloned = _mapClone(tensor)
+                        emit(nice, cloned, "ok")
+                  }
+            }
+
+            mut as list of data: sh = tensor["shape"] as list of data
+            mut as int64: ndim = tensor["ndim"] as int64
+            mut as map: out = tensorNew(sh)
+
+            mut as int64: total_elements = 1
+            mut as int64: i = 1
+            infinite (i <= ndim) {
+                  total_elements = total_elements * (sh[i] as int64)
+                  i = i + 1
+            }
+
+            mut as list of data: coords = []
+            i = 1
+            infinite (i <= ndim) {
+                  coords[i] = 1
+                  i = i + 1
+            }
+
+            mut as int64: idx = 1
+            infinite (idx <= total_elements) {
+                  mut as float64: val = tensorGetAt(tensor, coords)
+                  out = tensorSetAt(out, coords, val)
+
+                  mut as int64: dim = ndim
+                  infinite {
+                        route { dim < 1 ==> { break } }
+                        coords[dim] = (coords[dim] as int64) + 1
+                        route {
+                              (coords[dim] as int64) <= (sh[dim] as int64) ==> {
+                                    break
+                              }
+                              (coords[dim] as int64) > (sh[dim] as int64) ==> {
+                                    coords[dim] = 1
+                                    dim = dim - 1
+                              }
+                        }
+                  }
+                  idx = idx + 1
+            }
+            emit(nice, out, "ok")
+      }
+
+      #L ==============================================================================
+}

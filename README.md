@@ -75,60 +75,60 @@ Todos os programas TheFlux são compilados e validados simultaneamente em 6 ambi
 A linguagem conta com **37 bibliotecas padrão contratuais** organizadas pelos 4 pilares oficiais de desenvolvimento:
 
 ### 🔤 1. Núcleo, Texto & OO
-- `CharStdLib.fdsl`: Classificação, conversão e manipulação de caracteres individuais.
-- `ConvertStdLib.fdsl`: Conversões numéricas, bases matemáticas (binário, octal, hex) e parsing seguro.
-- `DebugStdLib.fdsl`: Rastreamento de chamadas, pontos de parada e introspecção em tempo de depuração.
-- `DslStdLib.fdsl`: Criação, análise e execução de linguagens de domínio específico (DSLs):
+- `CharStdLib/`: Classificação, conversão e manipulação de caracteres individuais (6 domínios).
+- `ConvertStdLib/`: Conversões numéricas, bases matemáticas (binário, octal, hex) e parsing seguro (6 domínios).
+- `DebugStdLib/`: Rastreamento de chamadas, pontos de parada e introspecção em tempo de depuração (8 domínios).
+- `DslStdLib/`: Criação, análise e execução de linguagens de domínio específico (DSLs, 6 domínios):
   - Análise léxica com regex (`DslLexerContract`).
   - Parsing e validação com diagnósticos visuais e cursor `^` (`DslParserContract`).
   - Manipulação de árvores AST e otimização por *constant folding* (`DslAstContract`).
   - Execução inline segura com injeção de contexto (`DslExecutionContract`).
   - Assembly inline de hardware com montagem e validação de registradores (`DslAsmContract`).
   - Governança de execução com limites de CPU, memória e timeout (`DslSandboxContract`).
-- `FileSignatureStdLib.fdsl`: Identificação de tipos MIME e assinaturas criptográficas de arquivos.
-- `FormatStdLib.fdsl`: Serialização e desserialização de formatos (JSON, CSV, YAML 1.2, TOML, Base64, URL).
-- `OoStdLib.fdsl`: Herança comportamental via contratos, composição e polimorfismo seguro.
-- `RegexStdLib.fdsl`: Motor de expressões regulares para busca, captura e substituição de padrões.
-- `StringStdLib.fdsl`: Manipulação, mutação, transformações e validações de strings.
+- `FileSignatureStdLib/`: Identificação de tipos MIME e assinaturas criptográficas de arquivos (4 domínios).
+- `FormatStdLib/`: Serialização e desserialização de formatos (JSON, CSV, YAML 1.2, TOML, Base64, URL, 5 domínios).
+- `OoStdLib/`: Herança comportamental via contratos, composição e polimorfismo seguro (5 domínios).
+- `RegexStdLib/`: Motor de expressões regulares para busca, captura e substituição de padrões (5 domínios).
+- `StringStdLib/`: Manipulação, mutação, transformações e validações de strings (8 domínios).
 
 ### 📊 2. Estruturas & Estados
-- `DateTimeStdLib.fdsl`: Manipulação de datas, horas, fusos horários e relógio monotônico de alta precisão.
-- `DbStdLib.fdsl`: Motores embutidos multi-modelo com persistência física em disco (`scratch/`):
+- `DateTimeStdLib/`: Manipulação de datas, horas, fusos horários e relógio monotônico de alta precisão (6 domínios).
+- `DbStdLib/`: Motores embutidos multi-modelo com persistência física em disco (`scratch/`, 7 domínios):
   - *Relacional (SQL)*: SQLite 3.53.4
   - *Colunar / OLAP*: DuckDB
   - *Chave-Valor*: LevelDB 1.23
   - *Documentos NoSQL*: UnQLite 1.1.4
   - *Grafos de Propriedades*: KùzuDB
   - *Vetores para IA*: ObjectBox 5.3.2
-- `FsmStdLib.fdsl`: Máquinas de estados finitos determinísticas orientadas a eventos.
-- `ListStdLib.fdsl`: Listas ordenadas dinâmicas, busca, filtros e transformações funcionais.
-- `MapStdLib.fdsl`: Tabelas hash, dicionários chave-valor, entradas e relacionamentos.
-- `RandomStdLib.fdsl`: Geradores pseudo-aleatórios criptográficos e distribuições estatísticas.
-- `SetStdLib.fdsl`: Teoria dos conjuntos, união, interseção, diferença e testes de pertinência.
-- `StructStdLib.fdsl`: Estruturas de dados tipadas, introspecção de campos e contratos em memória.
+- `FsmStdLib/`: Máquinas de estados finitos determinísticas orientadas a eventos (5 domínios).
+- `ListStdLib/`: Listas ordenadas dinâmicas, busca, filtros e transformações funcionais (9 domínios).
+- `MapStdLib/`: Tabelas hash, dicionários chave-valor, entradas e relacionamentos (10 domínios).
+- `RandomStdLib/`: Geradores pseudo-aleatórios criptográficos e distribuições estatísticas (4 domínios).
+- `SetStdLib/`: Teoria dos conjuntos, união, interseção, diferença e testes de pertinência (10 domínios).
+- `StructStdLib/`: Estruturas de dados tipadas, introspecção de campos e contratos em memória (4 domínios).
 
 ### 🧮 3. Matemática & Gráficos
-- `FinStdLib.fdsl`: Cálculos financeiros, amortizações, taxas de juros compostos e anuidades.
-- `GraphPlotStdLib.fdsl`: Plotagem científica abrangente cobrindo 7 domínios (distribuições/densidades/probabilidade, relações/correlações, superfícies/campos 3D, composições/partições, sistemas curvilíneos e câmeras, modelos matemáticos/grafos, gráficos de engenharia/controle), com 19 sistemas de coordenadas curvilíneas e projeções de câmera 3D (perspectiva, ortográfica, isométrica).
-- `HashStdLib.fdsl`: Hashes criptográficos (SHA-256, MD5) e checksums de integridade rápida (CRC32, Adler32).
-- `LinAlgStdLib.fdsl`: Álgebra linear densa, vetores multidimensionais, matrizes, determinantes e autovalores.
-- `MathStdLib.fdsl`: Operações fundamentais, trigonometria, hiperbólicas, logaritmos e arredondamentos.
-- `PhysStdLib.fdsl`: Cinemática, dinâmica, eletromagnetismo e termodinâmica física.
-- `SimdStdLib.fdsl`: Vetorização paralela de hardware SIMD, operações aritméticas e reduções de alta performance.
-- `StatStdLib.fdsl`: Estatística descritiva, medidas de tendência central, dispersão e testes de inferência.
-- `SymbolicStdLib.fdsl`: Computação algébrica simbólica, derivadas, integrais analíticas e matrizes simbólicas.
+- `FinStdLib/`: Cálculos financeiros, amortizações, taxas de juros compostos e anuidades (7 domínios).
+- `GraphPlotStdLib/`: Plotagem científica abrangente cobrindo 7 domínios (distribuições/densidades/probabilidade, relações/correlações, superfícies/campos 3D, composições/partições, sistemas curvilíneos e câmeras, modelos matemáticos/grafos, gráficos de engenharia/controle), com 19 sistemas de coordenadas curvilíneas e projeções de câmera 3D (perspectiva, ortográfica, isométrica, 12 domínios).
+- `HashStdLib/`: Hashes criptográficos (SHA-256, MD5) e checksums de integridade rápida (CRC32, Adler32, 6 domínios).
+- `LinAlgStdLib/`: Álgebra linear densa, vetores multidimensionais, matrizes, determinantes e autovalores (16 domínios).
+- `MathStdLib/`: Operações fundamentais, trigonometria, hiperbólicas, logaritmos e arredondamentos (10 domínios).
+- `PhysStdLib/`: Cinemática, dinâmica, eletromagnetismo e termodinâmica física (10 domínios).
+- `SimdStdLib/`: Vetorização paralela de hardware SIMD, operações aritméticas e reduções de alta performance (4 domínios).
+- `StatStdLib/`: Estatística descritiva, medidas de tendência central, dispersão e testes de inferência (8 domínios).
+- `SymbolicStdLib/`: Computação algébrica simbólica, derivadas, integrais analíticas e matrizes simbólicas (9 domínios).
 
 ### 🌐 4. Sistema, I/O & Rede
-- `ArchiveStdLib.fdsl`: Fachada unificada de alto nível para gerenciamento de containers e arquivos compactados (`.zip`, `.tar`, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.7z`, extração legada de `.rar`) e operações de arquivos em binário puro (8-bit *lossless*), formato Hexadecimal e Base64.
-- `CompressStdLib.fdsl`: Algoritmos puros de compressão e descompressão de streams em memória (Deflate RFC 1951, Zlib RFC 1950, Gzip RFC 1952, Bzip2, LZMA/LZMA2, XZ, Facebook Zstandard), telemetria com structs nominais (`CompressStats`), enums de formato (`CompressFormat`) e blindagem física contra Zip Bombs (`DecompressQuota`).
-- `GfxStdLib.fdsl` & `GuiStdLib.fdsl`: Primitivas gráficas em memória e componentes visuais imediatos (IMGUI).
-- `IoStdLib.fdsl`: Manipulação física de arquivos, diretórios, percursos de árvore, deleções, I/O binário puro/hex/Base64 (`IoBinaryFileContract`) e gerenciamento de arquivos compactados e containers em disco (`IoArchiveContract`).
-- `LowLevelStdLib.fdsl`: Acesso direto a bits, bytes, endianness e inspeção de blocos de memória.
-- `NativeGfxStdLib.fdsl`: Driver gráfico nativo acelerado (Win32 GDI / HTML5 Canvas / WASI), janelamento nativo, ciclo de vida de janelas, renderização acelerada (linhas, retângulos, círculos, textos) e pooling de eventos.
-- `NetStdLib.fdsl`: Redes, conectividade TCP/UDP, clientes HTTP e resolução de IP/URL.
-- `OsStdLib.fdsl`: Processos, variáveis de ambiente, caminhos e controle do sistema operacional.
-- `RuntimeStdLib.fdsl`: Introspecção do ambiente, controle do Garbage Collector (GC), memória e tipos.
-- `ThreadStdLib.fdsl`: Concorrência preemptiva multi-threading, ciclo de vida de threads nativas (`threadSpawn`, `threadJoin`, `threadYield`), primitivas de sincronização (mutexes recursivos, condition variables, semáforos, barreiras) e canais MPMC com buffers limitados ou ilimitados.
+- `ArchiveStdLib/`: Fachada unificada de alto nível para gerenciamento de containers e arquivos compactados (`.zip`, `.tar`, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.7z`, extração legada de `.rar`) e operações de arquivos em binário puro (8-bit *lossless*), formato Hexadecimal e Base64.
+- `CompressStdLib/`: Algoritmos puros de compressão e descompressão de streams em memória (Deflate RFC 1951, Zlib RFC 1950, Gzip RFC 1952, Bzip2, LZMA/LZMA2, XZ, Facebook Zstandard), telemetria com structs nominais (`CompressStats`), enums de formato (`CompressFormat`) e blindagem física contra Zip Bombs (`DecompressQuota`, 8 domínios).
+- `GfxStdLib/` & `GuiStdLib/`: Primitivas gráficas em memória e componentes visuais imediatos (IMGUI, 9 domínios cada).
+- `IoStdLib/`: Manipulação física de arquivos, diretórios, percursos de árvore, deleções, I/O binário puro/hex/Base64 (`IoBinaryFileContract`) e gerenciamento de arquivos compactados e containers em disco (`IoArchiveContract`, 9 domínios).
+- `LowLevelStdLib/`: Acesso direto a bits, bytes, endianness e inspeção de blocos de memória (9 domínios).
+- `NativeGfxStdLib/`: Driver gráfico nativo acelerado (Win32 GDI / HTML5 Canvas / WASI), janelamento nativo, ciclo de vida de janelas, renderização acelerada (linhas, retângulos, círculos, textos) e pooling de eventos (3 domínios).
+- `NetStdLib/`: Redes, conectividade TCP/UDP, clientes HTTP e resolução de IP/URL (4 domínios).
+- `OsStdLib/`: Processos, variáveis de ambiente, caminhos e controle do sistema operacional (4 domínios).
+- `RuntimeStdLib/`: Introspecção do ambiente, controle do Garbage Collector (GC), memória e tipos (4 domínios).
+- `ThreadStdLib/`: Concorrência preemptiva multi-threading, ciclo de vida de threads nativas (`threadSpawn`, `threadJoin`, `threadYield`), primitivas de sincronização (mutexes recursivos, condition variables, semáforos, barreiras) e canais MPMC com buffers limitados ou ilimitados (4 domínios).
 
 ---
 
@@ -234,7 +234,7 @@ TheFlux/
 │   ├── ListStdLib.fdsl          # Listas dinâmicas, busca, filtros e transformações
 │   ├── LowLevelStdLib.fdsl      # Operações de baixo nível, bits, bytes e memória
 │   ├── MapStdLib.fdsl           # Dicionários, tabelas hash chave-valor e entradas
-│   ├── MathStdLib.fdsl          # Matemática fundamental, trigonometria e logaritmos
+│   ├── MathStdLib/              # Biblioteca matemática modular (11 arquivos planos, 10 contratos, manifesto)
 │   ├── NativeGfxStdLib.fdsl     # Driver gráfico nativo Win32 GDI / HTML5 Canvas / WASI
 │   ├── NetStdLib.fdsl           # Redes, sockets TCP/UDP, HTTP e IPs
 │   ├── OoStdLib.fdsl            # Orientação a objetos, herança por contratos e despacho

@@ -1,0 +1,54 @@
+keyword: spawn
+category: Tarefas Assíncronas (Future / Green Thread)
+description: 'Gatilho de execução assíncrona: autoriza e despacha um nó ou o caminho do dataflow para o runtime, que o executa
+  como uma green thread cooperativa. Diferente de async (que apenas marca a função como não-bloqueante), o spawn já inicia
+  a execução no runtime, e o await coleta o resultado posteriormente.
+
+  '
+syntax: 'spawn <expressão>
+
+  '
+usages:
+- name: Despacho de pipeline para o runtime
+  description: Autoriza e despacha um caminho do dataflow como green thread; o resultado é coletado com await.
+  examples:
+  - code: 'mut g = spawn (dobro(20 + 1) --> print)
+
+      print(await g)
+
+      '
+- name: Despacho de nó do dataflow
+  description: Despacha um nó isolado do grafo de fluxo para execução assíncrona no runtime.
+  examples:
+  - code: 'mut n = spawn dobro(42)
+
+      print(await n)
+
+      '
+restrictions:
+- O spawn autoriza e despacha o nó ou caminho do dataflow para o runtime como green thread.
+- A execução ocorre de forma cooperativa e não-bloqueante; o resultado é coletado com await.
+- Só pode envolver valores assíncronos (Future) ou pipelines despacháveis.
+errors:
+- code: "CON601"
+  mnemonic: "FSM_INVALID_STATE_TRANSITION"
+  severity: "Error"
+  trigger: "Tentativa de transição para estado inválido ou não mapeado na FSM"
+  message: "Transição de estado inválida: o estado de destino não é permitido a partir do estado atual"
+  hint: "Verifique a tabela de transições válidas definida na máquina de estados (FSM)"
+  example_bad: |
+    # Transição direta de Inicializado para Finalizado sem passar por Executando
+  example_good: |
+    # Seguir o ciclo de vida: Inicializado -> Executando -> Finalizado
+- code: "CON602"
+  mnemonic: "CHANNEL_SEND_ON_CLOSED"
+  severity: "Error"
+  trigger: "Tentativa de enviar mensagem através de um canal que já foi encerrado"
+  message: "Tentativa de envio em canal fechado: o canal não aceita mais mensagens"
+  hint: "Verifique se o canal ainda está ativo antes de enviar mensagens ('route { channelIsClosed(ch) ==> ... }')"
+  example_bad: |
+    channelClose(ch)
+    channelSend(ch, "mensagem")
+  example_good: |
+    channelSend(ch, "mensagem")
+    channelClose(ch)

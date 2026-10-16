@@ -1,0 +1,43 @@
+#L ==============================================================================
+#L TheFlux Standard Library: RuntimeStdLib
+#L Dominio: RuntimeMemory
+#L ==============================================================================
+
+contract (RuntimeMemoryContract) {
+      op runtimeAllocatedMemory () as int64
+      op runtimeHeapSize () as int64
+      op runtimePointerOf (as data: value) as int64
+
+      #L Aliases
+      op allocatedMemory () as int64
+      op heapSize () as int64
+      op pointerOf (as data: value) as int64
+}
+
+agent (RuntimeStdLib) impl RuntimeMemoryContract {
+      #L -- RuntimeMemoryContract -------------------------------------
+      op runtimeAllocatedMemory () as int64 ==> {
+            emit(nice, stdRuntimeAllocatedMemory(), "ok")
+      }
+
+      op runtimeHeapSize () as int64 ==> {
+            emit(nice, stdRuntimeHeapSize(), "ok")
+      }
+
+      op runtimePointerOf (as data: value) as int64 ==> {
+            emit(nice, stdRuntimePointerOf(value), "ok")
+      }
+
+      #L Aliases Memory
+      op allocatedMemory () as int64 ==> {
+            emit(nice, stdRuntimeAllocatedMemory(), "ok")
+      }
+
+      op heapSize () as int64 ==> {
+            emit(nice, stdRuntimeHeapSize(), "ok")
+      }
+
+      op pointerOf (as data: value) as int64 ==> {
+            emit(nice, stdRuntimePointerOf(value), "ok")
+      }
+}

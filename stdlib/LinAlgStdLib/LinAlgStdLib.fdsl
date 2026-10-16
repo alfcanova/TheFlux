@@ -1,0 +1,24 @@
+#L ==============================================================================
+#L TheFlux Standard Library: LinAlgStdLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo de Modulos de Dominio
+#L ==============================================================================
+
+use TensorCore.fdsl
+use TensorArithmetic.fdsl
+use MatrixDecomposition.fdsl
+use TensorEinsum.fdsl
+use MatrixQR.fdsl
+use TensorReduction.fdsl
+use TensorStrides.fdsl
+use MatrixFactory.fdsl
+use VectorGeometry.fdsl
+use MatrixAdvancedDecomposition.fdsl
+use TensorTransform.fdsl
+use TensorElementwise.fdsl
+use MatrixSVD.fdsl
+use MatrixEigen.fdsl
+use TensorMultilinear.fdsl
+use TensorMath.fdsl
+
+agent (LinAlgStdLib) {
+}

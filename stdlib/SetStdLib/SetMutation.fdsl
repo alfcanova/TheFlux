@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Standard Library: SetStdLib
+#L Dominio: SetMutation
+#L ==============================================================================
+
+contract (SetMutationContract) {
+      op setInclude (as set of data: items, as data: item) as set of data
+      op setIncludeAll (as set of data: items, as set of data: other) as set of data
+      op setExclude (as set of data: items, as data: item) as set of data
+      op setExcludeAll (as set of data: items, as set of data: other) as set of data
+}
+
+agent (SetStdLib) impl SetMutationContract {
+      #L -- SetMutationContract ---------------------------------------
+      op setInclude (as set of data: items, as data: item) as set of data ==> {
+            emit(nice, stdSetInclude(items, item), "ok")
+      }
+
+      op setIncludeAll (as set of data: items, as set of data: other) as set of data ==> {
+            emit(nice, stdSetUnion(items, other), "ok")
+      }
+
+      op setExclude (as set of data: items, as data: item) as set of data ==> {
+            emit(nice, stdSetExclude(items, item), "ok")
+      }
+
+      op setExcludeAll (as set of data: items, as set of data: other) as set of data ==> {
+            emit(nice, stdSetDifference(items, other), "ok")
+      }
+}

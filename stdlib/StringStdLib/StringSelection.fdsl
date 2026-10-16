@@ -1,0 +1,197 @@
+#L ==============================================================================
+#L TheFlux Standard Library: StringStdLib
+#L Dominio: StringSelection
+#L ==============================================================================
+
+contract (StringSelectionContract) {
+      op stringTake (as string: text, as int64: n) as string
+      op stringDrop (as string: text, as int64: n) as string
+      op stringTakeLast (as string: text, as int64: n) as string
+      op stringDropLast (as string: text, as int64: n) as string
+      op stringPadStart (as string: text, as int64: target_len, as string: pad) as string
+      op stringPadEnd (as string: text, as int64: target_len, as string: pad) as string
+      op stringPadCenter (as string: text, as int64: target_len, as string: pad) as string
+      op stringFilter (as string: text, as list of data: allowed_chars) as string
+      op stringOmit (as string: text, as list of data: omitted_chars) as string
+}
+
+agent (StringStdLib) impl StringSelectionContract {
+      #L -- StringSelectionContract -----------------------------------
+      op stringTake (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 or len_t == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: act_n = n
+            route {
+                  act_n > len_t ==> {
+                        act_n = len_t
+                  }
+            }
+            imut as string: res = text[1..act_n]
+            emit(nice, res, "ok")
+      }
+
+      op stringDrop (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+                  n >= len_t ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: start = n + 1
+            imut as string: res = text[start..len_t]
+            emit(nice, res, "ok")
+      }
+
+      op stringTakeLast (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 or len_t == 0 ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: start = len_t - n + 1
+            route {
+                  start < 1 ==> {
+                        start = 1
+                  }
+            }
+            imut as string: res = text[start..len_t]
+            emit(nice, res, "ok")
+      }
+
+      op stringDropLast (as string: text, as int64: n) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  n <= 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+                  n >= len_t ==> {
+                        mut as string: empty = ""
+                        emit(nice, empty, "ok")
+                  }
+            }
+            mut as int64: end_pos = len_t - n
+            imut as string: res = text[1..end_pos]
+            emit(nice, res, "ok")
+      }
+
+      op stringPadStart (as string: text, as int64: target_len, as string: pad) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t >= target_len or stringLength(pad) == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: needed = target_len - len_t
+            mut as string: padding = ""
+            infinite (i in 1 .. needed) {
+                  padding = padding + pad
+            }
+            mut as string: act_pad = padding[1..needed]
+            imut as string: res = act_pad + text
+            emit(nice, res, "ok")
+      }
+
+      op stringPadEnd (as string: text, as int64: target_len, as string: pad) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t >= target_len or stringLength(pad) == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: needed = target_len - len_t
+            mut as string: padding = ""
+            infinite (i in 1 .. needed) {
+                  padding = padding + pad
+            }
+            mut as string: act_pad = padding[1..needed]
+            imut as string: res = text + act_pad
+            emit(nice, res, "ok")
+      }
+
+      op stringPadCenter (as string: text, as int64: target_len, as string: pad) as string ==> {
+            mut as int64: len_t = stringLength(text)
+            route {
+                  len_t >= target_len or stringLength(pad) == 0 ==> {
+                        emit(nice, text, "ok")
+                  }
+            }
+            mut as int64: needed = target_len - len_t
+            mut as int64: left_needed = needed /i 2
+            mut as int64: right_needed = needed - left_needed
+            mut as string: left_padding = ""
+            infinite (i in 1 .. left_needed) {
+                  left_padding = left_padding + pad
+            }
+            mut as string: right_padding = ""
+            infinite (i in 1 .. right_needed) {
+                  right_padding = right_padding + pad
+            }
+            mut as string: act_left = ""
+            route {
+                  left_needed > 0 ==> {
+                        act_left = left_padding[1..left_needed]
+                  }
+            }
+            mut as string: act_right = ""
+            route {
+                  right_needed > 0 ==> {
+                        act_right = right_padding[1..right_needed]
+                  }
+            }
+            imut as string: res = act_left + text + act_right
+            emit(nice, res, "ok")
+      }
+
+      op stringFilter (as string: text, as list of data: allowed_chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as bool: should_keep = false
+                  infinite (item in allowed_chars) {
+                        route {
+                              c == ("" + item) ==> {
+                                    should_keep = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        should_keep ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op stringOmit (as string: text, as list of data: omitted_chars) as string ==> {
+            mut as string: res = ""
+            infinite (c in text) {
+                  mut as bool: should_omit = false
+                  infinite (item in omitted_chars) {
+                        route {
+                              c == ("" + item) ==> {
+                                    should_omit = true
+                                    break
+                              }
+                        }
+                  }
+                  route {
+                        not should_omit ==> {
+                              res = res + c
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

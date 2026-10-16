@@ -1,0 +1,83 @@
+keyword: agent
+category: Declaração de Agente
+description: Declara um agente em arquivos .fdsl. Agentes são unidades modulares que encapsulam operações (op). O nome do
+  agente deve estar em PascalCase. Agentes são proibidos em arquivos .flux.
+syntax: "agent (<nome_PascalCase>) {\n      <declarações>\n      op <nome_camelCase> ([mut | imut | as] <tipo>: <identificador>\
+  \ [, [mut | imut | as] <tipo>: <identificador> ...]) [as <tipo_retorno>] ==> {\n            <instruções>\n            emit(nice\
+  \ | fail, <identificador>, \"<mensagem>\")\n      }\n      ...\n}"
+pseudocode: "AGENTE Veiculo:\n    OPERACAO acelerar(velocidade):\n        ...\n// unidade modular que encapsula operacoes\
+  \ (op)"
+usages:
+- name: Agente simples
+  description: Agente que declara operações sem parâmetros.
+  examples:
+  - code: "agent (AgentOfMath) {\n      op dot ==> {\n            print(\"Produto Escalar\")\n      }\n      op crux ==> {\n\
+      \            print(\"Produto Vetorial\")\n      }\n}"
+- name: Agente com operações parametrizadas
+  description: 'Agente com ops que recebem parâmetros nomeados ([mut | imut | as] <tipo>: <id>), retorno opcional ([as <tipo>])
+    e bloco com ==>.'
+  examples:
+  - code: "agent (AgentOfMath) {\n      op dot (as int64: x, as int64: y) as int64 ==> {\n            mut as int64: res =\
+      \ x + y\n            emit(nice, res, \"ok\")\n      }\n      op normalizarNome (as string: nome) as string ==> {\n \
+      \           emit(nice, nome, \"ok\")\n      }\n}"
+- name: Agente com estado
+  description: Agente que encapsula estado com declarações mut/imut.
+  examples:
+  - code: "agent (AgenteContador) {\n      mut as int64: total = 0\n      op incrementar (as int64: passo) as int64 ==> {\n\
+      \            total =+ passo\n            emit(nice, total, \"ok\")\n      }\n}"
+restrictions:
+- O nome do agente deve estar em PascalCase (SEM341).
+- Um agente pode implementar contratos usando a cláusula `impl`; todas as operações do contrato devem ser implementadas (SEM340).
+- 'Operações (`op`) declaradas no corpo do agente seguem a sintaxe `op nomeCamelCase ([mut | imut | as] <tipo>: <id> ...)
+  [as <tipo>] ==> { <corpo> }`.'
+- Arquivos `.fdsl` não possuem `program`; apenas agentes e contratos são permitidos. Agentes são proibidos em arquivos `.flux` (SEM342).
+- O corpo de um agente é delimitado por chaves `{}` e pode conter variáveis, funções e operações.
+- Agentes podem ser importados em arquivos `.flux` através da declaração `use`.
+errors:
+- code: "SEM340"
+  mnemonic: "AGENT_MISSING_CONTRACT_OP"
+  severity: "Error"
+  trigger: "O agente declara implementar um contrato ('impl'), mas deixa de implementar uma ou mais operações requeridas"
+  message: "O agente não implementou todas as operações exigidas pelo contrato"
+  hint: "Implemente todas as operações definidas no contrato ou revise a cláusula 'impl'"
+  example_bad: |
+    contract (Calculadora) { op somar(as int64: a) as int64 }
+    agent (MeuAgente) impl Calculadora { }
+  example_good: |
+    contract (Calculadora) { op somar(as int64: a) as int64 }
+    agent (MeuAgente) impl Calculadora {
+      op somar(as int64: a) as int64 ==> { emit(nice, a, "ok") }
+    }
+- code: "SEM341"
+  mnemonic: "AGENT_NAME_PASCAL_CASE"
+  severity: "Error"
+  trigger: "Nome de agente declarado fora da convenção PascalCase"
+  message: "Nome de agente deve utilizar a convenção PascalCase"
+  hint: "Renomeie o agente para iniciar com letra maiúscula (ex: 'CompressStdLib')"
+  example_bad: |
+    agent (meuAgente) { }
+  example_good: |
+    agent (MeuAgente) { }
+- code: "SEM342"
+  mnemonic: "AGENT_PROHIBITED_IN_FLUX_FILE"
+  severity: "Error"
+  trigger: "Declaração de 'agent' dentro de arquivo com extensão .flux"
+  message: "Declaração de 'agent' é permitida exclusivamente em arquivos de biblioteca (.fdsl)"
+  hint: "Mova a declaração do agente para um arquivo '.fdsl' e importe-o no '.flux' via 'use'"
+  example_bad: |
+    # Em main.flux
+    agent (MeuAgente) { }
+  example_good: |
+    # Em modulo.fdsl: agent (MeuAgente) { ... }
+    # Em main.flux: use MeuAgente
+- code: "CON603"
+  mnemonic: "AGENT_MAILBOX_OVERFLOW"
+  severity: "Error"
+  trigger: "Caixa de mensagens do agente atinge capacidade máxima sem consumo"
+  message: "Estouro da caixa postal do agente: capacidade máxima de mensagens pendentes excedida"
+  hint: "Processe mensagens pendentes do agente ou aumente a capacidade da caixa postal"
+  example_bad: |
+    # Envio em loop infinito sem que o agente processe mensagens
+  example_good: |
+    # Processar mensagens ou consumir a fila do agente
+

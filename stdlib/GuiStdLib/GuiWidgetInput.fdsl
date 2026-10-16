@@ -1,0 +1,32 @@
+#L ==============================================================================
+#L TheFlux Standard Library: GuiStdLib
+#L Dominio: GuiWidgetInput
+#L ==============================================================================
+
+contract (GuiWidgetInputContract) {
+      op guiInputText (as map: ctx, as string: label, as string: current_text, as int64: max_len) as list of data
+      op guiInputInt (as map: ctx, as string: label, as int64: current_val) as list of data
+      op guiInputFloat (as map: ctx, as string: label, as float64: current_val) as list of data
+}
+
+agent (GuiStdLib) impl GuiWidgetInputContract {
+      #L 7. GuiWidgetInputContract
+      #L =====================================================================
+
+      op guiInputText (as map: ctx, as string: label, as string: current_text, as int64: max_len) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, 200, 24)
+            emit(nice, [new_ctx, current_text], "ok")
+      }
+
+      op guiInputInt (as map: ctx, as string: label, as int64: current_val) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, 120, 24)
+            emit(nice, [new_ctx, current_val], "ok")
+      }
+
+      op guiInputFloat (as map: ctx, as string: label, as float64: current_val) as list of data ==> {
+            mut as map: new_ctx = _advanceWidget(ctx, 120, 24)
+            emit(nice, [new_ctx, current_val], "ok")
+      }
+
+      #L =====================================================================
+}
