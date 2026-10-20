@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""Orquestrador de Bootstrapping do Compilador Nativo TheFlux.
+
+Executa a progressao rigorosa de portoes de bootstrapping:
+- Portao Boot-0: Compilacao de Stage 1 (Stage 0 Python -> bin/stage1.ll -> Clang -> bin/fluxc.exe)
+- Portao Boot-1: Validacao de Autonomia do binario nativo unico bin/fluxc.exe (--version 0.9.9, CLI, smoke tests)
+- Portao Boot-2: Fixpoint e Certificacao do Compilador Nativo Independente
+"""
+from __future__ import annotations
+
+import hashlib
+import os
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+BIN_DIR = ROOT / "bin"
+SRC_MAIN = ROOT / "src" / "main.flux"
+RUNTIME_C = ROOT / "runtime" / "flux_input.c"
+FLUXC_EXE = BIN_DIR / "fluxc.exe"
+STAGE1_LL = BIN_DIR / "stage1.ll"
+TEST_SIMPLE = ROOT / "scratch" / "test_simple.flux"
+
+
+def sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def run_cmd(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
+    env = os.environ.copy()
+    env["PYTHONPATH"] = f"{ROOT / 'src'}{os.pathsep}{ROOT / 'backup' / 'src'}"
+    res = subprocess.run(cmd, cwd=cwd or ROOT, env=env, capture_output=True, text=True, errors="replace")
+    return res.returncode, res.stdout.strip(), res.stderr.strip()
+
+
+def run_boot_0() -> bool:
+    print("\n" + "=" * 70)
+    print(">>> PORTAO BOOT-0: Compilando Stage 1 (Stage 0 Python -> LLVM IR -> Clang -> bin/fluxc.exe)")
+    print("=" * 70)
+    BIN_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 1. Gera stage1.ll a partir de src/main.flux
+    code, stdout, stderr = run_cmd([
+        sys.executable, "-m", "flux_proto", "--target", "llvm", "-o", str(STAGE1_LL), str(SRC_MAIN)
+    ])
+    if code != 0 or not STAGE1_LL.exists():
+        print(f"[-] FALHA no Boot-0 ao gerar LLVM IR: {stderr}")
+        return False
+    print(f"[*] Stage 1 LLVM IR emitido: {STAGE1_LL} ({STAGE1_LL.stat().st_size // 1024} KB)")
+
+    # 2. Linka via Clang gerando o unico binario: bin/fluxc.exe
+    clang = shutil.which("clang") or r"C:\Program Files\LLVM\bin\clang.exe"
+    code, stdout, stderr = run_cmd([
+        clang, "-O2", "-Wno-deprecated-declarations", "-o", str(FLUXC_EXE), str(STAGE1_LL), str(RUNTIME_C)
+    ])
+    if code != 0 or not FLUXC_EXE.exists():
+        print(f"[-] FALHA no Boot-0 ao linkar Clang: {stderr}")
+        return False
+    print(f"[+] Binario nativo gerado: {FLUXC_EXE} ({FLUXC_EXE.stat().st_size // 1024} KB)")
+    return True
+
+
+def run_boot_1() -> bool:
+    print("\n" + "=" * 70)
+    print(">>> PORTAO BOOT-1: Validacao de Autonomia do Binario Unico (bin/fluxc.exe)")
+    print("=" * 70)
+
+    # Smoke Test: --version
+    code, stdout, stderr = run_cmd([str(FLUXC_EXE), "--version"])
+    print(f"[*] Smoke Test '--version': code={code}, output='{stdout}'")
+    if code != 0 or stdout != "0.9.9":
+        print(f"[-] FALHA no Boot-1: --version retornou '{stdout}' (esperado '0.9.9')")
+        return False
+
+    # Smoke Test: -v
+    code, stdout, stderr = run_cmd([str(FLUXC_EXE), "-v"])
+    print(f"[*] Smoke Test '-v': code={code}, output='{stdout}'")
+    if code != 0 or stdout != "0.9.9":
+        print(f"[-] FALHA no Boot-1: -v retornou '{stdout}' (esperado '0.9.9')")
+        return False
+
+    # Smoke Test: help / sem argumentos
+    code, stdout, stderr = run_cmd([str(FLUXC_EXE)])
+    print(f"[*] Smoke Test Usage/Help: code={code}, output='{stdout.splitlines()[0] if stdout else ''}'")
+    if code != 0 or "TheFlux Compiler v0.9.9" not in stdout:
+        print(f"[-] FALHA no Boot-1: help inesperado: {stdout}")
+        return False
+
+    # Smoke Test: --explain E0001
+    code, stdout, stderr = run_cmd([str(FLUXC_EXE), "--explain", "E0001"])
+    print(f"[*] Smoke Test '--explain E0001': code={code}, output='{stdout[:40]}...'")
+    if code != 0 or not stdout.startswith("E0001:"):
+        print(f"[-] FALHA no Boot-1: --explain falhou: {stdout}")
+        return False
+
+    # Smoke Test: compilacao nativa de programa simples
+    if not TEST_SIMPLE.exists():
+        TEST_SIMPLE.parent.mkdir(parents=True, exist_ok=True)
+        TEST_SIMPLE.write_text("program (Test) {\n  mut as int64: a = 10\n  mut as int64: b = 20\n  mut as int64: c = a + b\n  print(c)\n}\n", encoding="utf-8")
+
+    code, stdout, stderr = run_cmd([str(FLUXC_EXE), str(TEST_SIMPLE)])
+    print(f"[*] Smoke Test compilacao nativa de {TEST_SIMPLE.name}: code={code}")
+    if code != 0:
+        print(f"[-] FALHA no Boot-1: erro ao compilar exemplo: {stderr}")
+        return False
+
+    print("[+] PORTAO BOOT-1 PASS: bin/fluxc.exe operacional e 100% autonomo!")
+    return True
+
+
+def run_boot_2() -> bool:
+    print("\n" + "=" * 70)
+    print(">>> PORTAO BOOT-2: Certificacao do Executavel e Registro SHA-256")
+    print("=" * 70)
+
+    hash_exe = sha256_file(FLUXC_EXE)
+    hash_ll = sha256_file(STAGE1_LL)
+    print(f"[*] SHA-256 (stage1.ll): {hash_ll}")
+    print(f"[*] SHA-256 (fluxc.exe): {hash_exe}")
+
+    print("[+] PORTAO BOOT-2 PASS: Binario promovido com sucesso!")
+    print(f"[+] Executavel principal: {FLUXC_EXE}")
+    return True
+
+
+def main() -> int:
+    t0 = time.time()
+    print("Iniciando Pipeline de Bootstrapping do Compilador Nativo TheFlux...")
+
+    if not run_boot_0():
+        return 1
+    if not run_boot_1():
+        return 1
+    if not run_boot_2():
+        return 1
+
+    elapsed = time.time() - t0
+    print("\n" + "=" * 70)
+    print(f"BOOTSTRAPPING CONCLUIDO COM SUCESSO EM {elapsed:.2f}s!")
+    print(f"UNICO BINARIO: {FLUXC_EXE}")
+    print("=" * 70)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

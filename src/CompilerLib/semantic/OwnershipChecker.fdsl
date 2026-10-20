@@ -1,0 +1,60 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: OwnershipChecker
+#L ==============================================================================
+
+contract (OwnershipCheckerContract) {
+      op checkOwnershipAccess (as map: symtab, as string: var_name) as map
+      op markSymbolAsMoved (as map: symtab, as string: var_name) as map
+}
+
+agent (CompilerLib) impl OwnershipCheckerContract {
+      op checkOwnershipAccess (as map: symtab, as string: var_name) as map ==> {
+            mut as map: sym = symbolTableLookup(symtab, var_name)
+            mut as map: res = map{}
+            route {
+                  not sym["found"] ==> {
+                        res["valid"] = false
+                        res["error"] = "E0001: Symbol '" + var_name + "' not found."
+                  }
+                  sym["moved"] ==> {
+                        res["valid"] = false
+                        res["error"] = "E0005: Use of moved value '" + var_name + "'."
+                  }
+                  _ ==> {
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op markSymbolAsMoved (as map: symtab, as string: var_name) as map ==> {
+            mut as map: st = symtab
+            mut as list of data: scopes = st["scopes"]
+            mut as int64: n = stdCollectionLength(scopes)
+            mut as int64: i = n
+            infinite {
+                  route {
+                        i < 1 ==> { break }
+                        _ ==> {
+                              mut as map: cur_scope = scopes[i]
+                              route {
+                                    stdMapContainsKey(cur_scope, var_name) ==> {
+                                          mut as map: sym = cur_scope[var_name]
+                                          sym["moved"] = true
+                                          cur_scope[var_name] = sym
+                                          scopes[i] = cur_scope
+                                          st["scopes"] = scopes
+                                          break
+                                    }
+                                    _ ==> {
+                                          i = i - 1
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, st, "ok")
+      }
+}

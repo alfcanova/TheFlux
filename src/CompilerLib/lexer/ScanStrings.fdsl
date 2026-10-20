@@ -1,0 +1,257 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ScanStrings
+#L ==============================================================================
+
+contract (ScanStringsContract) {
+      op scanStringLiteral (as string: src, as int64: pos, as int64: len) as map
+      op scanCharLiteral (as string: src, as int64: pos, as int64: len) as map
+}
+
+agent (CompilerLib) impl ScanStringsContract {
+      op scanStringLiteral (as string: src, as int64: pos, as int64: len) as map ==> {
+            mut as int64: p = pos + 1
+            mut as string: content = ""
+            mut as bool: has_interp = false
+            mut as int64: brace_depth = 0
+
+            infinite {
+                  route {
+                        p > len ==> { break }
+                        _ ==> {
+                              mut as string: c = src[p]
+                              route {
+                                    c == "\"" and brace_depth == 0 ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    c == "\"" and brace_depth > 0 ==> {
+                                          content = content + "\""
+                                          p = p + 1
+                                          infinite {
+                                                route {
+                                                      p > len ==> { break }
+                                                      src[p] == "\\" and p < len ==> {
+                                                            content = content + "\\" + src[p + 1]
+                                                            p = p + 2
+                                                      }
+                                                      src[p] == "\"" ==> {
+                                                            content = content + "\""
+                                                            p = p + 1
+                                                            break
+                                                      }
+                                                      _ ==> {
+                                                            content = content + src[p]
+                                                            p = p + 1
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    c == "'" and brace_depth > 0 ==> {
+                                          content = content + "'"
+                                          p = p + 1
+                                          infinite {
+                                                route {
+                                                      p > len ==> { break }
+                                                      src[p] == "\\" and p < len ==> {
+                                                            content = content + "\\" + src[p + 1]
+                                                            p = p + 2
+                                                      }
+                                                      src[p] == "'" ==> {
+                                                            content = content + "'"
+                                                            p = p + 1
+                                                            break
+                                                      }
+                                                      _ ==> {
+                                                            content = content + src[p]
+                                                            p = p + 1
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    c == "#" and p < len and src[p + 1] == "{" ==> {
+                                          has_interp = true
+                                          brace_depth = brace_depth + 1
+                                          content = content + "#" + "{"
+                                          p = p + 2
+                                    }
+                                    c == "{" and brace_depth > 0 ==> {
+                                          brace_depth = brace_depth + 1
+                                          content = content + c
+                                          p = p + 1
+                                    }
+                                    c == "}" and brace_depth > 0 ==> {
+                                          brace_depth = brace_depth - 1
+                                          content = content + c
+                                          p = p + 1
+                                    }
+                                    c == "\\" and p < len ==> {
+                                          mut as string: nxt = src[p + 1]
+                                          mut as string: next_2 = ""
+                                          route {
+                                                p + 2 <= len ==> { next_2 = src[p + 2] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                nxt == "n" ==> {
+                                                      content = content + "\n"
+                                                      p = p + 2
+                                                }
+                                                nxt == "t" ==> {
+                                                      content = content + "\t"
+                                                      p = p + 2
+                                                }
+                                                nxt == "r" ==> {
+                                                      content = content + "\r"
+                                                      p = p + 2
+                                                }
+                                                nxt == "0" ==> {
+                                                      content = content + "\0"
+                                                      p = p + 2
+                                                }
+                                                nxt == "\"" ==> {
+                                                      content = content + "\""
+                                                      p = p + 2
+                                                }
+                                                nxt == "\\" ==> {
+                                                      content = content + "\\"
+                                                      p = p + 2
+                                                }
+                                                nxt == "u" and next_2 == "{" ==> {
+                                                      mut as int64: hp = p + 3
+                                                      mut as string: hex_str = ""
+                                                      infinite {
+                                                            route {
+                                                                  hp > len ==> { break }
+                                                                  src[hp] == "}" ==> { break }
+                                                                  _ ==> {
+                                                                        hex_str = hex_str + src[hp]
+                                                                        hp = hp + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      p = hp + 1
+                                                      route {
+                                                            hex_str == "03A9" or hex_str == "3A9" ==> { content = content + "Ω" }
+                                                            hex_str == "03C0" or hex_str == "3C0" ==> { content = content + "π" }
+                                                            hex_str == "1F600" ==> { content = content + "😀" }
+                                                            _ ==> { content = content + "?" }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      content = content + "\\" + nxt
+                                                      p = p + 2
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          content = content + c
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["pos"] = p
+            res["val"] = content
+            route {
+                  has_interp ==> { res["type"] = "INTERP_STRING" }
+                  _ ==> { res["type"] = "STRING" }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op scanCharLiteral (as string: src, as int64: pos, as int64: len) as map ==> {
+            mut as int64: p = pos + 1
+            mut as string: content = ""
+
+            infinite {
+                  route {
+                        p > len ==> { break }
+                        _ ==> {
+                              mut as string: c = src[p]
+                              route {
+                                    c == "'" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    c == "\\" and p < len ==> {
+                                          mut as string: nxt = src[p + 1]
+                                          mut as string: next_2 = ""
+                                          route {
+                                                p + 2 <= len ==> { next_2 = src[p + 2] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                nxt == "n" ==> {
+                                                      content = content + "\n"
+                                                      p = p + 2
+                                                }
+                                                nxt == "t" ==> {
+                                                      content = content + "\t"
+                                                      p = p + 2
+                                                }
+                                                nxt == "r" ==> {
+                                                      content = content + "\r"
+                                                      p = p + 2
+                                                }
+                                                nxt == "0" ==> {
+                                                      content = content + "\0"
+                                                      p = p + 2
+                                                }
+                                                nxt == "'" ==> {
+                                                      content = content + "'"
+                                                      p = p + 2
+                                                }
+                                                nxt == "\"" ==> {
+                                                      content = content + "\""
+                                                      p = p + 2
+                                                }
+                                                nxt == "\\" ==> {
+                                                      content = content + "\\"
+                                                      p = p + 2
+                                                }
+                                                nxt == "u" and next_2 == "{" ==> {
+                                                      mut as int64: hp = p + 3
+                                                      mut as string: hex_str = ""
+                                                      infinite {
+                                                            route {
+                                                                  hp > len ==> { break }
+                                                                  src[hp] == "}" ==> { break }
+                                                                  _ ==> {
+                                                                        hex_str = hex_str + src[hp]
+                                                                        hp = hp + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      p = hp + 1
+                                                      route {
+                                                            hex_str == "03A9" or hex_str == "3A9" ==> { content = content + "Ω" }
+                                                            hex_str == "1F600" ==> { content = content + "😀" }
+                                                            _ ==> { content = content + "?" }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      content = content + nxt
+                                                      p = p + 2
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          content = content + c
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["pos"] = p
+            res["val"] = content
+            res["type"] = "CHAR"
+            emit(nice, res, "ok")
+      }
+}

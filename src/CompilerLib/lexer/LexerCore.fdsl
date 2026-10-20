@@ -1,0 +1,188 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: LexerCore
+#L ==============================================================================
+
+contract (LexerCoreContract) {
+      op lexerTokenize (as string: source) as list of data
+      op lexerEmitJson (as list of data: tokens) as string
+}
+
+agent (CompilerLib) impl LexerCoreContract {
+      op lexerTokenize (as string: source) as list of data ==> {
+            mut as list of data: tokens = []
+            mut as int64: pos = 1
+            mut as int64: len = stdCollectionLength(source)
+            mut as int64: line = 1
+            mut as int64: col = 1
+            mut as map: tracker = indentTrackerNew()
+
+            infinite {
+                  route {
+                        pos > len ==> { break }
+                        _ ==> {
+                              mut as string: ch = source[pos]
+                              mut as string: next_ch = ""
+                              route {
+                                    pos < len ==> { next_ch = source[pos + 1] }
+                                    _ ==> {}
+                              }
+
+                              #L 1. Espacos e tabs
+                              route {
+                                    ch == " " or ch == "\t" ==> {
+                                          pos = pos + 1
+                                          col = col + 1
+                                    }
+                                    ch == "\r" ==> {
+                                          pos = pos + 1
+                                    }
+                                    ch == "\n" ==> {
+                                          tokens = stdListPushBack(tokens, tokenNew("NEWLINE", "\\n", line, col))
+                                          line = line + 1
+                                          col = 1
+                                          pos = pos + 1
+                                    }
+                                    ch == "#" ==> {
+                                          #L Verifica comentario ou docstring
+                                          route {
+                                                next_ch == "L" ==> {
+                                                      pos = scanLineComment(source, pos, len)
+                                                }
+                                                next_ch == "B" ==> {
+                                                      pos = scanBlockComment(source, pos, len)
+                                                }
+                                                next_ch == "D" ==> {
+                                                      mut as map: dres = scanDocstring(source, pos, len)
+                                                      pos = dres["pos"]
+                                                      tokens = stdListPushBack(tokens, tokenNew("DOCSTRING", "" + dres["doc"], line, col))
+                                                }
+                                                _ ==> {
+                                                      #L Comentario de linha padrao
+                                                      pos = scanLineComment(source, pos, len)
+                                                }
+                                          }
+                                    }
+                                    ch == "\"" ==> {
+                                          mut as map: sres = scanStringLiteral(source, pos, len)
+                                          tokens = stdListPushBack(tokens, tokenNew("" + sres["type"], "" + sres["val"], line, col))
+                                          col = col + (sres["pos"] - pos)
+                                          pos = sres["pos"]
+                                    }
+                                    ch == "'" ==> {
+                                          mut as map: cres = scanCharLiteral(source, pos, len)
+                                          tokens = stdListPushBack(tokens, tokenNew("" + cres["type"], "" + cres["val"], line, col))
+                                          col = col + (cres["pos"] - pos)
+                                          pos = cres["pos"]
+                                    }
+                                    (ch >= "0" and ch <= "9") ==> {
+                                          mut as bool: is_dt = false
+                                          route {
+                                                pos + 15 <= len ==> {
+                                                      is_dt = (source[pos + 4] == "-") and (source[pos + 7] == "-") and (source[pos + 10] == "T") and (source[pos + 13] == ":")
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                is_dt ==> {
+                                                      mut as string: dt_str = ""
+                                                      mut as int64: dp = pos
+                                                      infinite {
+                                                            route {
+                                                                  dp > len ==> { break }
+                                                                  _ ==> {
+                                                                        mut as string: dc = source[dp]
+                                                                        route {
+                                                                              dc == " " or dc == "\t" or dc == "\r" or dc == "\n" or dc == "," or dc == ")" or dc == "]" or dc == "}" ==> { break }
+                                                                              _ ==> {
+                                                                                    dt_str = dt_str + dc
+                                                                                    dp = dp + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                            }
+                                                      }
+                                                      tokens = stdListPushBack(tokens, tokenNew("STRING", dt_str, line, col))
+                                                      col = col + (dp - pos)
+                                                      pos = dp
+                                                }
+                                                _ ==> {
+                                                      mut as map: nres = scanNumberLiteral(source, pos, len)
+                                                      tokens = stdListPushBack(tokens, tokenNew("" + nres["type"], "" + nres["val"], line, col))
+                                                      col = col + (nres["pos"] - pos)
+                                                      pos = nres["pos"]
+                                                }
+                                          }
+                                    }
+                                    (ch == "." and next_ch >= "0" and next_ch <= "9") ==> {
+                                          mut as map: nres = scanNumberLiteral(source, pos, len)
+                                          tokens = stdListPushBack(tokens, tokenNew("" + nres["type"], "" + nres["val"], line, col))
+                                          col = col + (nres["pos"] - pos)
+                                          pos = nres["pos"]
+                                    }
+                                    (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or ch == "_" ==> {
+                                          mut as map: ires = scanIdentifier(source, pos, len)
+                                          tokens = stdListPushBack(tokens, tokenNew("" + ires["type"], "" + ires["val"], line, col))
+                                          col = col + (ires["pos"] - pos)
+                                          pos = ires["pos"]
+                                    }
+                                    _ ==> {
+                                          mut as map: ores = scanOperator(source, pos, len)
+                                          route {
+                                                ores["matched"] ==> {
+                                                      mut as string: op_val = "" + ores["val"]
+                                                      route {
+                                                            op_val == "(" or op_val == "[" or op_val == "{" ==> {
+                                                                  tracker = indentBracketOpen(tracker)
+                                                            }
+                                                            op_val == ")" or op_val == "]" or op_val == "}" ==> {
+                                                                  tracker = indentBracketClose(tracker)
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      tokens = stdListPushBack(tokens, tokenNew("OP", op_val, line, col))
+                                                      col = col + (ores["pos"] - pos)
+                                                      pos = ores["pos"]
+                                                }
+                                                _ ==> {
+                                                      tokens = stdListPushBack(tokens, tokenNew("UNKNOWN", ch, line, col))
+                                                      pos = pos + 1
+                                                      col = col + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            tokens = stdListPushBack(tokens, tokenNew("EOF", "", line, col))
+            emit(nice, tokens, "ok")
+      }
+
+      op lexerEmitJson (as list of data: tokens) as string ==> {
+            mut as string: json = "[\n"
+            mut as int64: n = stdCollectionLength(tokens)
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: tok = tokens[i]
+                              mut as string: t = "" + tok["type"]
+                              mut as string: v = "" + tok["val"]
+                              mut as string: l = "" + tok["line"]
+                              mut as string: c = "" + tok["col"]
+                              json = json + "  {\"type\": \"" + t + "\", \"value\": \"" + v + "\", \"line\": " + l + ", \"col\": " + c + "}"
+                              route {
+                                    i < n ==> { json = json + ",\n" }
+                                    _ ==> { json = json + "\n" }
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+            json = json + "]"
+            emit(nice, json, "ok")
+      }
+}

@@ -1,0 +1,129 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: SemanticCore
+#L ==============================================================================
+
+contract (SemanticCoreContract) {
+      op semanticAnalyze (as map: arena, as int64: root_id) as map
+}
+
+agent (CompilerLib) impl SemanticCoreContract {
+      op semanticAnalyze (as map: arena, as int64: root_id) as map ==> {
+            mut as map: symtab = symbolTableNew()
+            mut as list of data: errors = []
+
+            #L Registra tipos primitivos globais
+            symtab = symbolTableInsert(symtab, "int64", "TYPE", "type", false)
+            symtab = symbolTableInsert(symtab, "int32", "TYPE", "type", false)
+            symtab = symbolTableInsert(symtab, "float64", "TYPE", "type", false)
+            symtab = symbolTableInsert(symtab, "bool", "TYPE", "type", false)
+            symtab = symbolTableInsert(symtab, "string", "TYPE", "type", false)
+            symtab = symbolTableInsert(symtab, "data", "TYPE", "type", false)
+
+            #L Itera declaracoes de nivel superior
+            mut as list of data: decl_ids = astArenaNodeChildren(arena, root_id)
+            mut as int64: n_decls = stdCollectionLength(decl_ids)
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n_decls ==> { break }
+                        _ ==> {
+                              mut as int64: did = decl_ids[i]
+                              mut as string: kind = astArenaNodeKind(arena, did)
+                              mut as string: val = astArenaNodeValue(arena, did)
+
+                              route {
+                                    kind == "DECL_AGENT" ==> {
+                                          mut as map: c_res = validateNamingConvention(val, "AGENT")
+                                          route {
+                                                not c_res["valid"] ==> {
+                                                      errors = stdListPushBack(errors, c_res["error"])
+                                                }
+                                                _ ==> {}
+                                          }
+                                          symtab = symbolTableInsert(symtab, val, "AGENT", "agent", false)
+                                    }
+                                    kind == "DECL_CONTRACT" ==> {
+                                          mut as map: c_res = validateNamingConvention(val, "CONTRACT")
+                                          route {
+                                                not c_res["valid"] ==> {
+                                                      errors = stdListPushBack(errors, c_res["error"])
+                                                }
+                                                _ ==> {}
+                                          }
+                                          symtab = symbolTableInsert(symtab, val, "CONTRACT", "contract", false)
+                                    }
+                                    kind == "DECL_STRUCT" ==> {
+                                          mut as map: c_res = validateNamingConvention(val, "STRUCT")
+                                          route {
+                                                not c_res["valid"] ==> {
+                                                      errors = stdListPushBack(errors, c_res["error"])
+                                                }
+                                                _ ==> {}
+                                          }
+                                          symtab = symbolTableInsert(symtab, val, "STRUCT", "struct", false)
+                                    }
+                                    kind == "DECL_ENUM" ==> {
+                                          mut as map: c_res = validateNamingConvention(val, "ENUM")
+                                          route {
+                                                not c_res["valid"] ==> {
+                                                      errors = stdListPushBack(errors, c_res["error"])
+                                                }
+                                                _ ==> {}
+                                          }
+                                          symtab = symbolTableInsert(symtab, val, "ENUM", "enum", false)
+                                    }
+                                    kind == "DECL_PROGRAM" ==> {
+                                          symtab = symbolTableEnterScope(symtab)
+                                          mut as list of data: stmts = astArenaNodeChildren(arena, did)
+                                          mut as int64: n_stmts = stdCollectionLength(stmts)
+                                          mut as int64: si = 1
+                                          infinite {
+                                                route {
+                                                      si > n_stmts ==> { break }
+                                                      _ ==> {
+                                                            mut as int64: sid = stmts[si]
+                                                            mut as string: skind = astArenaNodeKind(arena, sid)
+                                                            mut as string: sval = astArenaNodeValue(arena, sid)
+
+                                                            route {
+                                                                  skind == "VAR_DECL" ==> {
+                                                                        mut as string: vtype = astArenaNodeValue(arena, astArenaNodeLeft(arena, sid))
+                                                                        mut as bool: is_mut = sval == "mut"
+                                                                        mut as int64: target_id = astArenaNodeRight(arena, sid)
+                                                                        mut as string: vname = astArenaNodeValue(arena, target_id)
+                                                                        symtab = symbolTableInsert(symtab, vname, "VAR", vtype, is_mut)
+                                                                  }
+                                                                  skind == "ASSIGN" ==> {
+                                                                        mut as map: m_check = checkAssignmentMutability(symtab, sval)
+                                                                        route {
+                                                                              not m_check["valid"] ==> {
+                                                                                    errors = stdListPushBack(errors, m_check["error"])
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            si = si + 1
+                                                      }
+                                                }
+                                          }
+                                          symtab = symbolTableExitScope(symtab)
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            mut as map: report = map{}
+            mut as int64: n_err = stdCollectionLength(errors)
+            report["success"] = n_err == 0
+            report["errors"] = errors
+            report["error_count"] = n_err
+            emit(nice, report, "ok")
+      }
+}

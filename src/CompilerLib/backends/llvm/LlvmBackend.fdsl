@@ -1,0 +1,93 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: LlvmBackend (Target: 'llvm')
+#L ==============================================================================
+
+contract (LlvmBackendContract) {
+      op llvmGenerateIr (as map: fmir_module) as string
+      op llvmCompileModule (as map: fmir_module, as string: output_path) as map
+}
+
+agent (CompilerLib) impl LlvmBackendContract {
+      op llvmGenerateIr (as map: fmir_module) as string ==> {
+            mut as string: ir = "; ModuleID = '" + fmir_module["name"] + "'\\n"
+            ir = ir + "source_filename = \\\"" + fmir_module["name"] + ".flux\\\"\\n\\n"
+
+            #L Declaracoes externas de runtime
+            ir = ir + "declare void @flux_runtime_init_args(i32, i8**)\\n"
+            ir = ir + "declare i32 @printf(i8*, ...)\\n\\n"
+            ir = ir + "@.fmt_int = private unnamed_addr constant [5 x i8] c\\\"%ld\\\\0A\\\\00\\\", align 1\\n"
+            ir = ir + "@.fmt_str = private unnamed_addr constant [4 x i8] c\\\"%s\\\\0A\\\\00\\\", align 1\\n\\n"
+
+            #L Definicao da funcao principal main
+            ir = ir + "define i32 @main(i32 %argc, i8** %argv) {\\n"
+            ir = ir + "entry:\\n"
+            ir = ir + "  call void @flux_runtime_init_args(i32 %argc, i8** %argv)\\n"
+
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+
+                              route {
+                                    opcode == "ALLOC" ==> {
+                                          ir = ir + "  %" + res + " = alloca i64, align 8\\n"
+                                    }
+                                    opcode == "CONST_INT" ==> {
+                                          ir = ir + "  " + res + " = add i64 0, " + a1 + "\\n"
+                                    }
+                                    opcode == "LOAD" ==> {
+                                          ir = ir + "  " + res + " = load i64, i64* %" + a1 + ", align 8\\n"
+                                    }
+                                    opcode == "STORE" ==> {
+                                          ir = ir + "  store i64 " + a1 + ", i64* %" + res + ", align 8\\n"
+                                    }
+                                    opcode == "BINOP_+" ==> {
+                                          ir = ir + "  " + res + " = add i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_-" ==> {
+                                          ir = ir + "  " + res + " = sub i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_*" ==> {
+                                          ir = ir + "  " + res + " = mul i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_/" ==> {
+                                          ir = ir + "  " + res + " = sdiv i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "PRINT" ==> {
+                                          ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.fmt_int, i32 0, i32 0), i64 " + a1 + ")\\n"
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            ir = ir + "  ret i32 0\\n"
+            ir = ir + "}\\n"
+
+            emit(nice, ir, "ok")
+      }
+
+      op llvmCompileModule (as map: fmir_module, as string: output_path) as map ==> {
+            mut as string: ir_text = llvmGenerateIr(fmir_module)
+            mut as string: ll_file = output_path + ".ll"
+            stdIoWriteFile(ll_file, ir_text)
+
+            mut as map: res = map{}
+            res["target"] = "llvm"
+            res["ir_file"] = ll_file
+            res["success"] = true
+            emit(nice, res, "ok")
+      }
+}

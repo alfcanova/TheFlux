@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>TheFlux Scientific Plotter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #141419;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h2 {
+    margin-bottom: 14px;
+    font-size: 20px;
+    color: #4a90d9;
+    font-weight: 600;
+  }
+  #canvas-container {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    background: #000;
+  }
+  canvas {
+    display: block;
+    cursor: default;
+  }
+  #status-bar {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+<h2>TheFlux — TheFlux Scientific Plotter</h2>
+<div id="canvas-container">
+  <canvas id="fluxCanvas" width="800" height="600"></canvas>
+</div>
+<div id="status-bar">Posição do Mouse: (0, 0) | Renderização: HTML5 Canvas2D Real</div>
+<script>
+  const canvas = document.getElementById('fluxCanvas');
+  const ctx = canvas.getContext('2d');
+  const statusBar = document.getElementById('status-bar');
+
+  function renderFrame() {
+    ctx.fillStyle = "rgb(30,30,35)";
+    ctx.fillRect(0, 0, 800, 600);
+    ctx.fillStyle = "rgb(25,25,30)";
+    ctx.fillRect(0, 0, 800, 600);
+    ctx.fillStyle = "rgb(35,35,42)";
+    ctx.fillRect(60, 40, 700, 510);
+    ctx.font = "14px Segoe UI, sans-serif";
+    ctx.fillStyle = "rgb(240,240,240)";
+    ctx.fillText("TheFlux Scientific Graphs 2D & 3D", 60, 12);
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(200, 40);
+    ctx.lineTo(200, 550);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(60, 142);
+    ctx.lineTo(760, 142);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(340, 40);
+    ctx.lineTo(340, 550);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(60, 244);
+    ctx.lineTo(760, 244);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(480, 40);
+    ctx.lineTo(480, 550);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(60, 346);
+    ctx.lineTo(760, 346);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(620, 40);
+    ctx.lineTo(620, 550);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(55,55,65)";
+    ctx.beginPath();
+    ctx.moveTo(60, 448);
+    ctx.lineTo(760, 448);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(120,120,135)";
+    ctx.strokeRect(60, 40, 700, 510);
+    ctx.strokeStyle = "rgb(80,180,255)";
+    ctx.beginPath();
+    ctx.moveTo(158, 295);
+    ctx.lineTo(284, 157);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(80,180,255)";
+    ctx.beginPath();
+    ctx.moveTo(284, 157);
+    ctx.lineTo(410, 295);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(80,180,255)";
+    ctx.beginPath();
+    ctx.moveTo(410, 295);
+    ctx.lineTo(536, 432);
+    ctx.stroke();
+    ctx.strokeStyle = "rgb(80,180,255)";
+    ctx.beginPath();
+    ctx.moveTo(536, 432);
+    ctx.lineTo(662, 295);
+    ctx.stroke();
+    ctx.fillStyle = "rgb(255,200,60)";
+    ctx.beginPath();
+    ctx.arc(158, 295, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "rgb(255,200,60)";
+    ctx.beginPath();
+    ctx.arc(284, 157, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "rgb(255,200,60)";
+    ctx.beginPath();
+    ctx.arc(410, 295, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "rgb(255,200,60)";
+    ctx.beginPath();
+    ctx.arc(536, 432, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "rgb(255,200,60)";
+    ctx.beginPath();
+    ctx.arc(662, 295, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "rgb(70,130,220)";
+    ctx.fillRect(62, 346, 136, 204);
+    ctx.fillStyle = "rgb(70,130,220)";
+    ctx.fillRect(202, 244, 136, 306);
+    ctx.fillStyle = "rgb(70,130,220)";
+    ctx.fillRect(342, 448, 136, 102);
+    ctx.fillStyle = "rgb(70,130,220)";
+    ctx.fillRect(482, 346, 136, 204);
+    ctx.fillStyle = "rgb(70,130,220)";
+    ctx.fillRect(622, 244, 136, 306);
+    ctx.fillStyle = "rgb(65,120,215)";
+    ctx.beginPath();
+    ctx.arc(410, 295, 204, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "rgb(35,35,42)";
+    ctx.beginPath();
+    ctx.arc(410, 295, 102, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  renderFrame();
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(e.clientX - rect.left);
+    const y = Math.floor(e.clientY - rect.top);
+    statusBar.innerText = `Posição do Mouse: (${x}, ${y}) | Renderização: HTML5 Canvas2D Real`;
+  });
+</script>
+</body>
+</html>

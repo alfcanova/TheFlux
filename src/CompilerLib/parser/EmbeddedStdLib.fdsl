@@ -1,0 +1,44 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: EmbeddedStdLib
+#L ==============================================================================
+
+contract (EmbeddedStdLibContract) {
+      op isStdLibAgent (as string: name) as bool
+      op getStdLibStubSource (as string: name) as string
+}
+
+agent (CompilerLib) impl EmbeddedStdLibContract {
+      op isStdLibAgent (as string: name) as bool ==> {
+            route {
+                  name == "IoStdLib" or name == "RuntimeStdLib" or name == "MathStdLib" ==> { emit(nice, true, "ok") }
+                  name == "StringStdLib" or name == "ListStdLib" or name == "MapStdLib" ==> { emit(nice, true, "ok") }
+                  name == "SetStdLib" or name == "SysStdLib" or name == "TimeStdLib" ==> { emit(nice, true, "ok") }
+                  name == "OsStdLib" or name == "LowLevelStdLib" or name == "FormatStdLib" ==> { emit(nice, true, "ok") }
+                  name == "ConvertStdLib" or name == "CharStdLib" or name == "HashStdLib" ==> { emit(nice, true, "ok") }
+                  name == "RandomStdLib" or name == "DebugStdLib" or name == "DateTimeStdLib" ==> { emit(nice, true, "ok") }
+                  name == "LinAlgStdLib" or name == "StatStdLib" or name == "SymbolicStdLib" ==> { emit(nice, true, "ok") }
+                  _ ==> { emit(nice, false, "ok") }
+            }
+      }
+
+      op getStdLibStubSource (as string: name) as string ==> {
+            route {
+                  name == "IoStdLib" ==> {
+                        emit(nice, "agent (IoStdLib) { op print (as string: s) as void ==> {} op println (as string: s) as void ==> {} }", "ok")
+                  }
+                  name == "RuntimeStdLib" ==> {
+                        emit(nice, "agent (RuntimeStdLib) { op getArgs () as list of string ==> { emit(nice, [], \"ok\") } op exit (as int64: code) as void ==> {} }", "ok")
+                  }
+                  name == "MathStdLib" ==> {
+                        emit(nice, "agent (MathStdLib) { op sqrt (as float64: x) as float64 ==> { emit(nice, 0.0, \"ok\") } }", "ok")
+                  }
+                  name == "StringStdLib" ==> {
+                        emit(nice, "agent (StringStdLib) { op length (as string: s) as int64 ==> { emit(nice, 0, \"ok\") } }", "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "agent (" + name + ") {}", "ok")
+                  }
+            }
+      }
+}

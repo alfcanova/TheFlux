@@ -11,6 +11,7 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+bin/
 .venv/
 venv/
 ENV/
@@ -54,6 +55,7 @@ intermediates/
 temp/
 scratch/
 build/
+bin/
 
 # Pastas de testes t_* preservadas via .gitkeep
 t_benchmarks/*
@@ -67,7 +69,11 @@ t_llvm/*
 t_wasm-*/*
 !t_wasm-*/.gitkeep
 t_wat-*/*
-!t_wat-*/.gitkeep
+!t_wat-*/.gitkeep
+t_wasm/*
+!t_wasm/.gitkeep
+t_wat/*
+!t_wat/.gitkeep
 
 
 *.exe
@@ -80,6 +86,7 @@ t_wat-*/*
 *.dll
 *.so
 *.dylib
+*.pdb
 
 # ------------------------------------------------------------------------------
 # 6. Saídas Geradas por Testes e Execuções

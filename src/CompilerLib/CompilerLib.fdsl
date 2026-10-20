@@ -1,0 +1,54 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Arquivo Agregador Mestre: Manifesto Declarativo da Biblioteca do Compilador
+#L ==============================================================================
+
+#L 1. Modulos Lexicos
+use lexer::TokenTypes.fdsl
+use lexer::IndentTracker.fdsl
+use lexer::ScanComments.fdsl
+use lexer::ScanNumbers.fdsl
+use lexer::ScanStrings.fdsl
+use lexer::ScanOperators.fdsl
+use lexer::ScanIdentifiers.fdsl
+use lexer::LexerCore.fdsl
+
+#L 2. Modulos Sintaticos (Parser)
+use parser::AstArena.fdsl
+use parser::TokenStream.fdsl
+use parser::ParseTypes.fdsl
+use parser::ParsePatterns.fdsl
+use parser::ParseExprs.fdsl
+use parser::ParseStmts.fdsl
+use parser::ParseDecls.fdsl
+use parser::EmbeddedStdLib.fdsl
+use parser::ImportResolver.fdsl
+use parser::ParserCore.fdsl
+
+#L 3. Modulos Semanticos
+use semantic::DiagnosticCatalog.fdsl
+use semantic::SymbolTable.fdsl
+use semantic::CapitalizationChecker.fdsl
+use semantic::MutabilityChecker.fdsl
+use semantic::OwnershipChecker.fdsl
+use semantic::TypeChecker.fdsl
+use semantic::ContractChecker.fdsl
+use semantic::EmitChecker.fdsl
+use semantic::SemanticCore.fdsl
+
+#L 4. Modulos de Representacao Intermediaria (FMIR)
+use fmir::FmirTypes.fdsl
+use fmir::FmirBuilder.fdsl
+
+#L 5. Modulos de Geracao de Codigo (Backends)
+use backends::BackendContract.fdsl
+use backends::interp::InterpBackend.fdsl
+use backends::vm::VmBackend.fdsl
+use backends::vmr::VmrBackend.fdsl
+use backends::llvm::LlvmBackend.fdsl
+use backends::wat::WatBackend.fdsl
+use backends::wasm::WasmBackend.fdsl
+use backends::BackendCore.fdsl
+
+agent (CompilerLib) {
+}

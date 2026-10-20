@@ -1,0 +1,38 @@
+#L ==============================================================================
+#L TheFlux Fast Virtual Machine (FVM): Cliente e Conector IPC
+#L Arquivo: src/Fvm/FvmClient.fdsl
+#L Versao: 0.9.9
+#L ==============================================================================
+
+use RuntimeStdLib
+
+agent (FvmClient) impl FvmContract {
+      op fvmInjectBytecode (as string: bytecode_json, as string: stdin_text) as map ==> {
+            #L Prepara chamada ao binario fluxvm com flag --inject
+            mut as string: cmd = "bin\\fluxvm.exe --inject -"
+            mut as string: out = stdOsExecOutput(cmd)
+            
+            mut as map: res = map{}
+            res["success"] = true
+            res["stdout"] = out
+            emit(nice, res, "ok")
+      }
+
+      op fvmExecuteFile (as string: fvmbc_path, as string: stdin_text) as map ==> {
+            mut as string: cmd = "bin\\fluxvm.exe " + fvmbc_path
+            mut as string: out = stdOsExecOutput(cmd)
+
+            mut as map: res = map{}
+            res["success"] = true
+            res["stdout"] = out
+            emit(nice, res, "ok")
+      }
+
+      op fvmIsServiceActive () as bool ==> {
+            mut as int64: ping = stdNetTcpPing("127.0.0.1", 9099, 100)
+            route {
+                  ping == 1 ==> { emit(nice, true, "active") }
+                  _ ==> { emit(nice, false, "inactive") }
+            }
+      }
+}

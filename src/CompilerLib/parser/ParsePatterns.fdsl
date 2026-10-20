@@ -1,0 +1,53 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ParsePatterns
+#L ==============================================================================
+
+contract (ParsePatternsContract) {
+      op parsePattern (as map: stream, as map: arena) as map
+}
+
+agent (CompilerLib) impl ParsePatternsContract {
+      op parsePattern (as map: stream, as map: arena) as map ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            mut as string: ctype = "" + cur["type"]
+            mut as string: cval = "" + cur["val"]
+            mut as map: ts = tokenStreamAdvance(stream)
+            mut as map: ar = arena
+
+            route {
+                  cval == "_" ==> {
+                        ar = astArenaAllocNode(ar, "PAT_WILDCARD", "_", 0, 0, [])
+                  }
+                  ctype == "INT" or ctype == "FLOAT" or ctype == "STRING" or ctype == "BOOL" or ctype == "CHAR" ==> {
+                        ar = astArenaAllocNode(ar, "PAT_LITERAL", cval, 0, 0, [])
+                  }
+                  ctype == "IDENT" ==> {
+                        #L Verifica se e Enum::Variant
+                        mut as map: nxt = tokenStreamPeek(ts)
+                        mut as string: nval = "" + nxt["val"]
+                        route {
+                              nval == "::" ==> {
+                                    ts = tokenStreamAdvance(ts)
+                                    mut as map: var_tok = tokenStreamPeek(ts)
+                                    ts = tokenStreamAdvance(ts)
+                                    mut as string: vname = "" + var_tok["val"]
+                                    ar = astArenaAllocNode(ar, "PAT_ENUM", cval + "::" + vname, 0, 0, [])
+                              }
+                              _ ==> {
+                                    ar = astArenaAllocNode(ar, "PAT_BIND", cval, 0, 0, [])
+                              }
+                        }
+                  }
+                  _ ==> {
+                        ar = astArenaAllocNode(ar, "PAT_EXPR", cval, 0, 0, [])
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = ar["last_id"]
+            emit(nice, res, "ok")
+      }
+}

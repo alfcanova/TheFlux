@@ -1,0 +1,89 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ScanIdentifiers
+#L ==============================================================================
+
+contract (ScanIdentifiersContract) {
+      op isAlpha (as string: ch) as bool
+      op isAlphaNum (as string: ch) as bool
+      op isKeyword (as string: word) as bool
+      op isTypeKeyword (as string: word) as bool
+      op isLiteralKeyword (as string: word) as bool
+      op scanIdentifier (as string: src, as int64: pos, as int64: len) as map
+}
+
+agent (CompilerLib) impl ScanIdentifiersContract {
+      op isAlpha (as string: ch) as bool ==> {
+            emit(nice, (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or ch == "_", "ok")
+      }
+
+      op isAlphaNum (as string: ch) as bool ==> {
+            emit(nice, (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == "_", "ok")
+      }
+
+      op isKeyword (as string: word) as bool ==> {
+            route {
+                  word == "program" or word == "contract" or word == "agent" or word == "impl" or word == "op" or word == "function" or word == "mut" or word == "imut" or word == "as" or word == "of" or word == "route" or word == "match" or word == "infinite" or word == "break" or word == "continue" or word == "emit" or word == "unsafe" or word == "print" or word == "input" or word == "use" or word == "struct" or word == "enum" or word == "nice" or word == "fail" or word == "keep" or word == "borrow" or word == "move" or word == "and" or word == "or" or word == "not" or word == "in" or word == "comptime" or word == "async" or word == "await" or word == "spawn" or word == "spy" ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op isTypeKeyword (as string: word) as bool ==> {
+            route {
+                  word == "int" or word == "int8" or word == "int16" or word == "int32" or word == "int64" or word == "uint" or word == "uint8" or word == "uint16" or word == "uint32" or word == "uint64" or word == "float" or word == "float32" or word == "float64" or word == "char" or word == "string" or word == "bool" or word == "datetime" or word == "complex" or word == "complex64" or word == "complex128" or word == "tensor" or word == "list" or word == "map" or word == "set" or word == "data" or word == "void" ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op isLiteralKeyword (as string: word) as bool ==> {
+            emit(nice, word == "true" or word == "false" or word == "none", "ok")
+      }
+
+      op scanIdentifier (as string: src, as int64: pos, as int64: len) as map ==> {
+            mut as int64: p = pos
+            mut as string: ident = ""
+
+            infinite {
+                  route {
+                        p > len ==> { break }
+                        _ ==> {
+                              mut as string: c = src[p]
+                              route {
+                                    (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or (c >= "0" and c <= "9") or c == "_" ==> {
+                                          ident = ident + c
+                                          p = p + 1
+                                    }
+                                    _ ==> { break }
+                              }
+                        }
+                  }
+            }
+
+            mut as string: tok_type = "IDENT"
+            route {
+                  ident == "true" or ident == "false" ==> { tok_type = "BOOL" }
+                  ident == "none" ==> { tok_type = "NONE" }
+                  ident == "program" or ident == "contract" or ident == "agent" or ident == "impl" or ident == "op" or ident == "function" or ident == "mut" or ident == "imut" or ident == "as" or ident == "of" or ident == "route" or ident == "match" or ident == "infinite" or ident == "break" or ident == "continue" or ident == "emit" or ident == "unsafe" or ident == "print" or ident == "input" or ident == "use" or ident == "struct" or ident == "enum" or ident == "nice" or ident == "fail" or ident == "keep" or ident == "borrow" or ident == "move" or ident == "and" or ident == "or" or ident == "not" or ident == "in" or ident == "comptime" or ident == "async" or ident == "await" or ident == "spawn" or ident == "spy" ==> {
+                        tok_type = "KEYWORD"
+                  }
+                  ident == "int" or ident == "int8" or ident == "int16" or ident == "int32" or ident == "int64" or ident == "uint" or ident == "uint8" or ident == "uint16" or ident == "uint32" or ident == "uint64" or ident == "float" or ident == "float32" or ident == "float64" or ident == "char" or ident == "string" or ident == "bool" or ident == "datetime" or ident == "complex" or ident == "complex64" or ident == "complex128" or ident == "tensor" or ident == "list" or ident == "map" or ident == "set" or ident == "data" or ident == "void" ==> {
+                        tok_type = "TYPE"
+                  }
+                  _ ==> {}
+            }
+
+            mut as map: res = map{}
+            res["pos"] = p
+            res["val"] = ident
+            res["type"] = tok_type
+            emit(nice, res, "ok")
+      }
+}

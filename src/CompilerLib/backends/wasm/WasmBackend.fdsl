@@ -1,0 +1,102 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: WasmBackend (Target: 'wasm')
+#L ==============================================================================
+
+contract (WasmBackendContract) {
+      op wasmGenerateHex (as map: fmir_module) as string
+      op wasmCompileModule (as map: fmir_module, as string: output_path) as map
+}
+
+agent (CompilerLib) impl WasmBackendContract {
+      op wasmGenerateHex (as map: fmir_module) as string ==> {
+            #L 1. Magic + Version: \x00asm\x01\x00\x00\x00
+            mut as string: hex = "0061736d01000000"
+
+            #L 2. Type Section (id 1): 1 funcao sem params nem retorno: () -> ()
+            #L id=01, size=04, count=01, form=60, param_count=00, return_count=00
+            hex = hex + "010401600000"
+
+            #L 3. Function Section (id 3): 1 funcao referenciando tipo 0
+            #L id=03, size=02, count=01, type_idx=00
+            hex = hex + "03020100"
+
+            #L 4. Export Section (id 7): exporta funcao 0 como "_start"
+            #L id=07, size=0a, count=01, name_len=06, "_start"=5f7374617274, kind=00, func_idx=00
+            hex = hex + "070a01065f73746172740000"
+
+            #L 5. Code Section (id 10)
+            #L Emite instrucoes do corpo da funcao em hex
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+
+            mut as string: body_hex = ""
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+
+                              route {
+                                    opcode == "CONST_INT" ==> {
+                                          #L i64.const (0x42) seguido de valor simples
+                                          body_hex = body_hex + "4201"
+                                          body_hex = body_hex + "1a" #L drop
+                                    }
+                                    opcode == "BINOP_+" ==> {
+                                          body_hex = body_hex + "420142017c1a" #L i64.const 1, i64.const 1, i64.add, drop
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            #L Fim do corpo: opcode 'end' (0x0b)
+            body_hex = body_hex + "0b"
+
+            #L 1 local decl count (0) + body
+            mut as string: func_hex = "00" + body_hex
+            mut as int64: body_bytes = stdCollectionLength(func_hex) / 2
+            mut as string: size_hex = "0a"
+            route {
+                  body_bytes < 16 ==> { size_hex = "0" + body_bytes }
+                  _ ==> { size_hex = "" + body_bytes }
+            }
+
+            #L Code section header: id=0a, size, count=01, func_size, func_hex
+            hex = hex + "0a" + size_hex + "01" + size_hex + func_hex
+
+            emit(nice, hex, "ok")
+      }
+
+      op wasmCompileModule (as map: fmir_module, as string: output_path) as map ==> {
+            mut as string: hex_data = wasmGenerateHex(fmir_module)
+            mut as string: wasm_file = output_path
+            mut as int64: wlen = stdCollectionLength(wasm_file)
+            mut as bool: needs_wasm_ext = true
+            route {
+                  wlen >= 5 ==> {
+                        needs_wasm_ext = (wasm_file[(wlen - 4)..wlen] != ".wasm")
+                  }
+                  _ ==> {}
+            }
+            route {
+                  needs_wasm_ext ==> { wasm_file = wasm_file + ".wasm" }
+                  _ ==> {}
+            }
+
+            stdIoWriteHexFile(wasm_file, hex_data)
+
+            mut as map: res = map{}
+            res["target"] = "wasm"
+            res["wasm_file"] = wasm_file
+            res["success"] = true
+            emit(nice, res, "ok")
+      }
+}

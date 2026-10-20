@@ -1,0 +1,106 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ParserCore
+#L ==============================================================================
+
+contract (ParserCoreContract) {
+      op parseSource (as string: source_code) as map
+      op parseFile (as string: file_path) as map
+      op parseDumpAst (as map: ast_result) as string
+}
+
+agent (CompilerLib) impl ParserCoreContract {
+      op parseSource (as string: source_code) as map ==> {
+            mut as list of data: tokens = lexerTokenize(source_code)
+            mut as map: stream = tokenStreamNew(tokens)
+            mut as map: arena = astArenaNew()
+            mut as list of data: decl_nodes = []
+
+            infinite {
+                  route {
+                        tokenStreamIsEof(stream) ==> { break }
+                        _ ==> {}
+                  }
+
+                  mut as map: cur = tokenStreamPeek(stream)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        ctype == "EOF" ==> { break }
+                        ctype == "NEWLINE" or cval == "\\n" or cval == ";" ==> {
+                              stream = tokenStreamAdvance(stream)
+                        }
+                        _ ==> {
+                              mut as map: decl_res = parseDeclaration(stream, arena)
+                              stream = decl_res["stream"]
+                              arena = decl_res["arena"]
+                              mut as list of data: dnids = decl_res["node_ids"]
+                              mut as int64: dnn = stdCollectionLength(dnids)
+                              route {
+                                    dnn > 0 ==> {
+                                          mut as int64: dni = 1
+                                          infinite {
+                                                route {
+                                                      dni > dnn ==> { break }
+                                                      _ ==> {
+                                                            decl_nodes = stdListPushBack(decl_nodes, dnids[dni])
+                                                            dni = dni + 1
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          mut as int64: nid = decl_res["node_id"]
+                                          route {
+                                                nid > 0 ==> {
+                                                      decl_nodes = stdListPushBack(decl_nodes, nid)
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            arena = astArenaAllocNode(arena, "PROGRAM", "main", 0, 0, decl_nodes)
+            mut as int64: root_id = arena["last_id"]
+
+            mut as map: result = map{}
+            result["arena"] = arena
+            result["root_id"] = root_id
+            result["count"] = stdCollectionLength(decl_nodes)
+            result["success"] = true
+            emit(nice, result, "ok")
+      }
+
+      op parseFile (as string: file_path) as map ==> {
+            route {
+                  stdIoFileExists(file_path) ==> {
+                        mut as string: code = stdIoReadFile(file_path)
+                        mut as map: res = parseSource(code)
+                        emit(nice, res, "ok")
+                  }
+                  _ ==> {
+                        mut as map: err = map{}
+                        err["success"] = false
+                        err["error"] = "File not found: " + file_path
+                        emit(nice, err, "ok")
+                  }
+            }
+      }
+
+      op parseDumpAst (as map: ast_result) as string ==> {
+            route {
+                  stdMapContainsKey(ast_result, "arena") and stdMapContainsKey(ast_result, "root_id") ==> {
+                        mut as map: arena = ast_result["arena"]
+                        mut as int64: root_id = ast_result["root_id"]
+                        emit(nice, astArenaDumpJson(arena, root_id), "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "{}", "ok")
+                  }
+            }
+      }
+}

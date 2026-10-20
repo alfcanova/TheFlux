@@ -1,0 +1,46 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: BackendCore
+#L ==============================================================================
+
+agent (CompilerLib) impl BackendContract {
+      op backendCompile (as map: fmir_module, as string: target, as map: options) as map ==> {
+            mut as string: out_path = "out"
+            route {
+                  stdMapContainsKey(options, "output") ==> { out_path = "" + options["output"] }
+                  _ ==> {}
+            }
+
+            route {
+                  target == "in" or target == "run" ==> {
+                        mut as map: res = interpExecuteFmir(fmir_module)
+                        emit(nice, res, "ok")
+                  }
+                  target == "vm" or target == "vmbc" ==> {
+                        mut as map: res = vmCompileFmir(fmir_module)
+                        emit(nice, res, "ok")
+                  }
+                  target == "vmr" ==> {
+                        mut as map: res = vmrEmitAndReload(fmir_module, out_path)
+                        emit(nice, res, "ok")
+                  }
+                  target == "llvm" ==> {
+                        mut as map: res = llvmCompileModule(fmir_module, out_path)
+                        emit(nice, res, "ok")
+                  }
+                  target == "wat" ==> {
+                        mut as map: res = watCompileModule(fmir_module, out_path)
+                        emit(nice, res, "ok")
+                  }
+                  target == "wasm" ==> {
+                        mut as map: res = wasmCompileModule(fmir_module, out_path)
+                        emit(nice, res, "ok")
+                  }
+                  _ ==> {
+                        #L Fallback para interpreter
+                        mut as map: res = interpExecuteFmir(fmir_module)
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+}

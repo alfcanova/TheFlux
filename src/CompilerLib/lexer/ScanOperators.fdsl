@@ -1,0 +1,82 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ScanOperators
+#L ==============================================================================
+
+contract (ScanOperatorsContract) {
+      op scanOperator (as string: src, as int64: pos, as int64: len) as map
+}
+
+agent (CompilerLib) impl ScanOperatorsContract {
+      op scanOperator (as string: src, as int64: pos, as int64: len) as map ==> {
+            mut as int64: p = pos
+            mut as string: op_str = ""
+            mut as int64: consumed = 0
+
+            #L Longest-match: 4 caracteres
+            route {
+                  p + 3 <= len ==> {
+                        mut as string: s4 = src[p..(p + 3)]
+                        route {
+                              s4 == "=>>>" ==> {
+                                    op_str = s4
+                                    consumed = 4
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            #L Longest-match: 3 caracteres
+            route {
+                  consumed == 0 and p + 2 <= len ==> {
+                        mut as string: s3 = src[p..(p + 2)]
+                        route {
+                              s3 == "-->" or s3 == "==>" or s3 == "..." or s3 == "=>>" or s3 == "=<<" or s3 == "=^e" or s3 == "=^r" or s3 == "=/f" or s3 == "=/i" or s3 == "=/r" or s3 == ">>>" ==> {
+                                    op_str = s3
+                                    consumed = 3
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            #L Longest-match: 2 caracteres
+            route {
+                  consumed == 0 and p + 1 <= len ==> {
+                        mut as string: s2 = src[p..(p + 1)]
+                        route {
+                              s2 == "=+" or s2 == "=-" or s2 == "=*" or s2 == "=^" or s2 == "=|" or s2 == "=&" or s2 == "=~" or s2 == "==" or s2 == "!=" or s2 == "<=" or s2 == ">=" or s2 == "&&" or s2 == "||" or s2 == "::" or s2 == ".." or s2 == "+=" or s2 == "-=" or s2 == "*=" or s2 == "/=" or s2 == "%=" or s2 == "^=" or s2 == "&=" or s2 == "|=" or s2 == ">>" or s2 == "<<" or s2 == "/r" or s2 == "/f" or s2 == "/i" ==> {
+                                    op_str = s2
+                                    consumed = 2
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            #L 1 caractere
+            route {
+                  consumed == 0 and p <= len ==> {
+                        mut as string: s1 = src[p]
+                        route {
+                              s1 == "+" or s1 == "-" or s1 == "*" or s1 == "/" or s1 == "%" or s1 == "^" or s1 == "&" or s1 == "|" or s1 == "~" or s1 == "<" or s1 == ">" or s1 == "=" or s1 == "!" or s1 == "(" or s1 == ")" or s1 == "[" or s1 == "]" or s1 == "{" or s1 == "}" or s1 == "," or s1 == ":" or s1 == "." or s1 == "?" or s1 == "@" or s1 == ";" ==> {
+                                    op_str = s1
+                                    consumed = 1
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            mut as map: res = map{}
+            res["matched"] = consumed > 0
+            res["val"] = op_str
+            res["pos"] = p + consumed
+            emit(nice, res, "ok")
+      }
+}

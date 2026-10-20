@@ -1,0 +1,1569 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: FmirBuilder
+#L ==============================================================================
+
+contract (FmirBuilderContract) {
+      op fmirBuildFromAst (as map: arena, as int64: root_id) as map
+      op fmirLowerExpr (as map: arena, as int64: node_id, as map: module, as int64: temp_counter) as map
+      op fmirLowerStmt (as map: arena, as int64: node_id, as map: module, as int64: temp_counter) as map
+}
+
+agent (CompilerLib) impl FmirBuilderContract {
+      op fmirLowerExpr (as map: arena, as int64: node_id, as map: module, as int64: temp_counter) as map ==> {
+            mut as string: kind = astArenaNodeKind(arena, node_id)
+            mut as string: val = astArenaNodeValue(arena, node_id)
+            mut as map: mod = module
+            mut as int64: tc = temp_counter
+            mut as string: res_reg = ""
+
+            route {
+                  kind == "LIT_INT" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_INT", val, "", res_reg)
+                  }
+                  kind == "LIT_FLOAT" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_FLOAT", val, "", res_reg)
+                  }
+                  kind == "LIT_COMPLEX" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_COMPLEX", val, "", res_reg)
+                  }
+                  kind == "LIT_STRING" or kind == "LIT_STR" or kind == "LIT_CHAR" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_STR", val, "", res_reg)
+                  }
+                  kind == "LIT_BOOL" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_BOOL", val, "", res_reg)
+                  }
+                  kind == "LIT_NONE" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_STR", "", "", res_reg)
+                  }
+                  kind == "LITERAL" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mut as int64: vlen = stdCollectionLength(val)
+                        mut as bool: has_dot = false
+                        mut as bool: all_digits = true
+                        mut as int64: vi = 1
+                        infinite {
+                              route {
+                                    vi > vlen ==> { break }
+                                    _ ==> {
+                                          mut as string: ch = val[vi]
+                                          route {
+                                                ch == "." ==> { has_dot = true }
+                                                (ch >= "0" and ch <= "9") or (vi == 1 and (ch == "-" or ch == "+")) ==> {}
+                                                _ ==> { all_digits = false }
+                                          }
+                                          vi = vi + 1
+                                    }
+                              }
+                        }
+                        route {
+                              val == "true" or val == "false" ==> {
+                                    mod = fmirAddInstruction(mod, "CONST_BOOL", val, "", res_reg)
+                              }
+                              all_digits and has_dot ==> {
+                                    mod = fmirAddInstruction(mod, "CONST_FLOAT", val, "", res_reg)
+                              }
+                              all_digits and vlen > 0 ==> {
+                                    mod = fmirAddInstruction(mod, "CONST_INT", val, "", res_reg)
+                              }
+                              _ ==> {
+                                    mod = fmirAddInstruction(mod, "CONST_STR", val, "", res_reg)
+                              }
+                        }
+                  }
+                  kind == "IDENT" or kind == "IDENTIFIER" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "LOAD", val, "", res_reg)
+                  }
+                  kind == "LIT_LIST" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "LIST_INIT", "", "", res_reg)
+                        mut as list of data: elem_ids = astArenaNodeChildren(arena, node_id)
+                        mut as int64: ne = stdCollectionLength(elem_ids)
+                        mut as int64: ei = 1
+                        infinite {
+                              route {
+                                    ei > ne ==> { break }
+                                    _ ==> {
+                                          mut as map: e_res = fmirLowerExpr(arena, elem_ids[ei], mod, tc)
+                                          mod = e_res["module"]
+                                          tc = e_res["temp_counter"]
+                                          mod = fmirAddInstruction(mod, "LIST_PUSH", res_reg, e_res["res_reg"], "")
+                                          ei = ei + 1
+                                    }
+                              }
+                        }
+                  }
+                  kind == "LIT_SET" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "SET_INIT", "", "", res_reg)
+                        mut as list of data: elem_ids = astArenaNodeChildren(arena, node_id)
+                        mut as int64: ne = stdCollectionLength(elem_ids)
+                        mut as int64: ei = 1
+                        infinite {
+                              route {
+                                    ei > ne ==> { break }
+                                    _ ==> {
+                                          mut as map: e_res = fmirLowerExpr(arena, elem_ids[ei], mod, tc)
+                                          mod = e_res["module"]
+                                          tc = e_res["temp_counter"]
+                                          mod = fmirAddInstruction(mod, "SET_ADD", res_reg, e_res["res_reg"], "")
+                                          ei = ei + 1
+                                    }
+                              }
+                        }
+                  }
+                  kind == "LIT_MAP" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "MAP_INIT", "", "", res_reg)
+                        mut as list of data: kv_ids = astArenaNodeChildren(arena, node_id)
+                        mut as int64: nkv = stdCollectionLength(kv_ids)
+                        mut as int64: kvi = 1
+                        infinite {
+                              route {
+                                    kvi > nkv ==> { break }
+                                    _ ==> {
+                                          mut as map: k_res = fmirLowerExpr(arena, kv_ids[kvi], mod, tc)
+                                          mod = k_res["module"]
+                                          tc = k_res["temp_counter"]
+                                          mut as map: v_res = fmirLowerExpr(arena, kv_ids[kvi + 1], mod, tc)
+                                          mod = v_res["module"]
+                                          tc = v_res["temp_counter"]
+                                          mod = fmirAddInstruction(mod, "MAP_SET", res_reg, k_res["res_reg"], v_res["res_reg"])
+                                          kvi = kvi + 2
+                                    }
+                              }
+                        }
+                  }
+                  kind == "STRUCT_INIT" ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "STRUCT_INIT", val, "", res_reg)
+                        mut as list of data: f_ids = astArenaNodeChildren(arena, node_id)
+                        mut as int64: nf = stdCollectionLength(f_ids)
+                        mut as int64: fi = 1
+                        infinite {
+                              route {
+                                    fi > nf ==> { break }
+                                    _ ==> {
+                                          mut as int64: fnode = f_ids[fi]
+                                          mut as string: fname = astArenaNodeValue(arena, fnode)
+                                          mut as int64: fval_id = astArenaNodeRight(arena, fnode)
+                                          mut as map: fv_res = fmirLowerExpr(arena, fval_id, mod, tc)
+                                          mod = fv_res["module"]
+                                          tc = fv_res["temp_counter"]
+                                          mod = fmirAddInstruction(mod, "STRUCT_SET_FIELD", res_reg, fname, fv_res["res_reg"])
+                                          fi = fi + 1
+                                    }
+                              }
+                        }
+                  }
+                  kind == "FIELD_ACCESS" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as map: o_res = fmirLowerExpr(arena, obj_id, mod, tc)
+                        mod = o_res["module"]
+                        tc = o_res["temp_counter"]
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "GET_FIELD", o_res["res_reg"], val, res_reg)
+                  }
+                  kind == "INDEX_ACCESS" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as int64: idx_id = astArenaNodeRight(arena, node_id)
+                        mut as map: o_res = fmirLowerExpr(arena, obj_id, mod, tc)
+                        mod = o_res["module"]
+                        tc = o_res["temp_counter"]
+                        mut as map: i_res = fmirLowerExpr(arena, idx_id, mod, tc)
+                        mod = i_res["module"]
+                        tc = i_res["temp_counter"]
+                        mut as string: idx_full = i_res["res_reg"]
+                        mut as list of data: ichildren = astArenaNodeChildren(arena, node_id)
+                        route {
+                              val == "MULTI" and stdCollectionLength(ichildren) > 0 ==> {
+                                    mut as map: i2_res = fmirLowerExpr(arena, ichildren[1], mod, tc)
+                                    mod = i2_res["module"]
+                                    tc = i2_res["temp_counter"]
+                                    idx_full = idx_full + "," + i2_res["res_reg"]
+                              }
+                              _ ==> {}
+                        }
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "GET_INDEX", o_res["res_reg"], idx_full, res_reg)
+                  }
+                  kind == "SLICE_ACCESS" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as int64: start_id = astArenaNodeRight(arena, node_id)
+                        mut as list of data: schildren = astArenaNodeChildren(arena, node_id)
+                        mut as int64: end_id = 0
+                        route {
+                              stdCollectionLength(schildren) > 0 ==> { end_id = schildren[1] }
+                              _ ==> {}
+                        }
+                        mut as map: o_res = fmirLowerExpr(arena, obj_id, mod, tc)
+                        mod = o_res["module"]
+                        tc = o_res["temp_counter"]
+                        mut as string: start_reg = ""
+                        route {
+                              start_id > 0 ==> {
+                                    mut as map: s_res = fmirLowerExpr(arena, start_id, mod, tc)
+                                    mod = s_res["module"]
+                                    tc = s_res["temp_counter"]
+                                    start_reg = s_res["res_reg"]
+                              }
+                              _ ==> {}
+                        }
+                        mut as string: end_reg = ""
+                        route {
+                              end_id > 0 ==> {
+                                    mut as map: en_res = fmirLowerExpr(arena, end_id, mod, tc)
+                                    mod = en_res["module"]
+                                    tc = en_res["temp_counter"]
+                                    end_reg = en_res["res_reg"]
+                              }
+                              _ ==> {}
+                        }
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "GET_SLICE", o_res["res_reg"], start_reg + ":" + end_reg, res_reg)
+                  }
+                  kind == "CAST_EXPR" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as map: o_res = fmirLowerExpr(arena, obj_id, mod, tc)
+                        mod = o_res["module"]
+                        tc = o_res["temp_counter"]
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CAST", o_res["res_reg"], val, res_reg)
+                  }
+                  kind == "SCOPE_RESOLVE" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as string: obj_name = astArenaNodeValue(arena, obj_id)
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CONST_STR", obj_name + "::" + val, "", res_reg)
+                  }
+                  kind == "PIPELINE" or (kind == "BINARY_EXPR" and val == "-->") ==> {
+                        mut as int64: lid = astArenaNodeLeft(arena, node_id)
+                        mut as map: l_res = fmirLowerExpr(arena, lid, mod, tc)
+                        mod = l_res["module"]
+                        tc = l_res["temp_counter"]
+                        mut as string: l_reg = l_res["res_reg"]
+                        mod = fmirAddInstruction(mod, "PRINT", l_reg, "", "")
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                  }
+                  kind == "BIN_OP" or kind == "BINARY_EXPR" ==> {
+                        mut as int64: lid = astArenaNodeLeft(arena, node_id)
+                        mut as int64: rid = astArenaNodeRight(arena, node_id)
+
+                        mut as map: l_res = fmirLowerExpr(arena, lid, mod, tc)
+                        mod = l_res["module"]
+                        tc = l_res["temp_counter"]
+                        mut as string: l_reg = l_res["res_reg"]
+
+                        mut as map: r_res = fmirLowerExpr(arena, rid, mod, tc)
+                        mod = r_res["module"]
+                        tc = r_res["temp_counter"]
+                        mut as string: r_reg = r_res["res_reg"]
+
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "BINOP_" + val, l_reg, r_reg, res_reg)
+                  }
+                  kind == "UNARY_EXPR" ==> {
+                        mut as int64: op_id = astArenaNodeLeft(arena, node_id)
+                        mut as map: op_res = fmirLowerExpr(arena, op_id, mod, tc)
+                        mod = op_res["module"]
+                        tc = op_res["temp_counter"]
+                        mut as string: op_reg = op_res["res_reg"]
+
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "UNARY_" + val, op_reg, "", res_reg)
+                  }
+                  kind == "CALL" ==> {
+                        mut as list of data: c_args = astArenaNodeChildren(arena, node_id)
+                        mut as string: arg_reg = ""
+                        route {
+                              stdCollectionLength(c_args) > 0 ==> {
+                                    mut as map: a_res = fmirLowerExpr(arena, c_args[1], mod, tc)
+                                    mod = a_res["module"]
+                                    tc = a_res["temp_counter"]
+                                    arg_reg = a_res["res_reg"]
+                              }
+                              _ ==> {}
+                        }
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "CALL", val, arg_reg, res_reg)
+                  }
+                  _ ==> {
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "NOP", "", "", res_reg)
+                  }
+            }
+
+            mut as map: result = map{}
+            result["module"] = mod
+            result["temp_counter"] = tc
+            result["res_reg"] = res_reg
+            emit(nice, result, "ok")
+      }
+
+      op fmirLowerStmt (as map: arena, as int64: node_id, as map: module, as int64: temp_counter) as map ==> {
+            mut as string: kind = astArenaNodeKind(arena, node_id)
+            mut as string: val = astArenaNodeValue(arena, node_id)
+            mut as map: mod = module
+            mut as int64: tc = temp_counter
+
+            route {
+                  kind == "VAR_DECL" or kind == "STMT_VAR_DECL" ==> {
+                        mut as int64: target_id = astArenaNodeRight(arena, node_id)
+                        mut as string: var_name = ""
+                        route {
+                              target_id > 0 ==> {
+                                    var_name = astArenaNodeValue(arena, target_id)
+                              }
+                              _ ==> {}
+                        }
+                        route {
+                              var_name == "" ==> {
+                                    mut as int64: vlen = stdCollectionLength(val)
+                                    mut as int64: cpos = 0
+                                    mut as int64: vi = 1
+                                    infinite {
+                                          route {
+                                                vi > vlen ==> { break }
+                                                val[vi] == ":" ==> {
+                                                      cpos = vi
+                                                      break
+                                                }
+                                                _ ==> { vi = vi + 1 }
+                                          }
+                                    }
+                                    route {
+                                          cpos > 0 and cpos < vlen ==> {
+                                                mut as string: extracted = ""
+                                                mut as int64: ej = cpos + 1
+                                                infinite {
+                                                      route {
+                                                            ej > vlen ==> { break }
+                                                            _ ==> {
+                                                                  extracted = extracted + val[ej]
+                                                                  ej = ej + 1
+                                                            }
+                                                      }
+                                                }
+                                                var_name = extracted
+                                          }
+                                          _ ==> { var_name = val }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+                        mod = fmirAddInstruction(mod, "ALLOC", var_name, "", var_name)
+
+                        mut as int64: init_id = 0
+                        mut as list of data: children = astArenaNodeChildren(arena, node_id)
+                        route {
+                              stdCollectionLength(children) > 0 ==> {
+                                    init_id = children[1]
+                              }
+                              _ ==> {}
+                        }
+                        route {
+                              init_id > 0 ==> {
+                                    mut as map: init_res = fmirLowerExpr(arena, init_id, mod, tc)
+                                    mod = init_res["module"]
+                                    tc = init_res["temp_counter"]
+                                    mut as string: store_reg = init_res["res_reg"]
+                                    mut as int64: type_id = astArenaNodeLeft(arena, node_id)
+                                    mut as string: tname = ""
+                                    route {
+                                          type_id > 0 ==> { tname = astArenaNodeValue(arena, type_id) }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          tname == "fp8_e4m3" or tname == "fp8_e5m2" ==> {
+                                                tc = tc + 1
+                                                mut as string: cast_reg = "%t" + tc
+                                                mod = fmirAddInstruction(mod, "CAST", store_reg, tname, cast_reg)
+                                                store_reg = cast_reg
+                                          }
+                                          _ ==> {}
+                                    }
+                                    mod = fmirAddInstruction(mod, "STORE", store_reg, "", var_name)
+                              }
+                              _ ==> {
+                                    mut as int64: type_id = astArenaNodeLeft(arena, node_id)
+                                    mut as string: tname = ""
+                                    route {
+                                          type_id > 0 ==> { tname = astArenaNodeValue(arena, type_id) }
+                                          _ ==> {}
+                                    }
+                                    tc = tc + 1
+                                    mut as string: def_reg = "%t" + tc
+                                    mut as bool: is_tensor_ty = false
+                                    route {
+                                          stdCollectionLength(tname) >= 6 ==> {
+                                                is_tensor_ty = (tname[1..6] == "tensor")
+                                          }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          tname == "string" ==> {
+                                                mod = fmirAddInstruction(mod, "CONST_STR", "", "", def_reg)
+                                          }
+                                          tname == "bool" ==> {
+                                                mod = fmirAddInstruction(mod, "CONST_BOOL", "false", "", def_reg)
+                                          }
+                                          tname == "float" or tname == "float32" or tname == "float64" or tname == "float16" ==> {
+                                                mod = fmirAddInstruction(mod, "CONST_FLOAT", "0.0", "", def_reg)
+                                          }
+                                          tname == "complex" or tname == "complex32" or tname == "complex64" or tname == "complex128" ==> {
+                                                mod = fmirAddInstruction(mod, "CONST_COMPLEX", "0.0 + 0.0i", "", def_reg)
+                                          }
+                                          is_tensor_ty ==> {
+                                                mod = fmirAddInstruction(mod, "MAP_INIT", "", "", def_reg)
+                                          }
+                                          _ ==> {
+                                                mod = fmirAddInstruction(mod, "CONST_INT", "0", "", def_reg)
+                                          }
+                                    }
+                                    mod = fmirAddInstruction(mod, "STORE", def_reg, "", var_name)
+                              }
+                        }
+                  }
+                  kind == "ASSIGN" or kind == "STMT_ASSIGN" ==> {
+                        mut as int64: val_id = astArenaNodeRight(arena, node_id)
+                        route {
+                              val_id == 0 ==> { val_id = astArenaNodeLeft(arena, node_id) }
+                              _ ==> {}
+                        }
+                        mut as map: v_res = fmirLowerExpr(arena, val_id, mod, tc)
+                        mod = v_res["module"]
+                        tc = v_res["temp_counter"]
+                        mod = fmirAddInstruction(mod, "STORE", v_res["res_reg"], "", val)
+                  }
+                  kind == "SET_FIELD" or kind == "STMT_SET_FIELD" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as int64: val_id = astArenaNodeRight(arena, node_id)
+                        mut as string: var_name = astArenaNodeValue(arena, obj_id)
+                        mut as map: v_res = fmirLowerExpr(arena, val_id, mod, tc)
+                        mod = v_res["module"]
+                        tc = v_res["temp_counter"]
+                        mod = fmirAddInstruction(mod, "SET_FIELD", var_name, val, v_res["res_reg"])
+                  }
+                  kind == "SET_INDEX" or kind == "STMT_SET_INDEX" ==> {
+                        mut as int64: obj_id = astArenaNodeLeft(arena, node_id)
+                        mut as int64: val_id = astArenaNodeRight(arena, node_id)
+                        mut as list of data: schildren = astArenaNodeChildren(arena, node_id)
+                        mut as string: var_name = astArenaNodeValue(arena, obj_id)
+                        mut as int64: idx_id = 0
+                        route {
+                              stdCollectionLength(schildren) > 0 ==> { idx_id = schildren[1] }
+                              _ ==> {}
+                        }
+                        mut as map: i_res = fmirLowerExpr(arena, idx_id, mod, tc)
+                        mod = i_res["module"]
+                        tc = i_res["temp_counter"]
+                        mut as string: idx_full = i_res["res_reg"]
+                        route {
+                              stdCollectionLength(schildren) > 1 ==> {
+                                    mut as map: i2_res = fmirLowerExpr(arena, schildren[2], mod, tc)
+                                    mod = i2_res["module"]
+                                    tc = i2_res["temp_counter"]
+                                    idx_full = idx_full + "," + i2_res["res_reg"]
+                              }
+                              _ ==> {}
+                        }
+                        mut as map: v_res = fmirLowerExpr(arena, val_id, mod, tc)
+                        mod = v_res["module"]
+                        tc = v_res["temp_counter"]
+                        mod = fmirAddInstruction(mod, "SET_INDEX", var_name, idx_full, v_res["res_reg"])
+                  }
+                  kind == "PRINT" or kind == "STMT_PRINT" ==> {
+                        mut as list of data: c_args = astArenaNodeChildren(arena, node_id)
+                        mut as int64: num_args = stdCollectionLength(c_args)
+                        route {
+                              num_args > 0 ==> {
+                                    mut as int64: first_id = c_args[1]
+                                    mut as map: p_res = fmirLowerExpr(arena, first_id, mod, tc)
+                                    mod = p_res["module"]
+                                    tc = p_res["temp_counter"]
+                                    mut as string: cur_reg = p_res["res_reg"]
+
+                                    mut as int64: ai = 2
+                                    infinite {
+                                          route {
+                                                ai > num_args ==> { break }
+                                                _ ==> {
+                                                      tc = tc + 1
+                                                      mut as string: sp_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "CONST_STR", " ", "", sp_reg)
+
+                                                      tc = tc + 1
+                                                      mut as string: joined_sp = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "BINOP_+", cur_reg, sp_reg, joined_sp)
+
+                                                      mut as int64: next_id = c_args[ai]
+                                                      mut as map: n_res = fmirLowerExpr(arena, next_id, mod, tc)
+                                                      mod = n_res["module"]
+                                                      tc = n_res["temp_counter"]
+
+                                                      tc = tc + 1
+                                                      mut as string: next_joined = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "BINOP_+", joined_sp, n_res["res_reg"], next_joined)
+
+                                                      cur_reg = next_joined
+                                                      ai = ai + 1
+                                                }
+                                          }
+                                    }
+                                    mod = fmirAddInstruction(mod, "PRINT", cur_reg, "", "")
+                              }
+                              _ ==> {
+                                    mut as int64: expr_id = astArenaNodeRight(arena, node_id)
+                                    route {
+                                          expr_id == 0 ==> { expr_id = astArenaNodeLeft(arena, node_id) }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          expr_id > 0 ==> {
+                                                mut as map: p_res = fmirLowerExpr(arena, expr_id, mod, tc)
+                                                mod = p_res["module"]
+                                                tc = p_res["temp_counter"]
+                                                mod = fmirAddInstruction(mod, "PRINT", p_res["res_reg"], "", "")
+                                          }
+                                          _ ==> {
+                                                tc = tc + 1
+                                                mut as string: empty_reg = "%t" + tc
+                                                mod = fmirAddInstruction(mod, "CONST_STR", "", "", empty_reg)
+                                                mod = fmirAddInstruction(mod, "PRINT", empty_reg, "", "")
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  kind == "EMIT" or kind == "STMT_EMIT" ==> {
+                        mut as int64: expr_id = astArenaNodeRight(arena, node_id)
+                        route {
+                              expr_id == 0 ==> { expr_id = astArenaNodeLeft(arena, node_id) }
+                              _ ==> {}
+                        }
+                        mut as map: e_res = fmirLowerExpr(arena, expr_id, mod, tc)
+                        mod = e_res["module"]
+                        tc = e_res["temp_counter"]
+                        mod = fmirAddInstruction(mod, "EMIT", e_res["res_reg"], "", "")
+                  }
+                  kind == "STMT_CONTROL" ==> {
+                        route {
+                              val == "break" and stdMapContainsKey(mod, "loop_end") ==> {
+                                    mod = fmirAddInstruction(mod, "JUMP", "" + mod["loop_end"], "", "")
+                              }
+                              val == "continue" and stdMapContainsKey(mod, "loop_cont") ==> {
+                                    mod = fmirAddInstruction(mod, "JUMP", "" + mod["loop_cont"], "", "")
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  kind == "STMT_LOOP_INFINITE" ==> {
+                        tc = tc + 1
+                        mut as string: l_start = "loop_start_" + tc
+                        mut as string: l_end = "loop_end_" + tc
+                        mut as string: prev_le = ""
+                        mut as string: prev_lc = ""
+                        route {
+                              stdMapContainsKey(mod, "loop_end") ==> { prev_le = "" + mod["loop_end"] }
+                              _ ==> {}
+                        }
+                        route {
+                              stdMapContainsKey(mod, "loop_cont") ==> { prev_lc = "" + mod["loop_cont"] }
+                              _ ==> {}
+                        }
+                        mod["loop_end"] = l_end
+                        mod["loop_cont"] = l_start
+
+                        mod = fmirAddInstruction(mod, "LABEL", l_start, "", "")
+
+                        mut as list of data: loop_stmts = astArenaNodeChildren(arena, node_id)
+                        mut as int64: nls = stdCollectionLength(loop_stmts)
+                        mut as int64: lsi = 1
+                        infinite {
+                              route {
+                                    lsi > nls ==> { break }
+                                    _ ==> {
+                                          mut as map: ls_res = fmirLowerStmt(arena, loop_stmts[lsi], mod, tc)
+                                          mod = ls_res["module"]
+                                          tc = ls_res["temp_counter"]
+                                          lsi = lsi + 1
+                                    }
+                              }
+                        }
+
+                        mod["loop_end"] = prev_le
+                        mod["loop_cont"] = prev_lc
+
+                        mod = fmirAddInstruction(mod, "JUMP", l_start, "", "")
+                        mod = fmirAddInstruction(mod, "LABEL", l_end, "", "")
+                  }
+                  kind == "STMT_LOOP_COND" ==> {
+                        tc = tc + 1
+                        mut as string: l_start = "loop_start_" + tc
+                        mut as string: l_end = "loop_end_" + tc
+                        mut as string: prev_le = ""
+                        mut as string: prev_lc = ""
+                        route {
+                              stdMapContainsKey(mod, "loop_end") ==> { prev_le = "" + mod["loop_end"] }
+                              _ ==> {}
+                        }
+                        route {
+                              stdMapContainsKey(mod, "loop_cont") ==> { prev_lc = "" + mod["loop_cont"] }
+                              _ ==> {}
+                        }
+                        mod["loop_end"] = l_end
+                        mod["loop_cont"] = l_start
+
+                        mod = fmirAddInstruction(mod, "LABEL", l_start, "", "")
+
+                        mut as int64: cond_id = astArenaNodeLeft(arena, node_id)
+                        mut as map: c_res = fmirLowerExpr(arena, cond_id, mod, tc)
+                        mod = c_res["module"]
+                        tc = c_res["temp_counter"]
+                        mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", c_res["res_reg"], l_end, "")
+
+                        mut as list of data: loop_stmts = astArenaNodeChildren(arena, node_id)
+                        mut as int64: nls = stdCollectionLength(loop_stmts)
+                        mut as int64: lsi = 1
+                        infinite {
+                              route {
+                                    lsi > nls ==> { break }
+                                    _ ==> {
+                                          mut as map: ls_res = fmirLowerStmt(arena, loop_stmts[lsi], mod, tc)
+                                          mod = ls_res["module"]
+                                          tc = ls_res["temp_counter"]
+                                          lsi = lsi + 1
+                                    }
+                              }
+                        }
+
+                        mod["loop_end"] = prev_le
+                        mod["loop_cont"] = prev_lc
+
+                        mod = fmirAddInstruction(mod, "JUMP", l_start, "", "")
+                        mod = fmirAddInstruction(mod, "LABEL", l_end, "", "")
+                  }
+                  kind == "STMT_LOOP" ==> {
+                        mut as string: iter_var = val
+                        mut as int64: coll_id = astArenaNodeLeft(arena, node_id)
+                        mut as string: coll_var = ""
+                        mut as int64: vlen = stdCollectionLength(val)
+                        mut as int64: cpos = 0
+                        mut as int64: vi = 1
+                        infinite {
+                              route {
+                                    vi > vlen ==> { break }
+                                    val[vi] == ":" ==> {
+                                          cpos = vi
+                                          break
+                                    }
+                                    _ ==> { vi = vi + 1 }
+                              }
+                        }
+                        route {
+                              cpos > 1 and cpos < vlen ==> {
+                                    iter_var = val[1..(cpos - 1)]
+                                    coll_var = val[(cpos + 1)..vlen]
+                              }
+                              _ ==> {}
+                        }
+
+                        mut as bool: is_range = false
+                        mut as int64: r_start_id = 0
+                        mut as int64: r_end_id = 0
+                        route {
+                              coll_id > 0 ==> {
+                                    mut as string: ckind = astArenaNodeKind(arena, coll_id)
+                                    mut as string: cval = astArenaNodeValue(arena, coll_id)
+                                    route {
+                                          (ckind == "BINARY_EXPR" or ckind == "BIN_OP") and cval == ".." ==> {
+                                                is_range = true
+                                                r_start_id = astArenaNodeLeft(arena, coll_id)
+                                                r_end_id = astArenaNodeRight(arena, coll_id)
+                                          }
+                                          _ ==> {
+                                                route {
+                                                      ckind == "IDENT" or ckind == "IDENTIFIER" ==> {
+                                                            coll_var = cval
+                                                      }
+                                                      _ ==> {}
+                                                }
+                                          }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+
+                        route {
+                              is_range ==> {
+                                    mut as map: s_res = fmirLowerExpr(arena, r_start_id, mod, tc)
+                                    mod = s_res["module"]
+                                    tc = s_res["temp_counter"]
+                                    mut as string: start_reg = s_res["res_reg"]
+
+                                    mut as map: e_res = fmirLowerExpr(arena, r_end_id, mod, tc)
+                                    mod = e_res["module"]
+                                    tc = e_res["temp_counter"]
+                                    mut as string: end_reg = e_res["res_reg"]
+
+                                    tc = tc + 1
+                                    mut as string: is_asc_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_<=", start_reg, end_reg, is_asc_reg)
+
+                                    mod = fmirAddInstruction(mod, "ALLOC", iter_var, "", iter_var)
+                                    mod = fmirAddInstruction(mod, "STORE", start_reg, "", iter_var)
+
+                                    tc = tc + 1
+                                    mut as string: l_asc_test = "range_asc_" + tc
+                                    mut as string: l_desc_test = "range_desc_" + tc
+                                    mut as string: l_body = "range_body_" + tc
+                                    mut as string: l_step = "range_step_" + tc
+                                    mut as string: l_end = "range_end_" + tc
+
+                                    mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", is_asc_reg, l_desc_test, "")
+
+                                    #L Ascending loop test
+                                    mod = fmirAddInstruction(mod, "LABEL", l_asc_test, "", "")
+                                    tc = tc + 1
+                                    mut as string: cur_r1 = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "LOAD", iter_var, "", cur_r1)
+                                    tc = tc + 1
+                                    mut as string: cond_r1 = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_<=", cur_r1, end_reg, cond_r1)
+                                    mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", cond_r1, l_end, "")
+                                    mod = fmirAddInstruction(mod, "JUMP", l_body, "", "")
+
+                                    #L Descending loop test
+                                    mod = fmirAddInstruction(mod, "LABEL", l_desc_test, "", "")
+                                    tc = tc + 1
+                                    mut as string: cur_r2 = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "LOAD", iter_var, "", cur_r2)
+                                    tc = tc + 1
+                                    mut as string: cond_r2 = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_>=", cur_r2, end_reg, cond_r2)
+                                    mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", cond_r2, l_end, "")
+                                    mod = fmirAddInstruction(mod, "JUMP", l_body, "", "")
+
+                                    #L Loop body
+                                    mod = fmirAddInstruction(mod, "LABEL", l_body, "", "")
+
+                                    mut as string: prev_le = ""
+                                    mut as string: prev_lc = ""
+                                    route {
+                                          stdMapContainsKey(mod, "loop_end") ==> { prev_le = "" + mod["loop_end"] }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          stdMapContainsKey(mod, "loop_cont") ==> { prev_lc = "" + mod["loop_cont"] }
+                                          _ ==> {}
+                                    }
+                                    mod["loop_end"] = l_end
+                                    mod["loop_cont"] = l_step
+
+                                    mut as list of data: loop_stmts = astArenaNodeChildren(arena, node_id)
+                                    mut as int64: nls = stdCollectionLength(loop_stmts)
+                                    mut as int64: lsi = 1
+                                    infinite {
+                                          route {
+                                                lsi > nls ==> { break }
+                                                _ ==> {
+                                                      mut as map: ls_res = fmirLowerStmt(arena, loop_stmts[lsi], mod, tc)
+                                                      mod = ls_res["module"]
+                                                      tc = ls_res["temp_counter"]
+                                                      lsi = lsi + 1
+                                                }
+                                          }
+                                    }
+
+                                    mod["loop_end"] = prev_le
+                                    mod["loop_cont"] = prev_lc
+
+                                    #L Step
+                                    mod = fmirAddInstruction(mod, "LABEL", l_step, "", "")
+                                    tc = tc + 1
+                                    mut as string: l_step_desc = "step_desc_" + tc
+                                    mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", is_asc_reg, l_step_desc, "")
+
+                                    #L Step asc
+                                    tc = tc + 1
+                                    mut as string: c_asc = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "LOAD", iter_var, "", c_asc)
+                                    tc = tc + 1
+                                    mut as string: one1 = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CONST_INT", "1", "", one1)
+                                    tc = tc + 1
+                                    mut as string: next_asc = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_+", c_asc, one1, next_asc)
+                                    mod = fmirAddInstruction(mod, "STORE", next_asc, "", iter_var)
+                                    mod = fmirAddInstruction(mod, "JUMP", l_asc_test, "", "")
+
+                                    #L Step desc
+                                    mod = fmirAddInstruction(mod, "LABEL", l_step_desc, "", "")
+                                    tc = tc + 1
+                                    mut as string: c_desc = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "LOAD", iter_var, "", c_desc)
+                                    tc = tc + 1
+                                    mut as string: one2 = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CONST_INT", "1", "", one2)
+                                    tc = tc + 1
+                                    mut as string: next_desc = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_-", c_desc, one2, next_desc)
+                                    mod = fmirAddInstruction(mod, "STORE", next_desc, "", iter_var)
+                                    mod = fmirAddInstruction(mod, "JUMP", l_desc_test, "", "")
+
+                                    mod = fmirAddInstruction(mod, "LABEL", l_end, "", "")
+                              }
+                              iter_var != "" and coll_var != "" ==> {
+                                    tc = tc + 1
+                                    mut as string: len_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "COLL_LEN", coll_var, "", len_reg)
+                                    tc = tc + 1
+                                    mut as string: idx_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CONST_INT", "1", "", idx_reg)
+                                    tc = tc + 1
+                                    mut as string: step_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CONST_INT", "1", "", step_reg)
+
+                                    tc = tc + 1
+                                    mut as string: l_start = "loop_start_" + tc
+                                    mut as string: l_step = "loop_step_" + tc
+                                    mut as string: l_end = "loop_end_" + tc
+                                    mod = fmirAddInstruction(mod, "LABEL", l_start, "", "")
+
+                                    tc = tc + 1
+                                    mut as string: cond_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_<=", idx_reg, len_reg, cond_reg)
+                                    mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", cond_reg, l_end, "")
+
+                                    mod = fmirAddInstruction(mod, "ALLOC", iter_var, "", iter_var)
+                                    mod = fmirAddInstruction(mod, "COLL_GET", coll_var, idx_reg, iter_var)
+
+                                    mut as string: prev_le = ""
+                                    mut as string: prev_lc = ""
+                                    route {
+                                          stdMapContainsKey(mod, "loop_end") ==> { prev_le = "" + mod["loop_end"] }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          stdMapContainsKey(mod, "loop_cont") ==> { prev_lc = "" + mod["loop_cont"] }
+                                          _ ==> {}
+                                    }
+                                    mod["loop_end"] = l_end
+                                    mod["loop_cont"] = l_step
+
+                                    mut as list of data: loop_stmts = astArenaNodeChildren(arena, node_id)
+                                    mut as int64: nls = stdCollectionLength(loop_stmts)
+                                    mut as int64: lsi = 1
+                                    infinite {
+                                          route {
+                                                lsi > nls ==> { break }
+                                                _ ==> {
+                                                      mut as map: ls_res = fmirLowerStmt(arena, loop_stmts[lsi], mod, tc)
+                                                      mod = ls_res["module"]
+                                                      tc = ls_res["temp_counter"]
+                                                      lsi = lsi + 1
+                                                }
+                                          }
+                                    }
+
+                                    mod["loop_end"] = prev_le
+                                    mod["loop_cont"] = prev_lc
+
+                                    mod = fmirAddInstruction(mod, "LABEL", l_step, "", "")
+                                    tc = tc + 1
+                                    mut as string: next_idx = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "BINOP_+", idx_reg, step_reg, next_idx)
+                                    mod = fmirAddInstruction(mod, "COPY_REG", next_idx, "", idx_reg)
+                                    mod = fmirAddInstruction(mod, "JUMP", l_start, "", "")
+                                    mod = fmirAddInstruction(mod, "LABEL", l_end, "", "")
+                              }
+                              _ ==> {
+                                    mut as list of data: loop_stmts = astArenaNodeChildren(arena, node_id)
+                                    mut as int64: nls = stdCollectionLength(loop_stmts)
+                                    mut as int64: lsi = 1
+                                    infinite {
+                                          route {
+                                                lsi > nls ==> { break }
+                                                _ ==> {
+                                                      mut as map: ls_res = fmirLowerStmt(arena, loop_stmts[lsi], mod, tc)
+                                                      mod = ls_res["module"]
+                                                      tc = ls_res["temp_counter"]
+                                                      lsi = lsi + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  kind == "STMT_ROUTE" ==> {
+                        mut as int64: subj_id = astArenaNodeLeft(arena, node_id)
+                        mut as string: subj_reg = ""
+                        route {
+                              subj_id > 0 ==> {
+                                    mut as map: s_res = fmirLowerExpr(arena, subj_id, mod, tc)
+                                    mod = s_res["module"]
+                                    tc = s_res["temp_counter"]
+                                    subj_reg = s_res["res_reg"]
+                              }
+                              _ ==> {}
+                        }
+
+                        mut as list of data: r_arms = astArenaNodeChildren(arena, node_id)
+                        mut as int64: num_arms = stdCollectionLength(r_arms)
+                        tc = tc + 1
+                        mut as string: r_end = "route_end_" + tc
+
+                        mut as int64: ai = 1
+                        infinite {
+                              route {
+                                    ai > num_arms ==> { break }
+                                    _ ==> {
+                                          mut as int64: arm_id = r_arms[ai]
+                                          mut as int64: cond_id = astArenaNodeLeft(arena, arm_id)
+                                          mut as list of data: arm_stmts = astArenaNodeChildren(arena, arm_id)
+                                          mut as string: ckind = astArenaNodeKind(arena, cond_id)
+                                          tc = tc + 1
+                                          mut as string: next_arm = "route_arm_" + tc
+
+                                          route {
+                                                ckind == "WILDCARD" ==> {
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      mut as map: c_res = fmirLowerExpr(arena, cond_id, mod, tc)
+                                                      mod = c_res["module"]
+                                                      tc = c_res["temp_counter"]
+                                                      mut as string: final_cond_reg = c_res["res_reg"]
+
+                                                      route {
+                                                            subj_reg != "" and (ckind == "LIT_STRING" or ckind == "LIT_STR" or ckind == "LIT_INT" or ckind == "LIT_FLOAT" or ckind == "LIT_BOOL" or ckind == "LITERAL") ==> {
+                                                                  tc = tc + 1
+                                                                  mut as string: cmp_reg = "%t" + tc
+                                                                  mod = fmirAddInstruction(mod, "BINOP_==", subj_reg, c_res["res_reg"], cmp_reg)
+                                                                  final_cond_reg = cmp_reg
+                                                            }
+                                                            _ ==> {}
+                                                      }
+
+                                                      mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", final_cond_reg, next_arm, "")
+
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", r_end, "", "")
+                                                      mod = fmirAddInstruction(mod, "LABEL", next_arm, "", "")
+                                                }
+                                          }
+                                          ai = ai + 1
+                                    }
+                              }
+                        }
+                        mod = fmirAddInstruction(mod, "LABEL", r_end, "", "")
+                  }
+                  kind == "STMT_MATCH" ==> {
+                        mut as int64: target_expr_id = astArenaNodeLeft(arena, node_id)
+                        mut as map: t_res = fmirLowerExpr(arena, target_expr_id, mod, tc)
+                        mod = t_res["module"]
+                        tc = t_res["temp_counter"]
+                        mut as string: target_reg = t_res["res_reg"]
+
+                        tc = tc + 1
+                        mut as string: m_end = "match_end_" + tc
+                        mut as list of data: m_arms = astArenaNodeChildren(arena, node_id)
+                        mut as int64: num_arms = stdCollectionLength(m_arms)
+
+                        mut as int64: ai = 1
+                        infinite {
+                              route {
+                                    ai > num_arms ==> { break }
+                                    _ ==> {
+                                          mut as int64: arm_id = m_arms[ai]
+                                          mut as int64: pat_id = astArenaNodeLeft(arena, arm_id)
+                                          mut as list of data: arm_stmts = astArenaNodeChildren(arena, arm_id)
+                                          mut as string: pkind = astArenaNodeKind(arena, pat_id)
+                                          mut as string: pval = astArenaNodeValue(arena, pat_id)
+
+                                          route {
+                                                pkind == "PAT_LITERAL" ==> {
+                                                      tc = tc + 1
+                                                      mut as string: next_arm = "match_arm_" + tc
+                                                      tc = tc + 1
+                                                      mut as string: lit_reg = "%t" + tc
+
+                                                      mut as int64: pvlen = stdCollectionLength(pval)
+                                                      mut as bool: has_dot = false
+                                                      mut as bool: all_digits = true
+                                                      mut as int64: vi = 1
+                                                      infinite {
+                                                            route {
+                                                                  vi > pvlen ==> { break }
+                                                                  _ ==> {
+                                                                        mut as string: ch = pval[vi]
+                                                                        route {
+                                                                              ch == "." ==> { has_dot = true }
+                                                                              (ch >= "0" and ch <= "9") or (vi == 1 and (ch == "-" or ch == "+")) ==> {}
+                                                                              _ ==> { all_digits = false }
+                                                                        }
+                                                                        vi = vi + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      route {
+                                                            pval == "true" or pval == "false" ==> {
+                                                                  mod = fmirAddInstruction(mod, "CONST_BOOL", pval, "", lit_reg)
+                                                            }
+                                                            all_digits and has_dot ==> {
+                                                                  mod = fmirAddInstruction(mod, "CONST_FLOAT", pval, "", lit_reg)
+                                                            }
+                                                            all_digits and pvlen > 0 ==> {
+                                                                  mod = fmirAddInstruction(mod, "CONST_INT", pval, "", lit_reg)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as string: sval = pval
+                                                                  route {
+                                                                        pvlen >= 2 and pval[1] == "\"" and pval[pvlen] == "\"" ==> {
+                                                                              sval = pval[2..(pvlen - 1)]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  mod = fmirAddInstruction(mod, "CONST_STR", sval, "", lit_reg)
+                                                            }
+                                                      }
+
+                                                      tc = tc + 1
+                                                      mut as string: cmp_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "BINOP_==", target_reg, lit_reg, cmp_reg)
+                                                      mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", cmp_reg, next_arm, "")
+
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", m_end, "", "")
+                                                      mod = fmirAddInstruction(mod, "LABEL", next_arm, "", "")
+                                                }
+                                                pkind == "PAT_ENUM" ==> {
+                                                      tc = tc + 1
+                                                      mut as string: next_arm = "match_arm_" + tc
+
+                                                      mut as int64: pipe_pos = 0
+                                                      mut as int64: pvlen = stdCollectionLength(pval)
+                                                      mut as int64: pvi = 1
+                                                      infinite {
+                                                            route {
+                                                                  pvi > pvlen ==> { break }
+                                                                  pval[pvi] == "|" ==> {
+                                                                        pipe_pos = pvi
+                                                                        break
+                                                                  }
+                                                                  _ ==> { pvi = pvi + 1 }
+                                                            }
+                                                      }
+                                                      mut as string: full_enum_name = pval
+                                                      mut as string: f_pairs = ""
+                                                      route {
+                                                            pipe_pos > 0 ==> {
+                                                                  full_enum_name = pval[1..(pipe_pos - 1)]
+                                                                  route {
+                                                                        pipe_pos < pvlen ==> {
+                                                                              f_pairs = pval[(pipe_pos + 1)..pvlen]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+
+                                                      tc = tc + 1
+                                                      mut as string: sname_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "GET_FIELD", target_reg, "_struct_name", sname_reg)
+                                                      tc = tc + 1
+                                                      mut as string: exp_sname_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "CONST_STR", full_enum_name, "", exp_sname_reg)
+                                                      tc = tc + 1
+                                                      mut as string: name_match_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "BINOP_==", sname_reg, exp_sname_reg, name_match_reg)
+                                                      mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", name_match_reg, next_arm, "")
+
+                                                      mut as int64: fplen = stdCollectionLength(f_pairs)
+                                                      mut as int64: fpi = 1
+                                                      mut as string: cur_pair = ""
+                                                      infinite {
+                                                            mut as bool: is_sep = (fpi == fplen + 1)
+                                                            route {
+                                                                  fpi <= fplen ==> {
+                                                                        is_sep = is_sep or (f_pairs[fpi] == ",")
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            route {
+                                                                  fpi > fplen + 1 ==> { break }
+                                                                  is_sep ==> {
+                                                                        route {
+                                                                              cur_pair != "" ==> {
+                                                                                    mut as int64: cpos2 = 0
+                                                                                    mut as int64: cpi = 1
+                                                                                    mut as int64: cplen = stdCollectionLength(cur_pair)
+                                                                                    infinite {
+                                                                                          route {
+                                                                                                cpi > cplen ==> { break }
+                                                                                                cur_pair[cpi] == ":" ==> {
+                                                                                                      cpos2 = cpi
+                                                                                                      break
+                                                                                                }
+                                                                                                _ ==> { cpi = cpi + 1 }
+                                                                                          }
+                                                                                    }
+                                                                                    mut as string: fld_s = cur_pair[1..(cpos2 - 1)]
+                                                                                    mut as string: vn_s = cur_pair[(cpos2 + 1)..cplen]
+                                                                                    tc = tc + 1
+                                                                                    mut as string: fld_reg = "%t" + tc
+                                                                                    mod = fmirAddInstruction(mod, "GET_FIELD", target_reg, fld_s, fld_reg)
+                                                                                    mod = fmirAddInstruction(mod, "ALLOC", vn_s, "", vn_s)
+                                                                                    mod = fmirAddInstruction(mod, "STORE", fld_reg, "", vn_s)
+                                                                                    cur_pair = ""
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        fpi = fpi + 1
+                                                                  }
+                                                                  _ ==> {
+                                                                        cur_pair = cur_pair + f_pairs[fpi]
+                                                                        fpi = fpi + 1
+                                                                  }
+                                                            }
+                                                      }
+
+                                                      mut as int64: guard_id = astArenaNodeRight(arena, pat_id)
+                                                      route {
+                                                            guard_id > 0 ==> {
+                                                                  mut as map: g_res = fmirLowerExpr(arena, guard_id, mod, tc)
+                                                                  mod = g_res["module"]
+                                                                  tc = g_res["temp_counter"]
+                                                                  mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", g_res["res_reg"], next_arm, "")
+                                                            }
+                                                            _ ==> {}
+                                                      }
+
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", m_end, "", "")
+                                                      mod = fmirAddInstruction(mod, "LABEL", next_arm, "", "")
+                                                }
+                                                pkind == "PAT_RECORD" ==> {
+                                                      tc = tc + 1
+                                                      mut as string: next_arm = "match_arm_" + tc
+
+                                                      mut as int64: fplen = stdCollectionLength(pval)
+                                                      mut as int64: fpi = 1
+                                                      mut as string: cur_pair = ""
+                                                      infinite {
+                                                            mut as bool: is_sep = (fpi == fplen + 1)
+                                                            route {
+                                                                  fpi <= fplen ==> {
+                                                                        is_sep = is_sep or (pval[fpi] == ",")
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            route {
+                                                                  fpi > fplen + 1 ==> { break }
+                                                                  is_sep ==> {
+                                                                        route {
+                                                                              cur_pair != "" ==> {
+                                                                                    mut as int64: cpos2 = 0
+                                                                                    mut as int64: cpi = 1
+                                                                                    mut as int64: cplen = stdCollectionLength(cur_pair)
+                                                                                    infinite {
+                                                                                          route {
+                                                                                                cpi > cplen ==> { break }
+                                                                                                cur_pair[cpi] == ":" ==> {
+                                                                                                      cpos2 = cpi
+                                                                                                      break
+                                                                                                }
+                                                                                                _ ==> { cpi = cpi + 1 }
+                                                                                          }
+                                                                                    }
+                                                                                    mut as string: fld_s = cur_pair[1..(cpos2 - 1)]
+                                                                                    mut as string: vn_s = cur_pair[(cpos2 + 1)..cplen]
+                                                                                    tc = tc + 1
+                                                                                    mut as string: fld_reg = "%t" + tc
+                                                                                    mod = fmirAddInstruction(mod, "GET_FIELD", target_reg, fld_s, fld_reg)
+
+                                                                                    mut as int64: vn_len = stdCollectionLength(vn_s)
+                                                                                    mut as bool: is_lit = false
+                                                                                    route {
+                                                                                          vn_len >= 2 and vn_s[1] == "\"" and vn_s[vn_len] == "\"" ==> {
+                                                                                                is_lit = true
+                                                                                          }
+                                                                                          _ ==> {}
+                                                                                    }
+                                                                                    route {
+                                                                                          is_lit ==> {
+                                                                                                mut as string: unquoted = vn_s[2..(vn_len - 1)]
+                                                                                                tc = tc + 1
+                                                                                                mut as string: lit_r = "%t" + tc
+                                                                                                mod = fmirAddInstruction(mod, "CONST_STR", unquoted, "", lit_r)
+                                                                                                tc = tc + 1
+                                                                                                mut as string: cmp_r = "%t" + tc
+                                                                                                mod = fmirAddInstruction(mod, "BINOP_==", fld_reg, lit_r, cmp_r)
+                                                                                                mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", cmp_r, next_arm, "")
+                                                                                          }
+                                                                                          _ ==> {
+                                                                                                mod = fmirAddInstruction(mod, "ALLOC", vn_s, "", vn_s)
+                                                                                                mod = fmirAddInstruction(mod, "STORE", fld_reg, "", vn_s)
+                                                                                          }
+                                                                                    }
+                                                                                    cur_pair = ""
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        fpi = fpi + 1
+                                                                  }
+                                                                  _ ==> {
+                                                                        cur_pair = cur_pair + pval[fpi]
+                                                                        fpi = fpi + 1
+                                                                  }
+                                                            }
+                                                      }
+
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", m_end, "", "")
+                                                      mod = fmirAddInstruction(mod, "LABEL", next_arm, "", "")
+                                                }
+                                                pkind == "PAT_LIST" ==> {
+                                                      tc = tc + 1
+                                                      mut as string: next_arm = "match_arm_" + tc
+
+                                                      mut as int64: colpos = 0
+                                                      mut as int64: pvlen = stdCollectionLength(pval)
+                                                      mut as int64: pvi = 1
+                                                      infinite {
+                                                            route {
+                                                                  pvi > pvlen ==> { break }
+                                                                  pval[pvi] == ":" ==> {
+                                                                        colpos = pvi
+                                                                        break
+                                                                  }
+                                                                  _ ==> { pvi = pvi + 1 }
+                                                            }
+                                                      }
+                                                      mut as string: f_var = pval[1..(colpos - 1)]
+                                                      mut as string: r_var = pval[(colpos + 1)..pvlen]
+
+                                                      tc = tc + 1
+                                                      mut as string: idx1_r = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "CONST_INT", "1", "", idx1_r)
+                                                      tc = tc + 1
+                                                      mut as string: f_val_r = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "GET_INDEX", target_reg, idx1_r, f_val_r)
+                                                      mod = fmirAddInstruction(mod, "ALLOC", f_var, "", f_var)
+                                                      mod = fmirAddInstruction(mod, "STORE", f_val_r, "", f_var)
+
+                                                      tc = tc + 1
+                                                      mut as string: idx2_r = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "CONST_INT", "2", "", idx2_r)
+                                                      tc = tc + 1
+                                                      mut as string: r_val_r = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "GET_SLICE", target_reg, idx2_r + ":", r_val_r)
+                                                      mod = fmirAddInstruction(mod, "ALLOC", r_var, "", r_var)
+                                                      mod = fmirAddInstruction(mod, "STORE", r_val_r, "", r_var)
+
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", m_end, "", "")
+                                                      mod = fmirAddInstruction(mod, "LABEL", next_arm, "", "")
+                                                }
+                                                pkind == "PAT_STRUCT" ==> {
+                                                      tc = tc + 1
+                                                      mut as string: next_arm = "match_arm_" + tc
+
+                                                      mut as int64: pipe_pos = 0
+                                                      mut as int64: pvlen = stdCollectionLength(pval)
+                                                      mut as int64: pvi = 1
+                                                      infinite {
+                                                            route {
+                                                                  pvi > pvlen ==> { break }
+                                                                  pval[pvi] == "|" ==> {
+                                                                        pipe_pos = pvi
+                                                                        break
+                                                                  }
+                                                                  _ ==> { pvi = pvi + 1 }
+                                                            }
+                                                      }
+                                                      mut as string: sname = pval
+                                                      mut as string: f_pairs = ""
+                                                      route {
+                                                            pipe_pos > 0 ==> {
+                                                                  sname = pval[1..(pipe_pos - 1)]
+                                                                  route {
+                                                                        pipe_pos < pvlen ==> {
+                                                                              f_pairs = pval[(pipe_pos + 1)..pvlen]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+
+                                                      tc = tc + 1
+                                                      mut as string: sname_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "GET_FIELD", target_reg, "_struct_name", sname_reg)
+                                                      tc = tc + 1
+                                                      mut as string: exp_sname_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "CONST_STR", sname, "", exp_sname_reg)
+                                                      tc = tc + 1
+                                                      mut as string: name_match_reg = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "BINOP_==", sname_reg, exp_sname_reg, name_match_reg)
+                                                      mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", name_match_reg, next_arm, "")
+
+                                                      mut as int64: fplen = stdCollectionLength(f_pairs)
+                                                      mut as int64: fpi = 1
+                                                      mut as string: cur_pair = ""
+                                                      infinite {
+                                                            mut as bool: is_sep = (fpi == fplen + 1)
+                                                            route {
+                                                                  fpi <= fplen ==> {
+                                                                        is_sep = is_sep or (f_pairs[fpi] == ",")
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            route {
+                                                                  fpi > fplen + 1 ==> { break }
+                                                                  is_sep ==> {
+                                                                        route {
+                                                                              cur_pair != "" ==> {
+                                                                                    mut as int64: cpos2 = 0
+                                                                                    mut as int64: cpi = 1
+                                                                                    mut as int64: cplen = stdCollectionLength(cur_pair)
+                                                                                    infinite {
+                                                                                          route {
+                                                                                                cpi > cplen ==> { break }
+                                                                                                cur_pair[cpi] == ":" ==> {
+                                                                                                      cpos2 = cpi
+                                                                                                      break
+                                                                                                }
+                                                                                                _ ==> { cpi = cpi + 1 }
+                                                                                          }
+                                                                                    }
+                                                                                    mut as string: fld_s = cur_pair[1..(cpos2 - 1)]
+                                                                                    mut as string: vn_s = cur_pair[(cpos2 + 1)..cplen]
+                                                                                    tc = tc + 1
+                                                                                    mut as string: fld_reg = "%t" + tc
+                                                                                    mod = fmirAddInstruction(mod, "GET_FIELD", target_reg, fld_s, fld_reg)
+                                                                                    mod = fmirAddInstruction(mod, "ALLOC", vn_s, "", vn_s)
+                                                                                    mod = fmirAddInstruction(mod, "STORE", fld_reg, "", vn_s)
+                                                                                    cur_pair = ""
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        fpi = fpi + 1
+                                                                  }
+                                                                  _ ==> {
+                                                                        cur_pair = cur_pair + f_pairs[fpi]
+                                                                        fpi = fpi + 1
+                                                                  }
+                                                            }
+                                                      }
+
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", m_end, "", "")
+                                                      mod = fmirAddInstruction(mod, "LABEL", next_arm, "", "")
+                                                }
+                                                pkind == "PAT_WILDCARD" ==> {
+                                                      mut as int64: si = 1
+                                                      mut as int64: nsi = stdCollectionLength(arm_stmts)
+                                                      infinite {
+                                                            route {
+                                                                  si > nsi ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: as_res = fmirLowerStmt(arena, arm_stmts[si], mod, tc)
+                                                                        mod = as_res["module"]
+                                                                        tc = as_res["temp_counter"]
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mod = fmirAddInstruction(mod, "JUMP", m_end, "", "")
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ai = ai + 1
+                                    }
+                              }
+                        }
+                        mod = fmirAddInstruction(mod, "LABEL", m_end, "", "")
+                  }
+                  kind == "STMT_EXPR" ==> {
+                        mut as int64: eid = astArenaNodeLeft(arena, node_id)
+                        mut as map: e_res = fmirLowerExpr(arena, eid, mod, tc)
+                        mod = e_res["module"]
+                        tc = e_res["temp_counter"]
+                  }
+                  _ ==> {
+                        mut as map: d_res = fmirLowerExpr(arena, node_id, mod, tc)
+                        mod = d_res["module"]
+                        tc = d_res["temp_counter"]
+                  }
+            }
+
+            mut as map: result = map{}
+            result["module"] = mod
+            result["temp_counter"] = tc
+            emit(nice, result, "ok")
+      }
+
+      op fmirBuildFromAst (as map: arena, as int64: root_id) as map ==> {
+            mut as map: mod = fmirNewModule("main")
+            mut as int64: tc = 0
+
+            mut as list of data: decl_ids = astArenaNodeChildren(arena, root_id)
+            mut as int64: n_decls = stdCollectionLength(decl_ids)
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n_decls ==> { break }
+                        _ ==> {
+                              mut as int64: did = decl_ids[i]
+                              mut as string: kind = astArenaNodeKind(arena, did)
+
+                              route {
+                                    kind == "DECL_PROGRAM" or kind == "DECL_program" ==> {
+                                          mut as list of data: stmts = astArenaNodeChildren(arena, did)
+
+                                          mut as int64: n_stmts = stdCollectionLength(stmts)
+                                          mut as int64: si = 1
+                                          infinite {
+                                                route {
+                                                      si > n_stmts ==> { break }
+                                                      _ ==> {
+                                                            mut as int64: sid = stmts[si]
+                                                            mut as map: s_res = fmirLowerStmt(arena, sid, mod, tc)
+                                                            mod = s_res["module"]
+                                                            tc = s_res["temp_counter"]
+                                                            si = si + 1
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    kind == "DECL_FUNCTION" or kind == "DECL_function" or kind == "DECL_STRUCT" or kind == "DECL_struct" or kind == "DECL_ENUM" or kind == "DECL_enum" or kind == "DECL_USE" or kind == "DECL_use" ==> {}
+                                    _ ==> {
+                                          mut as map: s_res = fmirLowerStmt(arena, did, mod, tc)
+                                          mod = s_res["module"]
+                                          tc = s_res["temp_counter"]
+                                    }
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            emit(nice, mod, "ok")
+      }
+}

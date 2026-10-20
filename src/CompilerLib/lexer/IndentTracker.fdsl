@@ -1,0 +1,89 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: IndentTracker
+#L ==============================================================================
+
+contract (IndentTrackerContract) {
+      op indentTrackerNew () as map
+      op indentPush (as map: tracker, as int64: level) as map
+      op indentPop (as map: tracker) as map
+      op indentTop (as map: tracker) as int64
+      op indentBracketOpen (as map: tracker) as map
+      op indentBracketClose (as map: tracker) as map
+      op indentBracketDepth (as map: tracker) as int64
+}
+
+agent (CompilerLib) impl IndentTrackerContract {
+      op indentTrackerNew () as map ==> {
+            mut as map: tr = map{}
+            mut as list of data: st = [0]
+            tr["stack"] = st
+            tr["bracket_depth"] = 0
+            emit(nice, tr, "ok")
+      }
+
+      op indentPush (as map: tracker, as int64: level) as map ==> {
+            mut as map: tr = tracker
+            mut as list of data: st = tr["stack"]
+            st = stdListPushBack(st, level)
+            tr["stack"] = st
+            emit(nice, tr, "ok")
+      }
+
+      op indentPop (as map: tracker) as map ==> {
+            mut as map: tr = tracker
+            mut as list of data: st = tr["stack"]
+            mut as int64: n = stdCollectionLength(st)
+            route {
+                  n > 1 ==> {
+                        mut as list of data: new_st = []
+                        mut as int64: i = 1
+                        infinite {
+                              route {
+                                    i >= n ==> { break }
+                                    _ ==> {
+                                          new_st = stdListPushBack(new_st, st[i])
+                                          i = i + 1
+                                    }
+                              }
+                        }
+                        tr["stack"] = new_st
+                  }
+                  _ ==> {}
+            }
+            emit(nice, tr, "ok")
+      }
+
+      op indentTop (as map: tracker) as int64 ==> {
+            mut as list of data: st = tracker["stack"]
+            mut as int64: n = stdCollectionLength(st)
+            route {
+                  n > 0 ==> { emit(nice, st[n], "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op indentBracketOpen (as map: tracker) as map ==> {
+            mut as map: tr = tracker
+            mut as int64: bd = tr["bracket_depth"]
+            tr["bracket_depth"] = bd + 1
+            emit(nice, tr, "ok")
+      }
+
+      op indentBracketClose (as map: tracker) as map ==> {
+            mut as map: tr = tracker
+            mut as int64: bd = tr["bracket_depth"]
+            route {
+                  bd > 0 ==> { tr["bracket_depth"] = bd - 1 }
+                  _ ==> { tr["bracket_depth"] = 0 }
+            }
+            emit(nice, tr, "ok")
+      }
+
+      op indentBracketDepth (as map: tracker) as int64 ==> {
+            route {
+                  stdMapContainsKey(tracker, "bracket_depth") ==> { emit(nice, tracker["bracket_depth"], "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+}

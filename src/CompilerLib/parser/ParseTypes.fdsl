@@ -1,0 +1,85 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ParseTypes
+#L ==============================================================================
+
+contract (ParseTypesContract) {
+      op parseTypeRef (as map: stream, as map: arena) as map
+}
+
+agent (CompilerLib) impl ParseTypesContract {
+      op parseTypeRef (as map: stream, as map: arena) as map ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            mut as string: type_name = "" + cur["val"]
+            mut as map: ts = tokenStreamAdvance(stream)
+            mut as map: ar = arena
+
+            #L Verifica se e colecao (list of, map of, set of)
+            route {
+                  type_name == "list" or type_name == "set" or type_name == "map" ==> {
+                        mut as map: m_of = tokenStreamMatch(ts, "KEYWORD", "of")
+                        route {
+                              m_of["matched"] ==> {
+                                    ts = m_of["stream"]
+                                    mut as map: elem_tok = tokenStreamPeek(ts)
+                                    mut as string: elem_type = "" + elem_tok["val"]
+                                    ts = tokenStreamAdvance(ts)
+                                    ar = astArenaAllocNode(ar, "TYPE_COLLECTION", type_name + " of " + elem_type, 0, 0, [])
+                              }
+                              _ ==> {
+                                    ar = astArenaAllocNode(ar, "TYPE_PRIMITIVE", type_name, 0, 0, [])
+                              }
+                        }
+                  }
+                  type_name == "tensor" ==> {
+                        mut as string: shape_str = ""
+                        mut as map: m_br = tokenStreamMatch(ts, "OP", "[")
+                        route {
+                              m_br["matched"] ==> {
+                                    ts = m_br["stream"]
+                                    shape_str = "["
+                                    infinite {
+                                          mut as map: stok = tokenStreamPeek(ts)
+                                          mut as string: sv = "" + stok["val"]
+                                          route {
+                                                sv == "]" or tokenIsEof(stok) ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                      shape_str = shape_str + "]"
+                                                      break
+                                                }
+                                                _ ==> {
+                                                      shape_str = shape_str + sv
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                          }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+                        #L tensor of <tipo>
+                        mut as map: m_of = tokenStreamMatch(ts, "KEYWORD", "of")
+                        route {
+                              m_of["matched"] ==> {
+                                    ts = m_of["stream"]
+                                    mut as map: elem_tok = tokenStreamPeek(ts)
+                                    mut as string: elem_type = "" + elem_tok["val"]
+                                    ts = tokenStreamAdvance(ts)
+                                    ar = astArenaAllocNode(ar, "TYPE_TENSOR", "tensor" + shape_str + " of " + elem_type, 0, 0, [])
+                              }
+                              _ ==> {
+                                    ar = astArenaAllocNode(ar, "TYPE_TENSOR", "tensor" + shape_str, 0, 0, [])
+                              }
+                        }
+                  }
+                  _ ==> {
+                        ar = astArenaAllocNode(ar, "TYPE_PRIMITIVE", type_name, 0, 0, [])
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = ar["last_id"]
+            emit(nice, res, "ok")
+      }
+}

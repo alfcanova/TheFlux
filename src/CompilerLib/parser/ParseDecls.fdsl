@@ -1,0 +1,140 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ParseDecls
+#L ==============================================================================
+
+contract (ParseDeclsContract) {
+      op parseDeclaration (as map: stream, as map: arena) as map
+}
+
+agent (CompilerLib) impl ParseDeclsContract {
+      op parseDeclaration (as map: stream, as map: arena) as map ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            mut as string: cval = "" + cur["val"]
+            mut as map: ts = stream
+            mut as map: ar = arena
+            mut as list of data: fallback_nids = []
+
+            route {
+                  cval == "use" ==> {
+                        ts = tokenStreamAdvance(ts)
+                        mut as map: target_tok = tokenStreamPeek(ts)
+                        mut as string: target_name = "" + target_tok["val"]
+                        ts = tokenStreamAdvance(ts)
+                        ar = astArenaAllocNode(ar, "DECL_USE", target_name, 0, 0, [])
+                  }
+                  cval == "program" or cval == "agent" or cval == "contract" or cval == "struct" or cval == "enum" or cval == "function" ==> {
+                        mut as string: decl_kind = cval
+                        ts = tokenStreamAdvance(ts)
+                        mut as map: m_op = tokenStreamMatch(ts, "OP", "(")
+                        route {
+                              m_op["matched"] ==> { ts = m_op["stream"] }
+                              _ ==> {}
+                        }
+                        mut as map: name_tok = tokenStreamPeek(ts)
+                        mut as string: decl_name = "" + name_tok["val"]
+                        ts = tokenStreamAdvance(ts)
+                        mut as map: m_cl = tokenStreamMatch(ts, "OP", ")")
+                        route {
+                              m_cl["matched"] ==> { ts = m_cl["stream"] }
+                              _ ==> {}
+                        }
+
+                        #L Para function, consome parametros ( ... ) e retorno opcional as ...
+                        route {
+                              decl_kind == "function" ==> {
+                                    mut as map: m_pop = tokenStreamMatch(ts, "OP", "(")
+                                    route {
+                                          m_pop["matched"] ==> {
+                                                ts = m_pop["stream"]
+                                                infinite {
+                                                      mut as map: ptok = tokenStreamPeek(ts)
+                                                      mut as string: pval = "" + ptok["val"]
+                                                      route {
+                                                            pval == ")" or tokenIsEof(ptok) ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  break
+                                                            }
+                                                            _ ==> { ts = tokenStreamAdvance(ts) }
+                                                      }
+                                                }
+                                          }
+                                          _ ==> {}
+                                    }
+                                    mut as map: m_fas = tokenStreamMatch(ts, "KEYWORD", "as")
+                                    route {
+                                          m_fas["matched"] ==> {
+                                                ts = m_fas["stream"]
+                                                ts = tokenStreamAdvance(ts)
+                                          }
+                                          _ ==> {}
+                                    }
+                              }
+                              _ ==> {}
+                        }
+
+                        #L Corpo do bloco { ... }
+                        mut as map: m_brace = tokenStreamMatch(ts, "OP", "{")
+                        mut as list of data: body_nodes = []
+                        route {
+                              m_brace["matched"] ==> {
+                                    ts = m_brace["stream"]
+                                    infinite {
+                                          mut as map: peek_tok = tokenStreamPeek(ts)
+                                          mut as string: pval = "" + peek_tok["val"]
+                                          route {
+                                                pval == "}" or tokenIsEof(peek_tok) ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                      break
+                                                }
+                                                pval == "\\n" or peek_tok["type"] == "NEWLINE" ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                                _ ==> {
+                                                      mut as map: stmt_res = parseStatement(ts, ar)
+                                                      ts = stmt_res["stream"]
+                                                      ar = stmt_res["arena"]
+                                                      mut as list of data: nids = stmt_res["node_ids"]
+                                                      mut as int64: nn = stdCollectionLength(nids)
+                                                      route {
+                                                            nn > 0 ==> {
+                                                                  mut as int64: ni = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              ni > nn ==> { break }
+                                                                              _ ==> {
+                                                                                    body_nodes = stdListPushBack(body_nodes, nids[ni])
+                                                                                    ni = ni + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  body_nodes = stdListPushBack(body_nodes, stmt_res["node_id"])
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+                        ar = astArenaAllocNode(ar, "DECL_" + decl_kind, decl_name, 0, 0, body_nodes)
+                  }
+                  _ ==> {
+                        #L Fallback para statement no nivel global
+                        mut as map: gstmt_res = parseStatement(ts, ar)
+                        ts = gstmt_res["stream"]
+                        ar = gstmt_res["arena"]
+                        fallback_nids = gstmt_res["node_ids"]
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = ar["last_id"]
+            res["node_ids"] = fallback_nids
+            emit(nice, res, "ok")
+      }
+}

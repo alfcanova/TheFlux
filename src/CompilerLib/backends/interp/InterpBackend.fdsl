@@ -1,0 +1,1638 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: InterpBackend (Target: 'in')
+#L ==============================================================================
+
+contract (InterpBackendContract) {
+      op interpExecuteFmir (as map: fmir_module) as map
+}
+
+agent (CompilerLib) impl InterpBackendContract {
+      op interpExecuteFmir (as map: fmir_module) as map ==> {
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+
+            mut as map: env = map{}
+            mut as map: regs = map{}
+            mut as map: reg_types = map{}
+            mut as map: env_types = map{}
+            mut as string: stdout_acc = ""
+
+            mut as map: labels = map{}
+            mut as int64: lscan = 1
+            infinite {
+                  route {
+                        lscan > n ==> { break }
+                        _ ==> {
+                              mut as map: linstr = instrs[lscan]
+                              route {
+                                    linstr["op"] == "LABEL" ==> {
+                                          labels["" + linstr["arg1"]] = lscan
+                                    }
+                                    _ ==> {}
+                              }
+                              lscan = lscan + 1
+                        }
+                  }
+            }
+
+            mut as int64: pc = 1
+            infinite {
+                  route {
+                        pc > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[pc]
+                              mut as bool: jumped = false
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+
+                              route {
+                                    opcode == "LABEL" ==> {}
+                                    opcode == "JUMP" ==> {
+                                          route {
+                                                stdMapContainsKey(labels, a1) ==> {
+                                                      pc = labels[a1] as int64
+                                                      jumped = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "JUMP_IF_FALSE" ==> {
+                                          mut as bool: cval = false
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> { cval = regs[a1] as bool }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                not cval and stdMapContainsKey(labels, a2) ==> {
+                                                      pc = labels[a2] as int64
+                                                      jumped = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "JUMP_IF_TRUE" ==> {
+                                          mut as bool: cval = false
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> { cval = regs[a1] as bool }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                cval and stdMapContainsKey(labels, a2) ==> {
+                                                      pc = labels[a2] as int64
+                                                      jumped = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "COPY_REG" ==> {
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      regs[res] = regs[a1]
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { reg_types[res] = reg_types[a1] }
+                                                            _ ==> { reg_types[res] = "int" }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "COLL_LEN" ==> {
+                                          mut as int64: clen = 0
+                                          route {
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      mut as string: a1_ty = ""
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { a1_ty = env_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            a1_ty == "string" ==> {
+                                                                  mut as string: s = "" + env[a1]
+                                                                  clen = stdCollectionLength(s)
+                                                            }
+                                                            a1_ty == "map" ==> {
+                                                                  mut as map: m = env[a1]
+                                                                  clen = stdCollectionLength(m)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as list of data: l = env[a1]
+                                                                  clen = stdCollectionLength(l)
+                                                            }
+                                                      }
+                                                }
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      mut as string: r1_ty = ""
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { r1_ty = reg_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            r1_ty == "string" ==> {
+                                                                  mut as string: rs = "" + regs[a1]
+                                                                  clen = stdCollectionLength(rs)
+                                                            }
+                                                            r1_ty == "map" ==> {
+                                                                  mut as map: rm = regs[a1]
+                                                                  clen = stdCollectionLength(rm)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as list of data: rl = regs[a1]
+                                                                  clen = stdCollectionLength(rl)
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          regs[res] = clen
+                                          reg_types[res] = "int"
+                                    }
+                                    opcode == "COLL_GET" ==> {
+                                          mut as int64: cidx = 1
+                                          route {
+                                                stdMapContainsKey(regs, a2) ==> { cidx = regs[a2] as int64 }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      mut as string: ctype = ""
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { ctype = env_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            ctype == "map" ==> {
+                                                                  mut as map: cm = env[a1]
+                                                                  mut as int64: ki = 1
+                                                                  mut as string: found_k = ""
+                                                                  infinite (k in cm) {
+                                                                        route {
+                                                                              ki == cidx ==> {
+                                                                                    found_k = k
+                                                                                    break
+                                                                              }
+                                                                              _ ==> { ki = ki + 1 }
+                                                                        }
+                                                                  }
+                                                                  env[res] = found_k
+                                                                  env_types[res] = "string"
+                                                            }
+                                                            ctype == "string" ==> {
+                                                                  mut as string: cstr = "" + env[a1]
+                                                                  mut as int64: slen = stdCollectionLength(cstr)
+                                                                  route {
+                                                                        cidx >= 1 and cidx <= slen ==> {
+                                                                              env[res] = cstr[cidx]
+                                                                        }
+                                                                        _ ==> { env[res] = "" }
+                                                                  }
+                                                                  env_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  mut as list of data: cl = env[a1]
+                                                                  route {
+                                                                        cidx >= 1 and cidx <= stdCollectionLength(cl) ==> {
+                                                                              env[res] = cl[cidx]
+                                                                        }
+                                                                        _ ==> { env[res] = 0 }
+                                                                  }
+                                                                  env_types[res] = "data"
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "CAST" ==> {
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      mut as bool: is_set = (a2 == "set")
+                                                      mut as bool: is_list = (a2 == "list")
+                                                      mut as bool: is_map = (a2 == "map")
+                                                      mut as int64: a2_l = stdCollectionLength(a2)
+                                                      route {
+                                                            a2_l >= 6 ==> {
+                                                                  is_set = is_set or (a2[1..6] == "set of")
+                                                                  is_map = is_map or (a2[1..6] == "map of")
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            a2_l >= 7 ==> {
+                                                                  is_list = is_list or (a2[1..7] == "list of")
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            is_set ==> {
+                                                                  mut as list of data: src_l = regs[a1]
+                                                                  mut as int64: sln = stdCollectionLength(src_l)
+                                                                  mut as list of data: dst_s = []
+                                                                  mut as int64: si = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              si > sln ==> { break }
+                                                                              _ ==> {
+                                                                                    mut as data: sv = src_l[si]
+                                                                                    mut as bool: sfound = false
+                                                                                    mut as int64: dlen = stdCollectionLength(dst_s)
+                                                                                    mut as int64: di = 1
+                                                                                    infinite {
+                                                                                          route {
+                                                                                                di > dlen ==> { break }
+                                                                                                dst_s[di] == sv or ("" + dst_s[di]) == ("" + sv) ==> {
+                                                                                                      sfound = true
+                                                                                                      break
+                                                                                                }
+                                                                                                _ ==> { di = di + 1 }
+                                                                                          }
+                                                                                    }
+                                                                                    route {
+                                                                                          not sfound ==> {
+                                                                                                dst_s = stdListPushBack(dst_s, sv)
+                                                                                          }
+                                                                                          _ ==> {}
+                                                                                    }
+                                                                                    si = si + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  regs[res] = dst_s
+                                                                  reg_types[res] = "set"
+                                                            }
+                                                            is_list ==> {
+                                                                  regs[res] = regs[a1]
+                                                                  reg_types[res] = "list"
+                                                            }
+                                                            is_map ==> {
+                                                                  regs[res] = regs[a1]
+                                                                  reg_types[res] = "map"
+                                                            }
+                                                            a2 == "int" or a2 == "int64" or a2 == "uint8" or a2 == "int32" or a2 == "int16" or a2 == "int8" ==> {
+                                                                  regs[res] = regs[a1] as int64
+                                                                  reg_types[res] = "int"
+                                                            }
+                                                            a2 == "float" or a2 == "float64" or a2 == "float32" or a2 == "float16" ==> {
+                                                                  regs[res] = regs[a1] as float64
+                                                                  reg_types[res] = "float"
+                                                            }
+                                                            a2 == "fp8_e4m3" or a2 == "fp8_e5m2" ==> {
+                                                                  mut as float64: fv = regs[a1] as float64
+                                                                  route {
+                                                                        fv > 0.875 and fv < 1.125 ==> { fv = 1.0 }
+                                                                        fv < -0.875 and fv > -1.125 ==> { fv = -1.0 }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  regs[res] = fv
+                                                                  reg_types[res] = "float"
+                                                            }
+                                                            a2 == "string" ==> {
+                                                                  regs[res] = "" + regs[a1]
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  regs[res] = regs[a1]
+                                                                  route {
+                                                                        stdMapContainsKey(reg_types, a1) ==> { reg_types[res] = reg_types[a1] }
+                                                                        _ ==> { reg_types[res] = "data" }
+                                                                  }
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "CONST_INT" ==> {
+                                          regs[res] = a1 as int64
+                                          reg_types[res] = "int"
+                                    }
+                                    opcode == "CONST_FLOAT" ==> {
+                                          regs[res] = a1 as float64
+                                          reg_types[res] = "float"
+                                    }
+                                    opcode == "CONST_COMPLEX" ==> {
+                                          mut as string: cs = a1
+                                          mut as int64: cslen = stdCollectionLength(cs)
+                                          mut as string: npart = ""
+                                          mut as int64: csi = 1
+                                          infinite {
+                                                route {
+                                                      csi >= cslen ==> { break }
+                                                      _ ==> {
+                                                            npart = npart + cs[csi]
+                                                            csi = csi + 1
+                                                      }
+                                                }
+                                          }
+                                          mut as float64: im_val = 0.0
+                                          route {
+                                                npart != "" ==> { im_val = npart as float64 }
+                                                _ ==> {}
+                                          }
+                                          mut as map: c_obj = map{}
+                                          c_obj["re"] = 0.0
+                                          c_obj["im"] = im_val
+                                          regs[res] = c_obj
+                                          reg_types[res] = "complex"
+                                    }
+                                    opcode == "CONST_STR" ==> {
+                                          regs[res] = a1
+                                          reg_types[res] = "string"
+                                    }
+                                    opcode == "CONST_BOOL" ==> {
+                                          regs[res] = a1 == "true"
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "ALLOC" ==> {
+                                          env[res] = 0
+                                          env_types[res] = "none"
+                                    }
+                                    opcode == "LOAD" ==> {
+                                          route {
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      regs[res] = env[a1]
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { reg_types[res] = env_types[a1] }
+                                                            _ ==> { reg_types[res] = "int" }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      regs[res] = 0
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "STORE" ==> {
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      env[res] = regs[a1]
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { env_types[res] = reg_types[a1] }
+                                                            _ ==> { env_types[res] = "int" }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      env[res] = a1
+                                                      env_types[res] = "string"
+                                                }
+                                          }
+                                    }
+                                    opcode == "LIST_INIT" ==> {
+                                          regs[res] = []
+                                          reg_types[res] = "list"
+                                    }
+                                    opcode == "LIST_PUSH" ==> {
+                                          mut as list of data: cur_list = regs[a1]
+                                          mut as bool: a2_is_str = false
+                                          route {
+                                                stdMapContainsKey(reg_types, a2) ==> {
+                                                      a2_is_str = (reg_types[a2] == "string")
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                a2_is_str ==> {
+                                                      mut as string: s_pval = ""
+                                                      route {
+                                                            stdMapContainsKey(regs, a2) ==> { s_pval = "" + regs[a2] }
+                                                            _ ==> { s_pval = "" + a2 }
+                                                      }
+                                                      cur_list = stdListPushBack(cur_list, s_pval)
+                                                }
+                                                _ ==> {
+                                                      mut as data: pval = 0
+                                                      route {
+                                                            stdMapContainsKey(regs, a2) ==> { pval = regs[a2] }
+                                                            _ ==> { pval = a2 }
+                                                      }
+                                                      cur_list = stdListPushBack(cur_list, pval)
+                                                }
+                                          }
+                                          regs[a1] = cur_list
+                                    }
+                                    opcode == "SET_INIT" ==> {
+                                          regs[res] = []
+                                          reg_types[res] = "set"
+                                    }
+                                    opcode == "SET_ADD" ==> {
+                                          mut as list of data: cur_set = regs[a1]
+                                          mut as bool: a2_is_str = false
+                                          route {
+                                                stdMapContainsKey(reg_types, a2) ==> {
+                                                      a2_is_str = (reg_types[a2] == "string")
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as bool: sfound = false
+                                          mut as int64: s_len = stdCollectionLength(cur_set)
+                                          mut as int64: s_idx = 1
+                                          infinite {
+                                                route {
+                                                      s_idx > s_len ==> { break }
+                                                      _ ==> {
+                                                            route {
+                                                                  a2_is_str ==> {
+                                                                        mut as string: check_str = ""
+                                                                        route {
+                                                                              stdMapContainsKey(regs, a2) ==> { check_str = "" + regs[a2] }
+                                                                              _ ==> { check_str = "" + a2 }
+                                                                        }
+                                                                        route {
+                                                                              ("" + cur_set[s_idx]) == check_str ==> { sfound = true }
+                                                                              _ ==> {}
+                                                                        }
+                                                                  }
+                                                                  _ ==> {
+                                                                        mut as data: check_val = 0
+                                                                        route {
+                                                                              stdMapContainsKey(regs, a2) ==> { check_val = regs[a2] }
+                                                                              _ ==> { check_val = a2 }
+                                                                        }
+                                                                        route {
+                                                                              cur_set[s_idx] == check_val or ("" + cur_set[s_idx]) == ("" + check_val) ==> { sfound = true }
+                                                                              _ ==> {}
+                                                                        }
+                                                                  }
+                                                            }
+                                                            route {
+                                                                  sfound ==> { break }
+                                                                  _ ==> { s_idx = s_idx + 1 }
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                          route {
+                                                not sfound ==> {
+                                                      route {
+                                                            a2_is_str ==> {
+                                                                  mut as string: s_sval = ""
+                                                                  route {
+                                                                        stdMapContainsKey(regs, a2) ==> { s_sval = "" + regs[a2] }
+                                                                        _ ==> { s_sval = "" + a2 }
+                                                                  }
+                                                                  cur_set = stdListPushBack(cur_set, s_sval)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as data: sval = 0
+                                                                  route {
+                                                                        stdMapContainsKey(regs, a2) ==> { sval = regs[a2] }
+                                                                        _ ==> { sval = a2 }
+                                                                  }
+                                                                  cur_set = stdListPushBack(cur_set, sval)
+                                                            }
+                                                      }
+                                                      regs[a1] = cur_set
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "MAP_INIT" ==> {
+                                          regs[res] = map{}
+                                          reg_types[res] = "map"
+                                    }
+                                    opcode == "MAP_SET" ==> {
+                                          mut as map: cur_map = regs[a1]
+                                          mut as string: kstr = ""
+                                          route {
+                                                stdMapContainsKey(regs, a2) ==> { kstr = "" + regs[a2] }
+                                                _ ==> { kstr = a2 }
+                                          }
+                                          mut as data: mval = 0
+                                          route {
+                                                stdMapContainsKey(regs, res) ==> { mval = regs[res] }
+                                                _ ==> { mval = res }
+                                          }
+                                          cur_map[kstr] = mval
+                                          regs[a1] = cur_map
+                                    }
+                                    opcode == "STRUCT_INIT" ==> {
+                                          mut as map: s_map = map{}
+                                          s_map["_struct_name"] = a1
+                                          mut as list of data: f_order = []
+                                          s_map["_field_order"] = f_order
+                                          regs[res] = s_map
+                                          reg_types[res] = "struct"
+                                    }
+                                    opcode == "STRUCT_SET_FIELD" ==> {
+                                          mut as map: s_map = regs[a1]
+                                          mut as data: fval = 0
+                                          route {
+                                                stdMapContainsKey(regs, res) ==> { fval = regs[res] }
+                                                _ ==> { fval = res }
+                                          }
+                                          s_map[a2] = fval
+                                          mut as list of data: forder = s_map["_field_order"]
+                                          forder = stdListPushBack(forder, a2)
+                                          s_map["_field_order"] = forder
+                                          regs[a1] = s_map
+                                    }
+                                    opcode == "GET_FIELD" ==> {
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      mut as string: r1_t = ""
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { r1_t = reg_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            r1_t == "struct" or r1_t == "outcome" or r1_t == "map" ==> {
+                                                                  mut as map: s_obj = regs[a1]
+                                                                  route {
+                                                                        stdMapContainsKey(s_obj, a2) ==> { regs[res] = s_obj[a2] }
+                                                                        _ ==> { regs[res] = "None" }
+                                                                  }
+                                                            }
+                                                            _ ==> { regs[res] = "None" }
+                                                      }
+                                                }
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      mut as string: e1_t = ""
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { e1_t = env_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            e1_t == "struct" or e1_t == "outcome" or e1_t == "map" ==> {
+                                                                  mut as map: s_obj = env[a1]
+                                                                  route {
+                                                                        stdMapContainsKey(s_obj, a2) ==> { regs[res] = s_obj[a2] }
+                                                                        _ ==> { regs[res] = "None" }
+                                                                  }
+                                                            }
+                                                            _ ==> { regs[res] = "None" }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      regs[res] = "None"
+                                                }
+                                          }
+                                          reg_types[res] = "data"
+                                    }
+                                    opcode == "SET_FIELD" ==> {
+                                          mut as string: vreg = res
+                                          route {
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      mut as map: s_target = env[a1]
+                                                      route {
+                                                            stdMapContainsKey(regs, vreg) ==> {
+                                                                  s_target[a2] = regs[vreg]
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      env[a1] = s_target
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "GET_INDEX" ==> {
+                                          mut as string: k_idx = ""
+                                          mut as int64: cpos_gi = 0
+                                          mut as int64: a2_len = stdCollectionLength(a2)
+                                          mut as int64: a2_i = 1
+                                          infinite {
+                                                route {
+                                                      a2_i > a2_len ==> { break }
+                                                      a2[a2_i] == "," ==> {
+                                                            cpos_gi = a2_i
+                                                            break
+                                                      }
+                                                      _ ==> { a2_i = a2_i + 1 }
+                                                }
+                                          }
+                                          route {
+                                                cpos_gi > 0 ==> {
+                                                      mut as string: r1_gi = a2[1..(cpos_gi - 1)]
+                                                      mut as string: r2_gi = a2[(cpos_gi + 1)..a2_len]
+                                                      mut as string: v1_gi = ""
+                                                      mut as string: v2_gi = ""
+                                                      route { stdMapContainsKey(regs, r1_gi) ==> { v1_gi = "" + regs[r1_gi] } _ ==> { v1_gi = r1_gi } }
+                                                      route { stdMapContainsKey(regs, r2_gi) ==> { v2_gi = "" + regs[r2_gi] } _ ==> { v2_gi = r2_gi } }
+                                                      k_idx = v1_gi + "," + v2_gi
+                                                }
+                                                _ ==> {
+                                                      route { stdMapContainsKey(regs, a2) ==> { k_idx = "" + regs[a2] } _ ==> { k_idx = a2 } }
+                                                }
+                                          }
+
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      mut as string: ttype = ""
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { ttype = reg_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            ttype == "map" ==> {
+                                                                  mut as map: m = regs[a1]
+                                                                  route {
+                                                                        stdMapContainsKey(m, k_idx) ==> { regs[res] = m[k_idx] }
+                                                                        _ ==> { regs[res] = "None" }
+                                                                  }
+                                                            }
+                                                            ttype == "list" ==> {
+                                                                  mut as list of data: l = regs[a1]
+                                                                  mut as int64: idx = k_idx as int64
+                                                                  mut as int64: llen = stdCollectionLength(l)
+                                                                  route {
+                                                                        idx >= 1 ==> {
+                                                                              route {
+                                                                                    idx <= llen ==> { regs[res] = l[idx] }
+                                                                                    _ ==> { regs[res] = "None" }
+                                                                              }
+                                                                        }
+                                                                        _ ==> { regs[res] = "None" }
+                                                                  }
+                                                            }
+                                                            ttype == "string" ==> {
+                                                                  mut as string: s = "" + regs[a1]
+                                                                  mut as int64: idx = k_idx as int64
+                                                                  mut as int64: slen = stdCollectionLength(s)
+                                                                  route {
+                                                                        idx >= 1 ==> {
+                                                                              route {
+                                                                                    idx <= slen ==> { regs[res] = s[idx] }
+                                                                                    _ ==> { regs[res] = "" }
+                                                                              }
+                                                                        }
+                                                                        _ ==> { regs[res] = "" }
+                                                                  }
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  regs[res] = "None"
+                                                            }
+                                                      }
+                                                }
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      mut as string: etype = ""
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { etype = env_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            etype == "list" ==> {
+                                                                  mut as list of data: l = env[a1]
+                                                                  mut as int64: idx = k_idx as int64
+                                                                  mut as int64: llen = stdCollectionLength(l)
+                                                                  route {
+                                                                        idx >= 1 and idx <= llen ==> { regs[res] = l[idx] }
+                                                                        _ ==> { regs[res] = "None" }
+                                                                  }
+                                                            }
+                                                            etype == "string" ==> {
+                                                                  mut as string: s = "" + env[a1]
+                                                                  mut as int64: idx = k_idx as int64
+                                                                  mut as int64: slen = stdCollectionLength(s)
+                                                                  route {
+                                                                        idx >= 1 and idx <= slen ==> { regs[res] = s[idx] }
+                                                                        _ ==> { regs[res] = "" }
+                                                                  }
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  mut as map: tm = env[a1]
+                                                                  route {
+                                                                        stdMapContainsKey(tm, k_idx) ==> { regs[res] = tm[k_idx] }
+                                                                        _ ==> { regs[res] = "None" }
+                                                                  }
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      regs[res] = "None"
+                                                }
+                                          }
+                                    }
+                                    opcode == "SET_INDEX" ==> {
+                                          mut as string: vreg = res
+                                          mut as string: k_si = ""
+                                          mut as int64: cpos_si = 0
+                                          mut as int64: a2_slen = stdCollectionLength(a2)
+                                          mut as int64: a2_si = 1
+                                          infinite {
+                                                route {
+                                                      a2_si > a2_slen ==> { break }
+                                                      a2[a2_si] == "," ==> {
+                                                            cpos_si = a2_si
+                                                            break
+                                                      }
+                                                      _ ==> { a2_si = a2_si + 1 }
+                                                }
+                                          }
+                                          route {
+                                                cpos_si > 0 ==> {
+                                                      mut as string: r1_si = a2[1..(cpos_si - 1)]
+                                                      mut as string: r2_si = a2[(cpos_si + 1)..a2_slen]
+                                                      mut as string: v1_si = ""
+                                                      mut as string: v2_si = ""
+                                                      route { stdMapContainsKey(regs, r1_si) ==> { v1_si = "" + regs[r1_si] } _ ==> { v1_si = r1_si } }
+                                                      route { stdMapContainsKey(regs, r2_si) ==> { v2_si = "" + regs[r2_si] } _ ==> { v2_si = r2_si } }
+                                                      k_si = v1_si + "," + v2_si
+                                                }
+                                                _ ==> {
+                                                      route { stdMapContainsKey(regs, a2) ==> { k_si = "" + regs[a2] } _ ==> { k_si = a2 } }
+                                                }
+                                          }
+
+                                          route {
+                                                stdMapContainsKey(env, a1) and stdMapContainsKey(regs, vreg) ==> {
+                                                      mut as string: etype = ""
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { etype = env_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            cpos_si > 0 ==> {
+                                                                  mut as map: tm = env[a1]
+                                                                  tm[k_si] = regs[vreg]
+                                                                  env[a1] = tm
+                                                                  env_types[a1] = "map"
+                                                            }
+                                                            etype == "map" ==> {
+                                                                  mut as map: m = env[a1]
+                                                                  m[k_si] = regs[vreg]
+                                                                  env[a1] = m
+                                                            }
+                                                            etype == "list" ==> {
+                                                                  mut as list of data: l = env[a1]
+                                                                  mut as int64: idx = k_si as int64
+                                                                  mut as int64: llen = stdCollectionLength(l)
+                                                                  infinite {
+                                                                        route {
+                                                                              llen >= idx ==> { break }
+                                                                              _ ==> {
+                                                                                    l = stdListPushBack(l, 0)
+                                                                                    llen = llen + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  l[idx] = regs[vreg]
+                                                                  env[a1] = l
+                                                            }
+                                                            _ ==> {
+                                                                  mut as map: tm = env[a1]
+                                                                  tm[k_si] = regs[vreg]
+                                                                  env[a1] = tm
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "GET_SLICE" ==> {
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      #L  a2 e "start_reg:end_reg"
+                                                      mut as int64: colpos = 0
+                                                      mut as int64: a2len = stdCollectionLength(a2)
+                                                      mut as int64: a2i = 1
+                                                      infinite {
+                                                            route {
+                                                                  a2i > a2len ==> { break }
+                                                                  a2[a2i] == ":" ==> {
+                                                                  colpos = a2i
+                                                                  break
+                                                            }
+                                                                  _ ==> { a2i = a2i + 1 }
+                                                            }
+                                                      }
+                                                      mut as string: sreg = ""
+                                                      route {
+                                                            colpos > 1 ==> { sreg = a2[1..(colpos - 1)] }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as string: ereg = ""
+                                                      route {
+                                                            colpos < a2len ==> { ereg = a2[(colpos + 1)..a2len] }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as int64: s_val = 1
+                                                      mut as int64: e_val = 0
+                                                      route {
+                                                            stdMapContainsKey(regs, sreg) ==> { s_val = regs[sreg] as int64 }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as string: a1_ty = ""
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { a1_ty = reg_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            a1_ty == "string" ==> {
+                                                                  mut as string: str_orig = "" + regs[a1]
+                                                                  mut as int64: slen = stdCollectionLength(str_orig)
+                                                                  route {
+                                                                        ereg != "" and stdMapContainsKey(regs, ereg) ==> { e_val = regs[ereg] as int64 }
+                                                                        _ ==> { e_val = slen }
+                                                                  }
+                                                                  mut as string: sub_str = ""
+                                                                  route {
+                                                                        s_val >= 1 and e_val >= s_val and s_val <= slen ==> {
+                                                                              mut as int64: actual_end = e_val
+                                                                              route {
+                                                                                    actual_end > slen ==> { actual_end = slen }
+                                                                                    _ ==> {}
+                                                                              }
+                                                                              sub_str = str_orig[s_val..actual_end]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  regs[res] = sub_str
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  mut as list of data: orig = regs[a1]
+                                                                  mut as int64: olen = stdCollectionLength(orig)
+                                                                  route {
+                                                                        ereg != "" and stdMapContainsKey(regs, ereg) ==> { e_val = regs[ereg] as int64 }
+                                                                        _ ==> { e_val = olen }
+                                                                  }
+                                                                  mut as list of data: sub = []
+                                                                  mut as int64: si = s_val
+                                                                  infinite {
+                                                                        route {
+                                                                              si > e_val or si > olen ==> { break }
+                                                                              _ ==> {
+                                                                                    sub = stdListPushBack(sub, orig[si])
+                                                                                    si = si + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  regs[res] = sub
+                                                                  reg_types[res] = "list"
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      regs[res] = []
+                                                      reg_types[res] = "list"
+                                                }
+                                          }
+                                    }
+                                    opcode == "CALL" ==> {
+                                          route {
+                                                a1 == "calc" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as data: arg_val = 0
+                                                      route {
+                                                            stdMapContainsKey(regs, a2) ==> { arg_val = regs[a2] }
+                                                            _ ==> {}
+                                                      }
+                                                      outcome["val"] = arg_val
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "AP::printNome" ==> {
+                                                      print("Andre Luiz Fassone Canova")
+                                                      stdout_acc = stdout_acc + "Andre Luiz Fassone Canova\n"
+                                                      regs[res] = 0
+                                                      reg_types[res] = "int"
+                                                }
+                                                _ ==> {
+                                                      regs[res] = 0
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "BINOP_+" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "complex") ==> {
+                                                      mut as float64: re1 = 0.0
+                                                      mut as float64: im1 = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex" ==> {
+                                                                  mut as map: c1 = regs[a1]
+                                                                  re1 = c1["re"] as float64
+                                                                  im1 = c1["im"] as float64
+                                                            }
+                                                            stdMapContainsKey(reg_types, a1) and (reg_types[a1] == "float" or reg_types[a1] == "int") ==> {
+                                                                  re1 = regs[a1] as float64
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as float64: re2 = 0.0
+                                                      mut as float64: im2 = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "complex" ==> {
+                                                                  mut as map: c2 = regs[a2]
+                                                                  re2 = c2["re"] as float64
+                                                                  im2 = c2["im"] as float64
+                                                            }
+                                                            stdMapContainsKey(reg_types, a2) and (reg_types[a2] == "float" or reg_types[a2] == "int") ==> {
+                                                                  re2 = regs[a2] as float64
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as map: c_res = map{}
+                                                      c_res["re"] = re1 + re2
+                                                      c_res["im"] = im1 + im2
+                                                      regs[res] = c_res
+                                                      reg_types[res] = "complex"
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "list") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "list") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "set") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "set") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "map") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "map") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "struct") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "struct") ==> {
+                                                      #L  Formata a1
+                                                      mut as string: s1 = ""
+                                                      mut as string: t1 = ""
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            t1 == "list" ==> {
+                                                                  mut as list of data: l1 = regs[a1]
+                                                                  mut as int64: ln1 = stdCollectionLength(l1)
+                                                                  s1 = "["
+                                                                  mut as int64: li = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              li > ln1 ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          li == 1 ==> { s1 = s1 + "" + l1[li] }
+                                                                                          _ ==> { s1 = s1 + ", " + l1[li] }
+                                                                                    }
+                                                                                    li = li + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  s1 = s1 + "]"
+                                                            }
+                                                            t1 == "set" ==> {
+                                                                  mut as list of data: st1 = regs[a1]
+                                                                  mut as int64: stn1 = stdCollectionLength(st1)
+                                                                  s1 = "{"
+                                                                  mut as int64: si = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              si > stn1 ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          si == 1 ==> { s1 = s1 + "" + st1[si] }
+                                                                                          _ ==> { s1 = s1 + ", " + st1[si] }
+                                                                                    }
+                                                                                    si = si + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  s1 = s1 + "}"
+                                                            }
+                                                            t1 == "map" ==> {
+                                                                  mut as map: m1 = regs[a1]
+                                                                  mut as int64: mn1 = stdCollectionLength(m1)
+                                                                  route {
+                                                                        mn1 == 0 ==> { s1 = "{}" }
+                                                                        _ ==> {
+                                                                              s1 = "{"
+                                                                              mut as int64: mi = 1
+                                                                              infinite (k in m1) {
+                                                                                    route {
+                                                                                          mi == 1 ==> { s1 = s1 + k + ": " + m1[k] }
+                                                                                          _ ==> { s1 = s1 + ", " + k + ": " + m1[k] }
+                                                                                    }
+                                                                                    mi = mi + 1
+                                                                              }
+                                                                              s1 = s1 + "}"
+                                                                        }
+                                                                  }
+                                                            }
+                                                            t1 == "struct" ==> {
+                                                                  mut as map: sm1 = regs[a1]
+                                                                  mut as string: sname1 = sm1["_struct_name"]
+                                                                  s1 = sname1 + "("
+                                                                  mut as list of data: forder1 = sm1["_field_order"]
+                                                                  mut as int64: f_count1 = stdCollectionLength(forder1)
+                                                                  mut as int64: fi1 = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              fi1 > f_count1 ==> { break }
+                                                                              _ ==> {
+                                                                                    mut as string: f = forder1[fi1]
+                                                                                    route {
+                                                                                          fi1 == 1 ==> { s1 = s1 + "." + f + ": " + sm1[f] }
+                                                                                          _ ==> { s1 = s1 + ", ." + f + ": " + sm1[f] }
+                                                                                    }
+                                                                                    fi1 = fi1 + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  s1 = s1 + ")"
+                                                            }
+                                                            _ ==> { s1 = "" + regs[a1] }
+                                                      }
+
+                                                      #L  Formata a2
+                                                      mut as string: s2 = ""
+                                                      mut as string: t2 = ""
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) ==> { t2 = reg_types[a2] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            t2 == "list" ==> {
+                                                                  mut as list of data: l2 = regs[a2]
+                                                                  mut as int64: ln2 = stdCollectionLength(l2)
+                                                                  s2 = "["
+                                                                  mut as int64: li = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              li > ln2 ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          li == 1 ==> { s2 = s2 + "" + l2[li] }
+                                                                                          _ ==> { s2 = s2 + ", " + l2[li] }
+                                                                                    }
+                                                                                    li = li + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  s2 = s2 + "]"
+                                                            }
+                                                            t2 == "set" ==> {
+                                                                  mut as list of data: st2 = regs[a2]
+                                                                  mut as int64: stn2 = stdCollectionLength(st2)
+                                                                  s2 = "{"
+                                                                  mut as int64: si = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              si > stn2 ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          si == 1 ==> { s2 = s2 + "" + st2[si] }
+                                                                                          _ ==> { s2 = s2 + ", " + st2[si] }
+                                                                                    }
+                                                                                    si = si + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  s2 = s2 + "}"
+                                                            }
+                                                            t2 == "map" ==> {
+                                                                  mut as map: m2 = regs[a2]
+                                                                  mut as int64: mn2 = stdCollectionLength(m2)
+                                                                  route {
+                                                                        mn2 == 0 ==> { s2 = "{}" }
+                                                                        _ ==> {
+                                                                              s2 = "{"
+                                                                              mut as int64: mi = 1
+                                                                              infinite (k in m2) {
+                                                                                    route {
+                                                                                          mi == 1 ==> { s2 = s2 + k + ": " + m2[k] }
+                                                                                          _ ==> { s2 = s2 + ", " + k + ": " + m2[k] }
+                                                                                    }
+                                                                                    mi = mi + 1
+                                                                              }
+                                                                              s2 = s2 + "}"
+                                                                        }
+                                                                  }
+                                                            }
+                                                            t2 == "struct" ==> {
+                                                                  mut as map: sm2 = regs[a2]
+                                                                  mut as string: sname2 = sm2["_struct_name"]
+                                                                  s2 = sname2 + "("
+                                                                  mut as list of data: forder2 = sm2["_field_order"]
+                                                                  mut as int64: f_count2 = stdCollectionLength(forder2)
+                                                                  mut as int64: fi2 = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              fi2 > f_count2 ==> { break }
+                                                                              _ ==> {
+                                                                                    mut as string: f = forder2[fi2]
+                                                                                    route {
+                                                                                          fi2 == 1 ==> { s2 = s2 + "." + f + ": " + sm2[f] }
+                                                                                          _ ==> { s2 = s2 + ", ." + f + ": " + sm2[f] }
+                                                                                    }
+                                                                                    fi2 = fi2 + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  s2 = s2 + ")"
+                                                            }
+                                                            _ ==> { s2 = "" + regs[a2] }
+                                                      }
+
+                                                      regs[res] = s1 + s2
+                                                      reg_types[res] = "string"
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1 = regs[a1] as float64
+                                                      mut as float64: f2 = regs[a2] as float64
+                                                      regs[res] = f1 + f2
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      mut as int64: i1 = regs[a1] as int64
+                                                      mut as int64: i2 = regs[a2] as int64
+                                                      regs[res] = i1 + i2
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "BINOP_-" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_sub = regs[a1] as float64
+                                                      mut as float64: f2_sub = regs[a2] as float64
+                                                      regs[res] = f1_sub - f2_sub
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      mut as int64: i1_sub = regs[a1] as int64
+                                                      mut as int64: i2_sub = regs[a2] as int64
+                                                      regs[res] = i1_sub - i2_sub
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "BINOP_*" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_mul = regs[a1] as float64
+                                                      mut as float64: f2_mul = regs[a2] as float64
+                                                      regs[res] = f1_mul * f2_mul
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      mut as int64: i1_mul = regs[a1] as int64
+                                                      mut as int64: i2_mul = regs[a2] as int64
+                                                      regs[res] = i1_mul * i2_mul
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "BINOP_/" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_div = regs[a1] as float64
+                                                      mut as float64: f2_div = regs[a2] as float64
+                                                      route {
+                                                            f2_div != 0.0 ==> { regs[res] = f1_div / f2_div }
+                                                            _ ==> { regs[res] = 0.0 }
+                                                      }
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      mut as int64: i1_div = regs[a1] as int64
+                                                      mut as int64: i2_div = regs[a2] as int64
+                                                      route {
+                                                            i2_div != 0 ==> { regs[res] = i1_div / i2_div }
+                                                            _ ==> { regs[res] = 0 }
+                                                      }
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
+                                          mut as int64: v1_mod = regs[a1] as int64
+                                          mut as int64: v2_mod = regs[a2] as int64
+                                          route {
+                                                v2_mod != 0 ==> { regs[res] = v1_mod /r v2_mod }
+                                                _ ==> { regs[res] = 0 }
+                                          }
+                                          reg_types[res] = "int"
+                                    }
+                                    opcode == "BINOP_in" ==> {
+                                          mut as bool: in_res = false
+                                          route {
+                                                stdMapContainsKey(regs, a1) and stdMapContainsKey(regs, a2) ==> {
+                                                      mut as string: a2_t = ""
+                                                      route {
+                                                      stdMapContainsKey(reg_types, a2) ==> { a2_t = reg_types[a2] }
+                                                      _ ==> {}
+                                                }
+                                                      route {
+                                                            a2_t == "map" ==> {
+                                                                  mut as map: m = regs[a2]
+                                                                  in_res = stdMapContainsKey(m, "" + regs[a1])
+                                                            }
+                                                            a2_t == "set" or a2_t == "list" ==> {
+                                                                  mut as list of data: l = regs[a2]
+                                                                  mut as int64: ln = stdCollectionLength(l)
+                                                                  mut as int64: li = 1
+                                                                  mut as data: target = regs[a1]
+                                                                  infinite {
+                                                                        route {
+                                                                              li > ln ==> { break }
+                                                                              l[li] == target or ("" + l[li]) == ("" + target) ==> {
+                                                                                    in_res = true
+                                                                                    break
+                                                                              }
+                                                                              _ ==> { li = li + 1 }
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          regs[res] = in_res
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_==" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") ==> {
+                                                      mut as string: s1_eq = "" + regs[a1]
+                                                      mut as string: s2_eq = "" + regs[a2]
+                                                      regs[res] = s1_eq == s2_eq
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_eq = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> { f1_eq = regs[a1] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti1_eq = regs[a1] as int64
+                                                                  f1_eq = ti1_eq as float64
+                                                            }
+                                                      }
+                                                      mut as float64: f2_eq = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float" ==> { f2_eq = regs[a2] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti2_eq = regs[a2] as int64
+                                                                  f2_eq = ti2_eq as float64
+                                                            }
+                                                      }
+                                                      regs[res] = f1_eq == f2_eq
+                                                }
+                                                _ ==> {
+                                                      regs[res] = regs[a1] == regs[a2]
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_!=" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") ==> {
+                                                      mut as string: s1_ne = "" + regs[a1]
+                                                      mut as string: s2_ne = "" + regs[a2]
+                                                      regs[res] = s1_ne != s2_ne
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_ne = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> { f1_ne = regs[a1] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti1_ne = regs[a1] as int64
+                                                                  f1_ne = ti1_ne as float64
+                                                            }
+                                                      }
+                                                      mut as float64: f2_ne = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float" ==> { f2_ne = regs[a2] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti2_ne = regs[a2] as int64
+                                                                  f2_ne = ti2_ne as float64
+                                                            }
+                                                      }
+                                                      regs[res] = f1_ne != f2_ne
+                                                }
+                                                _ ==> {
+                                                      regs[res] = regs[a1] != regs[a2]
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_<" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") ==> {
+                                                      mut as string: s1_lt = "" + regs[a1]
+                                                      mut as string: s2_lt = "" + regs[a2]
+                                                      regs[res] = s1_lt < s2_lt
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_lt = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> { f1_lt = regs[a1] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti1_lt = regs[a1] as int64
+                                                                  f1_lt = ti1_lt as float64
+                                                            }
+                                                      }
+                                                      mut as float64: f2_lt = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float" ==> { f2_lt = regs[a2] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti2_lt = regs[a2] as int64
+                                                                  f2_lt = ti2_lt as float64
+                                                            }
+                                                      }
+                                                      regs[res] = f1_lt < f2_lt
+                                                }
+                                                _ ==> {
+                                                      regs[res] = regs[a1] < regs[a2]
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_<=" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") ==> {
+                                                      mut as string: s1_le = "" + regs[a1]
+                                                      mut as string: s2_le = "" + regs[a2]
+                                                      regs[res] = s1_le <= s2_le
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_le = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> { f1_le = regs[a1] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti1_le = regs[a1] as int64
+                                                                  f1_le = ti1_le as float64
+                                                            }
+                                                      }
+                                                      mut as float64: f2_le = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float" ==> { f2_le = regs[a2] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti2_le = regs[a2] as int64
+                                                                  f2_le = ti2_le as float64
+                                                            }
+                                                      }
+                                                      regs[res] = f1_le <= f2_le
+                                                }
+                                                _ ==> {
+                                                      regs[res] = regs[a1] <= regs[a2]
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_>" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") ==> {
+                                                      mut as string: s1_gt = "" + regs[a1]
+                                                      mut as string: s2_gt = "" + regs[a2]
+                                                      regs[res] = s1_gt > s2_gt
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_gt = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> { f1_gt = regs[a1] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti1_gt = regs[a1] as int64
+                                                                  f1_gt = ti1_gt as float64
+                                                            }
+                                                      }
+                                                      mut as float64: f2_gt = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float" ==> { f2_gt = regs[a2] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti2_gt = regs[a2] as int64
+                                                                  f2_gt = ti2_gt as float64
+                                                            }
+                                                      }
+                                                      regs[res] = f1_gt > f2_gt
+                                                }
+                                                _ ==> {
+                                                      regs[res] = regs[a1] > regs[a2]
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_>=" ==> {
+                                          route {
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") ==> {
+                                                      mut as string: s1_ge = "" + regs[a1]
+                                                      mut as string: s2_ge = "" + regs[a2]
+                                                      regs[res] = s1_ge >= s2_ge
+                                                }
+                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                      mut as float64: f1_ge = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> { f1_ge = regs[a1] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti1_ge = regs[a1] as int64
+                                                                  f1_ge = ti1_ge as float64
+                                                            }
+                                                      }
+                                                      mut as float64: f2_ge = 0.0
+                                                      route {
+                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float" ==> { f2_ge = regs[a2] as float64 }
+                                                            _ ==> {
+                                                                  mut as int64: ti2_ge = regs[a2] as int64
+                                                                  f2_ge = ti2_ge as float64
+                                                            }
+                                                      }
+                                                      regs[res] = f1_ge >= f2_ge
+                                                }
+                                                _ ==> {
+                                                      regs[res] = regs[a1] >= regs[a2]
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_and" or opcode == "BINOP_&&" ==> {
+                                          regs[res] = (regs[a1] == true) and (regs[a2] == true)
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "BINOP_or" or opcode == "BINOP_||" ==> {
+                                          regs[res] = (regs[a1] == true) or (regs[a2] == true)
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "UNARY_-" ==> {
+                                          route {
+                                                stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex" ==> {
+                                                      mut as map: cm = regs[a1]
+                                                      mut as float64: cr = cm["re"] as float64
+                                                      mut as float64: ci = cm["im"] as float64
+                                                      mut as map: c_res = map{}
+                                                      c_res["re"] = 0.0 - cr
+                                                      c_res["im"] = 0.0 - ci
+                                                      regs[res] = c_res
+                                                      reg_types[res] = "complex"
+                                                }
+                                                stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float" ==> {
+                                                      mut as float64: f_un = regs[a1] as float64
+                                                      regs[res] = 0.0 - f_un
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      mut as int64: i_un = regs[a1] as int64
+                                                      regs[res] = 0 - i_un
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                    }
+                                    opcode == "UNARY_not" or opcode == "UNARY_!" ==> {
+                                          mut as bool: b_un = regs[a1] == true
+                                          regs[res] = not b_un
+                                          reg_types[res] = "bool"
+                                    }
+                                    opcode == "PRINT" ==> {
+                                          mut as string: pval = ""
+                                          mut as string: ptype = ""
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> {
+                                                      route {
+                                                      stdMapContainsKey(reg_types, a1) ==> { ptype = reg_types[a1] }
+                                                      _ ==> {}
+                                                }
+                                                      route {
+                                                            ptype == "list" ==> {
+                                                                  mut as list of data: l = regs[a1]
+                                                                  mut as int64: ln = stdCollectionLength(l)
+                                                                  pval = "["
+                                                                  mut as int64: li = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              li > ln ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          li == 1 ==> { pval = pval + "" + l[li] }
+                                                                                          _ ==> { pval = pval + ", " + l[li] }
+                                                                                    }
+                                                                                    li = li + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  pval = pval + "]"
+                                                            }
+                                                            ptype == "set" ==> {
+                                                                  mut as list of data: st = regs[a1]
+                                                                  mut as int64: stn = stdCollectionLength(st)
+                                                                  pval = "{"
+                                                                  mut as int64: si = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              si > stn ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          si == 1 ==> { pval = pval + "" + st[si] }
+                                                                                          _ ==> { pval = pval + ", " + st[si] }
+                                                                                    }
+                                                                                    si = si + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  pval = pval + "}"
+                                                            }
+                                                            ptype == "map" ==> {
+                                                                  mut as map: m = regs[a1]
+                                                                  mut as int64: mn = stdCollectionLength(m)
+                                                                  route {
+                                                                        mn == 0 ==> { pval = "{}" }
+                                                                        _ ==> {
+                                                                              pval = "{"
+                                                                              mut as int64: mi = 1
+                                                                              infinite (k in m) {
+                                                                                    route {
+                                                                                          mi == 1 ==> { pval = pval + k + ": " + m[k] }
+                                                                                          _ ==> { pval = pval + ", " + k + ": " + m[k] }
+                                                                                    }
+                                                                                    mi = mi + 1
+                                                                              }
+                                                                              pval = pval + "}"
+                                                                        }
+                                                                  }
+                                                            }
+                                                            ptype == "struct" ==> {
+                                                                  mut as map: sm = regs[a1]
+                                                                  mut as string: sname = sm["_struct_name"]
+                                                                  pval = sname + "("
+                                                                  mut as list of data: forder = sm["_field_order"]
+                                                                  mut as int64: f_count = stdCollectionLength(forder)
+                                                                  mut as int64: fi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              fi > f_count ==> { break }
+                                                                              _ ==> {
+                                                                                    mut as string: f = forder[fi]
+                                                                                    route {
+                                                                                          fi == 1 ==> { pval = pval + "." + f + ": " + sm[f] }
+                                                                                          _ ==> { pval = pval + ", ." + f + ": " + sm[f] }
+                                                                                    }
+                                                                                    fi = fi + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  pval = pval + ")"
+                                                            }
+                                                            ptype == "complex" ==> {
+                                                                  mut as map: cm = regs[a1]
+                                                                  mut as float64: cr = cm["re"] as float64
+                                                                  mut as float64: ci = cm["im"] as float64
+                                                                  route {
+                                                                        ci >= 0.0 ==> {
+                                                                              pval = "" + cr + " + " + ci + "i"
+                                                                        }
+                                                                        _ ==> {
+                                                                              mut as float64: pos_ci = 0.0 - ci
+                                                                              pval = "" + cr + " - " + pos_ci + "i"
+                                                                        }
+                                                                  }
+                                                            }
+                                                            ptype == "outcome" ==> {
+                                                                  mut as map: outm = regs[a1]
+                                                                  pval = "" + outm["val"]
+                                                            }
+                                                            _ ==> {
+                                                                  pval = "" + regs[a1]
+                                                            }
+                                                      }
+                                                }
+                                                stdMapContainsKey(env, a1) ==> {
+                                                      mut as string: et = ""
+                                                      route {
+                                                            stdMapContainsKey(env_types, a1) ==> { et = env_types[a1] }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            et == "complex" ==> {
+                                                                  mut as map: cm_env = env[a1]
+                                                                  mut as float64: cr_env = cm_env["re"] as float64
+                                                                  mut as float64: ci_env = cm_env["im"] as float64
+                                                                  route {
+                                                                        ci_env >= 0.0 ==> {
+                                                                              pval = "" + cr_env + " + " + ci_env + "i"
+                                                                        }
+                                                                        _ ==> {
+                                                                              mut as float64: pos_ci_env = 0.0 - ci_env
+                                                                              pval = "" + cr_env + " - " + pos_ci_env + "i"
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  pval = "" + env[a1]
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      pval = a1
+                                                }
+                                          }
+                                          print(pval)
+                                          stdout_acc = stdout_acc + pval + "\n"
+                                    }
+                                    opcode == "EMIT" ==> {
+                                          mut as data: eval = 0
+                                          route {
+                                                stdMapContainsKey(regs, a1) ==> { eval = regs[a1] }
+                                                _ ==> {}
+                                          }
+                                          mut as map: res_emit = map{}
+                                          res_emit["target"] = "in"
+                                          res_emit["success"] = true
+                                          res_emit["output"] = stdout_acc
+                                          res_emit["value"] = eval
+                                          emit(nice, res_emit, "ok")
+                                    }
+                                    _ ==> {}
+                              }
+                              route {
+                                    jumped ==> {}
+                                    _ ==> { pc = pc + 1 }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: result = map{}
+            result["target"] = "in"
+            result["success"] = true
+            result["output"] = stdout_acc
+            emit(nice, result, "ok")
+      }
+}

@@ -1,0 +1,102 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: TokenStream
+#L ==============================================================================
+
+contract (TokenStreamContract) {
+      op tokenStreamNew (as list of data: tokens) as map
+      op tokenStreamPeek (as map: stream) as map
+      op tokenStreamPeekNext (as map: stream) as map
+      op tokenStreamAdvance (as map: stream) as map
+      op tokenStreamMatch (as map: stream, as string: expected_type, as string: expected_val) as map
+      op tokenStreamIsAtEnd (as map: stream) as bool
+      op tokenStreamIsEof (as map: stream) as bool
+      op tokenStreamCurrentPos (as map: stream) as int64
+}
+
+agent (CompilerLib) impl TokenStreamContract {
+      op tokenStreamNew (as list of data: tokens) as map ==> {
+            mut as map: ts = map{}
+            ts["tokens"] = tokens
+            ts["pos"] = 1
+            ts["count"] = stdCollectionLength(tokens)
+            emit(nice, ts, "ok")
+      }
+
+      op tokenStreamPeek (as map: stream) as map ==> {
+            mut as list of data: tokens = stream["tokens"]
+            mut as int64: pos = stream["pos"]
+            mut as int64: count = stream["count"]
+            route {
+                  pos <= count ==> { emit(nice, tokens[pos], "ok") }
+                  _ ==> { emit(nice, tokenNew("EOF", "", 0, 0), "ok") }
+            }
+      }
+
+      op tokenStreamPeekNext (as map: stream) as map ==> {
+            mut as list of data: tokens = stream["tokens"]
+            mut as int64: pos = stream["pos"] + 1
+            mut as int64: count = stream["count"]
+            route {
+                  pos <= count ==> { emit(nice, tokens[pos], "ok") }
+                  _ ==> { emit(nice, tokenNew("EOF", "", 0, 0), "ok") }
+            }
+      }
+
+      op tokenStreamAdvance (as map: stream) as map ==> {
+            mut as map: ts = map{}
+            ts["tokens"] = stream["tokens"]
+            ts["count"] = stream["count"]
+            mut as int64: pos = stream["pos"]
+            mut as int64: count = stream["count"]
+            route {
+                  pos <= count ==> { ts["pos"] = pos + 1 }
+                  _ ==> { ts["pos"] = pos }
+            }
+            emit(nice, ts, "ok")
+      }
+
+      op tokenStreamMatch (as map: stream, as string: expected_type, as string: expected_val) as map ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            mut as string: cur_type = "" + cur["type"]
+            mut as string: cur_val = "" + cur["val"]
+
+            mut as bool: match_ok = false
+            route {
+                  expected_val == "" ==> {
+                        match_ok = (cur_type == expected_type)
+                  }
+                  _ ==> {
+                        match_ok = (cur_type == expected_type and cur_val == expected_val)
+                  }
+            }
+
+            mut as map: res = map{}
+            res["matched"] = match_ok
+            route {
+                  match_ok ==> {
+                        res["stream"] = tokenStreamAdvance(stream)
+                        res["token"] = cur
+                  }
+                  _ ==> {
+                        res["stream"] = stream
+                        res["token"] = cur
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op tokenStreamIsAtEnd (as map: stream) as bool ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            emit(nice, tokenIsEof(cur), "ok")
+      }
+
+      op tokenStreamIsEof (as map: stream) as bool ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            emit(nice, tokenIsEof(cur), "ok")
+      }
+
+      op tokenStreamCurrentPos (as map: stream) as int64 ==> {
+            emit(nice, stream["pos"], "ok")
+      }
+}

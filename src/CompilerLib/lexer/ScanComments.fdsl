@@ -1,0 +1,97 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ScanComments
+#L ==============================================================================
+
+contract (ScanCommentsContract) {
+      op isCommentStart (as string: src, as int64: pos, as int64: len) as bool
+      op scanLineComment (as string: src, as int64: pos, as int64: len) as int64
+      op scanBlockComment (as string: src, as int64: pos, as int64: len) as int64
+      op scanDocstring (as string: src, as int64: pos, as int64: len) as map
+}
+
+agent (CompilerLib) impl ScanCommentsContract {
+      op isCommentStart (as string: src, as int64: pos, as int64: len) as bool ==> {
+            route {
+                  pos <= len ==> {
+                        route {
+                              src[pos] == "#" ==> {
+                                    emit(nice, true, "ok")
+                              }
+                              _ ==> {
+                                    emit(nice, false, "ok")
+                              }
+                        }
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op scanLineComment (as string: src, as int64: pos, as int64: len) as int64 ==> {
+            mut as int64: p = pos
+            infinite {
+                  route {
+                        p > len ==> { break }
+                        src[p] == "\n" ==> { break }
+                        _ ==> { p = p + 1 }
+                  }
+            }
+            emit(nice, p, "ok")
+      }
+
+      op scanBlockComment (as string: src, as int64: pos, as int64: len) as int64 ==> {
+            #L Pula ate fechar B#
+            mut as int64: p = pos + 2
+            infinite {
+                  mut as string: next_cp = ""
+                  route {
+                        p < len ==> { next_cp = src[p + 1] }
+                        _ ==> {}
+                  }
+                  route {
+                        p >= len ==> {
+                              p = len + 1
+                              break
+                        }
+                        src[p] == "B" and next_cp == "#" ==> {
+                              p = p + 2
+                              break
+                        }
+                        _ ==> { p = p + 1 }
+                  }
+            }
+            emit(nice, p, "ok")
+      }
+
+      op scanDocstring (as string: src, as int64: pos, as int64: len) as map ==> {
+            mut as int64: p = pos + 2
+            mut as string: doc = ""
+            infinite {
+                  mut as string: next_dp = ""
+                  route {
+                        p < len ==> { next_dp = src[p + 1] }
+                        _ ==> {}
+                  }
+                  route {
+                        p >= len ==> {
+                              p = len + 1
+                              break
+                        }
+                        src[p] == "D" and next_dp == "#" ==> {
+                              p = p + 2
+                              break
+                        }
+                        _ ==> {
+                              doc = doc + src[p]
+                              p = p + 1
+                        }
+                  }
+            }
+            mut as map: res = map{}
+            res["pos"] = p
+            res["doc"] = doc
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,37 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: VmrBackend (Target: 'vmr')
+#L ==============================================================================
+
+contract (VmrBackendContract) {
+      op vmrEmitAndReload (as map: fmir_module, as string: temp_path) as map
+}
+
+agent (CompilerLib) impl VmrBackendContract {
+      op vmrEmitAndReload (as map: fmir_module, as string: temp_path) as map ==> {
+            mut as string: json_bc = vmEmitBytecodeJson(fmir_module)
+            mut as string: fpath = temp_path
+            mut as int64: flen = stdCollectionLength(fpath)
+            mut as bool: needs_ext = true
+            route {
+                  flen >= 6 ==> {
+                        needs_ext = (fpath[(flen - 5)..flen] != ".fvmbc")
+                  }
+                  _ ==> {}
+            }
+            route {
+                  needs_ext ==> { fpath = fpath + ".fvmbc" }
+                  _ ==> {}
+            }
+
+            stdIoWriteFile(fpath, json_bc)
+            mut as string: reloaded = stdIoReadFile(fpath)
+
+            mut as map: res = map{}
+            res["target"] = "vmr"
+            res["path"] = fpath
+            res["reloaded"] = reloaded != ""
+            res["success"] = true
+            emit(nice, res, "ok")
+      }
+}

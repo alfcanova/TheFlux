@@ -1,0 +1,64 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ContractChecker
+#L ==============================================================================
+
+contract (ContractCheckerContract) {
+      op checkContractImplementation (as string: agent_name, as list of data: agent_ops, as string: contract_name, as list of data: required_ops) as map
+}
+
+agent (CompilerLib) impl ContractCheckerContract {
+      op checkContractImplementation (as string: agent_name, as list of data: agent_ops, as string: contract_name, as list of data: required_ops) as map ==> {
+            mut as int64: n_req = stdCollectionLength(required_ops)
+            mut as int64: n_ops = stdCollectionLength(agent_ops)
+            mut as list of data: missing = []
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n_req ==> { break }
+                        _ ==> {
+                              mut as string: req_op = "" + required_ops[i]
+                              mut as bool: found = false
+                              mut as int64: j = 1
+                              infinite {
+                                    route {
+                                          j > n_ops ==> { break }
+                                          _ ==> {
+                                                mut as string: cur_op = "" + agent_ops[j]
+                                                route {
+                                                      cur_op == req_op ==> {
+                                                            found = true
+                                                            break
+                                                      }
+                                                      _ ==> { j = j + 1 }
+                                                }
+                                          }
+                                    }
+                              }
+                              route {
+                                    not found ==> {
+                                          missing = stdListPushBack(missing, req_op)
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            mut as map: res = map{}
+            mut as int64: n_mis = stdCollectionLength(missing)
+            route {
+                  n_mis > 0 ==> {
+                        res["valid"] = false
+                        res["error"] = "E0006: Agent '" + agent_name + "' does not implement required op '" + missing[1] + "' of contract '" + contract_name + "'."
+                  }
+                  _ ==> {
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

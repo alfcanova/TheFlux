@@ -1,0 +1,91 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: TokenTypes
+#L ==============================================================================
+
+struct (Token) {
+      mut: .type_name: string
+      mut: .value: string
+      mut: .line: int64
+      mut: .col: int64
+}
+
+contract (TokenTypesContract) {
+      op tokenNew (as string: type_name, as string: value, as int64: line, as int64: col) as map
+      op tokenTypeName (as map: tok) as string
+      op tokenValue (as map: tok) as string
+      op tokenLine (as map: tok) as int64
+      op tokenCol (as map: tok) as int64
+      op tokenIsEof (as map: tok) as bool
+      op tokenIsIndent (as map: tok) as bool
+      op tokenIsDedent (as map: tok) as bool
+      op tokenIsNewline (as map: tok) as bool
+      op tokenFormat (as map: tok) as string
+}
+
+agent (CompilerLib) impl TokenTypesContract {
+      op tokenNew (as string: type_name, as string: value, as int64: line, as int64: col) as map ==> {
+            mut as map: tok = map{}
+            tok["type"] = type_name
+            tok["val"] = value
+            tok["line"] = line
+            tok["col"] = col
+            emit(nice, tok, "ok")
+      }
+
+      op tokenTypeName (as map: tok) as string ==> {
+            route {
+                  stdMapContainsKey(tok, "type") ==> { emit(nice, "" + tok["type"], "ok") }
+                  _ ==> { emit(nice, "UNKNOWN", "ok") }
+            }
+      }
+
+      op tokenValue (as map: tok) as string ==> {
+            route {
+                  stdMapContainsKey(tok, "val") ==> { emit(nice, "" + tok["val"], "ok") }
+                  _ ==> { emit(nice, "", "ok") }
+            }
+      }
+
+      op tokenLine (as map: tok) as int64 ==> {
+            route {
+                  stdMapContainsKey(tok, "line") ==> { emit(nice, tok["line"], "ok") }
+                  _ ==> { emit(nice, 1, "ok") }
+            }
+      }
+
+      op tokenCol (as map: tok) as int64 ==> {
+            route {
+                  stdMapContainsKey(tok, "col") ==> { emit(nice, tok["col"], "ok") }
+                  _ ==> { emit(nice, 1, "ok") }
+            }
+      }
+
+      op tokenIsEof (as map: tok) as bool ==> {
+            mut as string: t = "" + tok["type"]
+            emit(nice, t == "EOF", "ok")
+      }
+
+      op tokenIsIndent (as map: tok) as bool ==> {
+            mut as string: t = "" + tok["type"]
+            emit(nice, t == "INDENT", "ok")
+      }
+
+      op tokenIsDedent (as map: tok) as bool ==> {
+            mut as string: t = "" + tok["type"]
+            emit(nice, t == "DEDENT", "ok")
+      }
+
+      op tokenIsNewline (as map: tok) as bool ==> {
+            mut as string: t = "" + tok["type"]
+            emit(nice, t == "NEWLINE", "ok")
+      }
+
+      op tokenFormat (as map: tok) as string ==> {
+            mut as string: t = "" + tok["type"]
+            mut as string: v = "" + tok["val"]
+            mut as string: l = "" + tok["line"]
+            mut as string: c = "" + tok["col"]
+            emit(nice, "Token(" + t + ", \"" + v + "\", " + l + ":" + c + ")", "ok")
+      }
+}

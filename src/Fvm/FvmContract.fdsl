@@ -1,0 +1,16 @@
+#L ==============================================================================
+#L TheFlux Fast Virtual Machine (FVM): Contrato de Servico e Injecao
+#L Arquivo: src/Fvm/FvmContract.fdsl
+#L Versao: 0.9.9
+#L ==============================================================================
+
+contract (FvmContract) {
+      #L Injeta bytecode .fvmbc no servico residente Windows via Named Pipe
+      op fvmInjectBytecode (as string: bytecode_json, as string: stdin_text) as map
+
+      #L Executa arquivo de bytecode localmente
+      op fvmExecuteFile (as string: fvmbc_path, as string: stdin_text) as map
+
+      #L Checa se o servico Windows fluxvm esta ativo e respondendo
+      op fvmIsServiceActive () as bool
+}

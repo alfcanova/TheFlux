@@ -1,0 +1,59 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: FmirTypes
+#L ==============================================================================
+
+contract (FmirTypesContract) {
+      op fmirNewModule (as string: name) as map
+      op fmirAddInstruction (as map: module, as string: opcode, as string: arg1, as string: arg2, as string: res) as map
+      op fmirDumpText (as map: module) as string
+}
+
+agent (CompilerLib) impl FmirTypesContract {
+      op fmirNewModule (as string: name) as map ==> {
+            mut as map: mod = map{}
+            mod["name"] = name
+            mut as list of data: instrs = []
+            mod["instructions"] = instrs
+            mod["count"] = 0
+            emit(nice, mod, "ok")
+      }
+
+      op fmirAddInstruction (as map: module, as string: opcode, as string: arg1, as string: arg2, as string: res) as map ==> {
+            mut as map: mod = module
+            mut as list of data: instrs = mod["instructions"]
+            mut as int64: count = mod["count"] + 1
+
+            mut as map: inst = map{}
+            inst["id"] = count
+            inst["op"] = opcode
+            inst["arg1"] = arg1
+            inst["arg2"] = arg2
+            inst["res"] = res
+
+            instrs = stdListPushBack(instrs, inst)
+            mod["instructions"] = instrs
+            mod["count"] = count
+            emit(nice, mod, "ok")
+      }
+
+      op fmirDumpText (as map: module) as string ==> {
+            mut as list of data: instrs = module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+            mut as string: out = ";; FMIR Module: " + module["name"] + "\\n"
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: line = "  " + inst["res"] + " = " + inst["op"] + " " + inst["arg1"] + ", " + inst["arg2"] + "\\n"
+                              out = out + line
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, out, "ok")
+      }
+}

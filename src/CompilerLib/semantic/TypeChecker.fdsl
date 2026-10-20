@@ -1,0 +1,95 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: TypeChecker
+#L ==============================================================================
+
+contract (TypeCheckerContract) {
+      op checkTypeCompatibility (as string: expected, as string: actual) as map
+      op inferBinaryOpType (as string: op_sym, as string: left_type, as string: right_type) as map
+      op inferUnaryOpType (as string: op_sym, as string: operand_type) as map
+}
+
+agent (CompilerLib) impl TypeCheckerContract {
+      op checkTypeCompatibility (as string: expected, as string: actual) as map ==> {
+            mut as map: res = map{}
+            route {
+                  expected == actual or expected == "data" or expected == "any" or actual == "data" or actual == "any" ==> {
+                        res["compatible"] = true
+                        res["error"] = ""
+                  }
+                  (expected == "float64" or expected == "float32") and (actual == "int64" or actual == "int32") ==> {
+                        #L CoerÃ§Ã£o implÃ­cita de inteiro para ponto flutuante
+                        res["compatible"] = true
+                        res["error"] = ""
+                  }
+                  _ ==> {
+                        res["compatible"] = false
+                        res["error"] = "E0003: Type mismatch: expected '" + expected + "', found '" + actual + "'."
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op inferBinaryOpType (as string: op_sym, as string: left_type, as string: right_type) as map ==> {
+            mut as map: res = map{}
+            route {
+                  op_sym == "+" and (left_type == "string" or right_type == "string") ==> {
+                        res["result_type"] = "string"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  op_sym == "+" or op_sym == "-" or op_sym == "*" or op_sym == "/" or op_sym == "%" ==> {
+                        route {
+                              left_type == "float64" or right_type == "float64" ==> {
+                                    res["result_type"] = "float64"
+                                    res["valid"] = true
+                                    res["error"] = ""
+                              }
+                              _ ==> {
+                                    res["result_type"] = "int64"
+                                    res["valid"] = true
+                                    res["error"] = ""
+                              }
+                        }
+                  }
+                  op_sym == "==" or op_sym == "!=" or op_sym == "<" or op_sym == "<=" or op_sym == ">" or op_sym == ">=" ==> {
+                        res["result_type"] = "bool"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  op_sym == "and" or op_sym == "or" ==> {
+                        res["result_type"] = "bool"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  _ ==> {
+                        res["result_type"] = "data"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op inferUnaryOpType (as string: op_sym, as string: operand_type) as map ==> {
+            mut as map: res = map{}
+            route {
+                  op_sym == "not" ==> {
+                        res["result_type"] = "bool"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  op_sym == "-" ==> {
+                        res["result_type"] = operand_type
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  _ ==> {
+                        res["result_type"] = operand_type
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

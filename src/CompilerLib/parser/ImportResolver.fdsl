@@ -1,0 +1,99 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ImportResolver
+#L ==============================================================================
+
+contract (ImportResolverContract) {
+      op importResolveFile (as string: base_path, as string: module_name) as string
+      op importLoadSource (as string: resolved_path, as string: module_name) as string
+}
+
+agent (CompilerLib) impl ImportResolverContract {
+      op importResolveFile (as string: base_path, as string: module_name) as string ==> {
+            mut as string: mod = module_name
+            mut as int64: mlen = stdCollectionLength(mod)
+            mut as bool: has_ext = false
+            route {
+                  mlen >= 5 ==> {
+                        has_ext = (mod[(mlen - 4)..mlen] == ".fdsl") or (mod[(mlen - 4)..mlen] == ".flux")
+                  }
+                  _ ==> {}
+            }
+            route {
+                  has_ext ==> {}
+                  _ ==> { mod = mod + ".fdsl" }
+            }
+
+            #L 1. Checagem direta
+            route {
+                  stdIoFileExists(mod) ==> { emit(nice, mod, "ok") }
+                  _ ==> {}
+            }
+
+            #L 2. stdlib
+            mut as string: p_stdlib = "stdlib/" + module_name + "/" + mod
+            route {
+                  stdIoFileExists(p_stdlib) ==> { emit(nice, p_stdlib, "ok") }
+                  _ ==> {}
+            }
+            mut as string: p_stdlib_direct = "stdlib/" + mod
+            route {
+                  stdIoFileExists(p_stdlib_direct) ==> { emit(nice, p_stdlib_direct, "ok") }
+                  _ ==> {}
+            }
+
+            #L 3. src
+            mut as string: p_src = "src/" + module_name + "/" + mod
+            route {
+                  stdIoFileExists(p_src) ==> { emit(nice, p_src, "ok") }
+                  _ ==> {}
+            }
+            mut as string: p_src_direct = "src/" + mod
+            route {
+                  stdIoFileExists(p_src_direct) ==> { emit(nice, p_src_direct, "ok") }
+                  _ ==> {}
+            }
+
+            #L 4. fdsl
+            mut as string: p_fdsl = "fdsl/" + mod
+            route {
+                  stdIoFileExists(p_fdsl) ==> { emit(nice, p_fdsl, "ok") }
+                  _ ==> {}
+            }
+
+            #L 5. Fallback para Embedded StdLib
+            route {
+                  isStdLibAgent(module_name) ==> {
+                        emit(nice, "__EMBEDDED__:" + module_name, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "", "ok")
+                  }
+            }
+      }
+
+      op importLoadSource (as string: resolved_path, as string: module_name) as string ==> {
+            mut as int64: rlen = stdCollectionLength(resolved_path)
+            mut as bool: is_emb = false
+            route {
+                  rlen >= 13 ==> {
+                        is_emb = (resolved_path[1..13] == "__EMBEDDED__:")
+                  }
+                  _ ==> {}
+            }
+            route {
+                  is_emb ==> {
+                        emit(nice, getStdLibStubSource(module_name), "ok")
+                  }
+                  resolved_path != "" and stdIoFileExists(resolved_path) ==> {
+                        emit(nice, stdIoReadFile(resolved_path), "ok")
+                  }
+                  isStdLibAgent(module_name) ==> {
+                        emit(nice, getStdLibStubSource(module_name), "ok")
+                  }
+                  _ ==> {
+                        emit(nice, "", "ok")
+                  }
+            }
+      }
+}

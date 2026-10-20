@@ -1,19 +1,34 @@
-"""Shortcut: run a FLUX source file with the AST interpreter."""
+"""TheFlux Backend Driver: IN (AST/FMIR Native Interpreter).
+
+Executes a .flux source file using the self-hosted native compiler's interpreter backend.
+Zero dependencies on legacy prototype code.
+"""
 from __future__ import annotations
+
+import os
+import subprocess
 import sys
-sys.dont_write_bytecode = True
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "src"))
+FLUXC_EXE = ROOT / "bin" / "fluxc.exe"
 
-from flux_proto.cli import main
+
+def main() -> int:
+    if not FLUXC_EXE.exists():
+        print(f"Error: Native compiler binary not found at {FLUXC_EXE}", file=sys.stderr)
+        return 1
+
+    args = sys.argv[1:]
+    if not args or args[0] in ("-h", "--help"):
+        print("Usage: python flux_in.py <source.flux> [options...]", file=sys.stderr)
+        print("Executes FLUX source file using the native interpreter backend.", file=sys.stderr)
+        return 0 if args else 1
+
+    cmd = [str(FLUXC_EXE), "--target", "in"] + args
+    res = subprocess.run(cmd)
+    return res.returncode
+
 
 if __name__ == "__main__":
-    try:
-        idx = sys.argv.index("--target")
-        sys.argv[idx + 1] = "run"
-    except ValueError:
-        sys.argv.insert(1, "--target")
-        sys.argv.insert(2, "run")
-    raise SystemExit(main())
+    sys.exit(main())

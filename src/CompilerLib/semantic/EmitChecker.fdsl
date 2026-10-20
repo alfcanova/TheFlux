@@ -1,0 +1,49 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: EmitChecker
+#L ==============================================================================
+
+contract (EmitCheckerContract) {
+      op checkOperationEmit (as map: arena, as int64: op_node_id) as map
+}
+
+agent (CompilerLib) impl EmitCheckerContract {
+      op checkOperationEmit (as map: arena, as int64: op_node_id) as map ==> {
+            mut as list of data: children = astArenaNodeChildren(arena, op_node_id)
+            mut as int64: n = stdCollectionLength(children)
+            mut as bool: has_emit = false
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as int64: cid = children[i]
+                              mut as string: kind = astArenaNodeKind(arena, cid)
+                              route {
+                                    kind == "EMIT" or kind == "RETURN" ==> {
+                                          has_emit = true
+                                          break
+                                    }
+                                    _ ==> {
+                                          i = i + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["valid"] = has_emit
+            route {
+                  not has_emit ==> {
+                        mut as string: op_name = astArenaNodeValue(arena, op_node_id)
+                        res["error"] = "E0007: Missing emit or return in operation '" + op_name + "'."
+                  }
+                  _ ==> {
+                        res["error"] = ""
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

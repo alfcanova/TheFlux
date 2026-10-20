@@ -1,0 +1,46 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: DiagnosticCatalog
+#L ==============================================================================
+
+contract (DiagnosticCatalogContract) {
+      op diagnosticCreate (as string: code, as string: message, as int64: line, as int64: col) as map
+      op diagnosticFormat (as map: diag) as string
+      op diagnosticExplain (as string: code) as string
+}
+
+agent (CompilerLib) impl DiagnosticCatalogContract {
+      op diagnosticCreate (as string: code, as string: message, as int64: line, as int64: col) as map ==> {
+            mut as map: diag = map{}
+            diag["code"] = code
+            diag["message"] = message
+            diag["line"] = line
+            diag["col"] = col
+            emit(nice, diag, "ok")
+      }
+
+      op diagnosticFormat (as map: diag) as string ==> {
+            mut as string: c = "" + diag["code"]
+            mut as string: m = "" + diag["message"]
+            mut as int64: l = diag["line"]
+            mut as int64: col = diag["col"]
+            mut as string: res = "Error [" + c + "] at line " + l + ":" + col + " - " + m
+            emit(nice, res, "ok")
+      }
+
+      op diagnosticExplain (as string: code) as string ==> {
+            route {
+                  code == "E0001" ==> { emit(nice, "E0001: Symbol not found. Check if variable or function is declared.", "ok") }
+                  code == "E0002" ==> { emit(nice, "E0002: Reassignment to immutable variable. Declare with 'mut' if modification is needed.", "ok") }
+                  code == "E0003" ==> { emit(nice, "E0003: Type mismatch. The expression type does not match target type.", "ok") }
+                  code == "E0004" ==> { emit(nice, "E0004: Invalid capitalization convention. Agents/contracts must be PascalCase, vars/ops camelCase.", "ok") }
+                  code == "E0005" ==> { emit(nice, "E0005: Use after move. The value has already been transferred.", "ok") }
+                  code == "E0006" ==> { emit(nice, "E0006: Contract implementation incomplete. Agent must implement all contract operations.", "ok") }
+                  code == "E0007" ==> { emit(nice, "E0007: Missing emit in operation body. All branches must produce an emit.", "ok") }
+                  code == "E0008" ==> { emit(nice, "E0008: Duplicate declaration of identifier in the same scope.", "ok") }
+                  code == "E0009" ==> { emit(nice, "E0009: Invalid argument count in call.", "ok") }
+                  code == "E0010" ==> { emit(nice, "E0010: Module import not found.", "ok") }
+                  _ ==> { emit(nice, code + ": General compilation diagnostic.", "ok") }
+            }
+      }
+}

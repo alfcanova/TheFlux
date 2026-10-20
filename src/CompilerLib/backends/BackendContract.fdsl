@@ -1,0 +1,11 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: BackendContract
+#L ==============================================================================
+
+contract (BackendContract) {
+      op backendCompile (as map: fmir_module, as string: target, as map: options) as map
+}
+
+agent (CompilerLib) {
+}

@@ -1,0 +1,113 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: AstArena
+#L ==============================================================================
+
+contract (AstArenaContract) {
+      op astArenaNew () as map
+      op astArenaAllocNode (as map: arena, as string: kind, as string: value, as int64: left_id, as int64: right_id, as list of data: children_ids) as map
+      op astArenaGetNode (as map: arena, as int64: node_id) as map
+      op astArenaNodeKind (as map: arena, as int64: node_id) as string
+      op astArenaNodeValue (as map: arena, as int64: node_id) as string
+      op astArenaNodeLeft (as map: arena, as int64: node_id) as int64
+      op astArenaNodeRight (as map: arena, as int64: node_id) as int64
+      op astArenaNodeChildren (as map: arena, as int64: node_id) as list of data
+      op astArenaDumpJson (as map: arena, as int64: root_id) as string
+}
+
+agent (CompilerLib) impl AstArenaContract {
+      op astArenaNew () as map ==> {
+            mut as map: arena = map{}
+            mut as list of data: nodes = []
+            arena["nodes"] = nodes
+            arena["count"] = 0
+            emit(nice, arena, "ok")
+      }
+
+      op astArenaAllocNode (as map: arena, as string: kind, as string: value, as int64: left_id, as int64: right_id, as list of data: children_ids) as map ==> {
+            mut as map: a = arena
+            mut as list of data: nodes = a["nodes"]
+            mut as int64: count = a["count"] + 1
+
+            mut as map: node = map{}
+            node["id"] = count
+            node["kind"] = kind
+            node["val"] = value
+            node["left"] = left_id
+            node["right"] = right_id
+            node["children"] = children_ids
+
+            nodes = stdListPushBack(nodes, node)
+            a["nodes"] = nodes
+            a["count"] = count
+            a["last_id"] = count
+            emit(nice, a, "ok")
+      }
+
+      op astArenaGetNode (as map: arena, as int64: node_id) as map ==> {
+            mut as list of data: nodes = arena["nodes"]
+            mut as int64: n = stdCollectionLength(nodes)
+            route {
+                  node_id >= 1 and node_id <= n ==> {
+                        emit(nice, nodes[node_id], "ok")
+                  }
+                  _ ==> {
+                        mut as map: empty = map{}
+                        empty["id"] = 0
+                        empty["kind"] = "NONE"
+                        emit(nice, empty, "ok")
+                  }
+            }
+      }
+
+      op astArenaNodeKind (as map: arena, as int64: node_id) as string ==> {
+            mut as map: node = astArenaGetNode(arena, node_id)
+            route {
+                  stdMapContainsKey(node, "kind") ==> { emit(nice, "" + node["kind"], "ok") }
+                  _ ==> { emit(nice, "NONE", "ok") }
+            }
+      }
+
+      op astArenaNodeValue (as map: arena, as int64: node_id) as string ==> {
+            mut as map: node = astArenaGetNode(arena, node_id)
+            route {
+                  stdMapContainsKey(node, "val") ==> { emit(nice, "" + node["val"], "ok") }
+                  _ ==> { emit(nice, "", "ok") }
+            }
+      }
+
+      op astArenaNodeLeft (as map: arena, as int64: node_id) as int64 ==> {
+            mut as map: node = astArenaGetNode(arena, node_id)
+            route {
+                  stdMapContainsKey(node, "left") ==> { emit(nice, node["left"], "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op astArenaNodeRight (as map: arena, as int64: node_id) as int64 ==> {
+            mut as map: node = astArenaGetNode(arena, node_id)
+            route {
+                  stdMapContainsKey(node, "right") ==> { emit(nice, node["right"], "ok") }
+                  _ ==> { emit(nice, 0, "ok") }
+            }
+      }
+
+      op astArenaNodeChildren (as map: arena, as int64: node_id) as list of data ==> {
+            mut as map: node = astArenaGetNode(arena, node_id)
+            route {
+                  stdMapContainsKey(node, "children") ==> { emit(nice, node["children"], "ok") }
+                  _ ==> {
+                        mut as list of data: empty = []
+                        emit(nice, empty, "ok")
+                  }
+            }
+      }
+
+      op astArenaDumpJson (as map: arena, as int64: root_id) as string ==> {
+            mut as map: root = astArenaGetNode(arena, root_id)
+            mut as string: kind = "" + root["kind"]
+            mut as string: val = "" + root["val"]
+            mut as string: json = "{\"id\": " + ("" + root_id) + ", \"kind\": \"" + kind + "\", \"value\": \"" + val + "\", \"nodes_count\": " + ("" + arena["count"]) + "}"
+            emit(nice, json, "ok")
+      }
+}

@@ -1,0 +1,135 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ScanNumbers
+#L ==============================================================================
+
+contract (ScanNumbersContract) {
+      op isDigit (as string: ch) as bool
+      op isHexDigit (as string: ch) as bool
+      op scanNumberLiteral (as string: src, as int64: pos, as int64: len) as map
+}
+
+agent (CompilerLib) impl ScanNumbersContract {
+      op isDigit (as string: ch) as bool ==> {
+            emit(nice, ch >= "0" and ch <= "9", "ok")
+      }
+
+      op isHexDigit (as string: ch) as bool ==> {
+            emit(nice, (ch >= "0" and ch <= "9") or (ch >= "a" and ch <= "f") or (ch >= "A" and ch <= "F"), "ok")
+      }
+
+      op scanNumberLiteral (as string: src, as int64: pos, as int64: len) as map ==> {
+            mut as int64: p = pos
+            mut as string: num_str = ""
+            mut as bool: is_float = false
+            mut as bool: is_complex = false
+            mut as string: ch0 = src[p]
+
+            route {
+                  ch0 == "." ==> {
+                        is_float = true
+                        num_str = "."
+                        p = p + 1
+                  }
+                  _ ==> {}
+            }
+
+            mut as string: next_ch0 = ""
+            route {
+                  p < len ==> { next_ch0 = src[p + 1] }
+                  _ ==> {}
+            }
+
+            #L Verifica prefixos 0x, 0b, 0o
+            route {
+                  ch0 == "0" and (next_ch0 == "x" or next_ch0 == "X" or next_ch0 == "b" or next_ch0 == "B" or next_ch0 == "o" or next_ch0 == "O") ==> {
+                        mut as string: ch1 = next_ch0
+                        num_str = num_str + ch0 + ch1
+                        p = p + 2
+                        infinite {
+                              route {
+                                    p > len ==> { break }
+                                    _ ==> {
+                                          mut as string: c = src[p]
+                                          route {
+                                                (c >= "0" and c <= "9") or (c >= "a" and c <= "f") or (c >= "A" and c <= "F") or c == "_" ==> {
+                                                      num_str = num_str + c
+                                                      p = p + 1
+                                                }
+                                                _ ==> { break }
+                                          }
+                                    }
+                              }
+                        }
+                        mut as map: res_hex = map{}
+                        res_hex["pos"] = p
+                        res_hex["val"] = num_str
+                        res_hex["type"] = "INT"
+                        emit(nice, res_hex, "ok")
+                  }
+                  _ ==> {}
+            }
+
+            infinite {
+                  route {
+                        p > len ==> { break }
+                        _ ==> {
+                              mut as string: c = src[p]
+                              mut as string: next_c = ""
+                              route {
+                                    p < len ==> { next_c = src[p + 1] }
+                                    _ ==> {}
+                              }
+                              route {
+                                    c >= "0" and c <= "9" ==> {
+                                          num_str = num_str + c
+                                          p = p + 1
+                                    }
+                                    c == "_" ==> {
+                                          p = p + 1
+                                    }
+                                    c == "." and not is_float and next_c >= "0" and next_c <= "9" ==> {
+                                          is_float = true
+                                          num_str = num_str + "."
+                                          p = p + 1
+                                    }
+                                    (c == "e" or c == "E") and not is_complex ==> {
+                                          is_float = true
+                                          num_str = num_str + c
+                                          p = p + 1
+                                          route {
+                                                p <= len ==> {
+                                                      route {
+                                                            src[p] == "+" or src[p] == "-" ==> {
+                                                                  num_str = num_str + src[p]
+                                                                  p = p + 1
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    c == "i" ==> {
+                                          is_complex = true
+                                          num_str = num_str + "i"
+                                          p = p + 1
+                                          break
+                                    }
+                                    _ ==> { break }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["pos"] = p
+            res["val"] = num_str
+            route {
+                  is_complex ==> { res["type"] = "COMPLEX" }
+                  is_float ==> { res["type"] = "FLOAT" }
+                  _ ==> { res["type"] = "INT" }
+            }
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,69 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: CapitalizationChecker
+#L ==============================================================================
+
+contract (CapitalizationCheckerContract) {
+      op checkTypeCapitalization (as string: name) as bool
+      op checkIdentifierCapitalization (as string: name) as bool
+      op validateNamingConvention (as string: name, as string: kind) as map
+}
+
+agent (CompilerLib) impl CapitalizationCheckerContract {
+      op checkTypeCapitalization (as string: name) as bool ==> {
+            route {
+                  name == "" ==> { emit(nice, true, "ok") }
+                  _ ==> {
+                        mut as string: first = name[1]
+                        emit(nice, first >= "A" and first <= "Z", "ok")
+                  }
+            }
+      }
+
+      op checkIdentifierCapitalization (as string: name) as bool ==> {
+            route {
+                  name == "" ==> { emit(nice, true, "ok") }
+                  _ ==> {
+                        mut as string: first = name[1]
+                        route {
+                              first == "_" ==> { emit(nice, true, "ok") }
+                              _ ==> {
+                                    emit(nice, first >= "a" and first <= "z", "ok")
+                              }
+                        }
+                  }
+            }
+      }
+
+      op validateNamingConvention (as string: name, as string: kind) as map ==> {
+            mut as map: res = map{}
+            mut as bool: valid = true
+            mut as string: err = ""
+
+            route {
+                  kind == "AGENT" or kind == "CONTRACT" or kind == "STRUCT" or kind == "ENUM" ==> {
+                        valid = checkTypeCapitalization(name)
+                        route {
+                              not valid ==> {
+                                    err = "E0004: " + kind + " '" + name + "' must follow PascalCase convention."
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  kind == "VAR" or kind == "OP" or kind == "FUNC" ==> {
+                        valid = checkIdentifierCapitalization(name)
+                        route {
+                              not valid ==> {
+                                    err = "E0004: Identifier '" + name + "' must follow camelCase convention."
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            res["valid"] = valid
+            res["error"] = err
+            emit(nice, res, "ok")
+      }
+}

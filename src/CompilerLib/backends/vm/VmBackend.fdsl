@@ -1,0 +1,141 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: VmBackend (Target: 'vm')
+#L ==============================================================================
+
+contract (VmBackendContract) {
+      op vmCompileFmir (as map: fmir_module) as map
+      op vmEmitBytecodeJson (as map: fmir_module) as string
+}
+
+agent (CompilerLib) impl VmBackendContract {
+      op vmCompileFmir (as map: fmir_module) as map ==> {
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+
+            mut as list of data: bc_ops = []
+            bc_ops = stdListPushBack(bc_ops, ["SCOPE_ENTER"])
+
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+
+                              route {
+                                    opcode == "ALLOC" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["DECLARE", res, "mut"])
+                                    }
+                                    opcode == "CONST_INT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 as int64])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "CONST_FLOAT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 as float64])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "CONST_STR" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "CONST_BOOL" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 == "true"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "LOAD" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "STORE" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_+" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["ADD"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_-" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["SUB"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_*" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["MUL"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_/" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["DIV"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "PRINT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["PRINTLN"])
+                                    }
+                                    opcode == "EMIT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["EMIT", "nice"])
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            bc_ops = stdListPushBack(bc_ops, ["SCOPE_EXIT"])
+            bc_ops = stdListPushBack(bc_ops, ["HALT"])
+
+            mut as map: result = map{}
+            result["ops"] = bc_ops
+            result["count"] = stdCollectionLength(bc_ops)
+            result["success"] = true
+            emit(nice, result, "ok")
+      }
+
+      op vmEmitBytecodeJson (as map: fmir_module) as string ==> {
+            mut as map: res = vmCompileFmir(fmir_module)
+            mut as list of data: ops = res["ops"]
+            mut as int64: n = stdCollectionLength(ops)
+
+            mut as string: json = "{\n  \"ops\": [\n"
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as list of data: op_tuple = ops[i]
+                              mut as string: comma = ""
+                              route {
+                                    i < n ==> { comma = "," }
+                                    _ ==> {}
+                              }
+                              mut as string: op_name = "" + op_tuple[1]
+                              mut as string: entry = "    [\"" + op_name + "\""
+                              route {
+                                    stdCollectionLength(op_tuple) > 1 ==> {
+                                          entry = entry + ", \"" + op_tuple[2] + "\""
+                                    }
+                                    _ ==> {}
+                              }
+                              entry = entry + "]" + comma + "\n"
+                              json = json + entry
+                              i = i + 1
+                        }
+                  }
+            }
+            json = json + "  ]\n}"
+            emit(nice, json, "ok")
+      }
+}

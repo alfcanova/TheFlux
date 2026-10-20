@@ -1,0 +1,117 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: SymbolTable
+#L ==============================================================================
+
+contract (SymbolTableContract) {
+      op symbolTableNew () as map
+      op symbolTableEnterScope (as map: symtab) as map
+      op symbolTableExitScope (as map: symtab) as map
+      op symbolTableInsert (as map: symtab, as string: name, as string: kind, as string: type_name, as bool: is_mut) as map
+      op symbolTableLookup (as map: symtab, as string: name) as map
+      op symbolTableContains (as map: symtab, as string: name) as bool
+}
+
+agent (CompilerLib) impl SymbolTableContract {
+      op symbolTableNew () as map ==> {
+            mut as map: st = map{}
+            mut as list of data: scopes = []
+            mut as map: root_scope = map{}
+            scopes = stdListPushBack(scopes, root_scope)
+            st["scopes"] = scopes
+            st["depth"] = 1
+            emit(nice, st, "ok")
+      }
+
+      op symbolTableEnterScope (as map: symtab) as map ==> {
+            mut as map: st = symtab
+            mut as list of data: scopes = st["scopes"]
+            mut as map: new_scope = map{}
+            scopes = stdListPushBack(scopes, new_scope)
+            st["scopes"] = scopes
+            st["depth"] = st["depth"] + 1
+            emit(nice, st, "ok")
+      }
+
+      op symbolTableExitScope (as map: symtab) as map ==> {
+            mut as map: st = symtab
+            mut as list of data: scopes = st["scopes"]
+            mut as int64: n = stdCollectionLength(scopes)
+            route {
+                  n > 1 ==> {
+                        mut as list of data: new_scopes = []
+                        mut as int64: i = 1
+                        infinite {
+                              route {
+                                    i >= n ==> { break }
+                                    _ ==> {
+                                          new_scopes = stdListPushBack(new_scopes, scopes[i])
+                                          i = i + 1
+                                    }
+                              }
+                        }
+                        st["scopes"] = new_scopes
+                        st["depth"] = n - 1
+                  }
+                  _ ==> {}
+            }
+            emit(nice, st, "ok")
+      }
+
+      op symbolTableInsert (as map: symtab, as string: name, as string: kind, as string: type_name, as bool: is_mut) as map ==> {
+            mut as map: st = symtab
+            mut as list of data: scopes = st["scopes"]
+            mut as int64: n = stdCollectionLength(scopes)
+            route {
+                  n > 0 ==> {
+                        mut as map: cur_scope = scopes[n]
+                        mut as map: sym_info = map{}
+                        sym_info["name"] = name
+                        sym_info["kind"] = kind
+                        sym_info["type"] = type_name
+                        sym_info["is_mut"] = is_mut
+                        sym_info["moved"] = false
+                        cur_scope[name] = sym_info
+                        scopes[n] = cur_scope
+                        st["scopes"] = scopes
+                  }
+                  _ ==> {}
+            }
+            emit(nice, st, "ok")
+      }
+
+      op symbolTableLookup (as map: symtab, as string: name) as map ==> {
+            mut as list of data: scopes = symtab["scopes"]
+            mut as int64: n = stdCollectionLength(scopes)
+            mut as int64: i = n
+            infinite {
+                  route {
+                        i < 1 ==> {
+                              mut as map: empty = map{}
+                              empty["found"] = false
+                              emit(nice, empty, "ok")
+                              break
+                        }
+                        _ ==> {
+                              mut as map: cur_scope = scopes[i]
+                              route {
+                                    stdMapContainsKey(cur_scope, name) ==> {
+                                          mut as map: res = cur_scope[name]
+                                          res["found"] = true
+                                          emit(nice, res, "ok")
+                                          break
+                                    }
+                                    _ ==> {
+                                          i = i - 1
+                                    }
+                              }
+                        }
+                  }
+            }
+      }
+
+      op symbolTableContains (as map: symtab, as string: name) as bool ==> {
+            mut as map: res = symbolTableLookup(symtab, name)
+            emit(nice, res["found"], "ok")
+      }
+}

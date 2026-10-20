@@ -1,0 +1,118 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: WatBackend (Target: 'wat')
+#L ==============================================================================
+
+contract (WatBackendContract) {
+      op watGenerateModule (as map: fmir_module) as string
+      op watCompileModule (as map: fmir_module, as string: output_path) as map
+}
+
+agent (CompilerLib) impl WatBackendContract {
+      op watGenerateModule (as map: fmir_module) as string ==> {
+            mut as string: wat = "(module\\n"
+            wat = wat + "  (import \\\"wasi_snapshot_preview1\\\" \\\"fd_write\\\" (func $fd_write (param i32 i32 i32 i32) (result i32)))\\n"
+            wat = wat + "  (memory (export \\\"memory\\\") 2)\\n"
+
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+
+            wat = wat + "  (func $main (export \\\"_start\\\")\\n"
+
+            #L Declara locais para as variaveis e temporarios
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: res = "" + inst["res"]
+                              route {
+                                    opcode == "ALLOC" ==> {
+                                          wat = wat + "    (local $" + res + " i64)\\n"
+                                    }
+                                    res != "" ==> {
+                                          wat = wat + "    (local $" + res + " i64)\\n"
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            #L Corpo da funcao
+            i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+
+                              route {
+                                    opcode == "CONST_INT" ==> {
+                                          wat = wat + "    i64.const " + a1 + "\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "LOAD" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "STORE" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_+" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.add\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_-" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.sub\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_*" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.mul\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_/" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.div_s\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            wat = wat + "  )\\n"
+            wat = wat + ")\\n"
+
+            emit(nice, wat, "ok")
+      }
+
+      op watCompileModule (as map: fmir_module, as string: output_path) as map ==> {
+            mut as string: wat_text = watGenerateModule(fmir_module)
+            mut as string: wat_file = output_path + ".wat"
+            stdIoWriteFile(wat_file, wat_text)
+
+            mut as map: res = map{}
+            res["target"] = "wat"
+            res["wat_file"] = wat_file
+            res["success"] = true
+            emit(nice, res, "ok")
+      }
+}

@@ -1,0 +1,30 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: MutabilityChecker
+#L ==============================================================================
+
+contract (MutabilityCheckerContract) {
+      op checkAssignmentMutability (as map: symtab, as string: var_name) as map
+}
+
+agent (CompilerLib) impl MutabilityCheckerContract {
+      op checkAssignmentMutability (as map: symtab, as string: var_name) as map ==> {
+            mut as map: sym = symbolTableLookup(symtab, var_name)
+            mut as map: res = map{}
+            route {
+                  not sym["found"] ==> {
+                        res["valid"] = false
+                        res["error"] = "E0001: Symbol '" + var_name + "' not found."
+                  }
+                  not sym["is_mut"] ==> {
+                        res["valid"] = false
+                        res["error"] = "E0002: Cannot reassign to immutable variable '" + var_name + "'. Declare with 'mut' to allow mutation."
+                  }
+                  _ ==> {
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

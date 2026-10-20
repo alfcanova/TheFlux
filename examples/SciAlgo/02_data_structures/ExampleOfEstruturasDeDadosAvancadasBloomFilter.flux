@@ -89,7 +89,7 @@ program (ExampleOfEstruturasDeDadosAvancadasBloomFilter) {
 
             mut as bool: in_filter = false
             route {
-                  bits[q_h1] == 1 && bits[q_h2] == 1 && bits[q_h3] == 1 ==> {
+                  bits[q_h1] == 1 and bits[q_h2] == 1 and bits[q_h3] == 1 ==> {
                         in_filter = true
                   }
                   _ ==> {

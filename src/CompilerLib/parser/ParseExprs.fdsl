@@ -1,0 +1,942 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: ParseExprs
+#L ==============================================================================
+
+contract (ParseExprsContract) {
+      op parseExpression (as map: stream, as map: arena) as map
+      op parseLogicalOr (as map: stream, as map: arena) as map
+      op parseLogicalAnd (as map: stream, as map: arena) as map
+      op parseRelational (as map: stream, as map: arena) as map
+      op parseRange (as map: stream, as map: arena) as map
+      op parseAdditive (as map: stream, as map: arena) as map
+      op parseMultiplicative (as map: stream, as map: arena) as map
+      op parsePostfix (as map: stream, as map: arena) as map
+      op parsePrimary (as map: stream, as map: arena) as map
+}
+
+agent (CompilerLib) impl ParseExprsContract {
+      op parsePrimary (as map: stream, as map: arena) as map ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            mut as string: ctype = "" + cur["type"]
+            mut as string: cval = "" + cur["val"]
+            mut as map: ts = tokenStreamAdvance(stream)
+            mut as map: ar = arena
+
+            route {
+                  cval == "-" or cval == "+" or cval == "not" or cval == "!" ==> {
+                        mut as string: u_op = cval
+                        mut as map: u_res = parsePrimary(ts, ar)
+                        ts = u_res["stream"]
+                        ar = u_res["arena"]
+                        mut as int64: op_id = u_res["node_id"]
+                        ar = astArenaAllocNode(ar, "UNARY_EXPR", u_op, op_id, 0, [])
+                  }
+                  cval == "." ==> {
+                        mut as map: ftok = tokenStreamPeek(ts)
+                        mut as string: fv = "" + ftok["val"]
+                        ts = tokenStreamAdvance(ts)
+                        ar = astArenaAllocNode(ar, "DOT_KEY", fv, 0, 0, [])
+                  }
+                  ctype == "INT" or ctype == "FLOAT" or ctype == "STRING" or ctype == "BOOL" or ctype == "CHAR" or ctype == "COMPLEX" or ctype == "NONE" ==> {
+                        ar = astArenaAllocNode(ar, "LIT_" + ctype, cval, 0, 0, [])
+                  }
+                  ctype == "INTERP_STRING" ==> {
+                        #L Expande string interpolada #L {...} em cadeia de concatenacao binaria (+)
+                        mut as int64: clen = stdCollectionLength(cval)
+                        mut as int64: ci = 1
+                        mut as string: cur_seg = ""
+                        mut as int64: chain_id = 0
+
+                        infinite {
+                              route {
+                                    ci > clen ==> {
+                                          route {
+                                                cur_seg != "" ==> {
+                                                      ar = astArenaAllocNode(ar, "LIT_STRING", cur_seg, 0, 0, [])
+                                                      mut as int64: seg_id = ar["last_id"]
+                                                      route {
+                                                            chain_id == 0 ==> { chain_id = seg_id }
+                                                            _ ==> {
+                                                                  ar = astArenaAllocNode(ar, "BINARY_EXPR", "+", chain_id, seg_id, [])
+                                                                  chain_id = ar["last_id"]
+                                                            }
+                                                      }
+                                                }
+                                                chain_id == 0 ==> {
+                                                      ar = astArenaAllocNode(ar, "LIT_STRING", "", 0, 0, [])
+                                                      chain_id = ar["last_id"]
+                                                }
+                                                _ ==> {}
+                                          }
+                                          break
+                                    }
+                                    _ ==> {
+                                          mut as string: c = cval[ci]
+                                          mut as bool: is_interp = false
+                                          route {
+                                                c == "#" and ci < clen ==> {
+                                                      is_interp = (cval[ci + 1] == "{")
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                is_interp ==> {
+                                                      route {
+                                                            cur_seg != "" ==> {
+                                                                  ar = astArenaAllocNode(ar, "LIT_STRING", cur_seg, 0, 0, [])
+                                                                  mut as int64: seg_id = ar["last_id"]
+                                                                  route {
+                                                                        chain_id == 0 ==> { chain_id = seg_id }
+                                                                        _ ==> {
+                                                                              ar = astArenaAllocNode(ar, "BINARY_EXPR", "+", chain_id, seg_id, [])
+                                                                              chain_id = ar["last_id"]
+                                                                        }
+                                                                  }
+                                                                  cur_seg = ""
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ci = ci + 2
+                                                      mut as string: sub_expr_str = ""
+                                                      mut as int64: sub_brace = 1
+                                                      mut as bool: in_sub_quotes = false
+                                                      infinite {
+                                                            route {
+                                                                  ci > clen ==> { break }
+                                                                  cval[ci] == "\"" ==> {
+                                                                        in_sub_quotes = not in_sub_quotes
+                                                                        sub_expr_str = sub_expr_str + cval[ci]
+                                                                        ci = ci + 1
+                                                                  }
+                                                                  not in_sub_quotes and cval[ci] == "{" ==> {
+                                                                        sub_brace = sub_brace + 1
+                                                                        sub_expr_str = sub_expr_str + cval[ci]
+                                                                        ci = ci + 1
+                                                                  }
+                                                                  not in_sub_quotes and cval[ci] == "}" ==> {
+                                                                        sub_brace = sub_brace - 1
+                                                                        route {
+                                                                              sub_brace == 0 ==> {
+                                                                                    ci = ci + 1
+                                                                                    break
+                                                                              }
+                                                                              _ ==> {
+                                                                                    sub_expr_str = sub_expr_str + cval[ci]
+                                                                                    ci = ci + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  _ ==> {
+                                                                        sub_expr_str = sub_expr_str + cval[ci]
+                                                                        ci = ci + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mut as list of data: sub_toks = lexerTokenize(sub_expr_str)
+                                                      mut as map: sub_ts = tokenStreamNew(sub_toks)
+                                                      mut as map: sub_res = parseExpression(sub_ts, ar)
+                                                      ar = sub_res["arena"]
+                                                      mut as int64: expr_id = sub_res["node_id"]
+                                                      route {
+                                                            chain_id == 0 ==> { chain_id = expr_id }
+                                                            _ ==> {
+                                                                  ar = astArenaAllocNode(ar, "BINARY_EXPR", "+", chain_id, expr_id, [])
+                                                                  chain_id = ar["last_id"]
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      cur_seg = cur_seg + c
+                                                      ci = ci + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  cval == "[" ==> {
+                        mut as list of data: elem_ids = []
+                        mut as map: m_cl_list = tokenStreamMatch(ts, "OP", "]")
+                        route {
+                              m_cl_list["matched"] ==> {
+                                    ts = m_cl_list["stream"]
+                              }
+                              _ ==> {
+                                    infinite {
+                                          mut as map: e_tok = tokenStreamPeek(ts)
+                                          mut as string: ev = "" + e_tok["val"]
+                                          route {
+                                                ev == "]" or tokenIsEof(e_tok) ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                      break
+                                                }
+                                                ev == "," or ev == "\\n" or e_tok["type"] == "NEWLINE" ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                                _ ==> {
+                                                      mut as map: el_res = parseExpression(ts, ar)
+                                                      ts = el_res["stream"]
+                                                      ar = el_res["arena"]
+                                                      elem_ids = stdListPushBack(elem_ids, el_res["node_id"])
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                        ar = astArenaAllocNode(ar, "LIT_LIST", "", 0, 0, elem_ids)
+                  }
+                  cval == "{" ==> {
+                        mut as list of data: elem_ids = []
+                        mut as map: m_cl_set = tokenStreamMatch(ts, "OP", "}")
+                        route {
+                              m_cl_set["matched"] ==> {
+                                    ts = m_cl_set["stream"]
+                                    ar = astArenaAllocNode(ar, "LIT_SET", "", 0, 0, elem_ids)
+                              }
+                              _ ==> {
+                                    mut as map: ptok = tokenStreamPeek(ts)
+                                    mut as string: pv = "" + ptok["val"]
+                                    mut as int64: pv_len = stdCollectionLength(pv)
+                                    mut as bool: is_record = (pv == "." or (pv_len > 1 and pv[1] == "."))
+                                    route {
+                                          is_record ==> {
+                                                mut as list of data: kv_ids = []
+                                                infinite {
+                                                      mut as map: m_tok = tokenStreamPeek(ts)
+                                                      mut as string: mv = "" + m_tok["val"]
+                                                      route {
+                                                            mv == "}" or tokenIsEof(m_tok) ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  break
+                                                            }
+                                                            mv == "," or mv == "\\n" or m_tok["type"] == "NEWLINE" ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as bool: is_dot_key = false
+                                                                  mut as string: dot_key_str = ""
+                                                                  mut as int64: mv_len = stdCollectionLength(mv)
+                                                                  route {
+                                                                        mv == "." ==> {
+                                                                              is_dot_key = true
+                                                                              ts = tokenStreamAdvance(ts)
+                                                                              mut as map: kn_tok = tokenStreamPeek(ts)
+                                                                              dot_key_str = "" + kn_tok["val"]
+                                                                              ts = tokenStreamAdvance(ts)
+                                                                        }
+                                                                        mv_len > 1 and mv[1] == "." ==> {
+                                                                              is_dot_key = true
+                                                                              dot_key_str = mv[2..mv_len]
+                                                                              ts = tokenStreamAdvance(ts)
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  route {
+                                                                        is_dot_key ==> {
+                                                                              mut as map: peek_of = tokenStreamPeek(ts)
+                                                                              route {
+                                                                                    ("" + peek_of["val"]) == "of" ==> {
+                                                                                          ts = tokenStreamAdvance(ts)
+                                                                                          mut as map: kt_res = parseTypeRef(ts, ar)
+                                                                                          ts = kt_res["stream"]
+                                                                                          ar = kt_res["arena"]
+                                                                                    }
+                                                                                    _ ==> {}
+                                                                              }
+                                                                              ar = astArenaAllocNode(ar, "LIT_STRING", dot_key_str, 0, 0, [])
+                                                                              kv_ids = stdListPushBack(kv_ids, ar["last_id"])
+                                                                        }
+                                                                        _ ==> {
+                                                                              mut as map: k_res = parseExpression(ts, ar)
+                                                                              ts = k_res["stream"]
+                                                                              ar = k_res["arena"]
+                                                                              kv_ids = stdListPushBack(kv_ids, k_res["node_id"])
+                                                                        }
+                                                                  }
+                                                                  mut as map: m_col = tokenStreamMatch(ts, "OP", ":")
+                                                                  route {
+                                                                        m_col["matched"] ==> { ts = m_col["stream"] }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  mut as map: v_res = parseExpression(ts, ar)
+                                                                  ts = v_res["stream"]
+                                                                  ar = v_res["arena"]
+                                                                  kv_ids = stdListPushBack(kv_ids, v_res["node_id"])
+                                                            }
+                                                      }
+                                                }
+                                                ar = astArenaAllocNode(ar, "LIT_MAP", "", 0, 0, kv_ids)
+                                          }
+                                          _ ==> {
+                                                infinite {
+                                                      mut as map: e_tok = tokenStreamPeek(ts)
+                                                      mut as string: ev = "" + e_tok["val"]
+                                                      route {
+                                                            ev == "}" or tokenIsEof(e_tok) ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  break
+                                                            }
+                                                            ev == "," or ev == "\\n" or e_tok["type"] == "NEWLINE" ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as map: el_res = parseExpression(ts, ar)
+                                                                  ts = el_res["stream"]
+                                                                  ar = el_res["arena"]
+                                                                  elem_ids = stdListPushBack(elem_ids, el_res["node_id"])
+                                                            }
+                                                      }
+                                                }
+                                                ar = astArenaAllocNode(ar, "LIT_SET", "", 0, 0, elem_ids)
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  cval == "map" ==> {
+                        mut as map: nxt_tok = tokenStreamPeek(ts)
+                        mut as string: nv = "" + nxt_tok["val"]
+                        route {
+                              nv == "{" ==> {
+                                    ts = tokenStreamAdvance(ts)
+                                    mut as list of data: kv_ids = []
+                                    infinite {
+                                          mut as map: m_tok = tokenStreamPeek(ts)
+                                          mut as string: mv = "" + m_tok["val"]
+                                          route {
+                                                mv == "}" or tokenIsEof(m_tok) ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                      break
+                                                }
+                                                mv == "," or mv == "\\n" or m_tok["type"] == "NEWLINE" ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                                _ ==> {
+                                                      mut as bool: is_dot_key = false
+                                                      mut as string: dot_key_str = ""
+                                                      mut as int64: mv_len = stdCollectionLength(mv)
+                                                      route {
+                                                            mv == "." ==> {
+                                                                  is_dot_key = true
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  mut as map: kn_tok = tokenStreamPeek(ts)
+                                                                  dot_key_str = "" + kn_tok["val"]
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                            mv_len > 1 and mv[1] == "." ==> {
+                                                                  is_dot_key = true
+                                                                  dot_key_str = mv[2..mv_len]
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            is_dot_key ==> {
+                                                                  mut as map: peek_of = tokenStreamPeek(ts)
+                                                                  route {
+                                                                        ("" + peek_of["val"]) == "of" ==> {
+                                                                              ts = tokenStreamAdvance(ts)
+                                                                              mut as map: kt_res = parseTypeRef(ts, ar)
+                                                                              ts = kt_res["stream"]
+                                                                              ar = kt_res["arena"]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  ar = astArenaAllocNode(ar, "LIT_STRING", dot_key_str, 0, 0, [])
+                                                                  kv_ids = stdListPushBack(kv_ids, ar["last_id"])
+                                                            }
+                                                            _ ==> {
+                                                                  mut as map: k_res = parseExpression(ts, ar)
+                                                                  ts = k_res["stream"]
+                                                                  ar = k_res["arena"]
+                                                                  kv_ids = stdListPushBack(kv_ids, k_res["node_id"])
+                                                            }
+                                                      }
+                                                      mut as map: m_col = tokenStreamMatch(ts, "OP", ":")
+                                                      route {
+                                                            m_col["matched"] ==> { ts = m_col["stream"] }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as map: v_res = parseExpression(ts, ar)
+                                                      ts = v_res["stream"]
+                                                      ar = v_res["arena"]
+                                                      kv_ids = stdListPushBack(kv_ids, v_res["node_id"])
+                                                }
+                                          }
+                                    }
+                                    ar = astArenaAllocNode(ar, "LIT_MAP", "", 0, 0, kv_ids)
+                              }
+                              _ ==> {
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                              }
+                        }
+                  }
+                  ctype == "IDENT" ==> {
+                        mut as map: nxt = tokenStreamPeek(ts)
+                        mut as string: nval = "" + nxt["val"]
+                        route {
+                              nval == "(" ==> {
+                                    ts = tokenStreamAdvance(ts)
+                                    infinite {
+                                          mut as map: nskip = tokenStreamPeek(ts)
+                                          route {
+                                                nskip["type"] == "NEWLINE" or nskip["val"] == "\\n" ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                                _ ==> { break }
+                                          }
+                                    }
+                                    #L  Verifica se e instanciacao de struct com .campo:
+                                    mut as map: peek_arg = tokenStreamPeek(ts)
+                                    mut as string: pav = "" + peek_arg["val"]
+                                    route {
+                                          pav == "." ==> {
+                                                mut as list of data: field_pairs = []
+                                                infinite {
+                                                      mut as map: ftok = tokenStreamPeek(ts)
+                                                      mut as string: fv = "" + ftok["val"]
+                                                      route {
+                                                            fv == ")" or tokenIsEof(ftok) ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  break
+                                                            }
+                                                            fv == "," or fv == "\\n" or ftok["type"] == "NEWLINE" ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                            fv == "." ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  mut as map: fntok = tokenStreamPeek(ts)
+                                                                  mut as string: fname = "" + fntok["val"]
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  mut as map: m_col = tokenStreamMatch(ts, "OP", ":")
+                                                                  route {
+                                                                        m_col["matched"] ==> { ts = m_col["stream"] }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  mut as map: fv_res = parseExpression(ts, ar)
+                                                                  ts = fv_res["stream"]
+                                                                  ar = fv_res["arena"]
+                                                                  ar = astArenaAllocNode(ar, "FIELD_INIT", fname, 0, fv_res["node_id"], [])
+                                                                  field_pairs = stdListPushBack(field_pairs, ar["last_id"])
+                                                            }
+                                                            _ ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                      }
+                                                }
+                                                ar = astArenaAllocNode(ar, "STRUCT_INIT", cval, 0, 0, field_pairs)
+                                          }
+                                          _ ==> {
+                                                #L  Chamada regular func(...)
+                                                mut as list of data: args = []
+                                                mut as map: m_close = tokenStreamMatch(ts, "OP", ")")
+                                                route {
+                                                      m_close["matched"] ==> {
+                                                            ts = m_close["stream"]
+                                                      }
+                                                      _ ==> {
+                                                            mut as map: arg_res = parseExpression(ts, ar)
+                                                            ts = arg_res["stream"]
+                                                            ar = arg_res["arena"]
+                                                            args = stdListPushBack(args, arg_res["node_id"])
+                                                            mut as map: m_end = tokenStreamMatch(ts, "OP", ")")
+                                                            route {
+                                                                  m_end["matched"] ==> { ts = m_end["stream"] }
+                                                                  _ ==> {}
+                                                            }
+                                                      }
+                                                }
+                                                ar = astArenaAllocNode(ar, "CALL", cval, 0, 0, args)
+                                          }
+                                    }
+                              }
+                              _ ==> {
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                              }
+                        }
+                  }
+                  cval == "(" ==> {
+                        mut as map: sub_res = parseExpression(ts, ar)
+                        ts = sub_res["stream"]
+                        ar = sub_res["arena"]
+                        mut as map: m_paren = tokenStreamMatch(ts, "OP", ")")
+                        route {
+                              m_paren["matched"] ==> { ts = m_paren["stream"] }
+                              _ ==> {}
+                        }
+                        mut as map: p_res = map{}
+                        p_res["stream"] = ts
+                        p_res["arena"] = ar
+                        p_res["node_id"] = sub_res["node_id"]
+                        emit(nice, p_res, "ok")
+                  }
+                  _ ==> {
+                        ar = astArenaAllocNode(ar, "RAW", cval, 0, 0, [])
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = ar["last_id"]
+            emit(nice, res, "ok")
+      }
+
+      op parsePostfix (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parsePrimary(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        #L  1. Acesso a campo: .campo
+                        cval == "." ==> {
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: ftok = tokenStreamPeek(ts)
+                              mut as string: fname = "" + ftok["val"]
+                              ts = tokenStreamAdvance(ts)
+                              ar = astArenaAllocNode(ar, "FIELD_ACCESS", fname, left_id, 0, [])
+                              left_id = ar["last_id"]
+                        }
+                        #L  2. Resolucao de escopo: ::membro
+                        cval == "::" ==> {
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: stok = tokenStreamPeek(ts)
+                              mut as string: sname = "" + stok["val"]
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: call_peek = tokenStreamPeek(ts)
+                              mut as string: cp_val = "" + call_peek["val"]
+                              route {
+                                    cp_val == "(" ==> {
+                                          ts = tokenStreamAdvance(ts)
+                                          infinite {
+                                                mut as map: nskip2 = tokenStreamPeek(ts)
+                                                route {
+                                                      nskip2["type"] == "NEWLINE" or nskip2["val"] == "\\n" ==> {
+                                                            ts = tokenStreamAdvance(ts)
+                                                      }
+                                                      _ ==> { break }
+                                                }
+                                          }
+                                          mut as map: peek_arg2 = tokenStreamPeek(ts)
+                                          mut as string: pav2 = "" + peek_arg2["val"]
+                                          route {
+                                                pav2 == "." ==> {
+                                                      mut as list of data: field_pairs2 = []
+                                                      infinite {
+                                                            mut as map: ftok2 = tokenStreamPeek(ts)
+                                                            mut as string: fv2 = "" + ftok2["val"]
+                                                            route {
+                                                                  fv2 == ")" or tokenIsEof(ftok2) ==> {
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                        break
+                                                                  }
+                                                                  fv2 == "," or fv2 == "\\n" or ftok2["type"] == "NEWLINE" ==> {
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                  }
+                                                                  fv2 == "." ==> {
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                        mut as map: fntok2 = tokenStreamPeek(ts)
+                                                                        mut as string: fname2 = "" + fntok2["val"]
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                        mut as map: m_col2 = tokenStreamMatch(ts, "OP", ":")
+                                                                        route {
+                                                                              m_col2["matched"] ==> { ts = m_col2["stream"] }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        mut as map: fv_res2 = parseExpression(ts, ar)
+                                                                        ts = fv_res2["stream"]
+                                                                        ar = fv_res2["arena"]
+                                                                        ar = astArenaAllocNode(ar, "FIELD_INIT", fname2, 0, fv_res2["node_id"], [])
+                                                                        field_pairs2 = stdListPushBack(field_pairs2, ar["last_id"])
+                                                                  }
+                                                                  _ ==> {
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                  }
+                                                            }
+                                                      }
+                                                      ar = astArenaAllocNode(ar, "STRUCT_INIT", astArenaNodeValue(ar, left_id) + "::" + sname, 0, 0, field_pairs2)
+                                                      left_id = ar["last_id"]
+                                                }
+                                                _ ==> {
+                                                      mut as list of data: call_args = []
+                                                      mut as map: m_cl = tokenStreamMatch(ts, "OP", ")")
+                                                      route {
+                                                            m_cl["matched"] ==> { ts = m_cl["stream"] }
+                                                            _ ==> {
+                                                                  mut as map: ca_res = parseExpression(ts, ar)
+                                                                  ts = ca_res["stream"]
+                                                                  ar = ca_res["arena"]
+                                                                  call_args = stdListPushBack(call_args, ca_res["node_id"])
+                                                                  mut as map: m_cend = tokenStreamMatch(ts, "OP", ")")
+                                                                  route {
+                                                                        m_cend["matched"] ==> { ts = m_cend["stream"] }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                      }
+                                                      ar = astArenaAllocNode(ar, "CALL", astArenaNodeValue(ar, left_id) + "::" + sname, 0, 0, call_args)
+                                                      left_id = ar["last_id"]
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          ar = astArenaAllocNode(ar, "SCOPE_RESOLVE", sname, left_id, 0, [])
+                                          left_id = ar["last_id"]
+                                    }
+                              }
+                        }
+                        #L  3. Indexacao / Fatiamento / Multidimensional: [expr] ou [start..end] ou [..end] ou [start..] ou [..] ou [i1, i2]
+                        cval == "[" ==> {
+                              ts = tokenStreamAdvance(ts)
+                              #L  Verifica se comeca com .. (ex: [..2] ou [..])
+                              mut as map: m_dotdot_start = tokenStreamMatch(ts, "OP", "..")
+                              route {
+                                    m_dotdot_start["matched"] ==> {
+                                          ts = m_dotdot_start["stream"]
+                                          mut as map: m_end_br = tokenStreamMatch(ts, "OP", "]")
+                                          route {
+                                                m_end_br["matched"] ==> {
+                                                      #L  [..] fatia completa
+                                                      ts = m_end_br["stream"]
+                                                      ar = astArenaAllocNode(ar, "SLICE_ACCESS", "..", left_id, 0, [0])
+                                                      left_id = ar["last_id"]
+                                                }
+                                                _ ==> {
+                                                      #L  [..fim]
+                                                      mut as map: end_res = parseExpression(ts, ar)
+                                                      ts = end_res["stream"]
+                                                      ar = end_res["arena"]
+                                                      mut as int64: end_id = end_res["node_id"]
+                                                      mut as map: m_br2 = tokenStreamMatch(ts, "OP", "]")
+                                                      route {
+                                                            m_br2["matched"] ==> { ts = m_br2["stream"] }
+                                                            _ ==> {}
+                                                      }
+                                                      ar = astArenaAllocNode(ar, "SLICE_ACCESS", "..", left_id, 0, [end_id])
+                                                      left_id = ar["last_id"]
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          #L  Comeca com expressao: [expr...]
+                                          mut as map: idx_res = parseExpression(ts, ar)
+                                          ts = idx_res["stream"]
+                                          ar = idx_res["arena"]
+                                          mut as int64: idx_id = idx_res["node_id"]
+                                          mut as map: m_dotdot = tokenStreamMatch(ts, "OP", "..")
+                                          route {
+                                                m_dotdot["matched"] ==> {
+                                                      ts = m_dotdot["stream"]
+                                                      mut as map: m_br_end = tokenStreamMatch(ts, "OP", "]")
+                                                      route {
+                                                            m_br_end["matched"] ==> {
+                                                                  #L  [inicio..]
+                                                                  ts = m_br_end["stream"]
+                                                                  ar = astArenaAllocNode(ar, "SLICE_ACCESS", "..", left_id, idx_id, [0])
+                                                                  left_id = ar["last_id"]
+                                                            }
+                                                            _ ==> {
+                                                                  #L  [inicio..fim]
+                                                                  mut as map: end_res = parseExpression(ts, ar)
+                                                                  ts = end_res["stream"]
+                                                                  ar = end_res["arena"]
+                                                                  mut as int64: end_id = end_res["node_id"]
+                                                                  mut as map: m_br3 = tokenStreamMatch(ts, "OP", "]")
+                                                                  route {
+                                                                        m_br3["matched"] ==> { ts = m_br3["stream"] }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  ar = astArenaAllocNode(ar, "SLICE_ACCESS", "..", left_id, idx_id, [end_id])
+                                                                  left_id = ar["last_id"]
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      #L  Multidimensional [i1, i2] ou indexacao simples [i1]
+                                                      mut as map: m_comma = tokenStreamMatch(ts, "OP", ",")
+                                                      route {
+                                                            m_comma["matched"] ==> {
+                                                                  ts = m_comma["stream"]
+                                                                  mut as map: idx2_res = parseExpression(ts, ar)
+                                                                  ts = idx2_res["stream"]
+                                                                  ar = idx2_res["arena"]
+                                                                  mut as int64: idx2_id = idx2_res["node_id"]
+                                                                  mut as map: m_br_multi = tokenStreamMatch(ts, "OP", "]")
+                                                                  route {
+                                                                        m_br_multi["matched"] ==> { ts = m_br_multi["stream"] }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  ar = astArenaAllocNode(ar, "INDEX_ACCESS", "MULTI", left_id, idx_id, [idx2_id])
+                                                                  left_id = ar["last_id"]
+                                                            }
+                                                            _ ==> {
+                                                                  mut as map: m_end_br = tokenStreamMatch(ts, "OP", "]")
+                                                                  route {
+                                                                        m_end_br["matched"] ==> { ts = m_end_br["stream"] }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  ar = astArenaAllocNode(ar, "INDEX_ACCESS", "", left_id, idx_id, [])
+                                                                  left_id = ar["last_id"]
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                        #L  4. Casts / Type annotations: as <type> ou of <type>
+                        cval == "as" or cval == "of" ==> {
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: t_res = parseTypeRef(ts, ar)
+                              ts = t_res["stream"]
+                              ar = t_res["arena"]
+                              ar = astArenaAllocNode(ar, "CAST_EXPR", astArenaNodeValue(ar, t_res["node_id"]), left_id, t_res["node_id"], [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseMultiplicative (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parsePostfix(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        (ctype == "OP") and (cval == "*" or cval == "/" or cval == "/r" or cval == "/f" or cval == "/i" or cval == "%") ==> {
+                              mut as string: b_op = cval
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: right_res = parsePostfix(ts, ar)
+                              ts = right_res["stream"]
+                              ar = right_res["arena"]
+                              mut as int64: right_id = right_res["node_id"]
+                              ar = astArenaAllocNode(ar, "BINARY_EXPR", b_op, left_id, right_id, [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseAdditive (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parseMultiplicative(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        (ctype == "OP") and (cval == "+" or cval == "-") ==> {
+                              mut as string: b_op = cval
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: right_res = parseMultiplicative(ts, ar)
+                              ts = right_res["stream"]
+                              ar = right_res["arena"]
+                              mut as int64: right_id = right_res["node_id"]
+                              ar = astArenaAllocNode(ar, "BINARY_EXPR", b_op, left_id, right_id, [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseRange (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parseAdditive(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        (ctype == "OP") and (cval == "..") ==> {
+                              mut as string: b_op = cval
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: right_res = parseAdditive(ts, ar)
+                              ts = right_res["stream"]
+                              ar = right_res["arena"]
+                              mut as int64: right_id = right_res["node_id"]
+                              ar = astArenaAllocNode(ar, "BINARY_EXPR", b_op, left_id, right_id, [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseRelational (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parseRange(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        (ctype == "OP" or cval == "in") and (cval == "==" or cval == "!=" or cval == "<" or cval == "<=" or cval == ">" or cval == ">=" or cval == "in") ==> {
+                              mut as string: b_op = cval
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: right_res = parseRange(ts, ar)
+                              ts = right_res["stream"]
+                              ar = right_res["arena"]
+                              mut as int64: right_id = right_res["node_id"]
+                              ar = astArenaAllocNode(ar, "BINARY_EXPR", b_op, left_id, right_id, [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseLogicalAnd (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parseRelational(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        (cval == "and" or cval == "&&") ==> {
+                              mut as string: b_op = cval
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: right_res = parseRelational(ts, ar)
+                              ts = right_res["stream"]
+                              ar = right_res["arena"]
+                              mut as int64: right_id = right_res["node_id"]
+                              ar = astArenaAllocNode(ar, "BINARY_EXPR", b_op, left_id, right_id, [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseLogicalOr (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parseLogicalAnd(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        (cval == "or" or cval == "||") ==> {
+                              mut as string: b_op = cval
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: right_res = parseLogicalAnd(ts, ar)
+                              ts = right_res["stream"]
+                              ar = right_res["arena"]
+                              mut as int64: right_id = right_res["node_id"]
+                              ar = astArenaAllocNode(ar, "BINARY_EXPR", b_op, left_id, right_id, [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+
+      op parseExpression (as map: stream, as map: arena) as map ==> {
+            mut as map: left_res = parseLogicalOr(stream, arena)
+            mut as map: ts = left_res["stream"]
+            mut as map: ar = left_res["arena"]
+            mut as int64: left_id = left_res["node_id"]
+
+            infinite {
+                  mut as map: cur = tokenStreamPeek(ts)
+                  mut as string: ctype = "" + cur["type"]
+                  mut as string: cval = "" + cur["val"]
+
+                  route {
+                        cval == "-->" ==> {
+                              ts = tokenStreamAdvance(ts)
+                              mut as map: r_res = parseLogicalOr(ts, ar)
+                              ts = r_res["stream"]
+                              ar = r_res["arena"]
+                              ar = astArenaAllocNode(ar, "PIPELINE", "-->", left_id, r_res["node_id"], [])
+                              left_id = ar["last_id"]
+                        }
+                        _ ==> { break }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["stream"] = ts
+            res["arena"] = ar
+            res["node_id"] = left_id
+            emit(nice, res, "ok")
+      }
+}
