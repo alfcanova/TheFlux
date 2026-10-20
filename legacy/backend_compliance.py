@@ -31,7 +31,7 @@ SRC = RAIZ / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-FLUX_DIR = RAIZ / "flux"
+FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
 T_FVMBC = RAIZ / "t_fvmbc"
 T_LLVM = RAIZ / "t_llvm"
 T_WAT = RAIZ / "t_wat-1.0"

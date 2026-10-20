@@ -25,8 +25,9 @@ FILES = [
 ]
 
 def run_cmd(cmd: list[str]) -> tuple[int, str]:
+    legacy_dir = ROOT / "legacy" if (ROOT / "legacy").exists() else ROOT / "backup"
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{ROOT / 'src'}{os.pathsep}{ROOT / 'backup' / 'src'}"
+    env["PYTHONPATH"] = f"{ROOT / 'src'}{os.pathsep}{legacy_dir / 'src'}"
     res = subprocess.run(cmd, cwd=ROOT, env=env, capture_output=True, text=True, errors="replace", timeout=30)
     out = res.stdout.replace("\r\n", "\n").strip()
     return res.returncode, out
@@ -45,9 +46,9 @@ def main():
         t0 = time.time()
 
         # 1. Reference
-        c1, out1 = run_cmd([sys.executable, str(ROOT / "backup" / "flux_in.py"), str(ex_path)])
+        c1, out1 = run_cmd([sys.executable, str(legacy_dir / "flux_in.py"), str(ex_path)])
         # 2. Self-Hosted
-        c2, out2 = run_cmd([sys.executable, str(ROOT / "backup" / "flux_in.py"), str(ROOT / "src" / "main.flux"), "--target", "in", str(ex_path)])
+        c2, out2 = run_cmd([sys.executable, str(legacy_dir / "flux_in.py"), str(ROOT / "src" / "main.flux"), "--target", "in", str(ex_path)])
         # 3. Independent Binary
         c3, out3 = run_cmd([str(BIN_FLUXC), "--target", "in", str(ex_path)])
         dt = time.time() - t0

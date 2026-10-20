@@ -69,10 +69,14 @@ t_llvm/*
 t_wasm-*/*
 !t_wasm-*/.gitkeep
 t_wat-*/*
-!t_wat-*/.gitkeep
-t_wasm/*
-!t_wasm/.gitkeep
-t_wat/*
+!t_wat-*/.gitkeep
+
+t_wasm/*
+
+!t_wasm/.gitkeep
+
+t_wat/*
+
 !t_wat/.gitkeep
 
 

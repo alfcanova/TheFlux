@@ -35,7 +35,8 @@ def sha256_file(path: Path) -> str:
 
 def run_cmd(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{ROOT / 'src'}{os.pathsep}{ROOT / 'backup' / 'src'}"
+    legacy_src = ROOT / "legacy" / "src" if (ROOT / "legacy" / "src").exists() else ROOT / "backup" / "src"
+    env["PYTHONPATH"] = f"{ROOT / 'src'}{os.pathsep}{legacy_src}"
     res = subprocess.run(cmd, cwd=cwd or ROOT, env=env, capture_output=True, text=True, errors="replace")
     return res.returncode, res.stdout.strip(), res.stderr.strip()
 
