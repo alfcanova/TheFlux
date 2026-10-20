@@ -1,7 +1,7 @@
 """Runner e validador de conformidade para a suíte Numerical Recipes v3 em TheFlux.
 
 Executado diretamente dentro de examples/NumericalRecipes/:
-1. Copia NumericalRecipes_compliance.md -> NumericalRecipes_compliance_OLD.md como baseline.
+1. Copia NumericalRecipes_compliance00.md -> NumericalRecipes_compliance01.md como baseline.
 2. Não retesta arquivos que já estejam 100% validados (6/6 OK) na tabela anterior (modo incremental).
 3. Testa novos arquivos ou arquivos não validados nos 6 backends:
      in, vm, vmr, llvm, wat, wasm
@@ -28,18 +28,25 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-RAIZ = SCRIPT_DIR.parent.parent
+RAIZ = SCRIPT_DIR if (SCRIPT_DIR / "src").exists() else SCRIPT_DIR.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
 import os
 os.chdir(RAIZ)
 
-import backend_compliance as bc
+try:
+    import compliance_BE as bc
+except ImportError:
+    import backend_compliance as bc
 
-NR_DIR = SCRIPT_DIR
-COMPLIANCE_MD = SCRIPT_DIR / "NumericalRecipes_compliance.md"
-COMPLIANCE_OLD_MD = SCRIPT_DIR / "NumericalRecipes_compliance_OLD.md"
+NR_DIR = SCRIPT_DIR if (SCRIPT_DIR / "01_preliminaries").exists() else SCRIPT_DIR.parent / "examples" / "NumericalRecipes"
+if not NR_DIR.exists():
+    NR_DIR = RAIZ / "examples" / "NumericalRecipes"
+COMPLIANCE_MD = SCRIPT_DIR / "NumericalRecipes_compliance00.md"
+COMPLIANCE_OLD_MD = SCRIPT_DIR / "NumericalRecipes_compliance01.md"
 
 COL_NAME_WIDTH = 77
 
@@ -108,7 +115,7 @@ def gerar_nr_compliance_md(
     all_flux_files: list[Path],
     old_results: dict[str, dict[str, bool]],
 ) -> list[tuple[str, dict[str, bool], dict[str, bool]]]:
-    """Gera o arquivo NumericalRecipes_compliance.md estruturado por capítulos e com seção de regressão."""
+    """Gera o arquivo NumericalRecipes_compliance00.md estruturado por capítulos e com seção de regressão."""
     cat_files: dict[str, list[tuple[str, Path]]] = {}
     for path in all_flux_files:
         rel = path.resolve().relative_to(NR_DIR.resolve())
@@ -195,7 +202,7 @@ def run_nr_compliance(
     write_md: bool = True,
 ) -> int:
     """Executa a verificação dos 6 backends para os algoritmos de Numerical Recipes."""
-    # 1. Copia NumericalRecipes_compliance.md -> NumericalRecipes_compliance_OLD.md se existir
+    # 1. Copia NumericalRecipes_compliance00.md -> NumericalRecipes_compliance01.md se existir
     if COMPLIANCE_MD.exists():
         try:
             shutil.copyfile(COMPLIANCE_MD, COMPLIANCE_OLD_MD)
@@ -315,7 +322,7 @@ def main():
     parser = argparse.ArgumentParser(description="Validador de conformidade multi-backend para Numerical Recipes v3")
     parser.add_argument("--filter", "-f", type=str, default=None, help="Filtra arquivos por substring no nome")
     parser.add_argument("--force", action="store_true", help="Força reteste de todos os arquivos, mesmo os 100%% OK")
-    parser.add_argument("--no-md", action="store_true", help="Não regera o arquivo NumericalRecipes_compliance.md")
+    parser.add_argument("--no-md", action="store_true", help="Não regera o arquivo NumericalRecipes_compliance00.md")
     args = parser.parse_args()
 
     rc = run_nr_compliance(filter_arg=args.filter, force=args.force, write_md=not args.no_md)

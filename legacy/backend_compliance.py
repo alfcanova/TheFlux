@@ -98,6 +98,8 @@ def stdin_para(path: Path) -> str:
         return "\n".join(inputs) + "\n"
     return STDIN_MAP.get(path.name, "")
 
+obter_stdin_para_arquivo = stdin_para
+
 EXPECT_ERROR_RE = re.compile(r"^#L\s+EXPECT_ERROR:\s*([A-Z]{2,4}\d{3})", re.MULTILINE)
 
 
@@ -188,6 +190,8 @@ def saida_interp(path: Path, stdin_text: str) -> str | None:
     if r.returncode != 0:
         return None
     return r.stdout
+
+run_interpreter = saida_interp
 
 
 def saida_vm(path: Path, stdin_text: str) -> str | None:

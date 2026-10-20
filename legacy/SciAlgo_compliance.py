@@ -1,7 +1,7 @@
 """Runner e validador de conformidade para a suíte de algoritmos científicos (SciAlgo).
 
 Executado diretamente dentro de examples/SciAlgo/:
-1. Copia SciAlgo_compliance.md -> SciAlgo_compliance_OLD.md como baseline.
+1. Copia SciAlgo_compliance00.md -> SciAlgo_compliance01.md como baseline.
 2. Não retesta arquivos que já estejam 100% validados (6/6 OK) na tabela anterior (modo incremental).
 3. Testa novos arquivos ou arquivos não validados nos 6 backends:
      in, vm, vmr, llvm, wat, wasm
@@ -28,15 +28,22 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-RAIZ = SCRIPT_DIR.parent.parent
+RAIZ = SCRIPT_DIR if (SCRIPT_DIR / "src").exists() else SCRIPT_DIR.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
-import backend_compliance as bc
+try:
+    import compliance_BE as bc
+except ImportError:
+    import backend_compliance as bc
 
-ALGO_DIR = SCRIPT_DIR
-COMPLIANCE_MD = SCRIPT_DIR / "SciAlgo_compliance.md"
-COMPLIANCE_OLD_MD = SCRIPT_DIR / "SciAlgo_compliance_OLD.md"
+ALGO_DIR = SCRIPT_DIR if (SCRIPT_DIR / "01_foundations").exists() else SCRIPT_DIR.parent / "examples" / "SciAlgo"
+if not ALGO_DIR.exists():
+    ALGO_DIR = RAIZ / "examples" / "SciAlgo"
+COMPLIANCE_MD = SCRIPT_DIR / "SciAlgo_compliance00.md"
+COMPLIANCE_OLD_MD = SCRIPT_DIR / "SciAlgo_compliance01.md"
 
 COL_NAME_WIDTH = 77  # 67 + 10 caracteres adicionados para prevenir qualquer estouro de coluna
 
@@ -96,7 +103,7 @@ def gerar_scialgo_compliance_md(
     all_flux_files: list[Path],
     old_results: dict[str, dict[str, bool]],
 ) -> list[tuple[str, dict[str, bool], dict[str, bool]]]:
-    """Gera o arquivo SciAlgo_compliance.md estruturado por categorias e com seção de regressão."""
+    """Gera o arquivo SciAlgo_compliance00.md estruturado por categorias e com seção de regressão."""
     cat_files: dict[str, list[tuple[str, Path]]] = {}
     for path in all_flux_files:
         rel = path.resolve().relative_to(ALGO_DIR.resolve())
@@ -178,7 +185,7 @@ def run_scientific_compliance(
     write_md: bool = True,
 ) -> int:
     """Executa a verificação dos 6 backends para os algoritmos de SciAlgo."""
-    # 1. Copia SciAlgo_compliance.md -> SciAlgo_compliance_OLD.md se existir
+    # 1. Copia SciAlgo_compliance00.md -> SciAlgo_compliance01.md se existir
     if COMPLIANCE_MD.exists():
         try:
             shutil.copyfile(COMPLIANCE_MD, COMPLIANCE_OLD_MD)
@@ -301,7 +308,7 @@ def run_scientific_compliance(
             detalhes = [c for c in bc.COLS if l_old.get(c, False) and not l_new.get(c, False)]
             print(f"  ❌ {fname} regrediu nos backends: {', '.join(detalhes)}")
     else:
-        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao SciAlgo_compliance_OLD.md!")
+        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao SciAlgo_compliance01.md!")
 
     if falhas:
         print("\nFalhas detalhadas:")
@@ -323,7 +330,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Testa e gera matriz de conformidade da suíte SciAlgo.")
     parser.add_argument("--filter", "-f", help="Filtra por substring no nome do arquivo", default=None)
     parser.add_argument("--force", action="store_true", help="Força o reteste de todos os arquivos, mesmo já validados")
-    parser.add_argument("--no-md", action="store_true", help="Não atualiza o arquivo SciAlgo_compliance.md")
+    parser.add_argument("--no-md", action="store_true", help="Não atualiza o arquivo SciAlgo_compliance00.md")
     args = parser.parse_args()
     return run_scientific_compliance(filter_arg=args.filter, force=args.force, write_md=not args.no_md)
 
