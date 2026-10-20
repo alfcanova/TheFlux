@@ -240,6 +240,10 @@ def saida_interp(path: Path, stdin_text: str) -> str | None:
     return r.stdout
 
 
+run_interpreter = saida_interp
+obter_stdin_para_arquivo = stdin_para
+
+
 def saida_vm(path: Path, stdin_text: str) -> str | None:
     out = _run(COMPILER_CMD + ["--target", "vmr", "-o", str(T_FVMBC / path.stem), str(path.resolve())], input_text=stdin_text, timeout=10)
     if out.returncode != 0:
@@ -559,6 +563,10 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
 
 
 def main() -> int:
+    if any(a in ("-h", "--help") for a in sys.argv[1:]):
+        print(__doc__)
+        return 0
+
     filter_arg = None
     compiler_arg = None
     force = False
@@ -587,8 +595,8 @@ def main() -> int:
     if compiler_arg:
         COMPILER_CMD = resolver_compilador_selfhosted(compiler_arg)
 
-    md_path = RAIZ / "compliance_backend00.md"
-    old_md_path = RAIZ / "compliance_backend01.md"
+    md_path = RAIZ / "compliance_BE00.md"
+    old_md_path = RAIZ / "compliance_BE01.md"
 
     is_full_canonical = not filter_arg or filter_arg in ("flux", "flux/", str(FLUX_DIR), str(FLUX_DIR.resolve()))
 
@@ -597,8 +605,12 @@ def main() -> int:
         print(f"Copiado: {md_path.name} -> {old_md_path.name}")
 
     old_results = ler_tabela_md(old_md_path) if old_md_path.exists() else {}
-    if len(old_results) < 50 and md_path.exists():
-        cur_results = ler_tabela_md(md_path)
+    if len(old_results) < 50:
+        for legacy_md in (RAIZ / "compliance_backend00.md", md_path):
+            if legacy_md.exists():
+                cur_results = ler_tabela_md(legacy_md)
+                if len(cur_results) > len(old_results):
+                    old_results = cur_results
         if len(cur_results) > len(old_results):
             old_results = cur_results
 

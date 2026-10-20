@@ -29,17 +29,25 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-RAIZ = SCRIPT_DIR.parent.parent
+if (SCRIPT_DIR / "bin").exists() and (SCRIPT_DIR / "src").exists():
+    RAIZ = SCRIPT_DIR
+    ALGO_DIR = RAIZ / "examples" / "SciAlgo"
+else:
+    RAIZ = SCRIPT_DIR.parent.parent
+    ALGO_DIR = SCRIPT_DIR
+
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
 os.chdir(RAIZ)
 
-import backend_selfhosted as bsh
+try:
+    import compliance_BE as bsh
+except ImportError:
+    import backend_selfhosted as bsh
 
-ALGO_DIR = SCRIPT_DIR
-COMPLIANCE_MD = SCRIPT_DIR / "SciAlgo_selfhosted.md"
-COMPLIANCE_OLD_MD = SCRIPT_DIR / "SciAlgo_selfhosted_OLD.md"
+COMPLIANCE_MD = RAIZ / "compliance_SA00.md"
+COMPLIANCE_OLD_MD = RAIZ / "compliance_SA01.md"
 
 COL_NAME_WIDTH = 77
 
@@ -191,8 +199,12 @@ def run_scientific_compliance(
     old_results = ler_tabela_md(COMPLIANCE_OLD_MD) if COMPLIANCE_OLD_MD.exists() else {}
     if not old_results and COMPLIANCE_MD.exists():
         old_results = ler_tabela_md(COMPLIANCE_MD)
-    if not old_results and (SCRIPT_DIR / "SciAlgo_compliance.md").exists():
-        old_results = ler_tabela_md(SCRIPT_DIR / "SciAlgo_compliance.md")
+    if not old_results:
+        for cand in (ALGO_DIR / "SciAlgo.md", SCRIPT_DIR / "SciAlgo_compliance.md", SCRIPT_DIR / "SciAlgo_selfhosted.md"):
+            if cand.exists():
+                old_results = ler_tabela_md(cand)
+                if old_results:
+                    break
 
     bsh.limpar_t()
     for d in (bsh.T_FVMBC, bsh.T_LLVM, bsh.T_WAT, bsh.T_WASM):
