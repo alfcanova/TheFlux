@@ -16,6 +16,7 @@ from flux_proto.vm.runtime import execute_bytecode
 
 RAIZ = Path(__file__).resolve().parent
 T_FVMBC = RAIZ / "t_fvmbc"
+FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
 
 import os
 
@@ -29,6 +30,8 @@ STDIN_MAP: dict[str, str] = {
 }
 
 fvmbc_files = sorted(T_FVMBC.glob("*.fvmbc"))
+if not fvmbc_files and (RAIZ.parent / "t_fvmbc").exists():
+    fvmbc_files = sorted((RAIZ.parent / "t_fvmbc").glob("*.fvmbc"))
 acertos = 0
 erros = 0
 

@@ -8,7 +8,7 @@ Backends (colunas da tabela): in, vm, vmr, llvm, wat, wasm
     wat   WAT -> wat2wasm -> wasmer
     wasm  WASM binario -> wasmer
 
-Gera backend_compliance.md com tabela de checks e totalizacao.
+Gera backend_compliance00.md com tabela de checks e totalizacao.
 
 Uso: python backend_compliance.py [--out DIR] [--stdin 'k=texto']
 """
@@ -34,8 +34,8 @@ if str(SRC) not in sys.path:
 FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
 T_FVMBC = RAIZ / "t_fvmbc"
 T_LLVM = RAIZ / "t_llvm"
-T_WAT = RAIZ / "t_wat-1.0"
-T_WASM = RAIZ / "t_wasm-1.0"
+T_WAT = RAIZ / "t_wat"
+T_WASM = RAIZ / "t_wasm"
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",
@@ -121,16 +121,10 @@ os.environ["FLUX_CI"] = "1"
 ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="utf-8", FLUX_CI="1")
 
 T_DIRS = [
-    RAIZ / "t_benchmarks",
     RAIZ / "t_fvmbc",
-    RAIZ / "t_general",
     RAIZ / "t_llvm",
-    RAIZ / "t_wasm-1.0",
-    RAIZ / "t_wasm-2.0",
-    RAIZ / "t_wasm-3.0",
-    RAIZ / "t_wat-1.0",
-    RAIZ / "t_wat-2.0",
-    RAIZ / "t_wat-3.0",
+    RAIZ / "t_wasm",
+    RAIZ / "t_wat",
     RAIZ / "intermediates" / "llvm",
 ]
 
@@ -438,10 +432,10 @@ def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
 
 
 def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_path: Path, outs: dict[str, dict[str, str | None]], old_results: dict[str, dict[str, bool]] | None = None) -> None:
-    """Gera backend_compliance.md: tabela paginada com ✅ verde / ❌ vermelho por
+    """Gera backend_compliance00.md: tabela paginada com ✅ verde / ❌ vermelho por
     backend e coluna result (verde se todos os backends concordam, vermelho caso
     contrario), seguida da totalizacao por backend, secao de regressao (comparando
-    com backend_compliance_OLD.md) e, por fim, blocos com as saidas colunadas dos
+    com backend_compliance01.md) e, por fim, blocos com as saidas colunadas dos
     arquivos que divergem."""
     larg_arq = max([len(n) for n in results] + [len("arquivo")])
 
@@ -548,10 +542,10 @@ def main() -> int:
         elif not a.startswith("--"):
             filter_arg = a
             break
-    md_path = RAIZ / "backend_compliance.md"
-    old_md_path = RAIZ / "backend_compliance_OLD.md"
+    md_path = RAIZ / "backend_compliance00.md"
+    old_md_path = RAIZ / "backend_compliance01.md"
 
-    # Copia backend_compliance.md para backend_compliance_OLD.md antes de executar
+    # Copia backend_compliance00.md para backend_compliance01.md antes de executar
     if not filter_arg and md_path.exists():
         shutil.copyfile(md_path, old_md_path)
         print(f"Copiado: {md_path.name} -> {old_md_path.name}")
@@ -698,7 +692,7 @@ def main() -> int:
             detalhes = [c for c in COLS if old_results[r].get(c, False) and not results[r].get(c, False)]
             print(f"  ❌ {r} regrediu em: {', '.join(detalhes)}")
     else:
-        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao backend_compliance_OLD.md!")
+        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao backend_compliance01.md!")
 
     print()
     print("Legenda:  {} coincide com o interpretador   {} diverge ou falhou".format(GREEN, RED))

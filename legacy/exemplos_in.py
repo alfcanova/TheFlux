@@ -14,7 +14,7 @@ if str(SRC) not in sys.path:
 from flux_proto.cli import main as run_flux
 
 RAIZ = Path(__file__).resolve().parent
-FLUX_DIR = RAIZ / "flux"
+FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
 flux_files = sorted(FLUX_DIR.glob("*.flux"))
 
 T_FVMBC = RAIZ / "t_fvmbc"
