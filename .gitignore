@@ -10,8 +10,6 @@ __pycache__/
 *$py.class
 *.egg-info/
 dist/
-build/
-bin/
 .venv/
 venv/
 ENV/
@@ -54,7 +52,10 @@ artifacts/
 intermediates/
 temp/
 scratch/
-build/
+build/intermediates/*
+!build/intermediates/.gitkeep
+build/intermediates/tmp/*
+!build/intermediates/tmp/.gitkeep
 bin/
 
 # Pastas de testes t_* preservadas via .gitkeep

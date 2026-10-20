@@ -18,11 +18,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BIN_DIR = ROOT / "bin"
+BUILD_DIR = ROOT / "build"
+INTERMEDIATES_DIR = BUILD_DIR / "intermediates"
+TESTS_DIR = BUILD_DIR / "tests"
+
 SRC_MAIN = ROOT / "src" / "main.flux"
 RUNTIME_C = ROOT / "runtime" / "flux_input.c"
 FLUXC_EXE = BIN_DIR / "fluxc.exe"
-STAGE1_LL = BIN_DIR / "stage1.ll"
-TEST_SIMPLE = ROOT / "scratch" / "test_simple.flux"
+STAGE1_LL = INTERMEDIATES_DIR / "stage1.ll"
+STAGE2_LL = INTERMEDIATES_DIR / "stage2.ll"
+TEST_SIMPLE = TESTS_DIR / "test_simple.flux"
 
 
 def sha256_file(path: Path) -> str:
@@ -46,6 +51,7 @@ def run_boot_0() -> bool:
     print(">>> PORTAO BOOT-0: Compilando Stage 1 (Stage 0 Python -> LLVM IR -> Clang -> bin/fluxc.exe)")
     print("=" * 70)
     BIN_DIR.mkdir(parents=True, exist_ok=True)
+    INTERMEDIATES_DIR.mkdir(parents=True, exist_ok=True)
 
     # 1. Gera stage1.ll a partir de src/main.flux
     code, stdout, stderr = run_cmd([
@@ -131,8 +137,50 @@ def run_boot_2() -> bool:
     return True
 
 
+def run_stage2_check() -> bool:
+    print("\n" + "=" * 70)
+    print(">>> EXPERIMENTO FIXPOINT: Auto-compilacao (bin/fluxc.exe -> build/intermediates/stage2.ll)")
+    print("=" * 70)
+    code, stdout, stderr = run_cmd([
+        str(FLUXC_EXE), "--target", "llvm", "-o", str(STAGE2_LL.with_suffix("")), str(SRC_MAIN)
+    ])
+    target_ll = Path(f"{STAGE2_LL.with_suffix('')}.ll")
+    if target_ll.exists():
+        size_kb = target_ll.stat().st_size // 1024
+        print(f"[*] stage2.ll gerado: {target_ll} ({size_kb} KB)")
+        print(f"[*] SHA-256 (stage2.ll): {sha256_file(target_ll)}")
+        return True
+    else:
+        print(f"[-] Auto-compilacao nao produziu stage2.ll: code={code}, stderr={stderr}")
+        return False
+
+
+def clean_intermediates() -> None:
+    print("[*] Limpando build/intermediates...")
+    if INTERMEDIATES_DIR.exists():
+        for f in INTERMEDIATES_DIR.glob("*"):
+            if f.is_file():
+                try:
+                    f.unlink()
+                except OSError:
+                    pass
+
+
 def main() -> int:
     t0 = time.time()
+    args = sys.argv[1:]
+
+    if "--help" in args or "-h" in args:
+        print("Uso: python scripts/bootstrap_compiler.py [OPTIONS]")
+        print("Opções:")
+        print("  --clean     Limpa build/intermediates antes do build")
+        print("  --fvm       Compila também o bin/fluxvm.exe via Clang")
+        print("  --stage2    Executa auto-compilação experimental de src/main.flux")
+        return 0
+
+    if "--clean" in args:
+        clean_intermediates()
+
     print("Iniciando Pipeline de Bootstrapping do Compilador Nativo TheFlux...")
 
     if not run_boot_0():
@@ -142,10 +190,27 @@ def main() -> int:
     if not run_boot_2():
         return 1
 
+    if "--fvm" in args or "--all" in args:
+        print("\n" + "=" * 70)
+        print(">>> COMPILACAO FVM: Compilando bin/fluxvm.exe")
+        print("=" * 70)
+        build_fvm_script = ROOT / "scripts" / "build_fluxvm.py"
+        code, stdout, stderr = run_cmd([sys.executable, str(build_fvm_script)])
+        print(stdout)
+        if code != 0:
+            print(f"[-] FALHA ao compilar fluxvm.exe: {stderr}")
+            return 1
+
+    if "--stage2" in args:
+        run_stage2_check()
+
     elapsed = time.time() - t0
     print("\n" + "=" * 70)
     print(f"BOOTSTRAPPING CONCLUIDO COM SUCESSO EM {elapsed:.2f}s!")
-    print(f"UNICO BINARIO: {FLUXC_EXE}")
+    print(f"BINARIOS DE PRODUCAO:")
+    print(f"  - Compilador: {FLUXC_EXE}")
+    if (BIN_DIR / "fluxvm.exe").exists():
+        print(f"  - FluxVM:     {BIN_DIR / 'fluxvm.exe'}")
     print("=" * 70)
     return 0
 

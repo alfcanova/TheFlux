@@ -61,9 +61,9 @@ def main() -> int:
             return 1
 
         # Compile .flux to bytecode first
-        scratch_dir = ROOT / "scratch"
-        scratch_dir.mkdir(parents=True, exist_ok=True)
-        tmp_bc_base = scratch_dir / f"tmp_vmr_{os.getpid()}_{in_path.stem}"
+        build_tmp = ROOT / "build" / "intermediates" / "tmp"
+        build_tmp.mkdir(parents=True, exist_ok=True)
+        tmp_bc_base = build_tmp / f"tmp_vmr_{os.getpid()}_{in_path.stem}"
         tmp_bc_file = Path(f"{tmp_bc_base}.fvmbc")
 
         try:
