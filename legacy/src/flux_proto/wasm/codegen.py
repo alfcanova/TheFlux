@@ -11573,7 +11573,7 @@ class _WasmCodegen:
             return I64
 
         if name == "stdRuntimeCompilerVersion":
-            fat = self._fat_const("0.8.0-dev")
+            fat = self._fat_const("0.9.9")
             fb.i64_const(fat)
             return I64
 

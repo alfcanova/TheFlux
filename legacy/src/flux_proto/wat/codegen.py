@@ -7380,7 +7380,7 @@ class _WatCodegen:
             return (f"(i64.const {fat})", "i64")
 
         if name == "stdRuntimeCompilerVersion":
-            fat = self._fat_const("0.8.0-dev")
+            fat = self._fat_const("0.9.9")
             return (f"(i64.const {fat})", "i64")
 
         if name == "stdRuntimeGetArgs":

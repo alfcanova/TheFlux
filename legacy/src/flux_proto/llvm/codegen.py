@@ -4126,7 +4126,8 @@ class LLVMCodegen:
                         self._w.emit(f"{r} = extractvalue {RESULT_TYPE} {val}, 1")
                         rp = self._w.new_local("pr_sp")
                         self._w.emit(f"{rp} = inttoptr i64 {r} to i8*")
-                        buf = self._get_scratch_buf()
+                        buf = self._w.new_local("colbuf")
+                        self._w.emit(f"{buf} = alloca i8, i64 4096")
                         out = self._w.new_local("colbufv")
                         self._w.emit(f"{out} = call i8* @flux_collection_to_buf(i8* {rp}, i8* {buf})")
                         val, t = out, "i8*"
@@ -4826,7 +4827,8 @@ class LLVMCodegen:
                 self._w.emit(f"{tag_d} = extractvalue {RESULT_TYPE} {r}, 2")
                 tag_i = self._w.new_local("dcall_tagi")
                 self._w.emit(f"{tag_i} = fptosi double {tag_d} to i64")
-                buf = self._get_scratch_buf()
+                buf = self._w.new_local("colbuf")
+                self._w.emit(f"{buf} = alloca i8, i64 4096")
                 out = self._w.new_local("colbufv")
                 self._w.emit(f"{out} = call i8* @flux_data_to_str(i64 {v64}, i64 {tag_i}, i8* {buf})")
                 return (out, "i8*")
@@ -4840,7 +4842,8 @@ class LLVMCodegen:
                 if oft == "string" or oft.startswith("string"):
                     return (val, "i8*")
                 if t == "i8*":
-                    buf = self._get_scratch_buf()
+                    buf = self._w.new_local("colbuf")
+                    self._w.emit(f"{buf} = alloca i8, i64 4096")
                     out = self._w.new_local("colbufv")
                     self._w.emit(f"{out} = call i8* @flux_list_to_buf(i8* {val}, i8* {buf})")
                     return (out, "i8*")
@@ -4884,7 +4887,8 @@ class LLVMCodegen:
         if _is_tensor_type(ft):
             val, t = self._emit_expr_text(node)
             vv = self._coerce_to(val, t, "i8*")
-            buf = self._get_scratch_buf()
+            buf = self._w.new_local("colbuf")
+            self._w.emit(f"{buf} = alloca i8, i64 4096")
             out = self._w.new_local("colbufv")
             self._w.emit(f"{out} = call i8* @flux_tensor_to_buf(i8* {vv}, i8* {buf})")
             return (out, "i8*")
@@ -4899,13 +4903,15 @@ class LLVMCodegen:
                 self._w.emit(f"{rp} = inttoptr i64 {val} to i8*")
                 val, t = rp, "i8*"
             if t == "i8*" and (_is_set_type(ft) or _is_list_type(ft) or _is_map_type(ft)):
-                buf = self._get_scratch_buf()
+                buf = self._w.new_local("colbuf")
+                self._w.emit(f"{buf} = alloca i8, i64 4096")
                 out = self._w.new_local("colbufv")
                 self._w.emit(f"{out} = call i8* @flux_collection_to_buf(i8* {val}, i8* {buf})")
                 return (out, "i8*")
             if ft == "data":
                 v64 = self._coerce_to(val, t, "i64")
-                buf = self._get_scratch_buf()
+                buf = self._w.new_local("colbuf")
+                self._w.emit(f"{buf} = alloca i8, i64 4096")
                 out = self._w.new_local("colbufv")
                 tag_arg = "0"
                 if isinstance(node, Identifier):
@@ -4989,7 +4995,8 @@ class LLVMCodegen:
             v2 = self._w.new_local("lrsel")
             self._w.emit(f"{v2} = select i1 {iss}, i64 {sp}, i64 {v}")
             v = v2
-        buf = self._get_scratch_buf()
+        buf = self._w.new_local("elem_buf")
+        self._w.emit(f"{buf} = alloca i8, i64 256")
         cnt = self._w.new_local("ecnt")
         self._w.emit(f"{cnt} = call i64 @flux_elem_to_buf(i64 {t}, i64 {v}, i8* {buf})")
         return (buf, "i8*")
@@ -5016,7 +5023,8 @@ class LLVMCodegen:
         vsel = self._w.new_local("gvvsel")
         self._w.emit(f"{tsel} = select i1 {miss}, i64 {dtag}, i64 {t}")
         self._w.emit(f"{vsel} = select i1 {miss}, i64 {dv64}, i64 {v}")
-        buf = self._get_scratch_buf()
+        buf = self._w.new_local("elem_buf")
+        self._w.emit(f"{buf} = alloca i8, i64 256")
         cnt = self._w.new_local("gecnt")
         self._w.emit(f"{cnt} = call i64 @flux_elem_to_buf(i64 {tsel}, i64 {vsel}, i8* {buf})")
         return (buf, "i8*")

@@ -8,7 +8,7 @@ Backends (colunas da tabela): in, vm, vmr, llvm, wat, wasm
     wat   WAT -> wat2wasm -> wasmer
     wasm  WASM binario -> wasmer
 
-Gera backend_compliance00.md com tabela de checks e totalizacao.
+Gera compliance_BE00.md com tabela de checks e totalizacao.
 
 Uso: python compliance_BE.py [--out DIR] [--stdin 'k=texto']
 """
@@ -172,6 +172,13 @@ def limpar_t() -> None:
                     except Exception:
                         pass
     limpar_scratch_dbs()
+    fix = RAIZ / "io_stdlib_fixture.txt"
+    if not fix.exists():
+        pai_fix = RAIZ.parent / "io_stdlib_fixture.txt"
+        if pai_fix.exists():
+            shutil.copyfile(pai_fix, fix)
+        else:
+            fix.write_text("conteudo fixture io_stdlib\n", encoding="utf-8")
     print("Limpado: t_* e intermediates/llvm")
 
 
@@ -436,10 +443,10 @@ def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
 
 
 def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_path: Path, outs: dict[str, dict[str, str | None]], old_results: dict[str, dict[str, bool]] | None = None) -> None:
-    """Gera backend_compliance00.md: tabela paginada com ✅ verde / ❌ vermelho por
+    """Gera compliance_BE00.md: tabela paginada com ✅ verde / ❌ vermelho por
     backend e coluna result (verde se todos os backends concordam, vermelho caso
     contrario), seguida da totalizacao por backend, secao de regressao (comparando
-    com backend_compliance01.md) e, por fim, blocos com as saidas colunadas dos
+    com compliance_BE01.md) e, por fim, blocos com as saidas colunadas dos
     arquivos que divergem."""
     larg_arq = max([len(n) for n in results] + [len("arquivo")])
 
@@ -546,10 +553,10 @@ def main() -> int:
         elif not a.startswith("--"):
             filter_arg = a
             break
-    md_path = RAIZ / "backend_compliance00.md"
-    old_md_path = RAIZ / "backend_compliance01.md"
+    md_path = RAIZ / "compliance_BE00.md"
+    old_md_path = RAIZ / "compliance_BE01.md"
 
-    # Copia backend_compliance00.md para backend_compliance01.md antes de executar
+    # Copia compliance_BE00.md para compliance_BE01.md antes de executar
     if not filter_arg and md_path.exists():
         shutil.copyfile(md_path, old_md_path)
         print(f"Copiado: {md_path.name} -> {old_md_path.name}")
@@ -696,7 +703,7 @@ def main() -> int:
             detalhes = [c for c in COLS if old_results[r].get(c, False) and not results[r].get(c, False)]
             print(f"  ❌ {r} regrediu em: {', '.join(detalhes)}")
     else:
-        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao backend_compliance01.md!")
+        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao compliance_BE01.md!")
 
     print()
     print("Legenda:  {} coincide com o interpretador   {} diverge ou falhou".format(GREEN, RED))

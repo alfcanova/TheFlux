@@ -16,10 +16,21 @@ def _resolve_candidate(path_str: str) -> Path | None:
     p = Path(path_str)
     if p.exists() and p.is_file():
         return p
-    # Fallback to look inside flux/ directory
-    flux_p = Path("flux") / p.name
-    if flux_p.exists() and flux_p.is_file():
-        return flux_p
+    # Fallback to look inside parent directories or flux/
+    for base in (
+        Path("."),
+        Path(".."),
+        Path("flux"),
+        Path("../flux"),
+        Path(__file__).resolve().parent.parent.parent,
+        Path(__file__).resolve().parent.parent.parent.parent,
+    ):
+        cand = base / p.name if not p.is_absolute() else p
+        if cand.exists() and cand.is_file():
+            return cand
+        cand_sub = base / p
+        if cand_sub.exists() and cand_sub.is_file():
+            return cand_sub
     return None
 
 
