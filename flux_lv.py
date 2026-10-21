@@ -121,7 +121,9 @@ def main() -> int:
     try:
         content = ll_path.read_text(encoding="utf-8", errors="replace")
         if "\\n" in content and not ("\n" in content and len(content.splitlines()) > 5):
-            ll_path.write_text(content.replace("\\n", "\n").replace('\\"', '"'), encoding="utf-8")
+            content = content.replace("\\n", "\n").replace('\\"', '"')
+        content = content.replace("\\\\0A", "\\0A").replace("\\\\00", "\\00")
+        ll_path.write_text(content, encoding="utf-8")
     except Exception:
         pass
 
