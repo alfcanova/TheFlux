@@ -19,7 +19,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 DOCS_DIR = RAIZ / "docs"
-PT_DIR = DOCS_DIR / "pt" / "keywords"
+PT_DIR = DOCS_DIR / "pt_BR" / "keywords"
 EN_DIR = DOCS_DIR / "en" / "keywords"
 
 CATEGORY_ORDER_PT = [

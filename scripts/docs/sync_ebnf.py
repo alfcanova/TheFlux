@@ -28,15 +28,15 @@ for stream in (sys.stdout, sys.stderr):
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DOCS_DIR = REPO_ROOT / "docs"
-PT_EBNF_PATH = DOCS_DIR / "pt" / "TheFlux.ebnf"
+PT_EBNF_PATH = DOCS_DIR / "pt_BR" / "TheFlux.ebnf"
 EN_EBNF_PATH = DOCS_DIR / "en" / "TheFlux.ebnf"
-PT_GRAMMAR_EBNF = DOCS_DIR / "pt" / "Gramatica.ebnf"
+PT_GRAMMAR_EBNF = DOCS_DIR / "pt_BR" / "Gramatica.ebnf"
 EN_GRAMMAR_EBNF = DOCS_DIR / "en" / "Grammar.ebnf"
 
-PT_DOC_PATH = DOCS_DIR / "pt" / "TheFlux.md"
+PT_DOC_PATH = DOCS_DIR / "pt_BR" / "TheFlux.md"
 EN_DOC_PATH = DOCS_DIR / "en" / "TheFlux.md"
 
-PT_GRAMMAR_MD = DOCS_DIR / "pt" / "Gramatica.md"
+PT_GRAMMAR_MD = DOCS_DIR / "pt_BR" / "Gramatica.md"
 EN_GRAMMAR_MD = DOCS_DIR / "en" / "Grammar.md"
 
 # Dicionário de tradução PT -> EN para comentários e títulos da especificação EBNF

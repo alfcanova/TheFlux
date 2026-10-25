@@ -22,7 +22,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 DOCS_DIR = RAIZ / "docs"
-PT_DOCS = DOCS_DIR / "pt"
+PT_DOCS = DOCS_DIR / "pt_BR"
 EN_DOCS = DOCS_DIR / "en"
 
 BAK_DOCX = PT_DOCS / "TheFlux_bak.docx"

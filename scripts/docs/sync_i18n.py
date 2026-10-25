@@ -27,7 +27,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 DOCS_DIR = RAIZ / "docs"
-PT_DIR = DOCS_DIR / "pt" / "keywords"
+PT_DIR = DOCS_DIR / "pt_BR" / "keywords"
 EN_DIR = DOCS_DIR / "en" / "keywords"
 
 # ── Glossário de Tradução de Categorias ──────────────────────────────────────

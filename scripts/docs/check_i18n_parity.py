@@ -35,7 +35,7 @@ if hasattr(sys.stderr, "reconfigure"):
 RAIZ = Path(__file__).resolve().parent.parent.parent
 
 DOCS_DIR = RAIZ / "docs"
-PT_DOCS_DIR = DOCS_DIR / "pt"
+PT_DOCS_DIR = DOCS_DIR / "pt_BR"
 EN_DOCS_DIR = DOCS_DIR / "en"
 PT_DIR = PT_DOCS_DIR / "keywords"
 EN_DIR = EN_DOCS_DIR / "keywords"
@@ -59,6 +59,7 @@ DOCS_MAP_PT_TO_EN: dict[str, str] = {
     "StdLibs.md": "StdLibs.md",
     "ReleaseNotes_0.5.0.md": "ReleaseNotes_0.5.0.md",
     "ReleaseNotes_0.7.5.md": "ReleaseNotes_0.7.5.md",
+    "ReleaseNotes_0.9.9.md": "ReleaseNotes_0.9.9.md",
     "TheFlux.md": "TheFlux.md",
 }
 DOCS_MAP_EN_TO_PT: dict[str, str] = {v: k for k, v in DOCS_MAP_PT_TO_EN.items()}
@@ -219,7 +220,7 @@ def verificar_limpeza_docs_raiz(docs_dir: Path) -> list[str]:
         "gramatica.md", "grammar.md",
         "errors.md", "stdlibs.md",
         "theflux.md", "theflux.ebnf",
-        "releasenotes_0.5.0.md", "releasenotes_0.7.5.md",
+        "releasenotes_0.5.0.md", "releasenotes_0.7.5.md", "releasenotes_0.9.9.md",
         "theflux_docs.html", "theflux_docs_pt.html", "theflux_docs_en.html", "index.html",
         "theflux_v0.5.docx", "theflux_v0.75.docx",
         "shared",

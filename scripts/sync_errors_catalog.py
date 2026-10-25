@@ -795,11 +795,11 @@ def main():
                 pass
 
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    default_pt_yaml = os.path.join(repo_root, "docs", "pt", "keywords")
+    default_pt_yaml = os.path.join(repo_root, "docs", "pt_BR", "keywords")
     default_en_yaml = os.path.join(repo_root, "docs", "en", "keywords")
 
     parser = argparse.ArgumentParser(description="Compile YAML error definitions into in-memory code and docs.")
-    parser.add_argument("--yaml-dir", default=None, help="Path to keywords YAML directory (default: docs/pt/keywords)")
+    parser.add_argument("--yaml-dir", default=None, help="Path to keywords YAML directory (default: docs/pt_BR/keywords)")
     parser.add_argument("--py-output", default=os.path.join(repo_root, "src", "flux_proto", "diagnostics", "catalog_data.py"), help="Output path for Python catalog")
     parser.add_argument("--c-output", default=os.path.join(repo_root, "src", "flux_proto", "llvm", "runtime", "flux_errors.h"), help="Output path for C header")
     parser.add_argument("--docs-output", default=None, help="Output path for markdown documentation")
@@ -845,7 +845,7 @@ def main():
 
     # 4. Docs Generation
     if args.lang in ("pt", "all"):
-        pt_docs_path = args.docs_output if (args.docs_output and args.lang == "pt") else os.path.join(repo_root, "docs", "pt", "Errors.md")
+        pt_docs_path = args.docs_output if (args.docs_output and args.lang == "pt") else os.path.join(repo_root, "docs", "pt_BR", "Errors.md")
         generate_errors_catalog_docs(pt_errors, pt_docs_path, lang="pt")
         print(f"  [+] Markdown catalog documentation (PT) generated: {pt_docs_path}")
 

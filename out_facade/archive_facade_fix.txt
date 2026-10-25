@@ -1,1 +1,0 @@
-Conteudo para testar a fachada ArchiveStdLib!

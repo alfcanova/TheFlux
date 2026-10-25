@@ -1,4 +1,4 @@
-"""Generate a single HTML page from all KW_*.yaml documentation files.
+﻿"""Generate a single HTML page from all KW_*.yaml documentation files.
 Supports --lang pt (Portuguese, default) and --lang en (English).
 """
 import os
@@ -9,13 +9,13 @@ import json
 import argparse
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DOCS_PT_DIR = os.path.join(REPO_ROOT, "docs", "pt", "keywords")
+DOCS_PT_DIR = os.path.join(REPO_ROOT, "docs", "pt_BR", "keywords")
 DOCS_EN_DIR = os.path.join(REPO_ROOT, "docs", "en", "keywords")
 SITE_DIR = os.path.join(REPO_ROOT, "docs", "site")
 ROOT_DOCS_DIR = os.path.join(REPO_ROOT, "docs")
 
 
-# ── English examples ───────────────────────────────────────────────
+# â”€â”€ English examples â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 EXAMPLES_EN = [
     {
         "id": "hello_world",
@@ -366,7 +366,7 @@ program (StructDataExample) {
     },
 ]
 
-# ── Portuguese examples ────────────────────────────────────────────
+# â”€â”€ Portuguese examples â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 EXAMPLES_PT = [
     {
         "id": "hello_world",
@@ -720,7 +720,7 @@ program (ExemploStructData) {
 EXAMPLES = EXAMPLES_PT  # default, overridden by --lang
 
 
-# ── Language-specific configuration ─────────────────────────────────
+# â”€â”€ Language-specific configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 LANG_CONFIG = {
     "pt": {
         "html_lang": "pt-BR",
@@ -746,8 +746,8 @@ LANG_CONFIG = {
         "detail_pseudocode": "Pseudocodigo",
         "detail_usos": "Usos",
         "detail_restricoes": "Restricoes",
-        "btn_copy": "📋 Copiar",
-        "btn_copied": "✓ Copiado!",
+        "btn_copy": "ðŸ“‹ Copiar",
+        "btn_copied": "âœ“ Copiado!",
         "tag_keyword": "Keywords",
         "tag_operator": "Operadores",
         "tag_type": "Tipos",
@@ -799,8 +799,8 @@ LANG_CONFIG = {
         "detail_pseudocode": "Pseudocode",
         "detail_usos": "Usages",
         "detail_restricoes": "Restrictions",
-        "btn_copy": "📋 Copy",
-        "btn_copied": "✓ Copied!",
+        "btn_copy": "ðŸ“‹ Copy",
+        "btn_copied": "âœ“ Copied!",
         "tag_keyword": "Keywords",
         "tag_operator": "Operators",
         "tag_type": "Types",
@@ -1107,7 +1107,7 @@ def build_html(entries, lang="pt"):
     lang_selector = (
         f'<a href="theflux_docs_pt.html" class="{"active" if lang == "pt" else ""}">PT</a>'
         f'<a href="theflux_docs_en.html" class="{"active" if lang == "en" else ""}">EN</a>'
-        f'<a href="index.html" title="Portal" style="font-size: 1.05em; text-decoration: none; margin-left: 6px;">🌐</a>'
+        f'<a href="index.html" title="Portal" style="font-size: 1.05em; text-decoration: none; margin-left: 6px;">ðŸŒ</a>'
     )
 
 
@@ -1713,7 +1713,7 @@ def main():
     langs = ["pt", "en"] if args.lang == "all" else [args.lang]
     for lang in langs:
         generate_for_lang(lang)
-    print("Geração HTML concluída com sucesso!")
+    print("GeraÃ§Ã£o HTML concluÃ­da com sucesso!")
 
 
 if __name__ == "__main__":
