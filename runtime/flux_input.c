@@ -1827,6 +1827,11 @@ char *flux_std_os_exec_output(const char *cmd) {
     return buf;
 }
 
+int64_t flux_std_os_exit(int64_t code) {
+    exit((int)code);
+    return 0;
+}
+
 int64_t flux_std_os_sleep(int64_t ms) {
     if (ms > 0) {
 #if defined(_WIN32)

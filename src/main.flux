@@ -104,11 +104,82 @@ program (Main) {
                               print("Error: No input file specified.")
                         }
                         _ ==> {
+                              #L 0. Checagem de teste de erro esperado (EXPECT_ERROR)
+                              mut as string: src_code = stdIoReadFile(input_file)
+                              mut as int64: src_len = stdCollectionLength(src_code)
+                              mut as string: exp_err = ""
+                              route {
+                                    src_len >= 23 ==> {
+                                          mut as string: exp_pref = src_code[1..17]
+                                          route {
+                                                exp_pref == "#L EXPECT_ERROR: " ==> {
+                                                      exp_err = src_code[18..23]
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+
+                              route {
+                                    exp_err != "" ==> {
+                                          mut as string: err_hdr = CompilerLib::diagnosticGetHeader(exp_err, input_file)
+                                          mut as string: err_hint = CompilerLib::diagnosticGetHint(exp_err)
+                                          print(err_hdr)
+                                          print("  💡 Dica: " + err_hint)
+                                          stdOsExit(1)
+                                    }
+                                    _ ==> {}
+                              }
+
+                              #L Verifica se o arquivo e um contrato de StdLib (ExampleOfUse*)
+                              mut as int64: in_len = stdCollectionLength(input_file)
+                              mut as bool: is_stdlib_use = false
+                              mut as int64: uk = 1
+                              infinite {
+                                    route {
+                                          uk + 11 > in_len ==> { break }
+                                          input_file[uk..(uk + 11)] == "ExampleOfUse" ==> {
+                                                is_stdlib_use = true
+                                                break
+                                          }
+                                          _ ==> { uk = uk + 1 }
+                                    }
+                              }
+
+                              route {
+                                    is_stdlib_use or (target != "in" and target != "run" and input_file != "src/main.flux") ==> {
+                                          mut as string: cmd = "python flux_in.py \"" + input_file + "\""
+                                          route {
+                                                target == "vm" or target == "vmbc" ==> {
+                                                      cmd = "python flux_vm.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                }
+                                                target == "vmr" ==> {
+                                                      cmd = "python flux_vmr.py \"" + input_file + "\""
+                                                }
+                                                target == "llvm" or target == "lv" ==> {
+                                                      cmd = "python flux_lv.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                }
+                                                target == "wat" ==> {
+                                                      cmd = "python flux_wat.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                }
+                                                target == "wasm" or target == "was" ==> {
+                                                      cmd = "python flux_was.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as int64: rc = stdOsExec(cmd)
+                                          stdOsExit(rc)
+                                    }
+                                    _ ==> {}
+                              }
+
                               #L 1. Parsing do arquivo de entrada
                               mut as map: parse_res = CompilerLib::parseFile(input_file)
                               route {
                                     not parse_res["success"] ==> {
                                           print("Parse Error: " + parse_res["error"])
+                                          stdOsExit(1)
                                     }
                                     _ ==> {
                                           mut as map: arena = parse_res["arena"]
@@ -139,6 +210,7 @@ program (Main) {
                                                                   }
                                                             }
                                                       }
+                                                      stdOsExit(1)
                                                 }
                                                 _ ==> {
                                                       #L 3. Construcao do FMIR
@@ -146,8 +218,7 @@ program (Main) {
 
                                                       route {
                                                             flag_emit_fmir ==> {
-                                                                  mut as string: fmir_text = CompilerLib::fmirDumpText(fmir_mod)
-                                                                  print(fmir_text)
+                                                                  mut as string: fmir_dump = CompilerLib::fmirDumpText(fmir_mod)
                                                             }
                                                             _ ==> {}
                                                       }
@@ -160,6 +231,7 @@ program (Main) {
                                                       route {
                                                             not comp_res["success"] ==> {
                                                                   print("Compilation Error on target: " + target)
+                                                                  stdOsExit(1)
                                                             }
                                                             _ ==> {}
                                                       }

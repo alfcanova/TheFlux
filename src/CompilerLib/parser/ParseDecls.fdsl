@@ -16,6 +16,15 @@ agent (CompilerLib) impl ParseDeclsContract {
             mut as list of data: fallback_nids = []
 
             route {
+                  cval == "async" ==> {
+                        ts = tokenStreamAdvance(ts)
+                        cur = tokenStreamPeek(ts)
+                        cval = "" + cur["val"]
+                  }
+                  _ ==> {}
+            }
+
+            route {
                   cval == "use" ==> {
                         ts = tokenStreamAdvance(ts)
                         mut as map: target_tok = tokenStreamPeek(ts)
@@ -65,7 +74,14 @@ agent (CompilerLib) impl ParseDeclsContract {
                                     route {
                                           m_fas["matched"] ==> {
                                                 ts = m_fas["stream"]
-                                                ts = tokenStreamAdvance(ts)
+                                                infinite {
+                                                      mut as map: ptok = tokenStreamPeek(ts)
+                                                      mut as string: pv = "" + ptok["val"]
+                                                      route {
+                                                            pv == "{" or tokenIsEof(ptok) ==> { break }
+                                                            _ ==> { ts = tokenStreamAdvance(ts) }
+                                                      }
+                                                }
                                           }
                                           _ ==> {}
                                     }

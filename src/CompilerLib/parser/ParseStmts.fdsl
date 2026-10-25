@@ -234,6 +234,56 @@ agent (CompilerLib) impl ParseStmtsContract {
                         ar = astArenaAllocNode(ar, loop_kind, loop_val, loop_left, 0, loop_stmts)
                         created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
                   }
+                  cval == "unsafe" ==> {
+                        ts = tokenStreamAdvance(ts)
+                        mut as map: m_uns_br = tokenStreamMatch(ts, "OP", "{")
+                        mut as list of data: uns_stmts = []
+                        route {
+                              m_uns_br["matched"] ==> {
+                                    ts = m_uns_br["stream"]
+                                    infinite {
+                                          mut as map: utok = tokenStreamPeek(ts)
+                                          mut as string: uv = "" + utok["val"]
+                                          route {
+                                                uv == "}" or tokenIsEof(utok) ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                      break
+                                                }
+                                                uv == "\n" or utok["type"] == "NEWLINE" or uv == ";" ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                                _ ==> {
+                                                      mut as map: us_res = parseStatement(ts, ar)
+                                                      ts = us_res["stream"]
+                                                      ar = us_res["arena"]
+                                                      mut as list of data: unids = us_res["node_ids"]
+                                                      mut as int64: unn = stdCollectionLength(unids)
+                                                      route {
+                                                            unn > 0 ==> {
+                                                                  mut as int64: uni = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              uni > unn ==> { break }
+                                                                              _ ==> {
+                                                                                    uns_stmts = stdListPushBack(uns_stmts, unids[uni])
+                                                                                    uni = uni + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  uns_stmts = stdListPushBack(uns_stmts, us_res["node_id"])
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+                        ar = astArenaAllocNode(ar, "STMT_UNSAFE", "unsafe", 0, 0, uns_stmts)
+                        created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                  }
                   cval == "match" ==> {
                         ts = tokenStreamAdvance(ts)
                         mut as map: m_m_op = tokenStreamMatch(ts, "OP", "(")
@@ -737,6 +787,109 @@ agent (CompilerLib) impl ParseStmtsContract {
                                     ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, div_id, [])
                                     created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
                               }
+                              nxt_val == "=^e" or nxt_val == "^e=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", "^e", cur_var_id, val_id, [])
+                                    mut as int64: pow_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, pow_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=&" or nxt_val == "&=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", "&", cur_var_id, val_id, [])
+                                    mut as int64: op_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, op_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=|" or nxt_val == "|=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", "|", cur_var_id, val_id, [])
+                                    mut as int64: op_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, op_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=^" or nxt_val == "^=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", "^", cur_var_id, val_id, [])
+                                    mut as int64: op_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, op_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=<<" or nxt_val == "<<=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", "<<", cur_var_id, val_id, [])
+                                    mut as int64: op_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, op_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=>>" or nxt_val == ">>=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", ">>", cur_var_id, val_id, [])
+                                    mut as int64: op_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, op_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=>>>" or nxt_val == ">>>=" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    mut as int64: val_id = val_res["node_id"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "BINARY_EXPR", ">>>", cur_var_id, val_id, [])
+                                    mut as int64: op_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, op_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
+                              nxt_val == "=~" ==> {
+                                    ts = tokenStreamAdvance(ts_adv)
+                                    mut as map: val_res = parseExpression(ts, ar)
+                                    ts = val_res["stream"]
+                                    ar = val_res["arena"]
+                                    ar = astArenaAllocNode(ar, "IDENT", cval, 0, 0, [])
+                                    mut as int64: cur_var_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "UNARY_EXPR", "~", cur_var_id, 0, [])
+                                    mut as int64: not_id = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, not_id, [])
+                                    created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
+                              }
                               nxt_val == "." ==> {
                                     mut as map: ts_dot = tokenStreamAdvance(ts_adv)
                                     mut as map: ftok = tokenStreamPeek(ts_dot)
@@ -771,21 +924,41 @@ agent (CompilerLib) impl ParseStmtsContract {
                                     ar = idx_res["arena"]
                                     mut as int64: idx_id = idx_res["node_id"]
                                     mut as list of data: indices = [idx_id]
-                                    mut as map: m_comma = tokenStreamMatch(ts, "OP", ",")
-                                    route {
-                                          m_comma["matched"] ==> {
-                                                ts = m_comma["stream"]
-                                                mut as map: idx2_res = parseExpression(ts, ar)
-                                                ts = idx2_res["stream"]
-                                                ar = idx2_res["arena"]
-                                                indices = stdListPushBack(indices, idx2_res["node_id"])
+                                    infinite {
+                                          mut as map: m_comma = tokenStreamMatch(ts, "OP", ",")
+                                          route {
+                                                m_comma["matched"] ==> {
+                                                      ts = m_comma["stream"]
+                                                      mut as map: idx2_res = parseExpression(ts, ar)
+                                                      ts = idx2_res["stream"]
+                                                      ar = idx2_res["arena"]
+                                                      indices = stdListPushBack(indices, idx2_res["node_id"])
+                                                }
+                                                _ ==> { break }
                                           }
-                                          _ ==> {}
                                     }
                                     mut as map: m_cl_br = tokenStreamMatch(ts, "OP", "]")
                                     route {
                                           m_cl_br["matched"] ==> { ts = m_cl_br["stream"] }
                                           _ ==> {}
+                                    }
+                                    infinite {
+                                          mut as map: m_next_br = tokenStreamMatch(ts, "OP", "[")
+                                          route {
+                                                m_next_br["matched"] ==> {
+                                                      ts = m_next_br["stream"]
+                                                      mut as map: idx_ch = parseExpression(ts, ar)
+                                                      ts = idx_ch["stream"]
+                                                      ar = idx_ch["arena"]
+                                                      indices = stdListPushBack(indices, idx_ch["node_id"])
+                                                      mut as map: m_cl_ch = tokenStreamMatch(ts, "OP", "]")
+                                                      route {
+                                                            m_cl_ch["matched"] ==> { ts = m_cl_ch["stream"] }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> { break }
+                                          }
                                     }
                                     mut as map: eq_tok = tokenStreamPeek(ts)
                                     route {

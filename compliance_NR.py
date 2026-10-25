@@ -1,24 +1,23 @@
-"""Runner e validador de conformidade para a suíte Numerical Recipes v3 via Compilador Self-Hosted TheFlux.
+"""Runner e validador de conformidade para a suíte Numerical Recipes v3 em TheFlux.
 
-Executado diretamente dentro de examples/NumericalRecipes/ ou da raiz do projeto:
-1. Copia NumericalRecipes_selfhosted.md -> NumericalRecipes_selfhosted_OLD.md como baseline.
+Executado diretamente dentro de examples/NumericalRecipes/:
+1. Copia compliance_NR00.md -> compliance_NR01.md como baseline.
 2. Não retesta arquivos que já estejam 100% validados (6/6 OK) na tabela anterior (modo incremental).
-3. Testa novos arquivos ou arquivos não validados nos 6 backends via Compilador Self-Hosted:
+3. Testa novos arquivos ou arquivos não validados nos 6 backends:
      in, vm, vmr, llvm, wat, wasm
 4. Acrescenta na tabela os novos arquivos no seu respectivo capítulo e em ordem alfabética.
 5. Compara os resultados atuais com o OLD e reporta eventuais regressões no terminal e no MD.
 6. A coluna de nome de arquivo reserva 77 caracteres úteis.
 
 Uso:
-  python NumericalRecipes_selfhosted.py             # Modo incremental (pula validados, testa novos)
-  python NumericalRecipes_selfhosted.py --force     # Força reteste de todos os arquivos
-  python NumericalRecipes_selfhosted.py --filter X  # Testa apenas arquivos contendo 'X'
-  python NumericalRecipes_selfhosted.py --no-md     # Apenas roda os testes sem alterar os arquivos .md
+  python compliance_NR.py             # Modo incremental (pula validados, testa novos)
+  python compliance_NR.py --force     # Força reteste de todos os arquivos
+  python compliance_NR.py --filter X  # Testa apenas arquivos contendo 'X'
+  python compliance_NR.py --no-md     # Apenas roda os testes sem alterar os arquivos .md
 """
 from __future__ import annotations
 
 import argparse
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -29,25 +28,25 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-if (SCRIPT_DIR / "bin").exists() and (SCRIPT_DIR / "src").exists():
-    RAIZ = SCRIPT_DIR
-    NR_DIR = RAIZ / "examples" / "NumericalRecipes"
-else:
-    RAIZ = SCRIPT_DIR.parent.parent
-    NR_DIR = SCRIPT_DIR
-
+RAIZ = SCRIPT_DIR if (SCRIPT_DIR / "src").exists() else SCRIPT_DIR.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
+import os
 os.chdir(RAIZ)
 
 try:
-    import compliance_BE as bsh
+    import compliance_BE as bc
 except ImportError:
-    import backend_selfhosted as bsh
+    import backend_compliance as bc
 
-COMPLIANCE_MD = RAIZ / "compliance_NR00.md"
-COMPLIANCE_OLD_MD = RAIZ / "compliance_NR01.md"
+NR_DIR = SCRIPT_DIR if (SCRIPT_DIR / "01_preliminaries").exists() else SCRIPT_DIR.parent / "examples" / "NumericalRecipes"
+if not NR_DIR.exists():
+    NR_DIR = RAIZ / "examples" / "NumericalRecipes"
+COMPLIANCE_MD = SCRIPT_DIR / "compliance_NR00.md"
+COMPLIANCE_OLD_MD = SCRIPT_DIR / "compliance_NR01.md"
 
 COL_NAME_WIDTH = 77
 
@@ -78,6 +77,7 @@ CHAPTER_TITLES = {
 
 
 def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
+    """Lê um arquivo markdown de conformidade e extrai resultados por nome de arquivo e backend."""
     if not md_path.exists():
         return {}
     res: dict[str, dict[str, bool]] = {}
@@ -100,11 +100,12 @@ def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
 
 
 def formatar_linha_md(fname: str, linha: dict[str, bool]) -> str:
+    """Formata uma linha da tabela Markdown com 77 caracteres na coluna de nome."""
     cells = []
-    for col in bsh.COLS:
+    for col in bc.COLS:
         icon = "✅" if linha.get(col, False) else "❌"
         cells.append(f"  {icon}  ")
-    all_ok = all(linha.get(col, False) for col in bsh.COLS)
+    all_ok = all(linha.get(col, False) for col in bc.COLS)
     res_icon = "   ✅   " if all_ok else "   ❌   "
     return f"| {fname:<{COL_NAME_WIDTH}} |" + "|".join(cells) + f"|{res_icon}|\n"
 
@@ -114,6 +115,7 @@ def gerar_nr_compliance_md(
     all_flux_files: list[Path],
     old_results: dict[str, dict[str, bool]],
 ) -> list[tuple[str, dict[str, bool], dict[str, bool]]]:
+    """Gera o arquivo compliance_NR00.md estruturado por capítulos e com seção de regressão."""
     cat_files: dict[str, list[tuple[str, Path]]] = {}
     for path in all_flux_files:
         rel = path.resolve().relative_to(NR_DIR.resolve())
@@ -126,12 +128,11 @@ def gerar_nr_compliance_md(
     )
 
     linhas: list[str] = [
-        "# 📊 Tabela de Conformidade Multi-Backend: Numerical Recipes v3 (Self-Hosted Compiler)\n\n",
-        "> **Compilador**: TheFlux Self-Hosted Compiler v1.0.0\n",
+        "# 📊 Tabela de Conformidade Multi-Backend: Numerical Recipes v3\n\n",
         "> **Suíte**: `examples/NumericalRecipes/` (22 capítulos clássicos)\n",
         "> **Backends**: `in` (AST interpretado), `vm` (FVM Bytecode), `vmr` (FVM Reloaded), `llvm` (LLVM nativo), `wat` (WebAssembly Text), `wasm` (WebAssembly Binário)\n\n",
     ]
-    totais = {c: 0 for c in bsh.COLS}
+    totais = {c: 0 for c in bc.COLS}
     total_checks = 0
     total_checks_ok = 0
     total_arquivos = len(all_flux_files)
@@ -142,8 +143,8 @@ def gerar_nr_compliance_md(
         linhas.append(header)
 
         for fname, path in sorted(cat_files[cat_key], key=lambda x: x[0].lower()):
-            linha = results.get(fname, {c: False for c in bsh.COLS})
-            for col in bsh.COLS:
+            linha = results.get(fname, {c: False for c in bc.COLS})
+            for col in bc.COLS:
                 total_checks += 1
                 if linha.get(col, False):
                     totais[col] += 1
@@ -153,6 +154,7 @@ def gerar_nr_compliance_md(
 
         linhas.append("\n\n\n")
 
+    # Sumário consolidado de backends
     linhas.append("## 📈 Sumário Consolidado de Backends\n\n")
     linhas.append(f"-   IN : ✅  {totais['in']:>3} of  {total_arquivos:>3} — ✅\n")
     linhas.append(f"-   VM : ✅  {totais['vm']:>3} of  {total_arquivos:>3} — ✅\n")
@@ -162,12 +164,13 @@ def gerar_nr_compliance_md(
     linhas.append(f"- WASM : ✅  {totais['wasm']:>3} of  {total_arquivos:>3} — ✅\n")
     linhas.append(f"-  ALL : ✅  {total_checks_ok:>3} of  {total_checks:>3} — ✅\n\n\n\n")
 
+    # --- Seção de Regressão ---
     regressoes: list[tuple[str, dict[str, bool], dict[str, bool]]] = []
     if old_results:
         for fname, linha_nova in results.items():
             if fname in old_results:
                 linha_antiga = old_results[fname]
-                if any(linha_antiga.get(c, False) and not linha_nova.get(c, False) for c in bsh.COLS):
+                if any(linha_antiga.get(c, False) and not linha_nova.get(c, False) for c in bc.COLS):
                     regressoes.append((fname, linha_antiga, linha_nova))
 
     linhas.append("### Regressão:\n\n")
@@ -189,18 +192,17 @@ def gerar_nr_compliance_md(
 
 
 def testar_arquivo_referencia(path: Path, stdin_text: str = "") -> str | None:
-    return bsh.saida_interp(path, stdin_text)
+    """Executa o arquivo no interpretador AST de referência (in) e captura a saída."""
+    return bc.saida_interp(path, stdin_text)
 
 
 def run_nr_compliance(
     filter_arg: str | None = None,
     force: bool = False,
     write_md: bool = True,
-    compiler_path: str | None = None,
 ) -> int:
-    if compiler_path:
-        bsh.COMPILER_CMD = bsh.resolver_compilador_selfhosted(compiler_path)
-
+    """Executa a verificação dos 6 backends para os algoritmos de Numerical Recipes."""
+    # 1. Copia compliance_NR00.md -> compliance_NR01.md se existir
     if COMPLIANCE_MD.exists():
         try:
             shutil.copyfile(COMPLIANCE_MD, COMPLIANCE_OLD_MD)
@@ -211,11 +213,9 @@ def run_nr_compliance(
     old_results = ler_tabela_md(COMPLIANCE_OLD_MD) if COMPLIANCE_OLD_MD.exists() else {}
     if not old_results and COMPLIANCE_MD.exists():
         old_results = ler_tabela_md(COMPLIANCE_MD)
-    if not old_results and (NR_DIR / "NumericalRecipes.md").exists():
-        old_results = ler_tabela_md(NR_DIR / "NumericalRecipes.md")
 
-    bsh.limpar_t()
-    for d in (bsh.T_FVMBC, bsh.T_LLVM, bsh.T_WAT, bsh.T_WASM):
+    bc.limpar_t()
+    for d in (bc.T_FVMBC, bc.T_LLVM, bc.T_WAT, bc.T_WASM):
         d.mkdir(parents=True, exist_ok=True)
 
     all_flux_files = sorted(NR_DIR.glob("**/*.flux"))
@@ -235,37 +235,40 @@ def run_nr_compliance(
     testados = 0
 
     print()
-    print(f"Iniciando verificação multi-backend de {len(all_flux_files)} algoritmos do Numerical Recipes (Self-Hosted)...")
+    print(f"Iniciando verificação multi-backend de {len(all_flux_files)} algoritmos do Numerical Recipes...")
 
     for path in all_flux_files:
         fname = path.name
 
+        # Se houver filtro ativo e o arquivo não for alvo do filtro, reaproveita resultado prévio se existir
         if filter_arg and path not in target_files:
             if fname in old_results:
                 results[fname] = old_results[fname]
             continue
 
-        if not force and fname in old_results and all(old_results[fname].get(c, False) for c in bsh.COLS):
+        # 2. Pula arquivos já 100% validados no baseline se não for --force
+        if not force and fname in old_results and all(old_results[fname].get(c, False) for c in bc.COLS):
             results[fname] = old_results[fname]
             pulados += 1
             continue
 
+        # Arquivo novo, com falha prévia ou selecionado para reteste
         testados += 1
-        stdin_text = bsh.stdin_para(path)
+        stdin_text = bc.stdin_para(path)
 
         linha: dict[str, bool] = {}
         outs[fname] = {}
 
         ref = testar_arquivo_referencia(path, stdin_text)
         outs[fname]["in"] = ref
-        for col in bsh.COLS:
+        for col in bc.COLS:
             if col == "in":
                 linha[col] = ref is not None
             else:
-                out = bsh.BACKENDS[col](path, stdin_text)
+                out = bc.BACKENDS[col](path, stdin_text)
                 outs[fname][col] = out
-                ref_norm = bsh.normalizar_saida(ref.rstrip("\n")) if ref is not None else None
-                out_norm = bsh.normalizar_saida(out.rstrip("\n")) if out is not None else None
+                ref_norm = bc.normalizar_saida(ref.rstrip("\n")) if ref is not None else None
+                out_norm = bc.normalizar_saida(out.rstrip("\n")) if out is not None else None
                 ok = ref_norm is not None and out_norm is not None and out_norm == ref_norm
                 linha[col] = ok
                 if not ok:
@@ -274,31 +277,32 @@ def run_nr_compliance(
         if testados % 10 == 0 or testados == len(target_files):
             print(f"  ⚡ Processados: {testados}/{len(target_files)} algoritmos...")
 
+    # Sumário da rodada no console
     print("-" * 72)
     print(f"Arquivos processados: {len(results)} total | {testados} testados agora | {pulados} mantidos (já validados 6/6 OK)")
     print("-" * 72)
 
-    col_w = {c: max(len(c), 3) for c in bsh.COLS}
+    col_w = {c: max(len(c), 3) for c in bc.COLS}
     larg = max(len(n) for n in results) if results else 10
-    cab = "algoritmo".ljust(larg) + "  " + "  ".join(c.rjust(col_w[c]) for c in bsh.COLS)
+    cab = "algoritmo".ljust(larg) + "  " + "  ".join(c.rjust(col_w[c]) for c in bc.COLS)
     print(cab)
     print("-" * len(cab))
 
-    totais = {c: 0 for c in bsh.COLS}
+    totais = {c: 0 for c in bc.COLS}
     for fname, linha in sorted(results.items()):
         cel = []
-        for c in bsh.COLS:
+        for c in bc.COLS:
             if linha.get(c, False):
                 totais[c] += 1
-                cel.append(bsh.GREEN.rjust(col_w[c] + 4))
+                cel.append(bc.GREEN.rjust(col_w[c] + 4))
             else:
-                cel.append(bsh.RED.rjust(col_w[c] + 4))
+                cel.append(bc.RED.rjust(col_w[c] + 4))
         print(fname.ljust(larg) + "    " + "    ".join(cel))
     print("-" * len(cab))
 
     ok_arquivos = sum(1 for linha in results.values() if all(linha.values()))
     print(f"Resultado Geral: {ok_arquivos}/{len(results)} arquivo(s) com todos os 6 backends OK")
-    for c in bsh.COLS:
+    for c in bc.COLS:
         print(f"  {c}: {totais[c]}/{len(results)} OK")
 
     regressoes: list[tuple[str, dict[str, bool], dict[str, bool]]] = []
@@ -315,14 +319,13 @@ def run_nr_compliance(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validador de conformidade multi-backend para Numerical Recipes v3 via Compilador Self-Hosted")
+    parser = argparse.ArgumentParser(description="Validador de conformidade multi-backend para Numerical Recipes v3")
     parser.add_argument("--filter", "-f", type=str, default=None, help="Filtra arquivos por substring no nome")
     parser.add_argument("--force", action="store_true", help="Força reteste de todos os arquivos, mesmo os 100%% OK")
-    parser.add_argument("--no-md", action="store_true", help="Não regera o arquivo NumericalRecipes_selfhosted.md")
-    parser.add_argument("--compiler", type=str, default=None, help="Caminho customizado do compilador self-hosted")
+    parser.add_argument("--no-md", action="store_true", help="Não regera o arquivo compliance_NR00.md")
     args = parser.parse_args()
 
-    rc = run_nr_compliance(filter_arg=args.filter, force=args.force, write_md=not args.no_md, compiler_path=args.compiler)
+    rc = run_nr_compliance(filter_arg=args.filter, force=args.force, write_md=not args.no_md)
     sys.exit(rc)
 
 

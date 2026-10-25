@@ -1,18 +1,27 @@
 from __future__ import annotations
+import io
 import os
-import subprocess
+import re
 import sys
+from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8")
+os.environ["FLUX_CI"] = "1"
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
 
 RAIZ = Path(__file__).resolve().parent
-BIN = RAIZ / "bin"
-FLUXC = BIN / "fluxc.exe"
+SRC = RAIZ / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from flux_proto.cli import main as run_flux
+
 FLUX_DIR = RAIZ / "flux"
+filtro = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
+flux_files = sorted(FLUX_DIR.glob("*.flux"))
+if filtro:
+    flux_files = [f for f in flux_files if filtro.lower() in f.name.lower()]
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",
@@ -20,46 +29,78 @@ STDIN_MAP: dict[str, str] = {
     "ExampleOfUseIoStdLib_IoInputContract.flux": "andre\nluiz\n",
 }
 
-if not FLUXC.exists():
-    print(f"Erro: Binario do compilador nao encontrado em {FLUXC}")
-    sys.exit(1)
+EXPECT_ERROR_RE = re.compile(r"^#L\s+EXPECT_ERROR:\s*([A-Z]{2,4}\d{3})", re.MULTILINE)
 
-filtro = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
-flux_files = sorted(FLUX_DIR.glob("*.flux"))
-if filtro:
-    flux_files = [f for f in flux_files if filtro.lower() in f.name.lower()]
+
+def obter_erro_esperado(path: Path) -> str | None:
+    if not path.name.startswith("ExampleOfError"):
+        return None
+    try:
+        m = EXPECT_ERROR_RE.search(path.read_text(encoding="utf-8"))
+        return m.group(1).upper() if m else None
+    except Exception:
+        return None
+
+
+def erro_esperado_obtido(expected_code: str | None, ec: int, texto_erro: str) -> bool:
+    if not expected_code or ec == 0:
+        return False
+    return (f"[{expected_code} - " in texto_erro) and ("💡 Dica:" in texto_erro)
+
+
+def limpar_scratch_dbs() -> None:
+    scratch = RAIZ / "scratch"
+    if scratch.exists():
+        for pat in ("flux_*.db*", "flux_*.kv", "flux_*.unqlite", "flux_*.duckdb", "flux_*.kuzu", "flux_*.obx"):
+            for f in scratch.glob(pat):
+                try:
+                    f.unlink()
+                except Exception:
+                    pass
+
 
 acertos = 0
 erros = 0
 
 for path in flux_files:
     nome = path.name
+    if "DbStdLib" in nome:
+        limpar_scratch_dbs()
     stdin_input = STDIN_MAP.get(nome, "")
+    expected_code = obter_erro_esperado(path)
+    old_stdin = sys.stdin
+    sys.stdin = io.StringIO(stdin_input)
 
     try:
-        res = subprocess.run(
-            [str(FLUXC), "--target", "in", str(path.resolve())],
-            input=stdin_input,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=30,
-        )
-        if res.returncode == 0:
+        out = io.StringIO()
+        err = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            try:
+                ec = run_flux([str(path)])
+            except SystemExit as se:
+                ec = se.code if isinstance(se.code, int) else (0 if se.code is None else 1)
+        output = out.getvalue()
+        err_output = (err.getvalue() or output).strip()
+        if ec == 0 and not expected_code:
             acertos += 1
-            if res.stdout.strip():
-                for linha in res.stdout.splitlines():
+            if output.strip():
+                for linha in output.splitlines():
                     print(f"  | {linha}")
+            print(f"  OK  {nome}")
+        elif erro_esperado_obtido(expected_code, ec, err_output):
+            acertos += 1
+            for linha in err_output.splitlines():
+                print(f"  | {linha}")
             print(f"  OK  {nome}")
         else:
             erros += 1
-            msg = (res.stderr or res.stdout).strip().splitlines()
-            error_msg = msg[-1] if msg else f"exit code {res.returncode}"
+            error_msg = err_output.split("\n")[-1] if err_output else f"esperava erro {expected_code}"
             print(f"FALHA  {nome}: {error_msg}")
     except Exception as exc:
         erros += 1
         print(f"FALHA  {nome}: {exc}")
+    finally:
+        sys.stdin = old_stdin
 
 print(f"\n{acertos} sucesso, {erros} falha(s)")
 raise SystemExit(0 if erros == 0 else 1)

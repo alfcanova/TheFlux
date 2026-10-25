@@ -48,7 +48,7 @@ agent (CompilerLib) impl ScanOperatorsContract {
                   consumed == 0 and p + 1 <= len ==> {
                         mut as string: s2 = src[p..(p + 1)]
                         route {
-                              s2 == "=+" or s2 == "=-" or s2 == "=*" or s2 == "=^" or s2 == "=|" or s2 == "=&" or s2 == "=~" or s2 == "==" or s2 == "!=" or s2 == "<=" or s2 == ">=" or s2 == "&&" or s2 == "||" or s2 == "::" or s2 == ".." or s2 == "+=" or s2 == "-=" or s2 == "*=" or s2 == "/=" or s2 == "%=" or s2 == "^=" or s2 == "&=" or s2 == "|=" or s2 == ">>" or s2 == "<<" or s2 == "/r" or s2 == "/f" or s2 == "/i" ==> {
+                              s2 == "^e" or s2 == "^r" or s2 == "=+" or s2 == "=-" or s2 == "=*" or s2 == "=^" or s2 == "=|" or s2 == "=&" or s2 == "=~" or s2 == "==" or s2 == "!=" or s2 == "<=" or s2 == ">=" or s2 == "&&" or s2 == "||" or s2 == "::" or s2 == ".." or s2 == "+=" or s2 == "-=" or s2 == "*=" or s2 == "/=" or s2 == "%=" or s2 == "^=" or s2 == "&=" or s2 == "|=" or s2 == ">>" or s2 == "<<" or s2 == "/r" or s2 == "/f" or s2 == "/i" ==> {
                                     op_str = s2
                                     consumed = 2
                               }

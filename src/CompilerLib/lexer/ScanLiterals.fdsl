@@ -1,0 +1,47 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: ScanLiterals.fdsl
+#L Reconhecimento Unificado de Literais (KW_LITERAL_*.yaml)
+#L ==============================================================================
+
+contract (ScanLiteralsContract) {
+      op isCanonicalBoolLiteral (as string: lexeme) as bool
+      op isIsoDatetimePrefix (as string: source, as int64: pos, as int64: total) as bool
+}
+
+agent (CompilerLib) impl ScanLiteralsContract {
+      op isCanonicalBoolLiteral (as string: lexeme) as bool ==> {
+            mut as bool: ok = false
+            route {
+                  lexeme == "True" ==> { ok = true }
+                  lexeme == "False" ==> { ok = true }
+                  _ ==> {}
+            }
+            emit(nice, ok, "ok")
+      }
+
+      op isIsoDatetimePrefix (as string: source, as int64: pos, as int64: total) as bool ==> {
+            mut as bool: ok = false
+            route {
+                  pos + 10 <= total ==> {
+                        route {
+                              source[pos + 4] == "-" ==> {
+                                    route {
+                                          source[pos + 7] == "-" ==> {
+                                                route {
+                                                      source[pos + 10] == "T" ==> {
+                                                            ok = true
+                                                      }
+                                                      _ ==> {}
+                                                }
+                                          }
+                                          _ ==> {}
+                                    }
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+            emit(nice, ok, "ok")
+      }
+}

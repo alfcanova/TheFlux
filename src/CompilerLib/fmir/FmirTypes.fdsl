@@ -40,7 +40,7 @@ agent (CompilerLib) impl FmirTypesContract {
       op fmirDumpText (as map: module) as string ==> {
             mut as list of data: instrs = module["instructions"]
             mut as int64: n = stdCollectionLength(instrs)
-            mut as string: out = ";; FMIR Module: " + module["name"] + "\\n"
+            print(";; FMIR Module: " + module["name"])
 
             mut as int64: i = 1
             infinite {
@@ -48,12 +48,11 @@ agent (CompilerLib) impl FmirTypesContract {
                         i > n ==> { break }
                         _ ==> {
                               mut as map: inst = instrs[i]
-                              mut as string: line = "  " + inst["res"] + " = " + inst["op"] + " " + inst["arg1"] + ", " + inst["arg2"] + "\\n"
-                              out = out + line
+                              print("  " + inst["res"] + " = " + inst["op"] + " " + inst["arg1"] + ", " + inst["arg2"])
                               i = i + 1
                         }
                   }
             }
-            emit(nice, out, "ok")
+            emit(nice, "", "ok")
       }
 }

@@ -2763,6 +2763,7 @@ class LLVMCodegen:
             self._w.declare_function("flux_std_os_uptime", "i64", [])
             self._w.declare_function("flux_std_os_memory_total", "i64", [])
             self._w.declare_function("flux_std_os_memory_free", "i64", [])
+            self._w.declare_function("flux_std_os_exit", "i64", ["i64"])
             # NetStdLib
             self._w.declare_function("flux_std_net_url_get_scheme", "i8*", ["i8*"])
             self._w.declare_function("flux_std_net_url_get_host", "i8*", ["i8*"])
@@ -4127,7 +4128,7 @@ class LLVMCodegen:
                         rp = self._w.new_local("pr_sp")
                         self._w.emit(f"{rp} = inttoptr i64 {r} to i8*")
                         buf = self._w.new_local("colbuf")
-                        self._w.emit(f"{buf} = alloca i8, i64 4096")
+                        self._w.emit_entry(f"{buf} = alloca i8, i64 4096")
                         out = self._w.new_local("colbufv")
                         self._w.emit(f"{out} = call i8* @flux_collection_to_buf(i8* {rp}, i8* {buf})")
                         val, t = out, "i8*"
@@ -4178,7 +4179,7 @@ class LLVMCodegen:
 
     def _gen_f64_str(self, val: str) -> str:
         buf = self._w.new_local("fbuf")
-        self._w.emit(f"{buf} = alloca i8, i64 64")
+        self._w.emit_entry(f"{buf} = alloca i8, i64 64")
         self._w.emit(f"call i8* @flux_fmt_double(double {val}, i8* {buf})")
         return buf
 
@@ -4530,7 +4531,7 @@ class LLVMCodegen:
     def _gen_enum_val_to_buf(self, node: EnumVariant) -> str:
         edef = self._enums[node.enum_name]
         buf = self._w.new_local("ebuf")
-        self._w.emit(f"{buf} = alloca i8, i64 512")
+        self._w.emit_entry(f"{buf} = alloca i8, i64 512")
         if not node.fields:
             s = f"{node.enum_name}::{node.variant}"
             sn = self._w.get_string_global(s)
@@ -4569,7 +4570,7 @@ class LLVMCodegen:
         tagv = self._w.new_local("etag")
         self._w.emit(f"{tagv} = load i64, i64* {tptr}")
         buf = self._w.new_local("ebuf")
-        self._w.emit(f"{buf} = alloca i8, i64 512")
+        self._w.emit_entry(f"{buf} = alloca i8, i64 512")
         seq = self._block_seq
         self._block_seq += 1
         end_b = f"enum_p_end_{seq}"
@@ -4650,7 +4651,7 @@ class LLVMCodegen:
                     self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {fval})")
                 elif ft == "datetime":
                     dt_tmp = self._w.new_local(f"dt_tmp_{j}")
-                    self._w.emit(f"{dt_tmp} = alloca i8, i64 64")
+                    self._w.emit_entry(f"{dt_tmp} = alloca i8, i64 64")
                     self._w.emit(f"call i8* @flux_datetime_to_buf(i64 {fval}, i8* {dt_tmp})")
                     fmt_s = prefix + "%s"
                     fn = self._w.get_string_global(fmt_s)
@@ -4658,7 +4659,7 @@ class LLVMCodegen:
                     self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {tail_ptr}, i64 {rem_size}, i8* getelementptr inbounds ([{fl} x i8], [{fl} x i8]* @{fn}, i32 0, i32 0), i8* {dt_tmp})")
                 elif ft in FLOATISH:
                     fmb = self._w.new_local(f"fmb_{j}")
-                    self._w.emit(f"{fmb} = alloca i8, i64 64")
+                    self._w.emit_entry(f"{fmb} = alloca i8, i64 64")
                     fs = self._w.new_local(f"fs_{j}")
                     fd = fval if llvm_t == "double" else self._coerce_to_double(fval, llvm_t)
                     self._w.emit(f"{fs} = call i8* @flux_fmt_double(double {fd}, i8* {fmb})")
@@ -4807,7 +4808,7 @@ class LLVMCodegen:
                 val, t = self._emit_expr_text(node)
                 v64 = self._coerce_to(val, t, "i64")
                 buf = self._w.new_local("dtbuf")
-                self._w.emit(f"{buf} = alloca i8, i64 64")
+                self._w.emit_entry(f"{buf} = alloca i8, i64 64")
                 out = self._w.new_local("dtbufv")
                 self._w.emit(f"{out} = call i8* @flux_datetime_to_buf(i64 {v64}, i8* {buf})")
                 return (out, "i8*")
@@ -4828,7 +4829,7 @@ class LLVMCodegen:
                 tag_i = self._w.new_local("dcall_tagi")
                 self._w.emit(f"{tag_i} = fptosi double {tag_d} to i64")
                 buf = self._w.new_local("colbuf")
-                self._w.emit(f"{buf} = alloca i8, i64 4096")
+                self._w.emit_entry(f"{buf} = alloca i8, i64 4096")
                 out = self._w.new_local("colbufv")
                 self._w.emit(f"{out} = call i8* @flux_data_to_str(i64 {v64}, i64 {tag_i}, i8* {buf})")
                 return (out, "i8*")
@@ -4843,7 +4844,7 @@ class LLVMCodegen:
                     return (val, "i8*")
                 if t == "i8*":
                     buf = self._w.new_local("colbuf")
-                    self._w.emit(f"{buf} = alloca i8, i64 4096")
+                    self._w.emit_entry(f"{buf} = alloca i8, i64 4096")
                     out = self._w.new_local("colbufv")
                     self._w.emit(f"{out} = call i8* @flux_list_to_buf(i8* {val}, i8* {buf})")
                     return (out, "i8*")
@@ -4872,7 +4873,7 @@ class LLVMCodegen:
                 self._w.emit(f"{re_v} = extractvalue {{ double, double }} {val}, 0")
                 self._w.emit(f"{im_v} = extractvalue {{ double, double }} {val}, 1")
             buf = self._w.new_local("cbuf")
-            self._w.emit(f"{buf} = alloca i8, i64 128")
+            self._w.emit_entry(f"{buf} = alloca i8, i64 128")
             out = self._w.new_local("cbufv")
             self._w.emit(f"{out} = call i8* @flux_complex_to_buf(double {re_v}, double {im_v}, i8* {buf})")
             return (out, "i8*")
@@ -4880,7 +4881,7 @@ class LLVMCodegen:
             val, t = self._emit_expr_text(node)
             v64 = self._coerce_to(val, t, "i64")
             buf = self._w.new_local("dtbuf")
-            self._w.emit(f"{buf} = alloca i8, i64 64")
+            self._w.emit_entry(f"{buf} = alloca i8, i64 64")
             out = self._w.new_local("dtbufv")
             self._w.emit(f"{out} = call i8* @flux_datetime_to_buf(i64 {v64}, i8* {buf})")
             return (out, "i8*")
@@ -4888,7 +4889,7 @@ class LLVMCodegen:
             val, t = self._emit_expr_text(node)
             vv = self._coerce_to(val, t, "i8*")
             buf = self._w.new_local("colbuf")
-            self._w.emit(f"{buf} = alloca i8, i64 4096")
+            self._w.emit_entry(f"{buf} = alloca i8, i64 4096")
             out = self._w.new_local("colbufv")
             self._w.emit(f"{out} = call i8* @flux_tensor_to_buf(i8* {vv}, i8* {buf})")
             return (out, "i8*")
@@ -4904,14 +4905,14 @@ class LLVMCodegen:
                 val, t = rp, "i8*"
             if t == "i8*" and (_is_set_type(ft) or _is_list_type(ft) or _is_map_type(ft)):
                 buf = self._w.new_local("colbuf")
-                self._w.emit(f"{buf} = alloca i8, i64 4096")
+                self._w.emit_entry(f"{buf} = alloca i8, i64 4096")
                 out = self._w.new_local("colbufv")
                 self._w.emit(f"{out} = call i8* @flux_collection_to_buf(i8* {val}, i8* {buf})")
                 return (out, "i8*")
             if ft == "data":
                 v64 = self._coerce_to(val, t, "i64")
                 buf = self._w.new_local("colbuf")
-                self._w.emit(f"{buf} = alloca i8, i64 4096")
+                self._w.emit_entry(f"{buf} = alloca i8, i64 4096")
                 out = self._w.new_local("colbufv")
                 tag_arg = "0"
                 if isinstance(node, Identifier):
@@ -4996,7 +4997,7 @@ class LLVMCodegen:
             self._w.emit(f"{v2} = select i1 {iss}, i64 {sp}, i64 {v}")
             v = v2
         buf = self._w.new_local("elem_buf")
-        self._w.emit(f"{buf} = alloca i8, i64 256")
+        self._w.emit_entry(f"{buf} = alloca i8, i64 256")
         cnt = self._w.new_local("ecnt")
         self._w.emit(f"{cnt} = call i64 @flux_elem_to_buf(i64 {t}, i64 {v}, i8* {buf})")
         return (buf, "i8*")
@@ -5024,7 +5025,7 @@ class LLVMCodegen:
         self._w.emit(f"{tsel} = select i1 {miss}, i64 {dtag}, i64 {t}")
         self._w.emit(f"{vsel} = select i1 {miss}, i64 {dv64}, i64 {v}")
         buf = self._w.new_local("elem_buf")
-        self._w.emit(f"{buf} = alloca i8, i64 256")
+        self._w.emit_entry(f"{buf} = alloca i8, i64 256")
         cnt = self._w.new_local("gecnt")
         self._w.emit(f"{cnt} = call i64 @flux_elem_to_buf(i64 {tsel}, i64 {vsel}, i8* {buf})")
         return (buf, "i8*")
@@ -5122,7 +5123,7 @@ class LLVMCodegen:
                 parts_vals.append(val)
                 parts_types.append(t)
             buf = self._w.new_local("buf")
-            self._w.emit(f"{buf} = alloca i8, i64 1024")
+            self._w.emit_entry(f"{buf} = alloca i8, i64 1024")
             fmt_pieces = []
             args_list = []
             for val, t in zip(parts_vals, parts_types):
@@ -6986,7 +6987,7 @@ class LLVMCodegen:
             i_val = self._w.new_local("lcimag")
             self._w.emit(f"{i_val} = extractvalue {{ double, double }} {left_val}, 1")
             lbuf = self._w.new_local("lcbuf")
-            self._w.emit(f"{lbuf} = alloca i8, i64 128")
+            self._w.emit_entry(f"{lbuf} = alloca i8, i64 128")
             lc_str = self._w.new_local("lcstr")
             self._w.emit(f"{lc_str} = call i8* @flux_complex_to_buf(double {r_val}, double {i_val}, i8* {lbuf})")
             left_val, left_t = lc_str, "i8*"
@@ -6996,20 +6997,20 @@ class LLVMCodegen:
             i_val = self._w.new_local("rcimag")
             self._w.emit(f"{i_val} = extractvalue {{ double, double }} {right_val}, 1")
             rbuf = self._w.new_local("rcbuf")
-            self._w.emit(f"{rbuf} = alloca i8, i64 128")
+            self._w.emit_entry(f"{rbuf} = alloca i8, i64 128")
             rc_str = self._w.new_local("rcstr")
             self._w.emit(f"{rc_str} = call i8* @flux_complex_to_buf(double {r_val}, double {i_val}, i8* {rbuf})")
             right_val, right_t = rc_str, "i8*"
         if left_t in ("double", "float"):
             lbuf = self._w.new_local("lfbuf")
-            self._w.emit(f"{lbuf} = alloca i8, i64 64")
+            self._w.emit_entry(f"{lbuf} = alloca i8, i64 64")
             lv = self._w.new_local("lfv")
             ld = self._coerce_to_double(left_val, left_t)
             self._w.emit(f"{lv} = call i8* @flux_fmt_double(double {ld}, i8* {lbuf})")
             left_val, left_t = lv, "i8*"
         if right_t in ("double", "float"):
             rbuf = self._w.new_local("rfbuf")
-            self._w.emit(f"{rbuf} = alloca i8, i64 64")
+            self._w.emit_entry(f"{rbuf} = alloca i8, i64 64")
             rv = self._w.new_local("rfv")
             rd = self._coerce_to_double(right_val, right_t)
             self._w.emit(f"{rv} = call i8* @flux_fmt_double(double {rd}, i8* {rbuf})")
@@ -8340,6 +8341,10 @@ class LLVMCodegen:
             res = self._w.new_local("os_memfree")
             self._w.emit(f"{res} = call i64 @flux_std_os_memory_free()")
             return (res, "i64")
+        if name == "stdOsExit":
+            res64 = self._w.new_local("os_exit64")
+            self._w.emit(f"{res64} = call i64 @flux_std_os_exit(i64 {i64v(0)})")
+            return (res64, "i64")
         raise CodegenError(f"unsupported os intrinsic '{name}'")
 
     def _gen_std_net_intrinsic(self, name: str, args: list[ASTNode]) -> tuple[str, str]:

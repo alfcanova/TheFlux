@@ -1,21 +1,21 @@
 from __future__ import annotations
-import io
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8")
+os.environ["FLUX_CI"] = "1"
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
 
 RAIZ = Path(__file__).resolve().parent
-BIN = RAIZ / "bin"
-FLUXC = BIN / "fluxc.exe"
+SRC = RAIZ / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
 FLUX_DIR = RAIZ / "flux"
 T_WASM = RAIZ / "t_wasm"
-T_WASM.mkdir(parents=True, exist_ok=True)
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",
@@ -23,10 +23,26 @@ STDIN_MAP: dict[str, str] = {
     "ExampleOfUseIoStdLib_IoInputContract.flux": "andre\nluiz\n",
 }
 
-if not FLUXC.exists():
-    print(f"Erro: Binario do compilador nao encontrado em {FLUXC}")
-    sys.exit(1)
+EXPECT_ERROR_RE = re.compile(r"^#L\s+EXPECT_ERROR:\s*([A-Z]{2,4}\d{3})", re.MULTILINE)
 
+
+def obter_erro_esperado(path: Path) -> str | None:
+    if not path.name.startswith("ExampleOfError"):
+        return None
+    try:
+        m = EXPECT_ERROR_RE.search(path.read_text(encoding="utf-8"))
+        return m.group(1).upper() if m else None
+    except Exception:
+        return None
+
+
+def erro_esperado_obtido(expected_code: str | None, ec: int, texto_erro: str) -> bool:
+    if not expected_code or ec == 0:
+        return False
+    return (f"[{expected_code} - " in texto_erro) and ("💡 Dica:" in texto_erro)
+
+
+T_WASM.mkdir(parents=True, exist_ok=True)
 filtro = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
 flux_files = sorted(FLUX_DIR.glob("*.flux"))
 if filtro:
@@ -35,36 +51,43 @@ if filtro:
 acertos = 0
 erros = 0
 
+PYTHON = sys.executable
+ENV = dict(os.environ, PYTHONPATH=str(SRC), FLUX_CI="1")
+
 for flux_path in flux_files:
     nome = flux_path.name
     base_stem = flux_path.stem
     stdin_input = STDIN_MAP.get(nome, "")
+    expected_code = obter_erro_esperado(flux_path)
+
     wasm_path = T_WASM / f"{base_stem}.wasm"
 
-    try:
-        # Emite WASM via fluxc.exe
-        res = subprocess.run(
-            [str(FLUXC), "--target", "wasm", "-o", str(T_WASM / base_stem), str(flux_path.resolve())],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=30,
-        )
-        if res.returncode != 0 or not wasm_path.exists():
+    result = subprocess.run(
+        [PYTHON, "-m", "flux_proto", str(flux_path), "--target", "wasm", "--output", str(wasm_path.with_suffix(""))],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, env=ENV, input=stdin_input,
+    )
+
+    if result.returncode != 0:
+        err_output = (result.stderr or result.stdout).strip()
+        if erro_esperado_obtido(expected_code, result.returncode, err_output):
+            acertos += 1
+            for linha in err_output.splitlines():
+                print(f"  | {linha}")
+            print(f"  OK    {nome}")
+        else:
             erros += 1
-            msg = (res.stderr or res.stdout).strip().splitlines()
-            error_msg = msg[-1] if msg else "falha ao emitir WASM"
-            print(f"FALHA  {nome}: {error_msg}")
-            continue
+            print(f"FALHA  {nome}: {err_output}")
+        continue
 
+    if wasm_path.exists() and not expected_code:
         print(f"  [wasm] {wasm_path.name}")
-        acertos += 1
-        print(f"  OK    {nome}")
-
-    except Exception as exc:
+    else:
         erros += 1
-        print(f"FALHA  {nome}: {exc}")
+        print(f"FALHA  {nome}: .wasm nao gerado")
+        continue
+
+    acertos += 1
+    print(f"  OK    {nome}")
 
 print(f"\n{acertos} sucesso, {erros} falha(s)")
 raise SystemExit(0 if erros == 0 else 1)

@@ -1,0 +1,73 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: Reader.fdsl
+#L Cursor de Leitura de Codigo-Fonte UTF-8 (Linha, Coluna e Offset)
+#L ==============================================================================
+
+contract (ReaderContract) {
+      op readerNew (as string: source, as string: path) as map
+      op readerIsAtEnd (as map: r) as bool
+      op readerPeek (as map: r, as int64: offset) as string
+      op readerAdvance (as map: r) as map
+}
+
+agent (CompilerLib) impl ReaderContract {
+      op readerNew (as string: source, as string: path) as map ==> {
+            mut as map: r = map{}
+            r["source"] = source
+            r["path"] = path
+            r["pos"] = 1
+            r["len"] = stdCollectionLength(source)
+            r["line"] = 1
+            r["col"] = 1
+            emit(nice, r, "ok")
+      }
+
+      op readerIsAtEnd (as map: r) as bool ==> {
+            mut as int64: pos = r["pos"]
+            mut as int64: total = r["len"]
+            mut as bool: done = pos > total
+            emit(nice, done, "ok")
+      }
+
+      op readerPeek (as map: r, as int64: offset) as string ==> {
+            mut as int64: pos = r["pos"] + offset
+            mut as int64: total = r["len"]
+            mut as string: src = r["source"]
+            mut as string: ch = ""
+            route {
+                  pos >= 1 ==> {
+                        route {
+                              pos <= total ==> {
+                                    ch = src[pos]
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+            emit(nice, ch, "ok")
+      }
+
+      op readerAdvance (as map: r) as map ==> {
+            mut as int64: pos = r["pos"]
+            mut as int64: total = r["len"]
+            mut as string: src = r["source"]
+            route {
+                  pos <= total ==> {
+                        mut as string: ch = src[pos]
+                        route {
+                              ch == "\n" ==> {
+                                    r["line"] = r["line"] + 1
+                                    r["col"] = 1
+                              }
+                              _ ==> {
+                                    r["col"] = r["col"] + 1
+                              }
+                        }
+                        r["pos"] = pos + 1
+                  }
+                  _ ==> {}
+            }
+            emit(nice, r, "ok")
+      }
+}

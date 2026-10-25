@@ -60,6 +60,26 @@ agent (CompilerLib) impl ImportResolverContract {
                   stdIoFileExists(p_fdsl) ==> { emit(nice, p_fdsl, "ok") }
                   _ ==> {}
             }
+            mut as string: p_asm = "fdsl/asm_dsl/" + mod
+            route {
+                  stdIoFileExists(p_asm) ==> { emit(nice, p_asm, "ok") }
+                  _ ==> {}
+            }
+            mut as string: p_calc = "fdsl/calc_dsl/" + mod
+            route {
+                  stdIoFileExists(p_calc) ==> { emit(nice, p_calc, "ok") }
+                  _ ==> {}
+            }
+            mut as string: p_logo = "fdsl/logo_dsl/" + mod
+            route {
+                  stdIoFileExists(p_logo) ==> { emit(nice, p_logo, "ok") }
+                  _ ==> {}
+            }
+            mut as string: p_rule = "fdsl/rule_dsl/" + mod
+            route {
+                  stdIoFileExists(p_rule) ==> { emit(nice, p_rule, "ok") }
+                  _ ==> {}
+            }
 
             #L 5. Fallback para Embedded StdLib
             route {

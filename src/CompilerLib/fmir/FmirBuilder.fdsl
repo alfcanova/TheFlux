@@ -195,12 +195,22 @@ agent (CompilerLib) impl FmirBuilderContract {
                         tc = i_res["temp_counter"]
                         mut as string: idx_full = i_res["res_reg"]
                         mut as list of data: ichildren = astArenaNodeChildren(arena, node_id)
+                        mut as int64: n_ichild = stdCollectionLength(ichildren)
                         route {
-                              val == "MULTI" and stdCollectionLength(ichildren) > 0 ==> {
-                                    mut as map: i2_res = fmirLowerExpr(arena, ichildren[1], mod, tc)
-                                    mod = i2_res["module"]
-                                    tc = i2_res["temp_counter"]
-                                    idx_full = idx_full + "," + i2_res["res_reg"]
+                              val == "MULTI" and n_ichild > 0 ==> {
+                                    mut as int64: ici = 1
+                                    infinite {
+                                          route {
+                                                ici > n_ichild ==> { break }
+                                                _ ==> {
+                                                      mut as map: ic_res = fmirLowerExpr(arena, ichildren[ici], mod, tc)
+                                                      mod = ic_res["module"]
+                                                      tc = ic_res["temp_counter"]
+                                                      idx_full = idx_full + "," + ic_res["res_reg"]
+                                                      ici = ici + 1
+                                                }
+                                          }
+                                    }
                               }
                               _ ==> {}
                         }
@@ -262,13 +272,30 @@ agent (CompilerLib) impl FmirBuilderContract {
                   }
                   kind == "PIPELINE" or (kind == "BINARY_EXPR" and val == "-->") ==> {
                         mut as int64: lid = astArenaNodeLeft(arena, node_id)
+                        mut as int64: rid = astArenaNodeRight(arena, node_id)
                         mut as map: l_res = fmirLowerExpr(arena, lid, mod, tc)
                         mod = l_res["module"]
                         tc = l_res["temp_counter"]
                         mut as string: l_reg = l_res["res_reg"]
-                        mod = fmirAddInstruction(mod, "PRINT", l_reg, "", "")
-                        tc = tc + 1
-                        res_reg = "%t" + tc
+
+                        mut as string: r_kind = astArenaNodeKind(arena, rid)
+                        mut as string: r_val = astArenaNodeValue(arena, rid)
+                        route {
+                              r_val == "print" ==> {
+                                    mod = fmirAddInstruction(mod, "PRINT", l_reg, "", "")
+                                    res_reg = l_reg
+                              }
+                              r_kind == "CAST_SINK" or r_kind == "CAST_EXPR" or r_kind == "CAST" ==> {
+                                    tc = tc + 1
+                                    res_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CAST", l_reg, r_val, res_reg)
+                              }
+                              _ ==> {
+                                    tc = tc + 1
+                                    res_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CALL", r_val, l_reg, res_reg)
+                              }
+                        }
                   }
                   kind == "BIN_OP" or kind == "BINARY_EXPR" ==> {
                         mut as int64: lid = astArenaNodeLeft(arena, node_id)
@@ -301,19 +328,135 @@ agent (CompilerLib) impl FmirBuilderContract {
                   }
                   kind == "CALL" ==> {
                         mut as list of data: c_args = astArenaNodeChildren(arena, node_id)
+                        mut as int64: num_args = stdCollectionLength(c_args)
                         mut as string: arg_reg = ""
-                        route {
-                              stdCollectionLength(c_args) > 0 ==> {
-                                    mut as map: a_res = fmirLowerExpr(arena, c_args[1], mod, tc)
-                                    mod = a_res["module"]
-                                    tc = a_res["temp_counter"]
-                                    arg_reg = a_res["res_reg"]
+                        mut as int64: ai = 1
+                        infinite {
+                              route {
+                                    ai > num_args ==> { break }
+                                    _ ==> {
+                                          mut as map: a_res = fmirLowerExpr(arena, c_args[ai], mod, tc)
+                                          mod = a_res["module"]
+                                          tc = a_res["temp_counter"]
+                                          mut as string: cur_arg_reg = a_res["res_reg"]
+                                          route {
+                                                arg_reg == "" ==> { arg_reg = cur_arg_reg }
+                                                _ ==> { arg_reg = arg_reg + "," + cur_arg_reg }
+                                          }
+                                          ai = ai + 1
+                                    }
                               }
-                              _ ==> {}
                         }
                         tc = tc + 1
                         res_reg = "%t" + tc
                         mod = fmirAddInstruction(mod, "CALL", val, arg_reg, res_reg)
+                  }
+                  kind == "COMPTIME" or kind == "AWAIT" or kind == "SPAWN" ==> {
+                        mut as int64: inner_id = astArenaNodeLeft(arena, node_id)
+                        route {
+                              inner_id > 0 ==> {
+                                    mut as map: c_res = fmirLowerExpr(arena, inner_id, mod, tc)
+                                    mod = c_res["module"]
+                                    tc = c_res["temp_counter"]
+                                    res_reg = c_res["res_reg"]
+                              }
+                              _ ==> {
+                                    tc = tc + 1
+                                    res_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "NOP", "", "", res_reg)
+                              }
+                        }
+                  }
+                  kind == "COMPTIME_BLOCK" ==> {
+                        mut as list of data: cb_nodes = astArenaNodeChildren(arena, node_id)
+                        mut as int64: n_cb = stdCollectionLength(cb_nodes)
+                        mut as int64: cbi = 1
+                        infinite {
+                              route {
+                                    cbi >= n_cb ==> { break }
+                                    _ ==> {
+                                          mut as int64: cid = cb_nodes[cbi]
+                                          mut as map: s_res = fmirLowerStmt(arena, cid, mod, tc)
+                                          mod = s_res["module"]
+                                          tc = s_res["temp_counter"]
+                                          cbi = cbi + 1
+                                    }
+                              }
+                        }
+                        route {
+                              n_cb > 0 ==> {
+                                    mut as int64: last_id = cb_nodes[n_cb]
+                                    mut as string: last_kind = astArenaNodeKind(arena, last_id)
+                                    route {
+                                          last_kind == "STMT_EXPR" or last_kind == "EXPR_STMT" ==> {
+                                                mut as int64: expr_id = astArenaNodeLeft(arena, last_id)
+                                                route { expr_id == 0 ==> { expr_id = last_id } _ ==> {} }
+                                                mut as map: e_res = fmirLowerExpr(arena, expr_id, mod, tc)
+                                                mod = e_res["module"]
+                                                tc = e_res["temp_counter"]
+                                                res_reg = e_res["res_reg"]
+                                          }
+                                          _ ==> {
+                                                mut as map: e_res2 = fmirLowerExpr(arena, last_id, mod, tc)
+                                                mod = e_res2["module"]
+                                                tc = e_res2["temp_counter"]
+                                                res_reg = e_res2["res_reg"]
+                                          }
+                                    }
+                              }
+                              _ ==> {
+                                    tc = tc + 1
+                                    res_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "NOP", "", "", res_reg)
+                              }
+                        }
+                  }
+                  kind == "DATAFLOW_SPLIT_JOIN" ==> {
+                        mut as int64: left_id = astArenaNodeLeft(arena, node_id)
+                        mut as int64: right_id = astArenaNodeRight(arena, node_id)
+                        mut as map: l_res = fmirLowerExpr(arena, left_id, mod, tc)
+                        mod = l_res["module"]
+                        tc = l_res["temp_counter"]
+                        mut as map: r_res = fmirLowerExpr(arena, right_id, mod, tc)
+                        mod = r_res["module"]
+                        tc = r_res["temp_counter"]
+                        tc = tc + 1
+                        res_reg = "%t" + tc
+                        mod = fmirAddInstruction(mod, "DATAFLOW_JOIN", l_res["res_reg"], r_res["res_reg"], res_reg)
+                  }
+                  kind == "DATAFLOW_MAP_EXPR" ==> {
+                        mut as int64: left_id = astArenaNodeLeft(arena, node_id)
+                        mut as int64: right_id = astArenaNodeRight(arena, node_id)
+                        mut as map: l_res = fmirLowerExpr(arena, left_id, mod, tc)
+                        mod = l_res["module"]
+                        tc = l_res["temp_counter"]
+                        mod = fmirAddInstruction(mod, "STORE", l_res["res_reg"], "", "it")
+                        mut as map: r_res = fmirLowerExpr(arena, right_id, mod, tc)
+                        mod = r_res["module"]
+                        tc = r_res["temp_counter"]
+                        res_reg = r_res["res_reg"]
+                  }
+                  kind == "ENSURE_BLOCK" ==> {
+                        mut as int64: target_id = astArenaNodeLeft(arena, node_id)
+                        mut as map: t_res = fmirLowerExpr(arena, target_id, mod, tc)
+                        mod = t_res["module"]
+                        tc = t_res["temp_counter"]
+                        res_reg = t_res["res_reg"]
+                        mut as list of data: stmts = astArenaNodeChildren(arena, node_id)
+                        mut as int64: sn = stdCollectionLength(stmts)
+                        mut as int64: si = 1
+                        infinite {
+                              route {
+                                    si > sn ==> { break }
+                                    _ ==> {
+                                          mut as int64: sid = stmts[si]
+                                          mut as map: s_res = fmirLowerStmt(arena, sid, mod, tc)
+                                          mod = s_res["module"]
+                                          tc = s_res["temp_counter"]
+                                          si = si + 1
+                                    }
+                              }
+                        }
                   }
                   _ ==> {
                         tc = tc + 1
@@ -443,7 +586,26 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                 mod = fmirAddInstruction(mod, "CONST_COMPLEX", "0.0 + 0.0i", "", def_reg)
                                           }
                                           is_tensor_ty ==> {
-                                                mod = fmirAddInstruction(mod, "MAP_INIT", "", "", def_reg)
+                                                tc = tc + 1
+                                                mut as string: tr1 = "%t" + tc
+                                                mod = fmirAddInstruction(mod, "LIST_INIT", "", "", tr1)
+                                                tc = tc + 1
+                                                mut as string: tz1 = "%t" + tc
+                                                mod = fmirAddInstruction(mod, "CONST_FLOAT", "0.0", "", tz1)
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", tr1, tz1, "")
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", tr1, tz1, "")
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", tr1, tz1, "")
+
+                                                tc = tc + 1
+                                                mut as string: tr2 = "%t" + tc
+                                                mod = fmirAddInstruction(mod, "LIST_INIT", "", "", tr2)
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", tr2, tz1, "")
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", tr2, tz1, "")
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", tr2, tz1, "")
+
+                                                mod = fmirAddInstruction(mod, "LIST_INIT", "", "", def_reg)
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", def_reg, tr1, "")
+                                                mod = fmirAddInstruction(mod, "LIST_PUSH", def_reg, tr2, "")
                                           }
                                           _ ==> {
                                                 mod = fmirAddInstruction(mod, "CONST_INT", "0", "", def_reg)
@@ -487,12 +649,22 @@ agent (CompilerLib) impl FmirBuilderContract {
                         mod = i_res["module"]
                         tc = i_res["temp_counter"]
                         mut as string: idx_full = i_res["res_reg"]
+                        mut as int64: n_schildren = stdCollectionLength(schildren)
                         route {
-                              stdCollectionLength(schildren) > 1 ==> {
-                                    mut as map: i2_res = fmirLowerExpr(arena, schildren[2], mod, tc)
-                                    mod = i2_res["module"]
-                                    tc = i2_res["temp_counter"]
-                                    idx_full = idx_full + "," + i2_res["res_reg"]
+                              n_schildren > 1 ==> {
+                                    mut as int64: sci = 2
+                                    infinite {
+                                          route {
+                                                sci > n_schildren ==> { break }
+                                                _ ==> {
+                                                      mut as map: sc_res = fmirLowerExpr(arena, schildren[sci], mod, tc)
+                                                      mod = sc_res["module"]
+                                                      tc = sc_res["temp_counter"]
+                                                      idx_full = idx_full + "," + sc_res["res_reg"]
+                                                      sci = sci + 1
+                                                }
+                                          }
+                                    }
                               }
                               _ ==> {}
                         }
@@ -711,12 +883,10 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                 r_end_id = astArenaNodeRight(arena, coll_id)
                                           }
                                           _ ==> {
-                                                route {
-                                                      ckind == "IDENT" or ckind == "IDENTIFIER" ==> {
-                                                            coll_var = cval
-                                                      }
-                                                      _ ==> {}
-                                                }
+                                                mut as map: c_res = fmirLowerExpr(arena, coll_id, mod, tc)
+                                                mod = c_res["module"]
+                                                tc = c_res["temp_counter"]
+                                                coll_var = c_res["res_reg"]
                                           }
                                     }
                               }
@@ -1499,6 +1669,23 @@ agent (CompilerLib) impl FmirBuilderContract {
                         }
                         mod = fmirAddInstruction(mod, "LABEL", m_end, "", "")
                   }
+                  kind == "STMT_UNSAFE" or kind == "UNSAFE" ==> {
+                        mut as list of data: uns_children = astArenaNodeChildren(arena, node_id)
+                        mut as int64: num_uns = stdCollectionLength(uns_children)
+                        mut as int64: unsi = 1
+                        infinite {
+                              route {
+                                    unsi > num_uns ==> { break }
+                                    _ ==> {
+                                          mut as int64: cid = uns_children[unsi]
+                                          mut as map: s_res = fmirLowerStmt(arena, cid, mod, tc)
+                                          mod = s_res["module"]
+                                          tc = s_res["temp_counter"]
+                                          unsi = unsi + 1
+                                    }
+                              }
+                        }
+                  }
                   kind == "STMT_EXPR" ==> {
                         mut as int64: eid = astArenaNodeLeft(arena, node_id)
                         mut as map: e_res = fmirLowerExpr(arena, eid, mod, tc)
@@ -1535,6 +1722,8 @@ agent (CompilerLib) impl FmirBuilderContract {
 
                               route {
                                     kind == "DECL_PROGRAM" or kind == "DECL_program" ==> {
+                                          mut as string: p_name = astArenaNodeValue(arena, did)
+                                          mod["name"] = p_name
                                           mut as list of data: stmts = astArenaNodeChildren(arena, did)
 
                                           mut as int64: n_stmts = stdCollectionLength(stmts)

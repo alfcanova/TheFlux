@@ -1,17 +1,16 @@
-"""Validador e Certificador de Conformidade dos 6 Backends TheFlux (Self-Hosted Nativo).
+"""Executa cada arquivo em ./flux nos 6 backends e compara as saidas.
 
 Backends (colunas da tabela): in, vm, vmr, llvm, wat, wasm
-    in    interpretador AST/FMIR via compilador nativo self-hosted (bin/fluxc.exe) -> referencia
-    vm    bytecode .fvmbc emitido via fluxc.exe e executado via bin/fluxvm.exe
-    vmr   bytecode .fvmbc recarregado do disco e executado via bin/fluxvm.exe
-    llvm  LLVM IR emitido via fluxc.exe -> clang -> executavel nativo
-    wat   WAT emitido via fluxc.exe -> wat2wasm -> wasmer
-    wasm  WASM binario emitido via fluxc.exe -> wasmer
+    in    interpretador AST (flux_in.py)              -> referencia
+    vm    bytecode .fvmbc executado pela VM
+    vmr   bytecode .fvmbc recarregado do disco e executado pela VM
+    llvm  LLVM IR -> clang -> executavel nativo
+    wat   WAT -> wat2wasm -> wasmer
+    wasm  WASM binario -> wasmer
 
-Gera compliance_backend00.md com tabela de checks e totalizacao.
-Baseline de regressao: compliance_backend01.md.
+Gera compliance_BE00.md com tabela de checks e totalizacao.
 
-Uso: python compliance_backend.py [FILTRO] [--compiler PATH] [--out DIR] [--stdin 'k=texto']
+Uso: python compliance_BE.py [--out DIR] [--stdin 'k=texto']
 """
 from __future__ import annotations
 
@@ -24,20 +23,21 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent
 SRC = RAIZ / "src"
-BIN = RAIZ / "bin"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-FLUX_DIR = RAIZ / "flux"
+FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
 T_FVMBC = RAIZ / "t_fvmbc"
 T_LLVM = RAIZ / "t_llvm"
 T_WAT = RAIZ / "t_wat"
 T_WASM = RAIZ / "t_wasm"
+for _d in (T_FVMBC, T_LLVM, T_WAT, T_WASM):
+    _d.mkdir(parents=True, exist_ok=True)
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",
@@ -47,6 +47,12 @@ STDIN_MAP: dict[str, str] = {
 
 
 def ler_inputs_yaml(path: Path) -> list[str] | None:
+    """Le os `inputs` declarados em flux/<stem>.yaml (injetor de dados).
+
+    Cada flux/ExampleOfX.flux pode ter um ExampleOfX.yaml companheiro com uma
+    lista YAML `inputs:` (1 item por chamada de `input`, na ordem do programa).
+    Devolve a lista, ou None se nao houver o .yaml / campo `inputs`.
+    """
     yaml_path = path.with_suffix(".yaml")
     if not yaml_path.exists():
         return None
@@ -68,6 +74,7 @@ def ler_inputs_yaml(path: Path) -> list[str] | None:
 
 
 def _ler_inputs_manual(yaml_path: Path) -> list[str] | None:
+    """Fallback sem PyYAML: extrai itens `- "valor"` da secao inputs:."""
     lines = yaml_path.read_text(encoding="utf-8").splitlines()
     result: list[str] = []
     in_inputs = False
@@ -87,16 +94,19 @@ def _ler_inputs_manual(yaml_path: Path) -> list[str] | None:
 
 
 def stdin_para(path: Path) -> str:
+    """Determina o stdin a injetar para um arquivo .flux."""
     inputs = ler_inputs_yaml(path)
     if inputs is not None:
         return "\n".join(inputs) + "\n"
     return STDIN_MAP.get(path.name, "")
 
+obter_stdin_para_arquivo = stdin_para
 
 EXPECT_ERROR_RE = re.compile(r"^#L\s+EXPECT_ERROR:\s*([A-Z]{2,4}\d{3})", re.MULTILINE)
 
 
 def obter_erro_esperado(path: Path) -> str | None:
+    """Extrai codigo esperado de erro estatico declarado com '#L EXPECT_ERROR: <CODIGO>'."""
     if not path.name.startswith("ExampleOfError"):
         return None
     try:
@@ -109,16 +119,16 @@ def obter_erro_esperado(path: Path) -> str | None:
     return None
 
 
+
 PYTHON = sys.executable
 os.environ["FLUX_CI"] = "1"
 ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="utf-8", FLUX_CI="1")
 
 T_DIRS = [
-    T_FVMBC,
-    T_LLVM,
-    T_WAT,
-    T_WASM,
-    RAIZ / "t_benchmarks",
+    RAIZ / "t_fvmbc",
+    RAIZ / "t_llvm",
+    RAIZ / "t_wasm",
+    RAIZ / "t_wat",
     RAIZ / "intermediates" / "llvm",
 ]
 
@@ -143,20 +153,6 @@ TOOLS = {
 }
 
 
-def resolver_compilador_selfhosted(custom_path: str | None = None) -> list[str]:
-    if custom_path:
-        p = Path(custom_path)
-        if p.exists():
-            return [str(p)]
-    exe = BIN / "fluxc.exe"
-    if exe.exists():
-        return [str(exe)]
-    raise FileNotFoundError(f"Compilador nativo TheFlux não encontrado em {exe}")
-
-
-COMPILER_CMD = resolver_compilador_selfhosted()
-
-
 def limpar_scratch_dbs() -> None:
     scratch = RAIZ / "scratch"
     if scratch.exists():
@@ -178,74 +174,37 @@ def limpar_t() -> None:
                     except Exception:
                         pass
     limpar_scratch_dbs()
-
-
-MAX_CAPTURE_BYTES = 512 * 1024
-
-
-def _kill_proc_tree(pid: int) -> None:
-    try:
-        if sys.platform == "win32":
-            subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], capture_output=True, timeout=3)
+    fix = RAIZ / "io_stdlib_fixture.txt"
+    if not fix.exists():
+        pai_fix = RAIZ.parent / "io_stdlib_fixture.txt"
+        if pai_fix.exists():
+            shutil.copyfile(pai_fix, fix)
         else:
-            import signal
-            os.kill(pid, signal.SIGKILL)
-    except Exception:
-        pass
+            fix.write_text("conteudo fixture io_stdlib\n", encoding="utf-8")
+    print("Limpado: t_* e intermediates/llvm")
 
 
-def _run(cmd: list[str], *, timeout: int = 10, input_text: str = "", cwd: Path | None = None) -> subprocess.CompletedProcess:
+def _run(cmd: list[str], *, timeout: int = 60, input_text: str = "", cwd: Path | None = None) -> subprocess.CompletedProcess:
     try:
-        proc = subprocess.Popen(
-            cmd,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=ENV,
-            cwd=str(cwd) if cwd else None,
+        return subprocess.run(
+            cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=timeout, env=ENV, input=input_text, cwd=str(cwd) if cwd else None,
         )
-        try:
-            stdout, stderr = proc.communicate(input=input_text, timeout=timeout)
-        except subprocess.TimeoutExpired:
-            _kill_proc_tree(proc.pid)
-            try:
-                proc.kill()
-            except Exception:
-                pass
-            try:
-                stdout, stderr = proc.communicate(timeout=1)
-            except Exception:
-                stdout, stderr = "", "timeout"
-            return subprocess.CompletedProcess(cmd, -1, (stdout or "")[:MAX_CAPTURE_BYTES], "timeout")
-
-        if stdout and len(stdout) > MAX_CAPTURE_BYTES:
-            stdout = stdout[:MAX_CAPTURE_BYTES]
-        if stderr and len(stderr) > MAX_CAPTURE_BYTES:
-            stderr = stderr[:MAX_CAPTURE_BYTES]
-        return subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
-    except Exception as e:
-        return subprocess.CompletedProcess(cmd, -1, "", str(e))
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(cmd, -1, "", "timeout")
 
 
 def saida_interp(path: Path, stdin_text: str) -> str | None:
-    exe = BIN / "fluxc.exe"
-    if not exe.exists():
-        return None
-    r = _run([str(exe), "--target", "in", str(path.resolve())], input_text=stdin_text, timeout=10)
+    r = _run([PYTHON, str(RAIZ / "flux_in.py"), str(path.resolve())], input_text=stdin_text)
     if r.returncode != 0:
         return None
     return r.stdout
 
-
 run_interpreter = saida_interp
-obter_stdin_para_arquivo = stdin_para
 
 
 def saida_vm(path: Path, stdin_text: str) -> str | None:
-    out = _run(COMPILER_CMD + ["--target", "vmr", "-o", str(T_FVMBC / path.stem), str(path.resolve())], input_text=stdin_text, timeout=10)
+    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
     if out.returncode != 0:
         return None
     bc_path = T_FVMBC / (path.stem + ".fvmbc")
@@ -255,17 +214,25 @@ def saida_vm(path: Path, stdin_text: str) -> str | None:
 def _executa_bc(bc_path: Path, stdin_text: str) -> str | None:
     if not bc_path.exists():
         return None
-    fluxvm = BIN / "fluxvm.exe"
-    if not fluxvm.exists():
+    try:
+        with open(bc_path, encoding="utf-8") as f:
+            bc = json.load(f)
+        from flux_proto.vm.runtime import execute_bytecode
+        cap = io.StringIO()
+        old_in, old_out = sys.stdin, sys.stdout
+        sys.stdin = io.StringIO(stdin_text)
+        try:
+            with redirect_stdout(cap):
+                execute_bytecode(bc)
+        finally:
+            sys.stdin, sys.stdout = old_in, old_out
+        return cap.getvalue()
+    except Exception:
         return None
-    res = _run([str(fluxvm), "--inject", str(bc_path.resolve())], input_text=stdin_text, timeout=10)
-    if res.returncode != 0 and not res.stdout:
-        return None
-    return res.stdout
 
 
 def saida_vmr(path: Path, stdin_text: str) -> str | None:
-    out = _run(COMPILER_CMD + ["--target", "vmr", "-o", str(T_FVMBC / path.stem), str(path.resolve())], input_text=stdin_text, timeout=10)
+    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
     if out.returncode != 0:
         return None
     bc_path = T_FVMBC / (path.stem + ".fvmbc")
@@ -273,36 +240,34 @@ def saida_vmr(path: Path, stdin_text: str) -> str | None:
 
 
 def saida_lv(path: Path, stdin_text: str) -> str | None:
-    out = _run(COMPILER_CMD + ["--target", "llvm", "-o", str(T_LLVM / path.stem), str(path.resolve())], input_text=stdin_text, timeout=10)
+    out = _run([PYTHON, "-m", "flux_proto", str(path), "--emit-llvm"], input_text=stdin_text)
     if out.returncode != 0:
         return None
-    ll_path = T_LLVM / (path.stem + ".ll")
-    if not ll_path.exists():
-        ll_path = RAIZ / "intermediates" / "llvm" / (path.stem + ".ll")
+    ll_path = RAIZ / "intermediates" / "llvm" / (path.stem + ".ll")
     if not ll_path.exists():
         return None
     clang = TOOLS.get("clang")
     if not clang:
         return None
     exe_path = T_LLVM / (path.stem + ".exe")
-    runtime_c = RAIZ / "runtime" / "flux_input.c"
-    c = _run([clang, "-O2", "-Wno-deprecated-declarations", "-o", str(exe_path), str(ll_path), str(runtime_c)], timeout=10)
+    runtime_c = RAIZ / "src" / "flux_proto" / "llvm" / "runtime" / "flux_input.c"
+    c = _run([clang, "-o", str(exe_path), str(ll_path), str(runtime_c)])
     if c.returncode != 0:
         import time
         time.sleep(0.5)
-        c = _run([clang, "-O2", "-Wno-deprecated-declarations", "-o", str(exe_path), str(ll_path), str(runtime_c)], timeout=10)
+        c = _run([clang, "-o", str(exe_path), str(ll_path), str(runtime_c)])
         if c.returncode != 0:
             return None
-    res = _run([str(exe_path)], input_text=stdin_text, timeout=10)
+    res = _run([str(exe_path)], input_text=stdin_text, timeout=30)
     if res.returncode != 0 and not res.stdout:
         import time
         time.sleep(0.5)
-        res = _run([str(exe_path)], input_text=stdin_text, timeout=10)
+        res = _run([str(exe_path)], input_text=stdin_text, timeout=30)
     return res.stdout
 
 
 def saida_wat(path: Path, stdin_text: str) -> str | None:
-    out = _run(COMPILER_CMD + ["--target", "wat", "-o", str(T_WAT / path.stem), str(path.resolve())], input_text=stdin_text, timeout=10)
+    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wat", "--output", str(T_WAT / path.stem)], input_text=stdin_text)
     if out.returncode != 0:
         return None
     wat_path = T_WAT / (path.stem + ".wat")
@@ -314,14 +279,14 @@ def saida_wat(path: Path, stdin_text: str) -> str | None:
         return None
     with tempfile.TemporaryDirectory(prefix="flux_cmp_") as td:
         bin_path = Path(td) / (path.stem + ".wasm")
-        c = _run([w2w, str(wat_path), "-o", str(bin_path)], timeout=10)
+        c = _run([w2w, str(wat_path), "-o", str(bin_path)])
         if c.returncode != 0:
             return None
-        return _run([wasmer, "run", "--forward-host-env", str(bin_path)], input_text=stdin_text, timeout=10).stdout
+        return _run([wasmer, "run", "--forward-host-env", str(bin_path)], input_text=stdin_text, timeout=30).stdout
 
 
 def saida_wasm(path: Path, stdin_text: str) -> str | None:
-    out = _run(COMPILER_CMD + ["--target", "wasm", "-o", str(T_WASM / path.stem), str(path.resolve())], input_text=stdin_text, timeout=10)
+    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wasm", "--output", str(T_WASM / path.stem)], input_text=stdin_text)
     if out.returncode != 0:
         return None
     wasm_path = T_WASM / (path.stem + ".wasm")
@@ -330,7 +295,7 @@ def saida_wasm(path: Path, stdin_text: str) -> str | None:
     wasmer = TOOLS.get("wasmer")
     if not wasmer:
         return None
-    return _run([wasmer, "run", "--forward-host-env", str(wasm_path)], input_text=stdin_text, timeout=10).stdout
+    return _run([wasmer, "run", "--forward-host-env", str(wasm_path)], input_text=stdin_text, timeout=30).stdout
 
 
 BACKENDS = {
@@ -352,12 +317,19 @@ MD_RED = "❌"
 
 
 def normalizar_saida(texto: str | None) -> str | None:
+    """Normaliza saida para comparacao de conformidade entre backends.
+
+    Trata valores numericos como 0 e 0.0 (ou -0.0) como equivalentes.
+    """
     if texto is None:
         return None
+    # Substitui 0.0, -0.0, 0.00... isolados por 0
     return re.sub(r'(^|[^\w.])(-?0\.0+)(?=[^\w.]|$)', r'\g<1>0', texto)
 
 
 def diff_em_colunas(nome: str, col: str, ref: str, out: str) -> list[str]:
+    """Devolve as linhas que divergem entre a saida do interpretador (referencia)
+    e a saida do backend, alinhadas em duas colunas."""
     rl = ref.splitlines()
     ol = out.splitlines()
     rl_norm = [normalizar_saida(l) for l in rl]
@@ -385,6 +357,9 @@ def diff_em_colunas(nome: str, col: str, ref: str, out: str) -> list[str]:
 
 
 def bloco_colunas(nome: str, outs: dict[str, str | None]) -> list[str]:
+    """Gera bloco markdown com a saida de cada backend em colunas (1 coluna por
+    backend, linhas alinhadas por indice; celulas vazias se um backend nao tem
+    aquela linha)."""
     cols = COLS
     split: dict[str, list[str]] = {}
     for c in cols:
@@ -446,6 +421,7 @@ MD_SEP = {
 
 
 def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
+    """Le um arquivo de compliance markdown e extrai os resultados por arquivo e backend."""
     if not md_path.exists():
         return {}
     res: dict[str, dict[str, bool]] = {}
@@ -469,6 +445,11 @@ def ler_tabela_md(md_path: Path) -> dict[str, dict[str, bool]]:
 
 
 def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_path: Path, outs: dict[str, dict[str, str | None]], old_results: dict[str, dict[str, bool]] | None = None) -> None:
+    """Gera compliance_BE00.md: tabela paginada com ✅ verde / ❌ vermelho por
+    backend e coluna result (verde se todos os backends concordam, vermelho caso
+    contrario), seguida da totalizacao por backend, secao de regressao (comparando
+    com compliance_BE01.md) e, por fim, blocos com as saidas colunadas dos
+    arquivos que divergem."""
     larg_arq = max([len(n) for n in results] + [len("arquivo")])
 
     def linha_md(nome: str, linha: dict[str, bool]) -> str:
@@ -489,8 +470,9 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
 
     linhas: list[str] = []
 
+    # 1. Tabela paginada para programas regulares positivos
     if pos_items:
-        linhas.append("## 📦 Programas Regulares de Execução (Self-Hosted Compiler)")
+        linhas.append("## 📦 Programas Regulares de Execução")
         linhas.append("")
         for n_page in range(0, len(pos_items), PAGE_SIZE):
             chunk = pos_items[n_page: n_page + PAGE_SIZE]
@@ -501,6 +483,7 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
                 linhas.append(linha_md(nome, linha))
             linhas.append("")
 
+    # 2. Tabela dedicada para testes de diagnósticos e erros (Opção 2)
     if err_items:
         linhas.append("## 🧪 Tabela de Conformidade — Testes de Diagnósticos e Erros (Negativos)")
         linhas.append("")
@@ -534,6 +517,7 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
     linhas.append(f"- {'TOTAL GERAL'.rjust(12)} : {cor_final} {verde_cells:>4} of {total_cells:>4} — {cor_final}")
     linhas.append("")
 
+    # --- Secao de Regressao ---
     regressoes: list[tuple[str, dict[str, bool], dict[str, bool]]] = []
     if old_results:
         for nome, linha_nova in results.items():
@@ -559,60 +543,27 @@ def gerar_md(results: dict[str, dict[str, bool]], totais: dict[str, int], md_pat
             linhas.extend(bloco_colunas(nome, outs[nome]))
 
     md_path.write_text("\n".join(linhas) + "\n", encoding="utf-8")
-    print(f"Relatório gerado: {md_path}")
+    print(f"Relatorio gerado: {md_path}")
 
 
 def main() -> int:
-    if any(a in ("-h", "--help") for a in sys.argv[1:]):
-        print(__doc__)
-        return 0
-
     filter_arg = None
-    compiler_arg = None
-    force = False
-    incremental = False
-    write_md = False
-    i = 1
-    while i < len(sys.argv):
-        a = sys.argv[i]
-        if a == "--compiler" and i + 1 < len(sys.argv):
-            compiler_arg = sys.argv[i + 1]
-            i += 2
-            continue
-        elif a == "--force":
-            force = True
-        elif a == "--incremental":
-            incremental = True
-        elif a in ("--write-md", "-w"):
-            write_md = True
-        elif a in ("--modular", "--stdlib"):
+    for a in sys.argv[1:]:
+        if a in ("--modular", "--stdlib"):
             filter_arg = a
+            break
         elif not a.startswith("--"):
             filter_arg = a
-        i += 1
-
-    global COMPILER_CMD
-    if compiler_arg:
-        COMPILER_CMD = resolver_compilador_selfhosted(compiler_arg)
-
+            break
     md_path = RAIZ / "compliance_BE00.md"
     old_md_path = RAIZ / "compliance_BE01.md"
 
-    is_full_canonical = not filter_arg or filter_arg in ("flux", "flux/", str(FLUX_DIR), str(FLUX_DIR.resolve()))
-
-    if is_full_canonical and md_path.exists():
+    # Copia compliance_BE00.md para compliance_BE01.md antes de executar
+    if not filter_arg and md_path.exists():
         shutil.copyfile(md_path, old_md_path)
         print(f"Copiado: {md_path.name} -> {old_md_path.name}")
 
     old_results = ler_tabela_md(old_md_path) if old_md_path.exists() else {}
-    if len(old_results) < 50:
-        for legacy_md in (RAIZ / "compliance_backend00.md", md_path):
-            if legacy_md.exists():
-                cur_results = ler_tabela_md(legacy_md)
-                if len(cur_results) > len(old_results):
-                    old_results = cur_results
-        if len(cur_results) > len(old_results):
-            old_results = cur_results
 
     limpar_t()
 
@@ -636,27 +587,20 @@ def main() -> int:
         elif filter_arg in ("--stdlib", "--modular", "modular", "stdlib"):
             flux_files = [f for f in flux_files if "StdLib" in f.name or "Modular" in f.name]
         else:
-            target = exact_p.name.lower()
-            flux_files = [f for f in flux_files if target in f.name.lower()]
+            parts = [p.strip().lower() for p in filter_arg.split(",") if p.strip()]
+            flux_files = [
+                f for f in flux_files
+                if any(
+                    (f.name.lower() == p or f.stem.lower() == p or p in f.name.lower())
+                    for p in parts
+                )
+            ]
         print(f"Executando filtro '{filter_arg}': {len(flux_files)} arquivo(s) encontrado(s)")
     results: dict[str, dict[str, bool]] = {}
     outs: dict[str, dict[str, str | None]] = {}
     falhas = []
-    testados = 0
-    pulados = 0
 
     for path in flux_files:
-        nome = path.name
-
-        if (incremental or not force) and nome in old_results and all(old_results[nome].get(c, False) for c in COLS):
-            results[nome] = old_results[nome]
-            pulados += 1
-            continue
-
-        testados += 1
-        if testados % 25 == 0 or testados == len(flux_files):
-            print(f"  ⚡ Processados: {testados}/{len(flux_files)} arquivos...", flush=True)
-
         nome = path.name
         stdin_text = stdin_para(path)
         linha: dict[str, bool] = {}
@@ -664,30 +608,31 @@ def main() -> int:
         expected_code = obter_erro_esperado(path)
 
         if expected_code:
-            r_in = _run(COMPILER_CMD + ["--target", "in", str(path.resolve())], input_text=stdin_text)
-            ok_in = (r_in.returncode != 0) and (f"[{expected_code} - " in r_in.stderr or expected_code in r_in.stdout or expected_code in r_in.stderr)
+            # Teste estático de diagnóstico: verifica se cada backend recusa e emite o código esperado
+            r_in = _run([PYTHON, str(RAIZ / "flux_in.py"), str(path.resolve())], input_text=stdin_text)
+            ok_in = (r_in.returncode != 0) and (f"[{expected_code} - " in r_in.stderr) and ("💡 Dica:" in r_in.stderr)
             linha["in"] = ok_in
             outs[nome]["in"] = f"[{expected_code} capturado]" if ok_in else r_in.stderr
 
-            r_vm = _run(COMPILER_CMD + ["--target", "vmr", "-o", str(T_FVMBC / path.stem), str(path.resolve())], input_text=stdin_text)
-            ok_vm = (r_vm.returncode != 0) and (f"[{expected_code} - " in r_vm.stderr or expected_code in r_vm.stdout or expected_code in r_vm.stderr)
+            r_vm = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
+            ok_vm = (r_vm.returncode != 0) and (f"[{expected_code} - " in r_vm.stderr) and ("💡 Dica:" in r_vm.stderr)
             linha["vm"] = ok_vm
             outs[nome]["vm"] = f"[{expected_code} capturado]" if ok_vm else r_vm.stderr
             linha["vmr"] = ok_vm
             outs[nome]["vmr"] = outs[nome]["vm"]
 
-            r_lv = _run(COMPILER_CMD + ["--target", "llvm", "-o", str(T_LLVM / path.stem), str(path.resolve())], input_text=stdin_text)
-            ok_lv = (r_lv.returncode != 0) and (f"[{expected_code} - " in r_lv.stderr or expected_code in r_lv.stdout or expected_code in r_lv.stderr)
+            r_lv = _run([PYTHON, "-m", "flux_proto", str(path), "--emit-llvm"], input_text=stdin_text)
+            ok_lv = (r_lv.returncode != 0) and (f"[{expected_code} - " in r_lv.stderr) and ("💡 Dica:" in r_lv.stderr)
             linha["llvm"] = ok_lv
             outs[nome]["llvm"] = f"[{expected_code} capturado]" if ok_lv else r_lv.stderr
 
-            r_wat = _run(COMPILER_CMD + ["--target", "wat", "-o", str(T_WAT / path.stem), str(path.resolve())], input_text=stdin_text)
-            ok_wat = (r_wat.returncode != 0) and (f"[{expected_code} - " in r_wat.stderr or expected_code in r_wat.stdout or expected_code in r_wat.stderr)
+            r_wat = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wat", "--output", str(T_WAT / path.stem)], input_text=stdin_text)
+            ok_wat = (r_wat.returncode != 0) and (f"[{expected_code} - " in r_wat.stderr) and ("💡 Dica:" in r_wat.stderr)
             linha["wat"] = ok_wat
             outs[nome]["wat"] = f"[{expected_code} capturado]" if ok_wat else r_wat.stderr
 
-            r_wasm = _run(COMPILER_CMD + ["--target", "wasm", "-o", str(T_WASM / path.stem), str(path.resolve())], input_text=stdin_text)
-            ok_wasm = (r_wasm.returncode != 0) and (f"[{expected_code} - " in r_wasm.stderr or expected_code in r_wasm.stdout or expected_code in r_wasm.stderr)
+            r_wasm = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wasm", "--output", str(T_WASM / path.stem)], input_text=stdin_text)
+            ok_wasm = (r_wasm.returncode != 0) and (f"[{expected_code} - " in r_wasm.stderr) and ("💡 Dica:" in r_wasm.stderr)
             linha["wasm"] = ok_wasm
             outs[nome]["wasm"] = f"[{expected_code} capturado]" if ok_wasm else r_wasm.stderr
 
@@ -715,9 +660,8 @@ def main() -> int:
                     if not ok:
                         falhas.append((path.name, col, ref, out))
             results[path.name] = linha
-        import gc
-        gc.collect()
 
+    # --- tabela ---
     col_w = {c: max(len(c), 3) for c in COLS}
     larg = max(len(n) for n in results) if results else 7
 
@@ -750,9 +694,10 @@ def main() -> int:
     for c in COLS:
         print(f"  {c}: {totais[c]}/{len(results)} OK")
 
-    if is_full_canonical or write_md:
+    if not filter_arg:
         gerar_md(results, totais, md_path, outs, old_results)
 
+    # Rastreamento de regressoes no terminal
     regressoes = [
         nome for nome, linha_nova in results.items()
         if nome in old_results and any(old_results[nome].get(c, False) and not linha_nova.get(c, False) for c in COLS)
@@ -761,12 +706,12 @@ def main() -> int:
     if not old_results:
         print("Rastreamento de regressão: Nenhum baseline anterior para comparação.")
     elif regressoes:
-        print(f"ATENÇÃO: {len(regressoes)} regressão(ões) detectada(s) em relação ao compliance_backend01.md:")
+        print(f"ATENÇÃO: {len(regressoes)} regressão(ões) detectada(s) em relação ao OLD:")
         for r in regressoes:
             detalhes = [c for c in COLS if old_results[r].get(c, False) and not results[r].get(c, False)]
             print(f"  ❌ {r} regrediu em: {', '.join(detalhes)}")
     else:
-        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao compliance_backend01.md!")
+        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao compliance_BE01.md!")
 
     print()
     print("Legenda:  {} coincide com o interpretador   {} diverge ou falhou".format(GREEN, RED))
@@ -791,6 +736,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
     raise SystemExit(main())

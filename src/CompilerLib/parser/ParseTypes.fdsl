@@ -31,7 +31,7 @@ agent (CompilerLib) impl ParseTypesContract {
                               }
                         }
                   }
-                  type_name == "tensor" ==> {
+                  type_name == "tensor" or type_name == "Tensor" ==> {
                         mut as string: shape_str = ""
                         mut as map: m_br = tokenStreamMatch(ts, "OP", "[")
                         route {

@@ -5,10 +5,12 @@
 
 #L 1. Modulos Lexicos
 use lexer::TokenTypes.fdsl
+use lexer::Reader.fdsl
 use lexer::IndentTracker.fdsl
 use lexer::ScanComments.fdsl
 use lexer::ScanNumbers.fdsl
 use lexer::ScanStrings.fdsl
+use lexer::ScanLiterals.fdsl
 use lexer::ScanOperators.fdsl
 use lexer::ScanIdentifiers.fdsl
 use lexer::LexerCore.fdsl
@@ -21,6 +23,7 @@ use parser::ParsePatterns.fdsl
 use parser::ParseExprs.fdsl
 use parser::ParseStmts.fdsl
 use parser::ParseDecls.fdsl
+use parser::MacroExpander.fdsl
 use parser::EmbeddedStdLib.fdsl
 use parser::ImportResolver.fdsl
 use parser::ParserCore.fdsl
@@ -44,6 +47,8 @@ use fmir::FmirBuilder.fdsl
 use backends::BackendContract.fdsl
 use backends::interp::InterpBackend.fdsl
 use backends::vm::VmBackend.fdsl
+use backends::vm::VmCompiler.fdsl
+use backends::vm::VmRuntime.fdsl
 use backends::vmr::VmrBackend.fdsl
 use backends::llvm::LlvmBackend.fdsl
 use backends::wat::WatBackend.fdsl

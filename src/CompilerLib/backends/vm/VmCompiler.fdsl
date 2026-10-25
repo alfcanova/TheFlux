@@ -1,0 +1,15 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: VmCompiler.fdsl
+#L Emissor Modular de Bytecode FVM (.fvmbc) a partir de FMIR
+#L ==============================================================================
+
+contract (VmCompilerContract) {
+      op vmCompileModuleToJson (as map: fmir_mod) as string
+}
+
+agent (CompilerLib) impl VmCompilerContract {
+      op vmCompileModuleToJson (as map: fmir_mod) as string ==> {
+            mut as string: bc_json = vmEmitBytecodeJson(fmir_mod)
+            emit(nice, bc_json, "ok")
+      }
+}

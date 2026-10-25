@@ -1,0 +1,15 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: VmRuntime.fdsl
+#L Executor Modular de Bytecode FVM (.fvmbc)
+#L ==============================================================================
+
+contract (VmRuntimeContract) {
+      op vmExecuteModule (as map: fmir_mod) as map
+}
+
+agent (CompilerLib) impl VmRuntimeContract {
+      op vmExecuteModule (as map: fmir_mod) as map ==> {
+            mut as map: res = vmCompileFmir(fmir_mod)
+            emit(nice, res, "ok")
+      }
+}

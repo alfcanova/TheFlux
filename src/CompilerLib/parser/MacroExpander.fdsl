@@ -1,0 +1,18 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: MacroExpander.fdsl
+#L Expansao em Tempo de Compilacao (KW_comptime, KW_meta, KW_lift, KW_lower)
+#L ==============================================================================
+
+contract (MacroExpanderContract) {
+      op expandModuleMacros (as map: arena, as int64: root_id) as map
+}
+
+agent (CompilerLib) impl MacroExpanderContract {
+      op expandModuleMacros (as map: arena, as int64: root_id) as map ==> {
+            mut as map: res = map{}
+            res["arena"] = arena
+            res["root_id"] = root_id
+            res["expanded"] = true
+            emit(nice, res, "ok")
+      }
+}

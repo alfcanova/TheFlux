@@ -25,11 +25,29 @@ STDIN_MAP: dict[str, str] = {
     "ExampleOfUseIoStdLib_IoInputContract.flux": "andre\nluiz\n",
 }
 
+
+def obter_erro_esperado(path: Path) -> str | None:
+    try:
+        for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+            if "#L EXPECT_ERROR:" in line:
+                return line.split("#L EXPECT_ERROR:")[1].strip().split()[0]
+    except Exception:
+        pass
+    return None
+
+
+def erro_esperado_obtido(expected_code: str, ec: int, texto_erro: str) -> bool:
+    if ec == 0:
+        return False
+    return f"[{expected_code} - " in texto_erro and "💡 Dica:" in texto_erro
+
+
 acertos = 0
 erros = 0
 
 for path in flux_files:
     nome = path.name
+    expected_code = obter_erro_esperado(path)
     stdin_input = STDIN_MAP.get(nome, "")
     old_stdin = sys.stdin
     sys.stdin = io.StringIO(stdin_input)
@@ -40,7 +58,18 @@ for path in flux_files:
         with redirect_stdout(out), redirect_stderr(err):
             ec = run_flux([str(path)])
         output = out.getvalue()
-        if ec == 0:
+        err_text = err.getvalue() or output
+        if expected_code is not None:
+            if erro_esperado_obtido(expected_code, ec, err_text):
+                acertos += 1
+                for linha in err_text.strip().splitlines():
+                    print(f"  | {linha}")
+                print(f"  OK  {nome}")
+            else:
+                erros += 1
+                error_msg = err_text.strip().split("\n")[-1] if err_text.strip() else "Sem erro emitido"
+                print(f"FALHA  {nome}: {error_msg}")
+        elif ec == 0:
             acertos += 1
             if output.strip():
                 for linha in output.splitlines():
@@ -48,7 +77,7 @@ for path in flux_files:
             print(f"  OK  {nome}")
         else:
             erros += 1
-            error_msg = (err.getvalue() or output).strip().split("\n")[-1]
+            error_msg = err_text.strip().split("\n")[-1]
             print(f"FALHA  {nome}: {error_msg}")
     except Exception as exc:
         erros += 1
