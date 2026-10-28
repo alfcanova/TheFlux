@@ -26,8 +26,10 @@ import tempfile
 from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent
+RAIZ = Path(__file__).resolve().parent.parent
 SRC = RAIZ / "src"
+FLUXC_EXE = RAIZ / "bin" / "fluxc.exe"
+RUNTIME_C = RAIZ / "runtime" / "flux_input.c"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -36,7 +38,8 @@ T_FVMBC = RAIZ / "t_fvmbc"
 T_LLVM = RAIZ / "t_llvm"
 T_WAT = RAIZ / "t_wat"
 T_WASM = RAIZ / "t_wasm"
-for _d in (T_FVMBC, T_LLVM, T_WAT, T_WASM):
+INTERMEDIATES_LLVM = RAIZ / "intermediates" / "llvm"
+for _d in (T_FVMBC, T_LLVM, T_WAT, T_WASM, INTERMEDIATES_LLVM):
     _d.mkdir(parents=True, exist_ok=True)
 
 STDIN_MAP: dict[str, str] = {
@@ -122,7 +125,14 @@ def obter_erro_esperado(path: Path) -> str | None:
 
 PYTHON = sys.executable
 os.environ["FLUX_CI"] = "1"
-ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="utf-8", FLUX_CI="1")
+ENV = dict(
+    os.environ,
+    PYTHONPATH=str(SRC),
+    PYTHONUTF8="1",
+    PYTHONIOENCODING="utf-8",
+    FLUX_CI="1",
+    _FLUXC_LV_EMIT_ONLY="1",
+)
 
 T_DIRS = [
     RAIZ / "t_fvmbc",
@@ -195,7 +205,7 @@ def _run(cmd: list[str], *, timeout: int = 60, input_text: str = "", cwd: Path |
 
 
 def saida_interp(path: Path, stdin_text: str) -> str | None:
-    r = _run([PYTHON, str(RAIZ / "flux_in.py"), str(path.resolve())], input_text=stdin_text)
+    r = _run([str(FLUXC_EXE), "--target", "in", str(path.resolve())], input_text=stdin_text, cwd=RAIZ)
     if r.returncode != 0:
         return None
     return r.stdout
@@ -204,7 +214,7 @@ run_interpreter = saida_interp
 
 
 def saida_vm(path: Path, stdin_text: str) -> str | None:
-    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
+    out = _run([str(FLUXC_EXE), str(path), "--target", "vmbc", "-o", str(T_FVMBC / path.stem)], input_text=stdin_text, cwd=RAIZ)
     if out.returncode != 0:
         return None
     bc_path = T_FVMBC / (path.stem + ".fvmbc")
@@ -232,7 +242,7 @@ def _executa_bc(bc_path: Path, stdin_text: str) -> str | None:
 
 
 def saida_vmr(path: Path, stdin_text: str) -> str | None:
-    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
+    out = _run([str(FLUXC_EXE), str(path), "--target", "vmbc", "-o", str(T_FVMBC / path.stem)], input_text=stdin_text, cwd=RAIZ)
     if out.returncode != 0:
         return None
     bc_path = T_FVMBC / (path.stem + ".fvmbc")
@@ -240,22 +250,22 @@ def saida_vmr(path: Path, stdin_text: str) -> str | None:
 
 
 def saida_lv(path: Path, stdin_text: str) -> str | None:
-    out = _run([PYTHON, "-m", "flux_proto", str(path), "--emit-llvm"], input_text=stdin_text)
+    ll_base = INTERMEDIATES_LLVM / path.stem
+    ll_path = ll_base.with_suffix(".ll")
+    out = _run([str(FLUXC_EXE), str(path), "--target", "llvm", "-o", str(ll_base)], input_text=stdin_text, cwd=RAIZ)
     if out.returncode != 0:
         return None
-    ll_path = RAIZ / "intermediates" / "llvm" / (path.stem + ".ll")
     if not ll_path.exists():
         return None
     clang = TOOLS.get("clang")
     if not clang:
         return None
     exe_path = T_LLVM / (path.stem + ".exe")
-    runtime_c = RAIZ / "src" / "flux_proto" / "llvm" / "runtime" / "flux_input.c"
-    c = _run([clang, "-o", str(exe_path), str(ll_path), str(runtime_c)])
+    c = _run([clang, "-o", str(exe_path), str(ll_path), str(RUNTIME_C)])
     if c.returncode != 0:
         import time
         time.sleep(0.5)
-        c = _run([clang, "-o", str(exe_path), str(ll_path), str(runtime_c)])
+        c = _run([clang, "-o", str(exe_path), str(ll_path), str(RUNTIME_C)])
         if c.returncode != 0:
             return None
     res = _run([str(exe_path)], input_text=stdin_text, timeout=30)
@@ -267,7 +277,7 @@ def saida_lv(path: Path, stdin_text: str) -> str | None:
 
 
 def saida_wat(path: Path, stdin_text: str) -> str | None:
-    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wat", "--output", str(T_WAT / path.stem)], input_text=stdin_text)
+    out = _run([str(FLUXC_EXE), str(path), "--target", "wat", "-o", str(T_WAT / path.stem)], input_text=stdin_text, cwd=RAIZ)
     if out.returncode != 0:
         return None
     wat_path = T_WAT / (path.stem + ".wat")
@@ -286,7 +296,7 @@ def saida_wat(path: Path, stdin_text: str) -> str | None:
 
 
 def saida_wasm(path: Path, stdin_text: str) -> str | None:
-    out = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wasm", "--output", str(T_WASM / path.stem)], input_text=stdin_text)
+    out = _run([str(FLUXC_EXE), str(path), "--target", "wasm", "-o", str(T_WASM / path.stem)], input_text=stdin_text, cwd=RAIZ)
     if out.returncode != 0:
         return None
     wasm_path = T_WASM / (path.stem + ".wasm")
@@ -608,33 +618,38 @@ def main() -> int:
         expected_code = obter_erro_esperado(path)
 
         if expected_code:
-            # Teste estático de diagnóstico: verifica se cada backend recusa e emite o código esperado
-            r_in = _run([PYTHON, str(RAIZ / "flux_in.py"), str(path.resolve())], input_text=stdin_text)
-            ok_in = (r_in.returncode != 0) and (f"[{expected_code} - " in r_in.stderr) and ("💡 Dica:" in r_in.stderr)
+            # Teste estático de diagnóstico: verifica se cada backend recusa e emite o código esperado via bin/fluxc.exe
+            r_in = _run([str(FLUXC_EXE), "--target", "in", str(path.resolve())], input_text=stdin_text, cwd=RAIZ)
+            t_in = (r_in.stderr or "") + (r_in.stdout or "")
+            ok_in = (r_in.returncode != 0) and (f"[{expected_code} - " in t_in) and ("💡 Dica:" in t_in)
             linha["in"] = ok_in
-            outs[nome]["in"] = f"[{expected_code} capturado]" if ok_in else r_in.stderr
+            outs[nome]["in"] = f"[{expected_code} capturado]" if ok_in else t_in
 
-            r_vm = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "vmbc", "--output", str(T_FVMBC / path.stem)], input_text=stdin_text)
-            ok_vm = (r_vm.returncode != 0) and (f"[{expected_code} - " in r_vm.stderr) and ("💡 Dica:" in r_vm.stderr)
+            r_vm = _run([str(FLUXC_EXE), str(path), "--target", "vmbc", "-o", str(T_FVMBC / path.stem)], input_text=stdin_text, cwd=RAIZ)
+            t_vm = (r_vm.stderr or "") + (r_vm.stdout or "")
+            ok_vm = (r_vm.returncode != 0) and (f"[{expected_code} - " in t_vm) and ("💡 Dica:" in t_vm)
             linha["vm"] = ok_vm
-            outs[nome]["vm"] = f"[{expected_code} capturado]" if ok_vm else r_vm.stderr
+            outs[nome]["vm"] = f"[{expected_code} capturado]" if ok_vm else t_vm
             linha["vmr"] = ok_vm
             outs[nome]["vmr"] = outs[nome]["vm"]
 
-            r_lv = _run([PYTHON, "-m", "flux_proto", str(path), "--emit-llvm"], input_text=stdin_text)
-            ok_lv = (r_lv.returncode != 0) and (f"[{expected_code} - " in r_lv.stderr) and ("💡 Dica:" in r_lv.stderr)
+            r_lv = _run([str(FLUXC_EXE), str(path), "--target", "llvm", "-o", str(INTERMEDIATES_LLVM / path.stem)], input_text=stdin_text, cwd=RAIZ)
+            t_lv = (r_lv.stderr or "") + (r_lv.stdout or "")
+            ok_lv = (r_lv.returncode != 0) and (f"[{expected_code} - " in t_lv) and ("💡 Dica:" in t_lv)
             linha["llvm"] = ok_lv
-            outs[nome]["llvm"] = f"[{expected_code} capturado]" if ok_lv else r_lv.stderr
+            outs[nome]["llvm"] = f"[{expected_code} capturado]" if ok_lv else t_lv
 
-            r_wat = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wat", "--output", str(T_WAT / path.stem)], input_text=stdin_text)
-            ok_wat = (r_wat.returncode != 0) and (f"[{expected_code} - " in r_wat.stderr) and ("💡 Dica:" in r_wat.stderr)
+            r_wat = _run([str(FLUXC_EXE), str(path), "--target", "wat", "-o", str(T_WAT / path.stem)], input_text=stdin_text, cwd=RAIZ)
+            t_wat = (r_wat.stderr or "") + (r_wat.stdout or "")
+            ok_wat = (r_wat.returncode != 0) and (f"[{expected_code} - " in t_wat) and ("💡 Dica:" in t_wat)
             linha["wat"] = ok_wat
-            outs[nome]["wat"] = f"[{expected_code} capturado]" if ok_wat else r_wat.stderr
+            outs[nome]["wat"] = f"[{expected_code} capturado]" if ok_wat else t_wat
 
-            r_wasm = _run([PYTHON, "-m", "flux_proto", str(path), "--target", "wasm", "--output", str(T_WASM / path.stem)], input_text=stdin_text)
-            ok_wasm = (r_wasm.returncode != 0) and (f"[{expected_code} - " in r_wasm.stderr) and ("💡 Dica:" in r_wasm.stderr)
+            r_wasm = _run([str(FLUXC_EXE), str(path), "--target", "wasm", "-o", str(T_WASM / path.stem)], input_text=stdin_text, cwd=RAIZ)
+            t_wasm = (r_wasm.stderr or "") + (r_wasm.stdout or "")
+            ok_wasm = (r_wasm.returncode != 0) and (f"[{expected_code} - " in t_wasm) and ("💡 Dica:" in t_wasm)
             linha["wasm"] = ok_wasm
-            outs[nome]["wasm"] = f"[{expected_code} capturado]" if ok_wasm else r_wasm.stderr
+            outs[nome]["wasm"] = f"[{expected_code} capturado]" if ok_wasm else t_wasm
 
             for col in COLS:
                 if not linha[col]:

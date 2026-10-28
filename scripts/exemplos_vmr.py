@@ -3,6 +3,7 @@ import io
 import json
 import os
 import re
+import subprocess
 import sys
 from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
@@ -11,15 +12,15 @@ os.environ["FLUX_CI"] = "1"
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-RAIZ = Path(__file__).resolve().parent
+RAIZ = Path(__file__).resolve().parent.parent
 SRC = RAIZ / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from flux_proto.cli import main as run_flux
 from flux_proto.vm.runtime import execute_bytecode
 
 FLUX_DIR = RAIZ / "flux"
+FLUXC_EXE = RAIZ / "bin" / "fluxc.exe"
 T_FVMBC = RAIZ / "t_fvmbc"
 T_FVMBC.mkdir(parents=True, exist_ok=True)
 
@@ -51,6 +52,17 @@ def erro_esperado_obtido(expected_code: str | None, ec: int, texto_erro: str) ->
     return (f"[{expected_code} - " in texto_erro) and ("💡 Dica:" in texto_erro)
 
 
+def limpar_scratch_dbs() -> None:
+    scratch = RAIZ / "scratch"
+    if scratch.exists():
+        for pat in ("flux_*.db*", "flux_*.kv", "flux_*.unqlite", "flux_*.duckdb", "flux_*.kuzu", "flux_*.obx"):
+            for f in scratch.glob(pat):
+                try:
+                    f.unlink()
+                except Exception:
+                    pass
+
+
 filtro = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
 flux_files = sorted(FLUX_DIR.glob("*.flux"))
 if filtro:
@@ -61,22 +73,34 @@ erros = 0
 
 for flux_path in flux_files:
     nome = flux_path.name
+    if "DbStdLib" in nome:
+        limpar_scratch_dbs()
     expected_code = obter_erro_esperado(flux_path)
     stdin_input = STDIN_MAP.get(nome, "")
     old_stdin = sys.stdin
     sys.stdin = io.StringIO(stdin_input)
     fvmbc_path = T_FVMBC / f"{flux_path.stem}.fvmbc"
+    env = dict(
+        os.environ,
+        FLUX_CI="1",
+        PYTHONUTF8="1",
+        PYTHONIOENCODING="utf-8",
+    )
 
     try:
         if expected_code:
-            out = io.StringIO()
-            err = io.StringIO()
-            with redirect_stdout(out), redirect_stderr(err):
-                try:
-                    ec = run_flux([str(flux_path), "--target", "vmbc", "--output", str(fvmbc_path.with_suffix(""))])
-                except SystemExit as se:
-                    ec = se.code if isinstance(se.code, int) else (0 if se.code is None else 1)
-            err_output = (err.getvalue() or out.getvalue()).strip()
+            res = subprocess.run(
+                [str(FLUXC_EXE), str(flux_path), "--target", "vmr"],
+                cwd=str(RAIZ),
+                input=stdin_input,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=env,
+            )
+            ec = res.returncode
+            err_output = ((res.stderr or "") or (res.stdout or "")).strip()
             if erro_esperado_obtido(expected_code, ec, err_output):
                 acertos += 1
                 for linha in err_output.splitlines():
@@ -89,10 +113,15 @@ for flux_path in flux_files:
             continue
 
         if not fvmbc_path.exists():
-            out_c = io.StringIO()
-            err_c = io.StringIO()
-            with redirect_stdout(out_c), redirect_stderr(err_c):
-                run_flux([str(flux_path), "--target", "vmbc", "--output", str(fvmbc_path.with_suffix(""))])
+            subprocess.run(
+                [str(FLUXC_EXE), str(flux_path), "--target", "vmbc", "-o", str(fvmbc_path.with_suffix(""))],
+                cwd=str(RAIZ),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                env=env,
+            )
 
         with open(fvmbc_path, encoding="utf-8") as f:
             bc = json.load(f)

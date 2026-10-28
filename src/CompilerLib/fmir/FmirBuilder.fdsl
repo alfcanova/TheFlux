@@ -1707,6 +1707,8 @@ agent (CompilerLib) impl FmirBuilderContract {
 
       op fmirBuildFromAst (as map: arena, as int64: root_id) as map ==> {
             mut as map: mod = fmirNewModule("main")
+            mut as map: fn_table = map{}
+            mut as list of data: imp_list = []
             mut as int64: tc = 0
 
             mut as list of data: decl_ids = astArenaNodeChildren(arena, root_id)
@@ -1741,7 +1743,14 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                 }
                                           }
                                     }
-                                    kind == "DECL_FUNCTION" or kind == "DECL_function" or kind == "DECL_STRUCT" or kind == "DECL_struct" or kind == "DECL_ENUM" or kind == "DECL_enum" or kind == "DECL_USE" or kind == "DECL_use" ==> {}
+                                    kind == "DECL_USE" or kind == "DECL_use" ==> {
+                                          imp_list = stdListPushBack(imp_list, astArenaNodeValue(arena, did))
+                                    }
+                                    kind == "DECL_FUNCTION" or kind == "DECL_function" or kind == "DECL_AGENT" or kind == "DECL_agent" ==> {
+                                          mut as string: fn_name = astArenaNodeValue(arena, did)
+                                          fn_table[fn_name] = did
+                                    }
+                                    kind == "DECL_STRUCT" or kind == "DECL_struct" or kind == "DECL_ENUM" or kind == "DECL_enum" or kind == "DECL_CONTRACT" or kind == "DECL_contract" ==> {}
                                     _ ==> {
                                           mut as map: s_res = fmirLowerStmt(arena, did, mod, tc)
                                           mod = s_res["module"]
@@ -1753,6 +1762,8 @@ agent (CompilerLib) impl FmirBuilderContract {
                   }
             }
 
+            mod["functions"] = fn_table
+            mod["imports"] = imp_list
             emit(nice, mod, "ok")
       }
 }

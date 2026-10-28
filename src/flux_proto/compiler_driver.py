@@ -15,7 +15,7 @@ SRC_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = SRC_DIR.parent
 MAIN_FLUX = SRC_DIR / "main.flux"
 COMPILER_LIB_DIR = SRC_DIR / "CompilerLib"
-KEYWORDS_YAML_DIR = ROOT_DIR / "docs" / "pt" / "keywords"
+KEYWORDS_YAML_DIR = ROOT_DIR / "docs" / "pt_BR" / "keywords"
 
 TARGET_ALIASES: dict[str, str] = {
     "run": "run",
@@ -64,7 +64,9 @@ def build_stage1_binary(output_exe: Path | None = None) -> Path:
     if not clang:
         raise RuntimeError("Clang not found on PATH")
 
-    runtime_c = SRC_DIR / "flux_proto" / "llvm" / "runtime" / "flux_input.c"
+    runtime_c = ROOT_DIR / "runtime" / "flux_input.c"
+    if not runtime_c.exists():
+        runtime_c = SRC_DIR / "flux_proto" / "llvm" / "runtime" / "flux_input.c"
     res = subprocess.run(
         [clang, "-O2", "-Wno-deprecated-declarations", "-o", str(output_exe), str(ll_path), str(runtime_c)],
         capture_output=True,

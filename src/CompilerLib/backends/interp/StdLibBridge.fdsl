@@ -1,0 +1,67 @@
+#L ==============================================================================
+#L TheFlux Native Compiler: CompilerLib
+#L Modulo: StdLibBridge (Ponte Nativa de Intrinsecas das 37 StdLibs)
+#L ==============================================================================
+
+contract (StdLibBridgeContract) {
+      op interpIsStdIntrinsic (as string: fname) as bool
+      op interpCallStdIntrinsic (as string: fname, as list of string: args) as map
+}
+
+agent (CompilerLib) impl StdLibBridgeContract {
+      op interpIsStdIntrinsic (as string: fname) as bool ==> {
+            mut as int64: flen = stdCollectionLength(fname)
+            route {
+                  flen >= 3 and fname[1..3] == "std" ==> {
+                        emit(nice, true, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, false, "ok")
+                  }
+            }
+      }
+
+      op interpCallStdIntrinsic (as string: fname, as list of string: args) as map ==> {
+            mut as map: res = map{}
+            res["handled"] = true
+            res["val"] = ""
+            mut as int64: n = stdCollectionLength(args)
+
+            route {
+                  fname == "stdIoFileExists" and n >= 1 ==> {
+                        res["val"] = stdIoFileExists(args[1])
+                  }
+                  fname == "stdIoReadFile" and n >= 1 ==> {
+                        res["val"] = stdIoReadFile(args[1])
+                  }
+                  fname == "stdIoWriteFile" and n >= 2 ==> {
+                        stdIoWriteFile(args[1], args[2])
+                        res["val"] = true
+                  }
+                  fname == "stdIoListDir" and n >= 1 ==> {
+                        res["val"] = stdIoListDir(args[1])
+                  }
+                  fname == "stdIoReadLines" and n >= 1 ==> {
+                        res["val"] = stdIoReadLines(args[1])
+                  }
+                  fname == "stdCollectionLength" and n >= 1 ==> {
+                        res["val"] = stdCollectionLength(args[1])
+                  }
+                  fname == "stdRuntimeGetArgs" ==> {
+                        res["val"] = stdRuntimeGetArgs()
+                  }
+                  fname == "stdOsExec" and n >= 1 ==> {
+                        res["val"] = stdOsExec(args[1])
+                  }
+                  fname == "stdOsExit" and n >= 1 ==> {
+                        mut as int64: ec = interpParseInt(args[1])
+                        stdOsExit(ec)
+                        res["val"] = 0
+                  }
+                  _ ==> {
+                        res["handled"] = false
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+}

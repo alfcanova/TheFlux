@@ -10,12 +10,10 @@ os.environ["FLUX_CI"] = "1"
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-RAIZ = Path(__file__).resolve().parent
-SRC = RAIZ / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
+RAIZ = Path(__file__).resolve().parent.parent
 FLUX_DIR = RAIZ / "flux"
+FLUXC_EXE = RAIZ / "bin" / "fluxc.exe"
+RUNTIME_C = RAIZ / "runtime" / "flux_input.c"
 T_LLVM = RAIZ / "t_llvm"
 CLANG = (
     shutil.which("clang")
@@ -57,8 +55,17 @@ if filtro:
 acertos = 0
 erros = 0
 
-PYTHON = sys.executable
-ENV = dict(os.environ, PYTHONPATH=str(SRC), FLUX_CI="1")
+INTERMEDIATES_LLVM = RAIZ / "intermediates" / "llvm"
+INTERMEDIATES_LLVM.mkdir(parents=True, exist_ok=True)
+
+ENV = dict(
+    os.environ,
+    FLUX_CI="1",
+    PYTHONUTF8="1",
+    PYTHONIOENCODING="utf-8",
+    _FLUXC_LV_DELEGATED="1",
+    _FLUXC_LV_EMIT_ONLY="1",
+)
 
 for flux_path in flux_files:
     nome = flux_path.name
@@ -68,9 +75,12 @@ for flux_path in flux_files:
     print(f"--- {nome} ---")
 
     stdin_input = STDIN_MAP.get(nome, "")
+    ll_base = INTERMEDIATES_LLVM / base_stem
+    ll_path = ll_base.with_suffix(".ll")
 
     result = subprocess.run(
-        [PYTHON, "-m", "flux_proto", str(flux_path), "--emit-llvm"],
+        [str(FLUXC_EXE), str(flux_path), "--target", "llvm", "-o", str(ll_base)],
+        cwd=str(RAIZ),
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, env=ENV, input=stdin_input,
     )
     if result.returncode != 0:
@@ -85,7 +95,6 @@ for flux_path in flux_files:
             print(f"FALHA  {nome} (LLVM IR): {err_output}")
         continue
 
-    ll_path = RAIZ / "intermediates" / "llvm" / f"{base_stem}.ll"
     if not ll_path.exists():
         erros += 1
         print(f"FALHA  {nome} (.ll nao gerado)")
@@ -99,9 +108,8 @@ for flux_path in flux_files:
         continue
 
     exe_path = T_LLVM / f"{base_stem}.exe"
-    runtime_c = SRC / "flux_proto" / "llvm" / "runtime" / "flux_input.c"
     clang_result = subprocess.run(
-        [CLANG, "-o", str(exe_path), str(ll_path), str(runtime_c)],
+        [CLANG, "-o", str(exe_path), str(ll_path), str(RUNTIME_C)],
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60,
     )
     if clang_result.returncode != 0:

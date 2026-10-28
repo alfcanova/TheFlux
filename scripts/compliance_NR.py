@@ -29,6 +29,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 RAIZ = SCRIPT_DIR if (SCRIPT_DIR / "src").exists() else SCRIPT_DIR.parent
+FLUXC_EXE = RAIZ / "bin" / "fluxc.exe"
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 if str(RAIZ) not in sys.path:
@@ -41,12 +42,13 @@ try:
     import compliance_BE as bc
 except ImportError:
     import backend_compliance as bc
+bc.FLUXC_EXE = FLUXC_EXE
 
 NR_DIR = SCRIPT_DIR if (SCRIPT_DIR / "01_preliminaries").exists() else SCRIPT_DIR.parent / "examples" / "NumericalRecipes"
 if not NR_DIR.exists():
     NR_DIR = RAIZ / "examples" / "NumericalRecipes"
-COMPLIANCE_MD = SCRIPT_DIR / "compliance_NR00.md"
-COMPLIANCE_OLD_MD = SCRIPT_DIR / "compliance_NR01.md"
+COMPLIANCE_MD = RAIZ / "compliance_NR00.md"
+COMPLIANCE_OLD_MD = RAIZ / "compliance_NR01.md"
 
 COL_NAME_WIDTH = 77
 

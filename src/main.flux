@@ -84,7 +84,12 @@ program (Main) {
                                                 #L Opcao desconhecida
                                           }
                                           _ ==> {
-                                                input_file = arg
+                                                route {
+                                                      input_file == "" ==> {
+                                                            input_file = arg
+                                                      }
+                                                      _ ==> {}
+                                                }
                                           }
                                     }
                                     i = i + 1
@@ -149,22 +154,22 @@ program (Main) {
 
                               route {
                                     is_stdlib_use or (target != "in" and target != "run" and input_file != "src/main.flux") ==> {
-                                          mut as string: cmd = "python flux_in.py \"" + input_file + "\""
+                                          mut as string: cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target run"
                                           route {
                                                 target == "vm" or target == "vmbc" ==> {
-                                                      cmd = "python flux_vm.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      cmd = "python scripts/flux_vm.py \"" + input_file + "\" -o \"" + output_path + "\""
                                                 }
                                                 target == "vmr" ==> {
-                                                      cmd = "python flux_vmr.py \"" + input_file + "\""
+                                                      cmd = "python scripts/flux_vmr.py \"" + input_file + "\""
                                                 }
                                                 target == "llvm" or target == "lv" ==> {
-                                                      cmd = "python flux_lv.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      cmd = "python scripts/flux_lv.py \"" + input_file + "\" -o \"" + output_path + "\""
                                                 }
                                                 target == "wat" ==> {
-                                                      cmd = "python flux_wat.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      cmd = "python scripts/flux_wat.py \"" + input_file + "\" -o \"" + output_path + "\""
                                                 }
                                                 target == "wasm" or target == "was" ==> {
-                                                      cmd = "python flux_was.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      cmd = "python scripts/flux_was.py \"" + input_file + "\" -o \"" + output_path + "\""
                                                 }
                                                 _ ==> {}
                                           }

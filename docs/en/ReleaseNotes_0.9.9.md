@@ -55,18 +55,18 @@ The standalone native executable [`bin/fluxc.exe`](file:///D:/Projetos/TheFlux/b
 - **Proven 376/376 Parity**: Verified directly via `python scripts/verify_legacy_in.py --use-fluxc-exe` with **376/376 identical outputs (0 divergences)**.
 
 ### 2.3 Canonical Validation of Expected Errors (`ExampleOfError*.flux` $\rightarrow$ `OK`)
-All root execution and compliance scripts ([`exemplos_in.py`](file:///D:/Projetos/TheFlux/exemplos_in.py), [`exemplos_vm.py`](file:///D:/Projetos/TheFlux/exemplos_vm.py), [`exemplos_vmr.py`](file:///D:/Projetos/TheFlux/exemplos_vmr.py), [`exemplos_lv.py`](file:///D:/Projetos/TheFlux/exemplos_lv.py), [`exemplos_wat.py`](file:///D:/Projetos/TheFlux/exemplos_wat.py), [`exemplos_was.py`](file:///D:/Projetos/TheFlux/exemplos_was.py), [`compliance_in.py`](file:///D:/Projetos/TheFlux/compliance_in.py), and [`compliance_BE.py`](file:///D:/Projetos/TheFlux/compliance_BE.py)) now parse `#L EXPECT_ERROR: <CODE>` in `flux/ExampleOfError_*.flux` and mark the execution as **`OK`** when:
+All root execution and compliance scripts ([`exemplos_in.py`](file:///D:/Projetos/TheFlux/exemplos_in.py), [`exemplos_vm.py`](file:///D:/Projetos/TheFlux/exemplos_vm.py), [`exemplos_vmr.py`](file:///D:/Projetos/TheFlux/exemplos_vmr.py), [`exemplos_lv.py`](file:///D:/Projetos/TheFlux/exemplos_lv.py), [`exemplos_wat.py`](file:///D:/Projetos/TheFlux/exemplos_wat.py), [`exemplos_was.py`](file:///D:/Projetos/TheFlux/exemplos_was.py), [`compliance_IN.py`](file:///D:/Projetos/TheFlux/compliance_IN.py), and [`compliance_BE.py`](file:///D:/Projetos/TheFlux/compliance_BE.py)) now parse `#L EXPECT_ERROR: <CODE>` in `flux/ExampleOfError_*.flux` and mark the execution as **`OK`** when:
 1. The compiler exits with a non-zero return code (`ec != 0`);
 2. The output contains the canonical header `[<CODE> - <MNEMONIC>]: ...`;
 3. The output contains the actionable hint line `💡 Dica: ...`.
 
 As a result, running the full `flux/*.flux` test suite reports **`376 sucesso, 0 falha(s)`** across all test runners.
 
-### 2.4 Interactive Side-by-Side Verifier (`compliance_in.py`)
-The new [`compliance_in.py`](file:///D:/Projetos/TheFlux/compliance_in.py) tool (and its generated report [`compliance_in.md`](file:///D:/Projetos/TheFlux/compliance_in.md)) provides side-by-side visual auditing between `LEGACY` and `SELFHOSTED`:
+### 2.4 Interactive Side-by-Side Verifier (`compliance_IN.py`)
+The new [`compliance_IN.py`](file:///D:/Projetos/TheFlux/compliance_IN.py) tool (and its generated report [`compliance_IN00.md`](file:///D:/Projetos/TheFlux/compliance_IN00.md) compared against baseline [`compliance_IN01.md`](file:///D:/Projetos/TheFlux/compliance_IN01.md)) provides side-by-side visual auditing between `LEGACY` and `SELFHOSTED`:
 - **Unicode Visual Width Alignment**: Accurate terminal column width calculation for tabs (`\t`) and wide Unicode code points (*East Asian Width `W`/`F`*, such as `😀` and `💡`), keeping the central `|` separator perfectly aligned.
-- **Interactive Auditing**: Prompts the user for `(C)erto` (Right) or `(E)rrado` (Wrong) per test, dynamically updating the Markdown table and final error summary.
-- **Automatic Post-Legacy Fallback**: If the `./legacy` folder is removed, `compliance_in.py` automatically falls back to reading reference outputs from [`docs/legacy_in.txt`](file:///D:/Projetos/TheFlux/docs/legacy_in.txt).
+- **Interactive Auditing & Regression Analysis**: Prompts the user for `(C)erto` (Right) or `(E)rrado` (Wrong) per test, dynamically updating [`compliance_IN00.md`](file:///D:/Projetos/TheFlux/compliance_IN00.md) and tracking regressions against [`compliance_IN01.md`](file:///D:/Projetos/TheFlux/compliance_IN01.md).
+- **Direct Reference Comparison**: Compares the execution of [`bin/fluxc.exe`](file:///D:/Projetos/TheFlux/bin/fluxc.exe) ([`docs/selfhosted_in.txt`](file:///D:/Projetos/TheFlux/docs/selfhosted_in.txt)) directly against reference outputs in [`docs/legacy_in.txt`](file:///D:/Projetos/TheFlux/docs/legacy_in.txt).
 
 ---
 
@@ -94,7 +94,7 @@ All **376 `.flux` programs** in the official suite pass simultaneously across al
 | **Native Binary (`bin/fluxc.exe`)** | Basic subset support | **376/376 (100%)** parity with native UTF-8 and full canonical diagnostics | Standalone execution with zero reliance on `./legacy` |
 | **`ExampleOfError_*.flux` Tests** | Reported as `FALHA` in `exemplos_*.py` runners | Validated by `[<CODE> - <NAME>]` + `💡 Dica:` and marked as **`OK`** | Clean `376 sucesso, 0 falha(s)` across the entire test suite |
 | **Multi-Dimensional Indexing** | Single-bracket `a[i] = v` in native parser | Full chained bracket `a[i][j] = v` (`SET_INDEX`) support | Complete matrix, nested list, and tensor mutation support in `fluxc.exe` |
-| **Compliance Auditing** | Manual log inspection | Interactive side-by-side verifier (`compliance_in.py`) + oracle (`verify_legacy_in.py`) | Deterministic zero-regression guarantee prior to removing `legacy/` |
+| **Compliance Auditing** | Manual log inspection | Interactive side-by-side verifier (`compliance_IN.py`) + oracle (`verify_legacy_in.py`) | Deterministic zero-regression guarantee prior to removing `legacy/` |
 
 ---
 
@@ -123,7 +123,7 @@ python scripts\verify_legacy_in.py
 python scripts\verify_legacy_in.py --use-fluxc-exe
 
 # Interactive side-by-side comparison (LEGACY vs SELFHOSTED) with (C)erto / (E)rrado grading
-python compliance_in.py
+python compliance_IN.py
 ```
 
 ---

@@ -85,10 +85,52 @@ agent (CompilerLib) impl WatBackendContract {
                                           wat = wat + "    i64.mul\\n"
                                           wat = wat + "    local.set $" + res + "\\n"
                                     }
-                                    opcode == "BINOP_/" ==> {
+                                    opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
                                           wat = wat + "    local.get $" + a1 + "\\n"
                                           wat = wat + "    local.get $" + a2 + "\\n"
                                           wat = wat + "    i64.div_s\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.rem_s\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_&" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.and\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_|" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.or\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_^" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.xor\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_<<" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.shl\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_>>" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.shr_s\\n"
+                                          wat = wat + "    local.set $" + res + "\\n"
+                                    }
+                                    opcode == "BINOP_>>>" ==> {
+                                          wat = wat + "    local.get $" + a1 + "\\n"
+                                          wat = wat + "    local.get $" + a2 + "\\n"
+                                          wat = wat + "    i64.shr_u\\n"
                                           wat = wat + "    local.set $" + res + "\\n"
                                     }
                                     _ ==> {}

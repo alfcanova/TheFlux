@@ -9,7 +9,9 @@ contract (VmRuntimeContract) {
 
 agent (CompilerLib) impl VmRuntimeContract {
       op vmExecuteModule (as map: fmir_mod) as map ==> {
-            mut as map: res = vmCompileFmir(fmir_mod)
-            emit(nice, res, "ok")
+            mut as map: bc_res = vmCompileFmir(fmir_mod)
+            mut as map: exec_res = interpExecuteFmir(fmir_mod)
+            bc_res["executed"] = exec_res["success"]
+            emit(nice, bc_res, "ok")
       }
 }

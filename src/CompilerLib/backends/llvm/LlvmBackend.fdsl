@@ -60,8 +60,51 @@ agent (CompilerLib) impl LlvmBackendContract {
                                     opcode == "BINOP_*" ==> {
                                           ir = ir + "  " + res + " = mul i64 " + a1 + ", " + a2 + "\\n"
                                     }
-                                    opcode == "BINOP_/" ==> {
+                                    opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
                                           ir = ir + "  " + res + " = sdiv i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
+                                          ir = ir + "  " + res + " = srem i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_&" ==> {
+                                          ir = ir + "  " + res + " = and i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_|" ==> {
+                                          ir = ir + "  " + res + " = or i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_^" ==> {
+                                          ir = ir + "  " + res + " = xor i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_<<" ==> {
+                                          ir = ir + "  " + res + " = shl i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_>>" ==> {
+                                          ir = ir + "  " + res + " = ashr i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_==" ==> {
+                                          ir = ir + "  " + res + " = icmp eq i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_!=" ==> {
+                                          ir = ir + "  " + res + " = icmp ne i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_<" ==> {
+                                          ir = ir + "  " + res + " = icmp slt i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_<=" ==> {
+                                          ir = ir + "  " + res + " = icmp sle i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_>" ==> {
+                                          ir = ir + "  " + res + " = icmp sgt i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "BINOP_>=" ==> {
+                                          ir = ir + "  " + res + " = icmp sge i64 " + a1 + ", " + a2 + "\\n"
+                                    }
+                                    opcode == "LABEL" ==> {
+                                          ir = ir + "  br label %" + a1 + "\\n"
+                                          ir = ir + a1 + ":\\n"
+                                    }
+                                    opcode == "JUMP" ==> {
+                                          ir = ir + "  br label %" + a1 + "\\n"
                                     }
                                     opcode == "PRINT" ==> {
                                           ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.fmt_int, i32 0, i32 0), i64 " + a1 + ")\\n"

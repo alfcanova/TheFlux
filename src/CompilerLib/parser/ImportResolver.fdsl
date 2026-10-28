@@ -5,10 +5,40 @@
 
 contract (ImportResolverContract) {
       op importResolveFile (as string: base_path, as string: module_name) as string
+      op importResolveRelative (as string: base_path, as string: module_name) as string
       op importLoadSource (as string: resolved_path, as string: module_name) as string
 }
 
 agent (CompilerLib) impl ImportResolverContract {
+      op importResolveRelative (as string: base_path, as string: module_name) as string ==> {
+            mut as int64: blen = stdCollectionLength(base_path)
+            mut as int64: last_sep = 0
+            mut as int64: bi = 1
+            infinite {
+                  route {
+                        bi > blen ==> { break }
+                        base_path[bi] == "/" or base_path[bi] == "\\" ==> {
+                              last_sep = bi
+                              bi = bi + 1
+                        }
+                        _ ==> { bi = bi + 1 }
+                  }
+            }
+            route {
+                  last_sep > 1 ==> {
+                        mut as string: dir_pref = base_path[1..last_sep]
+                        mut as string: cand = dir_pref + module_name
+                        route {
+                              stdIoFileExists(cand) ==> { emit(nice, cand, "ok") }
+                              stdIoFileExists(cand + ".fdsl") ==> { emit(nice, cand + ".fdsl", "ok") }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+            emit(nice, importResolveFile(base_path, module_name), "ok")
+      }
+
       op importResolveFile (as string: base_path, as string: module_name) as string ==> {
             mut as string: mod = module_name
             mut as int64: mlen = stdCollectionLength(mod)

@@ -1,11 +1,12 @@
 """Executa cada arquivo .flux em legacy e selfhosted, exibe as saidas lado a lado
 na tela, aguarda a avaliacao do usuario — (C)erto ou (E)rrado — e atualiza a
-tabela e a secao de erros ao final da tela e do arquivo compliance_in.md.
+tabela, a analise de regressao (contra compliance_IN01.md) e a secao de erros ao
+final da tela e do arquivo compliance_IN00.md.
 
-Tambem regenera docs/legacy_in.txt e docs/selfhosted_in.txt.
+Tambem regenera docs/selfhosted_in.txt (e docs/legacy_in.txt se nao existir).
 
 Uso:
-    python compliance_in.py [filtro]
+    python compliance_IN.py [filtro]
 """
 from __future__ import annotations
 
@@ -14,6 +15,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import unicodedata
@@ -26,19 +28,16 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
-RAIZ = Path(__file__).resolve().parent
+RAIZ = Path(__file__).resolve().parent.parent
 SRC = RAIZ / "src"
 LEGACY_SRC = RAIZ / "legacy" / "src"
 FLUX_DIR = RAIZ / "flux"
 DOCS_DIR = RAIZ / "docs"
 LEGACY_TXT = DOCS_DIR / "legacy_in.txt"
 SELFHOSTED_TXT = DOCS_DIR / "selfhosted_in.txt"
-MD_PATH = RAIZ / "compliance_in.md"
-
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
-from flux_proto.cli import main as run_selfhosted_flux  # noqa: E402
+MD_PATH = RAIZ / "compliance_IN00.md"
+OLD_MD_PATH = RAIZ / "compliance_IN01.md"
+FLUXC_EXE = RAIZ / "bin" / "fluxc.exe"
 
 GREEN = "\033[92m✓ CERTO\033[0m"
 RED = "\033[91m✗ ERRADO\033[0m"
@@ -140,12 +139,23 @@ for raw in sys.stdin:
 
 
 class LegacyRunner:
-    """Mantem um processo Python dedicado com PYTHONPATH=legacy/src, ou usa docs/legacy_in.txt se legacy/ nao existir."""
+    """Carrega a referencia de docs/legacy_in.txt, ou executa legacy/src se docs/legacy_in.txt nao existir."""
 
     def __init__(self) -> None:
         self.proc: subprocess.Popen[str] | None = None
         self.cached: dict[str, tuple[str, list[str]]] = {}
-        if LEGACY_SRC.exists():
+        if LEGACY_TXT.exists():
+            cur: list[str] = []
+            for ln in LEGACY_TXT.read_text(encoding="utf-8", errors="replace").splitlines():
+                if ln.startswith("  OK  ") or ln.startswith("FALHA  "):
+                    partes = ln.split()
+                    st = partes[0]
+                    nm = partes[1].rstrip(":")
+                    self.cached[nm] = (st, list(cur) + [ln])
+                    cur = []
+                elif ln.startswith("  | "):
+                    cur.append(ln)
+        elif LEGACY_SRC.exists():
             env = dict(
                 os.environ,
                 PYTHONPATH=str(LEGACY_SRC),
@@ -163,17 +173,6 @@ class LegacyRunner:
                 encoding="utf-8",
                 env=env,
             )
-        elif LEGACY_TXT.exists():
-            cur: list[str] = []
-            for ln in LEGACY_TXT.read_text(encoding="utf-8", errors="replace").splitlines():
-                if ln.startswith("  OK  ") or ln.startswith("FALHA  "):
-                    partes = ln.split()
-                    st = partes[0]
-                    nm = partes[1].rstrip(":")
-                    self.cached[nm] = (st, list(cur) + [ln])
-                    cur = []
-                elif ln.startswith("  | "):
-                    cur.append(ln)
 
     def run_file(self, path: Path, stdin_input: str) -> tuple[str, list[str]]:
         if self.proc is None:
@@ -219,21 +218,29 @@ def limpar_scratch_dbs() -> None:
 
 
 def executar_selfhosted(path: Path, stdin_input: str) -> tuple[str, list[str]]:
-    """Executa um arquivo .flux no compilador selfhosted (src) e formata como exemplos_in.py."""
+    """Executa um arquivo .flux usando o binario nativo bin/fluxc.exe e formata como selfhosted_in.txt."""
     nome = path.name
     expected_code = obter_erro_esperado(path)
-    old_stdin = sys.stdin
-    sys.stdin = io.StringIO(stdin_input)
-    out = io.StringIO()
-    err = io.StringIO()
+    env = dict(
+        os.environ,
+        FLUX_CI="1",
+        PYTHONUTF8="1",
+        PYTHONIOENCODING="utf-8",
+    )
     try:
-        with redirect_stdout(out), redirect_stderr(err):
-            try:
-                ec = run_selfhosted_flux([str(path)])
-            except SystemExit as se:
-                ec = se.code if isinstance(se.code, int) else (0 if se.code is None else 1)
-        output = out.getvalue()
-        err_output = (err.getvalue() or output).strip()
+        res = subprocess.run(
+            [str(FLUXC_EXE), str(path)],
+            cwd=str(RAIZ),
+            input=stdin_input,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
+        )
+        ec = res.returncode
+        output = res.stdout or ""
+        err_output = ((res.stderr or "") or output).strip()
         lines: list[str] = []
         if ec == 0 and not expected_code:
             status = "OK"
@@ -253,8 +260,6 @@ def executar_selfhosted(path: Path, stdin_input: str) -> tuple[str, list[str]]:
     except Exception as exc:
         status = "FALHA"
         lines = [f"FALHA  {nome}: {exc}"]
-    finally:
-        sys.stdin = old_stdin
     return status, lines
 
 
@@ -307,7 +312,7 @@ def exibir_saida_lado_a_lado(
     print("=" * sep_len)
     print(f"{CYAN}[{idx}/{total}] Arquivo: {nome}{RESET}")
     print("-" * sep_len)
-    print(f"{'LEGACY (legacy/exemplos_in.py)':<{col_w}} | {'SELFHOSTED (exemplos_in.py)':<{col_w}}")
+    print(f"{'LEGACY (docs/legacy_in.txt)':<{col_w}} | {'SELFHOSTED (bin/fluxc.exe -> selfhosted_in.txt)':<{col_w}}")
     print("-" * sep_len)
 
     max_linhas = max(len(linhas_leg), len(linhas_sh))
@@ -373,10 +378,56 @@ def salvar_txt_regenerado(
     destino.write_text("\n".join(todas_linhas) + "\n", encoding="utf-8")
 
 
+def ler_tabela_md(md_path: Path) -> dict[str, dict[str, str]]:
+    """Le a tabela de compliance_IN01.md para analise de regressao."""
+    if not md_path.exists():
+        return {}
+    res: dict[str, dict[str, str]] = {}
+    for line in md_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if not s.startswith("|") or s.startswith("| Arquivo") or s.startswith("| :---"):
+            continue
+        parts = [p.strip() for p in s.split("|")[1:-1]]
+        if len(parts) >= 5:
+            nome = parts[0].strip("`")
+            if nome.endswith(".flux"):
+                st_leg = parts[1].strip("`")
+                st_sh = parts[2].strip("`")
+                esc = parts[3].replace("*", "").strip("`")
+                res[nome] = {
+                    "status_leg": st_leg,
+                    "status_sh": st_sh,
+                    "escolha": esc,
+                }
+    return res
+
+
+def detectar_regressoes(
+    avaliacoes: list[dict[str, object]],
+    old_results: dict[str, dict[str, str]],
+) -> list[tuple[str, dict[str, str], dict[str, object]]]:
+    """Detecta arquivos que eram C/OK em compliance_IN01.md e regrediram para E/FALHA em compliance_IN00.md."""
+    regressoes: list[tuple[str, dict[str, str], dict[str, object]]] = []
+    for a in avaliacoes:
+        nome = str(a["nome"])
+        if nome not in old_results:
+            continue
+        ant = old_results[nome]
+        era_certo = ant.get("escolha") == "C"
+        agora_errado = str(a["escolha"]) == "E"
+        era_sh_ok = ant.get("status_sh") == "OK"
+        agora_sh_falha = str(a["status_sh"]) != "OK"
+        if (era_certo and agora_errado) or (era_sh_ok and agora_sh_falha):
+            regressoes.append((nome, ant, a))
+    return regressoes
+
+
 def gerar_relatorio_md(
     avaliacoes: list[dict[str, object]],
+    old_results: dict[str, dict[str, str]] | None = None,
 ) -> None:
-    """4) e 5) Atualiza a tabela e imprime os erros ao final de compliance_in.md conforme entrada (E)."""
+    """4) e 5) Atualiza a tabela, analise de regressao e imprime os erros ao final de compliance_IN00.md."""
+    old_map = old_results or {}
     total = len(avaliacoes)
     certos = sum(1 for a in avaliacoes if a["escolha"] == "C")
     errados = sum(1 for a in avaliacoes if a["escolha"] == "E")
@@ -390,7 +441,8 @@ def gerar_relatorio_md(
         "# Relatório de Conformidade Interativo (`legacy` vs `selfhosted`)",
         "",
         "- **Fonte Legacy**: `docs/legacy_in.txt` (`legacy/exemplos_in.py`)",
-        "- **Fonte Selfhosted**: `docs/selfhosted_in.txt` (`exemplos_in.py`)",
+        "- **Fonte Selfhosted**: `docs/selfhosted_in.txt` (`bin/fluxc.exe` / `exemplos_in.py`)",
+        "- **Baseline de Regressão**: `compliance_IN01.md`",
         "",
         "## 📊 Resumo da Avaliação do Usuário",
         "",
@@ -413,6 +465,24 @@ def gerar_relatorio_md(
         esc = str(a["escolha"])
         res_md = "✅ CERTO" if esc == "C" else "❌ ERRADO"
         linhas.append(f"| `{nome}` | `{st_leg}` | `{st_sh}` | **`{esc}`** | {res_md} |")
+
+    regressoes = detectar_regressoes(avaliacoes, old_map)
+    linhas.append("")
+    linhas.append("## 🔍 Análise de Regressão (`compliance_IN00.md` vs `compliance_IN01.md`)")
+    linhas.append("")
+    if not old_map:
+        linhas.append("> ℹ️ **Nenhum baseline anterior (`compliance_IN01.md`) com registros para comparação.**")
+    elif not regressoes:
+        linhas.append("> ✅ **Nenhuma regressão detectada em relação ao `compliance_IN01.md`!**")
+    else:
+        linhas.append(f"> ⚠️ **`{len(regressoes)}` regressão(ões) detectada(s) em relação ao `compliance_IN01.md`:**")
+        linhas.append("")
+        linhas.append("| Arquivo | Selfhosted Anterior (`IN01`) | Selfhosted Atual (`IN00`) | Avaliação Anterior | Avaliação Atual |")
+        linhas.append("| :--- | :---: | :---: | :---: | :---: |")
+        for nome, ant, atu in regressoes:
+            linhas.append(
+                f"| `{nome}` | `{ant.get('status_sh', '?')}` | `{atu['status_sh']}` | **`{ant.get('escolha', '?')}`** | **`{atu['escolha']}`** |"
+            )
 
     erros_marcados = [a for a in avaliacoes if a["escolha"] == "E"]
     linhas.append("")
@@ -460,11 +530,16 @@ def gerar_relatorio_md(
     MD_PATH.write_text("\n".join(linhas) + "\n", encoding="utf-8")
 
 
-def imprimir_resumo_e_erros_tela(avaliacoes: list[dict[str, object]], col_w: int = 55) -> None:
-    """4) e 5) Imprime na tela a tabela atualizada com (C)/(E) e os erros marcados com (E) ao final."""
+def imprimir_resumo_e_erros_tela(
+    avaliacoes: list[dict[str, object]],
+    old_results: dict[str, dict[str, str]] | None = None,
+    col_w: int = 55,
+) -> None:
+    """4) e 5) Imprime na tela a tabela atualizada com (C)/(E), regressao e os erros marcados com (E) ao final."""
     if not avaliacoes:
         return
 
+    old_map = old_results or {}
     larg_nome = max([len(str(a["nome"])) for a in avaliacoes] + [len("arquivo")])
     cab = (
         f"{'arquivo':<{larg_nome}}  | "
@@ -501,6 +576,20 @@ def imprimir_resumo_e_erros_tela(avaliacoes: list[dict[str, object]], col_w: int
     print(f"  (C)erto            : {certos}/{total}")
     print(f"  (E)rrado           : {errados}/{total}")
     print("=" * 80)
+
+    regressoes = detectar_regressoes(avaliacoes, old_map)
+    print()
+    if not old_map:
+        print("Rastreamento de regressão: Nenhum baseline anterior em compliance_IN01.md para comparação.")
+    elif regressoes:
+        print(f"ATENÇÃO: {len(regressoes)} regressão(ões) detectada(s) em relação ao compliance_IN01.md:")
+        for nome, ant, atu in regressoes:
+            print(
+                f"  ❌ {nome}: {ant.get('status_sh', '?')}/{ant.get('escolha', '?')} -> "
+                f"{atu['status_sh']}/{atu['escolha']}"
+            )
+    else:
+        print("Rastreamento de regressão: ✅ Nenhuma regressão detectada em relação ao compliance_IN01.md!")
 
     erros_marcados = [a for a in avaliacoes if a["escolha"] == "E"]
     if erros_marcados:
@@ -551,6 +640,13 @@ def main() -> int:
         print("Nenhum arquivo .flux encontrado para o filtro informado.")
         return 1
 
+    # Move/copia compliance_IN00.md para compliance_IN01.md para analise de regressao
+    if not filtros and MD_PATH.exists():
+        shutil.copyfile(MD_PATH, OLD_MD_PATH)
+        print(f"Movido/copiado baseline: {MD_PATH.name} -> {OLD_MD_PATH.name}")
+
+    old_results = ler_tabela_md(OLD_MD_PATH) if OLD_MD_PATH.exists() else {}
+
     legacy_runner = LegacyRunner()
     registros_leg: list[tuple[str, str, list[str]]] = []
     registros_sh: list[tuple[str, str, list[str]]] = []
@@ -590,22 +686,23 @@ def main() -> int:
                 }
             )
 
-            # Atualiza compliance_in.md incrementalmente a cada entrada
-            gerar_relatorio_md(avaliacoes)
+            # Atualiza compliance_IN00.md incrementalmente a cada entrada
+            gerar_relatorio_md(avaliacoes, old_results)
     except KeyboardInterrupt:
         print("\nExecução interrompida pelo usuário. Gerando tabela e relatório parcial...")
     finally:
         legacy_runner.close()
         limpar_scratch_dbs()
 
-    # Regenera docs/legacy_in.txt e docs/selfhosted_in.txt se executou a suite completa
-    if not filtros and len(registros_leg) == len(todos_arquivos):
-        salvar_txt_regenerado(LEGACY_TXT, registros_leg)
+    # Atualiza docs/selfhosted_in.txt (e docs/legacy_in.txt apenas se nao existir) quando executa a suite completa
+    if not filtros and len(registros_sh) == len(todos_arquivos):
+        if not LEGACY_TXT.exists():
+            salvar_txt_regenerado(LEGACY_TXT, registros_leg)
         salvar_txt_regenerado(SELFHOSTED_TXT, registros_sh)
 
     # 4) Atualizar a tabela com (C)/(E) e 5) Imprimir os erros marcados com (E) ao final
-    imprimir_resumo_e_erros_tela(avaliacoes)
-    gerar_relatorio_md(avaliacoes)
+    imprimir_resumo_e_erros_tela(avaliacoes, old_results)
+    gerar_relatorio_md(avaliacoes, old_results)
     print(f"\nRelatório atualizado em: {MD_PATH}")
 
     errados = sum(1 for a in avaliacoes if a["escolha"] == "E")

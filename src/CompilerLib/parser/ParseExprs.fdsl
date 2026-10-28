@@ -16,6 +16,7 @@ contract (ParseExprsContract) {
       op parseAdditive (as map: stream, as map: arena) as map
       op parseMultiplicative (as map: stream, as map: arena) as map
       op parsePower (as map: stream, as map: arena) as map
+      op parseUnary (as map: stream, as map: arena) as map
       op parsePostfix (as map: stream, as map: arena) as map
       op parsePrimary (as map: stream, as map: arena) as map
 }
@@ -29,26 +30,6 @@ agent (CompilerLib) impl ParseExprsContract {
             mut as map: ar = arena
 
             route {
-                  cval == "-" or cval == "+" or cval == "not" or cval == "!" or cval == "~" or cval == "&" or cval == "*" ==> {
-                        mut as string: u_op = cval
-                        mut as map: u_res = parsePrimary(ts, ar)
-                        ts = u_res["stream"]
-                        ar = u_res["arena"]
-                        mut as int64: op_id = u_res["node_id"]
-                        ar = astArenaAllocNode(ar, "UNARY_EXPR", u_op, op_id, 0, [])
-                  }
-                  cval == "await" ==> {
-                        mut as map: aw_res = parsePostfix(ts, ar)
-                        ts = aw_res["stream"]
-                        ar = aw_res["arena"]
-                        ar = astArenaAllocNode(ar, "AWAIT", "", aw_res["node_id"], 0, [])
-                  }
-                  cval == "spawn" ==> {
-                        mut as map: sp_res = parsePostfix(ts, ar)
-                        ts = sp_res["stream"]
-                        ar = sp_res["arena"]
-                        ar = astArenaAllocNode(ar, "SPAWN", "", sp_res["node_id"], 0, [])
-                  }
                   cval == "comptime" ==> {
                         mut as map: ptok = tokenStreamPeek(ts)
                         mut as string: pval = "" + ptok["val"]
@@ -906,8 +887,58 @@ agent (CompilerLib) impl ParseExprsContract {
             emit(nice, res, "ok")
       }
 
+      op parseUnary (as map: stream, as map: arena) as map ==> {
+            mut as map: cur = tokenStreamPeek(stream)
+            mut as string: ctype = "" + cur["type"]
+            mut as string: cval = "" + cur["val"]
+
+            route {
+                  cval == "-" or cval == "+" or cval == "not" or cval == "!" or cval == "~" or cval == "&" or cval == "*" ==> {
+                        mut as map: ts = tokenStreamAdvance(stream)
+                        mut as string: u_op = cval
+                        mut as map: u_res = parseUnary(ts, arena)
+                        ts = u_res["stream"]
+                        mut as map: ar = u_res["arena"]
+                        mut as int64: op_id = u_res["node_id"]
+                        ar = astArenaAllocNode(ar, "UNARY_EXPR", u_op, op_id, 0, [])
+                        mut as map: res = map{}
+                        res["stream"] = ts
+                        res["arena"] = ar
+                        res["node_id"] = ar["last_id"]
+                        emit(nice, res, "ok")
+                  }
+                  cval == "await" ==> {
+                        mut as map: ts = tokenStreamAdvance(stream)
+                        mut as map: aw_res = parseUnary(ts, arena)
+                        ts = aw_res["stream"]
+                        mut as map: ar = aw_res["arena"]
+                        ar = astArenaAllocNode(ar, "AWAIT", "", aw_res["node_id"], 0, [])
+                        mut as map: res = map{}
+                        res["stream"] = ts
+                        res["arena"] = ar
+                        res["node_id"] = ar["last_id"]
+                        emit(nice, res, "ok")
+                  }
+                  cval == "spawn" ==> {
+                        mut as map: ts = tokenStreamAdvance(stream)
+                        mut as map: sp_res = parseUnary(ts, arena)
+                        ts = sp_res["stream"]
+                        mut as map: ar = sp_res["arena"]
+                        ar = astArenaAllocNode(ar, "SPAWN", "", sp_res["node_id"], 0, [])
+                        mut as map: res = map{}
+                        res["stream"] = ts
+                        res["arena"] = ar
+                        res["node_id"] = ar["last_id"]
+                        emit(nice, res, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, parsePostfix(stream, arena), "ok")
+                  }
+            }
+      }
+
       op parsePower (as map: stream, as map: arena) as map ==> {
-            mut as map: left_res = parsePostfix(stream, arena)
+            mut as map: left_res = parseUnary(stream, arena)
             mut as map: ts = left_res["stream"]
             mut as map: ar = left_res["arena"]
             mut as int64: left_id = left_res["node_id"]
@@ -921,7 +952,7 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "^e" or cval == "^r") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
-                              mut as map: right_res = parsePostfix(ts, ar)
+                              mut as map: right_res = parseUnary(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
                               mut as int64: right_id = right_res["node_id"]

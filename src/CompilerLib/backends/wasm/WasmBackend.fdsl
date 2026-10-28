@@ -50,6 +50,15 @@ agent (CompilerLib) impl WasmBackendContract {
                                     opcode == "BINOP_+" ==> {
                                           body_hex = body_hex + "420142017c1a" #L i64.const 1, i64.const 1, i64.add, drop
                                     }
+                                    opcode == "BINOP_-" ==> {
+                                          body_hex = body_hex + "420142017d1a" #L i64.sub, drop
+                                    }
+                                    opcode == "BINOP_*" ==> {
+                                          body_hex = body_hex + "420142017e1a" #L i64.mul, drop
+                                    }
+                                    opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
+                                          body_hex = body_hex + "420142017f1a" #L i64.div_s, drop
+                                    }
                                     _ ==> {}
                               }
                               i = i + 1

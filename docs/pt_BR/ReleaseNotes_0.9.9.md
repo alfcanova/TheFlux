@@ -55,18 +55,18 @@ O executável nativo [`bin/fluxc.exe`](file:///D:/Projetos/TheFlux/bin/fluxc.exe
 - **Paridade 376/376 Comprovada**: Validado diretamente via `python scripts/verify_legacy_in.py --use-fluxc-exe` com **376/376 saídas idênticas (0 divergências)**.
 
 ### 2.3 Validação Canônica de Erros Esperados (`ExampleOfError*.flux` $\rightarrow$ `OK`)
-Todos os scripts de execução e conformidade da raiz ([`exemplos_in.py`](file:///D:/Projetos/TheFlux/exemplos_in.py), [`exemplos_vm.py`](file:///D:/Projetos/TheFlux/exemplos_vm.py), [`exemplos_vmr.py`](file:///D:/Projetos/TheFlux/exemplos_vmr.py), [`exemplos_lv.py`](file:///D:/Projetos/TheFlux/exemplos_lv.py), [`exemplos_wat.py`](file:///D:/Projetos/TheFlux/exemplos_wat.py), [`exemplos_was.py`](file:///D:/Projetos/TheFlux/exemplos_was.py), [`compliance_in.py`](file:///D:/Projetos/TheFlux/compliance_in.py) e [`compliance_BE.py`](file:///D:/Projetos/TheFlux/compliance_BE.py)) agora leem a diretiva `#L EXPECT_ERROR: <CODIGO>` nos arquivos `flux/ExampleOfError_*.flux` e assinalam **`OK`** quando:
+Todos os scripts de execução e conformidade da raiz ([`exemplos_in.py`](file:///D:/Projetos/TheFlux/exemplos_in.py), [`exemplos_vm.py`](file:///D:/Projetos/TheFlux/exemplos_vm.py), [`exemplos_vmr.py`](file:///D:/Projetos/TheFlux/exemplos_vmr.py), [`exemplos_lv.py`](file:///D:/Projetos/TheFlux/exemplos_lv.py), [`exemplos_wat.py`](file:///D:/Projetos/TheFlux/exemplos_wat.py), [`exemplos_was.py`](file:///D:/Projetos/TheFlux/exemplos_was.py), [`compliance_IN.py`](file:///D:/Projetos/TheFlux/compliance_IN.py) e [`compliance_BE.py`](file:///D:/Projetos/TheFlux/compliance_BE.py)) agora leem a diretiva `#L EXPECT_ERROR: <CODIGO>` nos arquivos `flux/ExampleOfError_*.flux` e assinalam **`OK`** quando:
 1. O compilador encerra com código de retorno não-zero (`ec != 0`);
 2. A saída contém o cabeçalho canônico `[<CODIGO> - <MNEMONICO>]: ...`;
 3. A saída contém a linha de orientação `💡 Dica: ...`.
 
 Com isso, a execução completa da suíte `flux/*.flux` reporta **`376 sucesso, 0 falha(s)`** em todos os corredores de teste.
 
-### 2.4 Verificador Interativo Lado a Lado (`compliance_in.py`)
-A nova ferramenta [`compliance_in.py`](file:///D:/Projetos/TheFlux/compliance_in.py) (e seu relatório [`compliance_in.md`](file:///D:/Projetos/TheFlux/compliance_in.md)) permite auditoria visual lado a lado entre `LEGACY` e `SELFHOSTED`:
+### 2.4 Verificador Interativo Lado a Lado (`compliance_IN.py`)
+A nova ferramenta [`compliance_IN.py`](file:///D:/Projetos/TheFlux/compliance_IN.py) (e seu relatório [`compliance_IN00.md`](file:///D:/Projetos/TheFlux/compliance_IN00.md) comparado contra o baseline [`compliance_IN01.md`](file:///D:/Projetos/TheFlux/compliance_IN01.md)) permite auditoria visual lado a lado entre `LEGACY` e `SELFHOSTED`:
 - **Alinhamento Visual Unicode**: Cálculo preciso de largura de coluna para tabulações (`\t`) e caracteres Unicode largos (*East Asian Width `W`/`F`*, como `😀` e `💡`), mantendo o separador `|` perfeitamente alinhado.
-- **Avaliação Interativa**: Aguarda entrada `(C)erto` ou `(E)rrado` do auditor, atualizando em tempo real a tabela de status e a seção final de erros.
-- **Fallback Automático Pós-Remoção do Legacy**: Caso a pasta `./legacy` seja removida, `compliance_in.py` carrega automaticamente as saídas de referência a partir de [`docs/legacy_in.txt`](file:///D:/Projetos/TheFlux/docs/legacy_in.txt).
+- **Avaliação Interativa & Análise de Regressão**: Aguarda entrada `(C)erto` ou `(E)rrado` do auditor, atualizando em tempo real [`compliance_IN00.md`](file:///D:/Projetos/TheFlux/compliance_IN00.md) e rastreando regressões em relação a [`compliance_IN01.md`](file:///D:/Projetos/TheFlux/compliance_IN01.md).
+- **Comparação Direta de Referência**: Compara a execução de [`bin/fluxc.exe`](file:///D:/Projetos/TheFlux/bin/fluxc.exe) ([`docs/selfhosted_in.txt`](file:///D:/Projetos/TheFlux/docs/selfhosted_in.txt)) diretamente contra as saídas de referência em [`docs/legacy_in.txt`](file:///D:/Projetos/TheFlux/docs/legacy_in.txt).
 
 ---
 
@@ -94,7 +94,7 @@ Todos os **376 programas `.flux`** da suíte oficial passam simultaneamente nos 
 | **Binário Nativo (`bin/fluxc.exe`)** | Suporte parcial a testes básicos | **376/376 (100%)** de paridade com UTF-8 nativo e diagnósticos completos | Execução autônoma sem necessidade do diretório `./legacy` |
 | **Testes `ExampleOfError_*.flux`** | Exibidos como `FALHA` nos scripts `exemplos_*.py` | Validados por código `[<COD> - <NOME>]` + `💡 Dica:` e marcados como **`OK`** | Resultado limpo `376 sucesso, 0 falha(s)` em toda a suíte |
 | **Indexação Multidimensional** | Atribuição simples `a[i] = v` no parser nativo | Suporte completo a colchetes encadeados `a[i][j] = v` (`SET_INDEX`) | Suporte total a matrizes, listas aninhadas e tensores no `fluxc.exe` |
-| **Auditoria de Conformidade** | Comparação manual de logs | Verificador interativo lado a lado (`compliance_in.py`) + oráculo (`verify_legacy_in.py`) | Garantia determinística de zero regressões antes da remoção do `legacy/` |
+| **Auditoria de Conformidade** | Comparação manual de logs | Verificador interativo lado a lado (`compliance_IN.py`) + oráculo (`verify_legacy_in.py`) | Garantia determinística de zero regressões antes da remoção do `legacy/` |
 
 ---
 
@@ -123,7 +123,7 @@ python scripts\verify_legacy_in.py
 python scripts\verify_legacy_in.py --use-fluxc-exe
 
 # Comparação interativa lado a lado (LEGACY vs SELFHOSTED) com avaliação (C)erto / (E)rrado
-python compliance_in.py
+python compliance_IN.py
 ```
 
 ---

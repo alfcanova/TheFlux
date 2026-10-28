@@ -80,6 +80,7 @@ agent (CompilerLib) impl ParserCoreContract {
                   stdIoFileExists(file_path) ==> {
                         mut as string: code = stdIoReadFile(file_path)
                         mut as map: res = parseSource(code)
+                        res["file_path"] = file_path
                         emit(nice, res, "ok")
                   }
                   _ ==> {

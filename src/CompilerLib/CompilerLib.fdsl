@@ -45,6 +45,7 @@ use fmir::FmirBuilder.fdsl
 
 #L 5. Modulos de Geracao de Codigo (Backends)
 use backends::BackendContract.fdsl
+use backends::interp::StdLibBridge.fdsl
 use backends::interp::InterpBackend.fdsl
 use backends::vm::VmBackend.fdsl
 use backends::vm::VmCompiler.fdsl

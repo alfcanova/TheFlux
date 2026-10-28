@@ -470,7 +470,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       mut as map: m = c_obj
                                                       clen = stdCollectionLength(m)
                                                 }
-                                                c_ty == "list" or c_ty == "set" ==> {
+                                                c_ty == "list" or c_ty == "set" or c_ty == "data" or c_ty == "" ==> {
                                                       mut as list of data: l = c_obj
                                                       clen = stdCollectionLength(l)
                                                 }
@@ -1169,7 +1169,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                               route {
                                                                                     b_str[1] == "[" ==> { base_ty = "list" }
                                                                                     b_str[1] == "{" ==> { base_ty = "map" }
-                                                                                    _ ==> { base_ty = "data" }
+                                                                                    _ ==> { base_ty = "string" }
                                                                               }
                                                                         }
                                                                         _ ==> { base_ty = "data" }
@@ -1673,6 +1673,20 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             sreg != "" and stdMapContainsKey(regs, sreg) ==> { s_val = regs[sreg] as int64 }
                                                             sreg != "" and stdMapContainsKey(env, sreg) ==> { s_val = env[sreg] as int64 }
                                                             sreg != "" ==> { s_val = interpParseInt(sreg) }
+                                                            _ ==> {}
+                                                      }
+
+                                                      route {
+                                                            a1_ty != "string" ==> {
+                                                                  mut as string: check_s = "" + slice_src
+                                                                  mut as int64: cs_len = stdCollectionLength(check_s)
+                                                                  route {
+                                                                        cs_len > 0 and check_s[1] != "[" and check_s[1] != "{" ==> {
+                                                                              a1_ty = "string"
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
                                                             _ ==> {}
                                                       }
 
@@ -3598,8 +3612,136 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       regs[res] = 0
                                                       reg_types[res] = "int"
                                                 }
+                                                a1 == "stdCollectionLength" ==> {
+                                                      mut as data: c_val = 0
+                                                      mut as string: c_ty = ""
+                                                      mut as string: piece = a2
+                                                      route {
+                                                            stdMapContainsKey(regs, piece) ==> {
+                                                                  c_val = regs[piece]
+                                                                  route { stdMapContainsKey(reg_types, piece) ==> { c_ty = reg_types[piece] } _ ==> {} }
+                                                            }
+                                                            stdMapContainsKey(env, piece) ==> {
+                                                                  c_val = env[piece]
+                                                                  route { stdMapContainsKey(env_types, piece) ==> { c_ty = env_types[piece] } _ ==> {} }
+                                                            }
+                                                            _ ==> {
+                                                                  c_val = piece
+                                                                  c_ty = "string"
+                                                            }
+                                                      }
+                                                      route {
+                                                            c_ty == "string" ==> {
+                                                                  mut as string: s = "" + c_val
+                                                                  regs[res] = stdCollectionLength(s)
+                                                            }
+                                                            c_ty == "map" ==> {
+                                                                  mut as map: m = c_val
+                                                                  regs[res] = stdCollectionLength(m)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as list of data: l = c_val
+                                                                  regs[res] = stdCollectionLength(l)
+                                                            }
+                                                      }
+                                                      reg_types[res] = "int"
+                                                }
+                                                a1 == "stdCollectionIsEmpty" ==> {
+                                                      mut as data: c_val = 0
+                                                      mut as string: c_ty = ""
+                                                      mut as string: piece = a2
+                                                      route {
+                                                            stdMapContainsKey(regs, piece) ==> {
+                                                                  c_val = regs[piece]
+                                                                  route { stdMapContainsKey(reg_types, piece) ==> { c_ty = reg_types[piece] } _ ==> {} }
+                                                            }
+                                                            stdMapContainsKey(env, piece) ==> {
+                                                                  c_val = env[piece]
+                                                                  route { stdMapContainsKey(env_types, piece) ==> { c_ty = env_types[piece] } _ ==> {} }
+                                                            }
+                                                            _ ==> {
+                                                                  c_val = piece
+                                                                  c_ty = "string"
+                                                            }
+                                                      }
+                                                      mut as int64: clen = 0
+                                                      route {
+                                                            c_ty == "string" ==> {
+                                                                  mut as string: s = "" + c_val
+                                                                  clen = stdCollectionLength(s)
+                                                            }
+                                                            c_ty == "map" ==> {
+                                                                  mut as map: m = c_val
+                                                                  clen = stdCollectionLength(m)
+                                                            }
+                                                            _ ==> {
+                                                                  mut as list of data: l = c_val
+                                                                  clen = stdCollectionLength(l)
+                                                            }
+                                                      }
+                                                      regs[res] = (clen == 0)
+                                                      reg_types[res] = "bool"
+                                                }
                                                 _ ==> {
                                                       route {
+                                                            interpIsStdIntrinsic(a1) ==> {
+                                                                  mut as list of string: sargs = []
+                                                                  mut as int64: a2_len = stdCollectionLength(a2)
+                                                                  mut as int64: last_p = 1
+                                                                  mut as int64: p_scan = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              p_scan > a2_len ==> {
+                                                                                    route {
+                                                                                          last_p <= a2_len ==> {
+                                                                                                mut as string: piece = a2[last_p..a2_len]
+                                                                                                mut as string: pval_str = ""
+                                                                                                route {
+                                                                                                      stdMapContainsKey(regs, piece) ==> { pval_str = "" + regs[piece] }
+                                                                                                      stdMapContainsKey(env, piece) ==> { pval_str = "" + env[piece] }
+                                                                                                      _ ==> { pval_str = piece }
+                                                                                                }
+                                                                                                sargs = stdListPushBack(sargs, pval_str)
+                                                                                          }
+                                                                                          _ ==> {}
+                                                                                    }
+                                                                                    break
+                                                                              }
+                                                                              a2[p_scan] == "," ==> {
+                                                                                    mut as string: piece = a2[last_p..(p_scan - 1)]
+                                                                                    mut as string: pval_str = ""
+                                                                                    route {
+                                                                                          stdMapContainsKey(regs, piece) ==> { pval_str = "" + regs[piece] }
+                                                                                          stdMapContainsKey(env, piece) ==> { pval_str = "" + env[piece] }
+                                                                                          _ ==> { pval_str = piece }
+                                                                                    }
+                                                                                    sargs = stdListPushBack(sargs, pval_str)
+                                                                                    last_p = p_scan + 1
+                                                                                    p_scan = p_scan + 1
+                                                                              }
+                                                                              _ ==> { p_scan = p_scan + 1 }
+                                                                        }
+                                                                  }
+                                                                  mut as map: sres = interpCallStdIntrinsic(a1, sargs)
+                                                                  regs[res] = sres["val"]
+                                                                  route {
+                                                                        a1 == "stdRuntimeGetArgs" or a1 == "stdIoListDir" or a1 == "stdIoReadLines" ==> {
+                                                                              reg_types[res] = "list"
+                                                                        }
+                                                                        a1 == "stdIoReadFile" ==> {
+                                                                              reg_types[res] = "string"
+                                                                        }
+                                                                        a1 == "stdCollectionLength" or a1 == "stdOsExec" or a1 == "stdOsExit" ==> {
+                                                                              reg_types[res] = "int"
+                                                                        }
+                                                                        a1 == "stdIoFileExists" ==> {
+                                                                              reg_types[res] = "bool"
+                                                                        }
+                                                                        _ ==> {
+                                                                              reg_types[res] = "data"
+                                                                        }
+                                                                  }
+                                                            }
                                                             stdMapContainsKey(regs, a2) ==> {
                                                                   regs[res] = regs[a2]
                                                                   route {

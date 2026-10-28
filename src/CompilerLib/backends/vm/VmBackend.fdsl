@@ -73,10 +73,36 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["MUL"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
-                                    opcode == "BINOP_/" ==> {
+                                    opcode == "BINOP_/" or opcode == "BINOP_/i" or opcode == "BINOP_/f" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
                                           bc_ops = stdListPushBack(bc_ops, ["DIV"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["MOD"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_==" or opcode == "BINOP_!=" or opcode == "BINOP_<" or opcode == "BINOP_<=" or opcode == "BINOP_>" or opcode == "BINOP_>=" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, [opcode])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "LABEL" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LABEL", a1])
+                                    }
+                                    opcode == "JUMP" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["JUMP", a1])
+                                    }
+                                    opcode == "JUMP_IF_FALSE" or opcode == "JUMP_IF_TRUE" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, [opcode, a2])
+                                    }
+                                    opcode == "CALL" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["CALL", a1, a2])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
                                     opcode == "PRINT" ==> {
@@ -87,7 +113,9 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["EMIT", "nice"])
                                     }
-                                    _ ==> {}
+                                    _ ==> {
+                                          bc_ops = stdListPushBack(bc_ops, [opcode, a1, a2, res])
+                                    }
                               }
                               i = i + 1
                         }

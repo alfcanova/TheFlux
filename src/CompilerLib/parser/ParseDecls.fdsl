@@ -30,6 +30,26 @@ agent (CompilerLib) impl ParseDeclsContract {
                         mut as map: target_tok = tokenStreamPeek(ts)
                         mut as string: target_name = "" + target_tok["val"]
                         ts = tokenStreamAdvance(ts)
+                        mut as map: nxt_tok = tokenStreamPeek(ts)
+                        mut as string: nxt_val = "" + nxt_tok["val"]
+                        route {
+                              nxt_val == "." ==> {
+                                    ts = tokenStreamAdvance(ts)
+                                    mut as map: ext_tok = tokenStreamPeek(ts)
+                                    target_name = target_name + "." + ext_tok["val"]
+                                    ts = tokenStreamAdvance(ts)
+                              }
+                              _ ==> {}
+                        }
+                        nxt_tok = tokenStreamPeek(ts)
+                        nxt_val = "" + nxt_tok["val"]
+                        route {
+                              nxt_val == "as" ==> {
+                                    ts = tokenStreamAdvance(ts)
+                                    ts = tokenStreamAdvance(ts)
+                              }
+                              _ ==> {}
+                        }
                         ar = astArenaAllocNode(ar, "DECL_USE", target_name, 0, 0, [])
                   }
                   cval == "program" or cval == "agent" or cval == "contract" or cval == "struct" or cval == "enum" or cval == "function" ==> {

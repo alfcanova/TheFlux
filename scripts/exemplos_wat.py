@@ -9,13 +9,10 @@ os.environ["FLUX_CI"] = "1"
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
 
-RAIZ = Path(__file__).resolve().parent
-SRC = RAIZ / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
-
+RAIZ = Path(__file__).resolve().parent.parent
 FLUX_DIR = RAIZ / "flux"
-T_WASM = RAIZ / "t_wasm"
+FLUXC_EXE = RAIZ / "bin" / "fluxc.exe"
+T_WAT = RAIZ / "t_wat"
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",
@@ -42,7 +39,7 @@ def erro_esperado_obtido(expected_code: str | None, ec: int, texto_erro: str) ->
     return (f"[{expected_code} - " in texto_erro) and ("💡 Dica:" in texto_erro)
 
 
-T_WASM.mkdir(parents=True, exist_ok=True)
+T_WAT.mkdir(parents=True, exist_ok=True)
 filtro = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else None
 flux_files = sorted(FLUX_DIR.glob("*.flux"))
 if filtro:
@@ -51,8 +48,13 @@ if filtro:
 acertos = 0
 erros = 0
 
-PYTHON = sys.executable
-ENV = dict(os.environ, PYTHONPATH=str(SRC), FLUX_CI="1")
+ENV = dict(
+    os.environ,
+    FLUX_CI="1",
+    PYTHONUTF8="1",
+    PYTHONIOENCODING="utf-8",
+    _FLUXC_WAT_DELEGATED="1",
+)
 
 for flux_path in flux_files:
     nome = flux_path.name
@@ -60,10 +62,11 @@ for flux_path in flux_files:
     stdin_input = STDIN_MAP.get(nome, "")
     expected_code = obter_erro_esperado(flux_path)
 
-    wasm_path = T_WASM / f"{base_stem}.wasm"
+    wat_path = T_WAT / f"{base_stem}.wat"
 
     result = subprocess.run(
-        [PYTHON, "-m", "flux_proto", str(flux_path), "--target", "wasm", "--output", str(wasm_path.with_suffix(""))],
+        [str(FLUXC_EXE), str(flux_path), "--target", "wat", "-o", str(wat_path.with_suffix(""))],
+        cwd=str(RAIZ),
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60, env=ENV, input=stdin_input,
     )
 
@@ -79,11 +82,16 @@ for flux_path in flux_files:
             print(f"FALHA  {nome}: {err_output}")
         continue
 
-    if wasm_path.exists() and not expected_code:
-        print(f"  [wasm] {wasm_path.name}")
+    result_stdout = result.stdout.strip()
+    for line in result_stdout.splitlines():
+        if line.startswith("WAT"):
+            print(f"  {line}")
+
+    if wat_path.exists() and not expected_code:
+        print(f"  [wat]  {wat_path.name}")
     else:
         erros += 1
-        print(f"FALHA  {nome}: .wasm nao gerado")
+        print(f"FALHA  {nome}: .wat nao gerado")
         continue
 
     acertos += 1

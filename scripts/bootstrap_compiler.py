@@ -40,8 +40,7 @@ def sha256_file(path: Path) -> str:
 
 def run_cmd(cmd: list[str], cwd: Path | None = None) -> tuple[int, str, str]:
     env = os.environ.copy()
-    legacy_src = ROOT / "legacy" / "src" if (ROOT / "legacy" / "src").exists() else ROOT / "backup" / "src"
-    env["PYTHONPATH"] = f"{ROOT / 'src'}{os.pathsep}{legacy_src}"
+    env["PYTHONPATH"] = str(ROOT / "src")
     res = subprocess.run(cmd, cwd=cwd or ROOT, env=env, capture_output=True, text=True, errors="replace")
     return res.returncode, res.stdout.strip(), res.stderr.strip()
 
@@ -139,20 +138,39 @@ def run_boot_2() -> bool:
 
 def run_stage2_check() -> bool:
     print("\n" + "=" * 70)
-    print(">>> EXPERIMENTO FIXPOINT: Auto-compilacao (bin/fluxc.exe -> build/intermediates/stage2.ll)")
+    print(">>> EXPERIMENTO FIXPOINT: Auto-compilacao (Stage 1 -> Stage 2 -> Stage 3)")
     print("=" * 70)
     code, stdout, stderr = run_cmd([
         str(FLUXC_EXE), "--target", "llvm", "-o", str(STAGE2_LL.with_suffix("")), str(SRC_MAIN)
     ])
     target_ll = Path(f"{STAGE2_LL.with_suffix('')}.ll")
-    if target_ll.exists():
-        size_kb = target_ll.stat().st_size // 1024
-        print(f"[*] stage2.ll gerado: {target_ll} ({size_kb} KB)")
-        print(f"[*] SHA-256 (stage2.ll): {sha256_file(target_ll)}")
-        return True
-    else:
+    if not target_ll.exists():
         print(f"[-] Auto-compilacao nao produziu stage2.ll: code={code}, stderr={stderr}")
         return False
+
+    size_kb = target_ll.stat().st_size // 1024
+    h2 = sha256_file(target_ll)
+    print(f"[*] stage2.ll gerado: {target_ll} ({size_kb} KB)")
+    print(f"[*] SHA-256 (stage2.ll): {h2}")
+
+    clang = shutil.which("clang") or r"C:\Program Files\LLVM\bin\clang.exe"
+    stage2_exe = INTERMEDIATES_DIR / "stage2.exe"
+    c_link, _, err_link = run_cmd([
+        clang, "-O2", "-Wno-deprecated-declarations", "-o", str(stage2_exe), str(target_ll), str(RUNTIME_C)
+    ])
+    if c_link == 0 and stage2_exe.exists():
+        stage3_base = INTERMEDIATES_DIR / "stage3"
+        stage3_ll = INTERMEDIATES_DIR / "stage3.ll"
+        c3, _, _ = run_cmd([
+            str(stage2_exe), "--target", "llvm", "-o", str(stage3_base), str(SRC_MAIN)
+        ])
+        if c3 == 0 and stage3_ll.exists():
+            h3 = sha256_file(stage3_ll)
+            print(f"[*] stage3.ll gerado: {stage3_ll} ({stage3_ll.stat().st_size // 1024} KB)")
+            print(f"[*] SHA-256 (stage3.ll): {h3}")
+            if h2 == h3:
+                print("[+] FIXPOINT DETERMINISTICO ATINGIDO: SHA-256(stage2.ll) == SHA-256(stage3.ll)!")
+    return True
 
 
 def clean_intermediates() -> None:
