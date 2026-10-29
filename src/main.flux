@@ -31,6 +31,7 @@ program (Main) {
                   mut as string: target = "in"
                   mut as string: output_path = "out"
                   mut as bool: flag_version = false
+                  mut as bool: flag_no_run = false
                   mut as bool: flag_emit_ast = false
                   mut as bool: flag_emit_fmir = false
                   mut as bool: flag_emit_llvm = false
@@ -72,6 +73,9 @@ program (Main) {
                                           }
                                           arg == "--emit-wat" ==> {
                                                 flag_emit_wat = true
+                                          }
+                                          arg == "--no-run" ==> {
+                                                flag_no_run = true
                                           }
                                           arg == "--explain" ==> {
                                                 i = i + 1
@@ -157,19 +161,55 @@ program (Main) {
                                           mut as string: cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target run"
                                           route {
                                                 target == "vm" or target == "vmbc" ==> {
-                                                      cmd = "python scripts/flux_vm.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target vmbc -o \"" + output_path + "\""
                                                 }
                                                 target == "vmr" ==> {
-                                                      cmd = "python scripts/flux_vmr.py \"" + input_file + "\""
+                                                      mut as int64: flen = stdCollectionLength(input_file)
+                                                      mut as bool: is_fvmbc = false
+                                                      route {
+                                                            flen >= 6 and input_file[(flen - 5)..flen] == ".fvmbc" ==> {
+                                                                  is_fvmbc = true
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            is_fvmbc ==> {
+                                                                  cmd = "set PYTHONPATH=src && python -X utf8 -c \"import json, sys; from flux_proto.vm.runtime import execute_bytecode; execute_bytecode(json.load(open(sys.argv[1], encoding='utf-8')))\" \"" + input_file + "\""
+                                                            }
+                                                            _ ==> {
+                                                                  cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target vmbc -o \"" + output_path + "\" && python -X utf8 -c \"import json, sys; from flux_proto.vm.runtime import execute_bytecode; execute_bytecode(json.load(open(sys.argv[1], encoding='utf-8')))\" \"" + output_path + ".fvmbc\""
+                                                            }
+                                                      }
                                                 }
                                                 target == "llvm" or target == "lv" ==> {
-                                                      cmd = "python scripts/flux_lv.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      mut as string: run_cmd = ""
+                                                      route {
+                                                            not flag_no_run ==> {
+                                                                  run_cmd = " && \"" + output_path + ".exe\""
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target llvm -o \"" + output_path + "\" && clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" runtime/flux_input.c" + run_cmd
                                                 }
                                                 target == "wat" ==> {
-                                                      cmd = "python scripts/flux_wat.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      mut as string: run_cmd = ""
+                                                      route {
+                                                            not flag_no_run ==> {
+                                                                  run_cmd = " && wasmer run \"" + output_path + ".wat\""
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target wat -o \"" + output_path + "\"" + run_cmd
                                                 }
                                                 target == "wasm" or target == "was" ==> {
-                                                      cmd = "python scripts/flux_was.py \"" + input_file + "\" -o \"" + output_path + "\""
+                                                      mut as string: run_cmd = ""
+                                                      route {
+                                                            not flag_no_run ==> {
+                                                                  run_cmd = " && wasmer run \"" + output_path + ".wasm\""
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target wasm -o \"" + output_path + "\"" + run_cmd
                                                 }
                                                 _ ==> {}
                                           }

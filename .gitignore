@@ -59,12 +59,8 @@ build/intermediates/tmp/*
 bin/
 
 # Pastas de testes t_* preservadas via .gitkeep
-t_benchmarks/*
-!t_benchmarks/.gitkeep
 t_fvmbc/*
 !t_fvmbc/.gitkeep
-t_general/*
-!t_general/.gitkeep
 t_llvm/*
 !t_llvm/.gitkeep
 t_wasm-*/*
