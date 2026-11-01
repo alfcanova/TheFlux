@@ -89,6 +89,20 @@ t_wat/*
 *.pdb
 
 # ------------------------------------------------------------------------------
+# Legado 0.9.9
+# ------------------------------------------------------------------------------
+legacy-0.9.9/scratch/*
+!legacy-0.9.9/scratch/.gitkeep
+legacy-0.9.9/t_fvmbc/*
+!legacy-0.9.9/t_fvmbc/.gitkeep
+legacy-0.9.9/t_llvm/*
+!legacy-0.9.9/t_llvm/.gitkeep
+legacy-0.9.9/t_wasm/*
+!legacy-0.9.9/t_wasm/.gitkeep
+legacy-0.9.9/t_wat/*
+!legacy-0.9.9/t_wat/.gitkeep
+
+# ------------------------------------------------------------------------------
 # 6. Saídas Geradas por Testes e Execuções
 # ------------------------------------------------------------------------------
 io_stdlib_output.txt

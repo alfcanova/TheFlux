@@ -189,21 +189,12 @@ TheFlux/
 │   └── rule_dsl/                # DSL de Regras de Negócio (Lexer, Semantic, AST, Executor)
 ├── flux/                        # 360 programas e suítes canônicas de teste (.flux)
 ├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
-├── runtime/                     # Suporte de runtime
-├── src/                         # Núcleo do compilador e backends (src/flux_proto)
-│   └── flux_proto/              # Lexer, Parser, AST, Semântica, VM, LLVM, WAT, WASM
-│       ├── ast/                 # Árvores sintáticas AST
-│       ├── ddg/                 # Árvores sintáticas DDG
-│       ├── interpreter/         # Interpretador AST interativo
-│       ├── lexer/               # Análise léxica
-│       ├── llvm/                # Emissão LLVM IR nativo + runtime C (flux_input.c)
-│       ├── macro/               # Expansor de macros
-│       ├── parser/              # Análise sintática
-│       ├── semantic/            # Análise semântica, tabela de símbolos e tipos
-│       ├── telemetry/           # Substima de telemetria de dados
-│       ├── vm/                  # Bytecode + máquina virtual (.fvmbc)
-│       ├── wat/                 # Backends WebAssembly texto (.wat)
-│       └── wasm/                # Backends WebAssembly binário (.wasm)
+├── runtime/                     # Runtime C modular (include/flux/, src/) e libfluxrt.a
+├── src/                         # Compilador auto-hospedado nativo TheFlux / FDSL
+│   ├── CompilerLib/             # Lexer, Parser, AST, Semântica, FMIR e Backends (LLVM/VM/WAT/WASM)
+│   ├── Fvm/                     # Compilador e Máquina Virtual Bytecode (.fvmbc) em FDSL
+│   └── main.flux                # Ponto de entrada do compilador CLI nativo (fluxc)
+├── legacy-0.9.9/                # Protótipo original em Python (flux_proto) e ferramentas legadas v0.9.9
 ├── stdlib/                      # 37 Bibliotecas Padrão em FDSL (.fdsl)
 │   ├── db/                      # Motores de banco de dados embutidos (cabeçalhos C/C++ e binários)
 │   │   └── windows/             # Distribuições nativas Windows x64

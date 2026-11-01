@@ -87,7 +87,7 @@ flowchart LR
     Item3["3. Desacoplamento CLI\n(Zero Fallback Python\nem src/main.flux)"]
     Item4["4. Bootstrapping\nNativo Autônomo\n(bootstrap.bat/sh)"]
     Item5["5. Migração de Tooling\n(Testes e Runners\nem TheFlux Puro)"]
-    Item6["6. Quarentena do Legado\n(Mover flux_proto e\nlegacy para archive/)"]
+    Item6["6. Quarentena do Legado\n(Mover flux_proto e\nlegado para legacy-0.9.9/)"]
 
     Item1 --> Item2
     Item2 --> Item3
@@ -318,17 +318,17 @@ Todos os utilitários de linha de comando, testes e suítes de conformidade deve
 
 ---
 
-### Item 6: Quarentena, Desativação e Arquivamento de `src/flux_proto/` e `legacy/`
+### Item 6: Quarentena, Desativação e Isolamento em `legacy-0.9.9/`
 
 Uma vez que o novo runtime e os backends FDSL estejam validados pelo Fixpoint:
 
 1. **Desacoplamento no Repositório**:
-   - Mover [`src/flux_proto/`](file:///D:/Projetos/TheFlux/src/flux_proto) para fora de `src/`, alocando em [`archive/legacy_prototype/`](file:///D:/Projetos/TheFlux/archive/legacy_prototype).
-   - O diretório [`src/`](file:///D:/Projetos/TheFlux/src) conterá exclusivamente código TheFlux/FDSL (`main.flux`, `CompilerLib/`).
-2. **Isolamento de `legacy/`**:
-   - Mover [`legacy/`](file:///D:/Projetos/TheFlux/legacy) para [`archive/stage0_legacy/`](file:///D:/Projetos/TheFlux/archive/stage0_legacy).
+   - Mover [`src/flux_proto/`](file:///D:/Projetos/TheFlux/legacy-0.9.9/src/flux_proto) para fora de `src/`, alocando em [`legacy-0.9.9/src/flux_proto/`](file:///D:/Projetos/TheFlux/legacy-0.9.9/src/flux_proto).
+   - O diretório [`src/`](file:///D:/Projetos/TheFlux/src) contém exclusivamente código TheFlux/FDSL (`main.flux`, `CompilerLib/`, `Fvm/`).
+2. **Isolamento de `legacy-0.9.9/`**:
+   - Renomear [`legacy/`](file:///D:/Projetos/TheFlux/legacy-0.9.9) para [`legacy-0.9.9/`](file:///D:/Projetos/TheFlux/legacy-0.9.9), concentrando o protótipo Python, scripts legados de migração e intermediários da versão 0.9.9.
 3. **Verificação de Pureza**:
-   - Garantir que uma busca global por `python` ou `flux_proto` em `src/`, `scripts/` e na raiz resulte em zero ocorrências funcionais.
+   - Garantir que [`src/`](file:///D:/Projetos/TheFlux/src) e [`scripts/`](file:///D:/Projetos/TheFlux/scripts) contenham zero dependências de `flux_proto`.
 
 ---
 
@@ -354,7 +354,7 @@ gantt
     Certificação de Fixpoint (M5)     :p9, after p8, 3d
     section Fase 6: Tooling & Arquivamento
     Migrar exemplos_*.py para .flux   :p10, after p9, 5d
-    Mover flux_proto para archive/    :p11, after p10, 2d
+    Mover flux_proto para legacy-0.9.9:p11, after p10, 2d
 ```
 
 ### Detalhamento dos Marcos (Milestones)
@@ -366,7 +366,7 @@ gantt
 | **M3: FVM & WASM Nativos** | Implementação de `VmCompiler.fdsl`, `VmRuntime.fdsl`, `WatBackend.fdsl` e `WasmBackend.fdsl`. | 376 testes em `flux/` compilam e executam nos alvos `vm`, `vmr`, `wat` e `wasm` puramente em FDSL. | **Completa e Ok** |
 | **M4: Desacoplamento de CLI** | Remoção de todo o bloco de fallback externo em `src/main.flux`. | `bin/fluxc.exe` não contém strings `"python"` ou referências a `flux_proto`. | **Completa e Ok** |
 | **M5: Fixpoint 100% Nativo** | Execução de `scripts/bootstrap.bat` do início ao fim sem interpretador Python. | `SHA256(stage2.ll) == SHA256(stage3.ll)` de forma reproduzível e determinística. | **Completa e Ok** |
-| **M6: Tooling & Arquivo** | Migração de `exemplos_*.py` para `.flux` e transferência de `flux_proto/` e `legacy/` para `archive/`. | Repositório compila e roda a suíte de 1741 testes SciAlgo e 205 NumericalRecipes com zero dependências de Python. | Pendente |
+| **M6: Tooling & Arquivo** | Migração de `exemplos_*.py` para `.flux` e transferência de `flux_proto/` e scripts legados para `legacy-0.9.9/`. | Repositório compila e roda a suíte com zero dependências de Python no pipeline nativo. | **Completa e Ok** |
 
 ---
 
