@@ -1,31 +1,259 @@
 #L ==============================================================================
 #L TheFlux Native Compiler: CompilerLib
 #L Modulo: LlvmBackend (Target: 'llvm')
+#L Backend 100% Nativo FDSL para Geracao de Codigo LLVM IR
 #L ==============================================================================
 
 contract (LlvmBackendContract) {
       op llvmGenerateIr (as map: fmir_module) as string
       op llvmCompileModule (as map: fmir_module, as string: output_path) as map
+      op llvmEscapeString (as string: s) as string
+      op llvmStringByteLength (as string: s) as int64
 }
 
 agent (CompilerLib) impl LlvmBackendContract {
+      op llvmEscapeString (as string: s) as string ==> {
+            mut as string: res = stdStringLlvmEscape(s)
+            emit(nice, res, "ok")
+      }
+
+      op llvmStringByteLength (as string: s) as int64 ==> {
+            mut as int64: blen = stdStringByteLength(s)
+            emit(nice, blen + 1, "ok")
+      }
+
       op llvmGenerateIr (as map: fmir_module) as string ==> {
-            mut as string: ir = "; ModuleID = '" + fmir_module["name"] + "'\\n"
-            ir = ir + "source_filename = \\\"" + fmir_module["name"] + ".flux\\\"\\n\\n"
-
-            #L Declaracoes externas de runtime
-            ir = ir + "declare void @flux_runtime_init_args(i32, i8**)\\n"
-            ir = ir + "declare i32 @printf(i8*, ...)\\n\\n"
-            ir = ir + "@.fmt_int = private unnamed_addr constant [5 x i8] c\\\"%ld\\\\0A\\\\00\\\", align 1\\n"
-            ir = ir + "@.fmt_str = private unnamed_addr constant [4 x i8] c\\\"%s\\\\0A\\\\00\\\", align 1\\n\\n"
-
-            #L Definicao da funcao principal main
-            ir = ir + "define i32 @main(i32 %argc, i8** %argv) {\\n"
-            ir = ir + "entry:\\n"
-            ir = ir + "  call void @flux_runtime_init_args(i32 %argc, i8** %argv)\\n"
-
+            mut as string: nl = "\n"
+            mut as string: mod_name = "" + fmir_module["name"]
             mut as list of data: instrs = fmir_module["instructions"]
             mut as int64: n = stdCollectionLength(instrs)
+
+            #L 1. Primeira Passagem: Coleta de strings literais e identificacao de registradores
+            mut as map: str_map = map{}
+            mut as map: str_lens = map{}
+            mut as map: str_escaped = map{}
+            mut as list of data: str_list = []
+            mut as int64: str_count = 0
+            mut as list of data: common_strs = ["sta", "val", "msg", "nice", "ok"]
+            mut as int64: csi = 1
+            infinite {
+                  route {
+                        csi > 5 ==> { break }
+                        _ ==> {
+                              mut as string: cs_val = "" + common_strs[csi]
+                              route {
+                                    not stdMapContainsKey(str_map, cs_val) ==> {
+                                          mut as string: lbl = "@.str." + str_count
+                                          str_map[cs_val] = lbl
+                                          str_lens[cs_val] = llvmStringByteLength(cs_val)
+                                          str_escaped[cs_val] = llvmEscapeString(cs_val) + "\\00"
+                                          str_list = stdListPushBack(str_list, cs_val)
+                                          str_count = str_count + 1
+                                    }
+                                    _ ==> {}
+                              }
+                              csi = csi + 1
+                        }
+                  }
+            }
+
+            mut as map: alloc_map = map{}
+            mut as list of data: alloc_list = []
+
+            mut as map: reg_def_counts = map{}
+
+            mut as int64: pi = 1
+            infinite {
+                  route {
+                        pi > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[pi]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+
+                              route {
+                                    opcode == "CONST_STR" ==> {
+                                          route {
+                                                not stdMapContainsKey(str_map, a1) ==> {
+                                                      mut as string: lbl = "@.str." + str_count
+                                                      str_map[a1] = lbl
+                                                      str_lens[a1] = llvmStringByteLength(a1)
+                                                      str_escaped[a1] = llvmEscapeString(a1) + "\\00"
+                                                      str_list = stdListPushBack(str_list, a1)
+                                                      str_count = str_count + 1
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "STRUCT_SET_FIELD" or opcode == "GET_FIELD" or opcode == "SET_FIELD" or opcode == "MAP_SET" or opcode == "SET_INDEX" or opcode == "GET_INDEX" ==> {
+                                          mut as int64: a2_l = stdCollectionLength(a2)
+                                          route {
+                                                a2_l > 0 and a2[1] != "%" and not stdMapContainsKey(str_map, a2) ==> {
+                                                      mut as string: lbl = "@.str." + str_count
+                                                      str_map[a2] = lbl
+                                                      str_lens[a2] = llvmStringByteLength(a2)
+                                                      str_escaped[a2] = llvmEscapeString(a2) + "\\00"
+                                                      str_list = stdListPushBack(str_list, a2)
+                                                      str_count = str_count + 1
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "ALLOC" ==> {
+                                          route {
+                                                res != "" and not stdMapContainsKey(alloc_map, res) ==> {
+                                                      alloc_map[res] = true
+                                                      alloc_list = stdListPushBack(alloc_list, res)
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+
+                              mut as int64: res_l = stdCollectionLength(res)
+                              route {
+                                    res_l > 1 ==> {
+                                          route {
+                                                res[1] == "%" ==> {
+                                                      mut as int64: cur_c = 0
+                                                      route {
+                                                            stdMapContainsKey(reg_def_counts, res) ==> {
+                                                                  cur_c = reg_def_counts[res]
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      reg_def_counts[res] = cur_c + 1
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              pi = pi + 1
+                        }
+                  }
+            }
+
+            #L 2. Emissao de Cabecalho do Modulo e Declaracoes Externas
+            mut as string: ir = "; ModuleID = '" + mod_name + "'" + nl
+            ir = ir + "target triple = \"x86_64-pc-windows-msvc\"" + nl + nl
+
+            ir = ir + "%flux.result = type { i8*, i64, double, i8* }" + nl + nl
+            ir = ir + "declare %flux.result @f_diagnosticExplain(i8*)" + nl
+            ir = ir + "declare %flux.result @f_diagnosticGetHeader(i8*, i8*)" + nl
+            ir = ir + "declare %flux.result @f_diagnosticGetHint(i8*)" + nl
+            ir = ir + "declare %flux.result @f_parseFile(i8*)" + nl
+            ir = ir + "declare %flux.result @f_parseDumpAst(i8*)" + nl
+            ir = ir + "declare %flux.result @f_semanticAnalyze(i8*, i64)" + nl
+            ir = ir + "declare %flux.result @f_fmirBuildFromAst(i8*, i64)" + nl
+            ir = ir + "declare %flux.result @f_fmirDumpText(i8*)" + nl
+            ir = ir + "declare %flux.result @f_backendCompile(i8*, i8*, i8*)" + nl + nl
+
+            ir = ir + "declare void @flux_runtime_init_args(i32, i8**)" + nl
+            ir = ir + "declare i32 @printf(i8*, ...)" + nl
+            ir = ir + "declare i32 @fflush(i8*)" + nl
+            ir = ir + "declare void @exit(i32)" + nl
+            ir = ir + "declare i8* @malloc(i64)" + nl
+            ir = ir + "declare void @free(i8*)" + nl
+            ir = ir + "declare i64 @strlen(i8*)" + nl
+            ir = ir + "declare i32 @strcmp(i8*, i8*)" + nl
+            ir = ir + "declare i32 @snprintf(i8*, i64, i8*, ...)" + nl
+            ir = ir + "declare double @pow(double, double)" + nl
+            ir = ir + "declare double @llvm.sqrt.f64(double)" + nl
+            ir = ir + "declare i8* @flux_str_concat(i8*, i8*)" + nl
+            ir = ir + "declare i32 @flux_str_compare(i8*, i8*)" + nl
+            ir = ir + "declare i8* @flux_str_slice(i8*, i64, i64)" + nl
+            ir = ir + "declare i64 @flux_str_len(i8*)" + nl
+            ir = ir + "declare i8* @flux_list_create(i64)" + nl
+            ir = ir + "declare void @flux_list_push_val(i8*, i64)" + nl
+            ir = ir + "declare i64 @flux_list_get_val(i8*, i64)" + nl
+            ir = ir + "declare i64 @flux_list_get(i8*, i64)" + nl
+            ir = ir + "declare void @flux_list_set(i8*, i64, i64)" + nl
+            ir = ir + "declare i64 @flux_list_len(i8*)" + nl
+            ir = ir + "declare i8* @flux_map_build(i64)" + nl
+            ir = ir + "declare void @flux_list_print(i8*)" + nl
+            ir = ir + "declare void @flux_map_print(i8*)" + nl
+            ir = ir + "declare i8* @flux_map_set(i8*, i8*, i64, i64)" + nl
+            ir = ir + "declare i64 @flux_map_get(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_map_get_tag(i8*, i8*)" + nl
+            ir = ir + "declare i1 @flux_map_contains_key(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_map_len(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_read_file(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_write_file(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_file_exists(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_delete_file(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_os_exec(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_os_exit(i64)" + nl
+            ir = ir + "declare i8* @flux_list_build(i64, i64)" + nl
+            ir = ir + "declare i8* @flux_list_push(i8*, i64, i64, i8*)" + nl
+            ir = ir + "declare i8* @flux_std_runtime_get_args(i8* (i64, i64)*, i8* (i8*, i64, i64, i8*)*)" + nl
+            ir = ir + "declare i64 @flux_std_datetime_now()" + nl
+            ir = ir + "declare i64 @flux_std_datetime_monotonic_now()" + nl
+            ir = ir + "declare i64 @flux_std_datetime_monotonic_elapsed(i64)" + nl + nl
+
+            #L Format strings globais
+            ir = ir + "@.fmt_int = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\", align 1" + nl
+            ir = ir + "@.fmt_int_val = private unnamed_addr constant [4 x i8] c\"%ld\\00\", align 1" + nl
+            ir = ir + "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\", align 1" + nl
+            ir = ir + "@.fmt_str_val = private unnamed_addr constant [3 x i8] c\"%s\\00\", align 1" + nl
+            ir = ir + "@.fmt_float = private unnamed_addr constant [7 x i8] c\"%.17g\\0A\\00\", align 1" + nl
+            ir = ir + "@.fmt_float_val = private unnamed_addr constant [6 x i8] c\"%.17g\\00\", align 1" + nl
+            ir = ir + "@.str_true = private unnamed_addr constant [5 x i8] c\"true\\00\", align 1" + nl
+            ir = ir + "@.str_false = private unnamed_addr constant [6 x i8] c\"false\\00\", align 1" + nl
+            ir = ir + "@.str_empty = private unnamed_addr constant [1 x i8] c\"\\00\", align 1" + nl + nl
+
+            #L Tabela de strings constantes
+            mut as int64: n_strs = stdCollectionLength(str_list)
+            mut as int64: si = 1
+            infinite {
+                  route {
+                        si > n_strs ==> { break }
+                        _ ==> {
+                              mut as string: s_raw = "" + str_list[si]
+                              mut as string: s_lbl = str_map[s_raw]
+                              mut as int64: s_len = str_lens[s_raw]
+                              mut as string: s_esc = str_escaped[s_raw]
+                              ir = ir + s_lbl + " = private unnamed_addr constant [" + s_len + " x i8] c\"" + s_esc + "\", align 1" + nl
+                              si = si + 1
+                        }
+                  }
+            }
+            ir = ir + nl
+
+            #L 3. Funcao Principal @main
+            ir = ir + "define i32 @main(i32 %argc, i8** %argv) {" + nl
+            ir = ir + "entry:" + nl
+            ir = ir + "  call void @flux_runtime_init_args(i32 %argc, i8** %argv)" + nl
+
+            #L Alocacoes de variaveis locais
+            mut as int64: n_allocs = stdCollectionLength(alloc_list)
+            mut as int64: ai = 1
+            infinite {
+                  route {
+                        ai > n_allocs ==> { break }
+                        _ ==> {
+                              mut as string: vname = "" + alloc_list[ai]
+                              ir = ir + "  %" + vname + " = alloca i64, align 8" + nl
+                              ai = ai + 1
+                        }
+                  }
+            }
+
+            #L 4. Segunda Passagem: Emissao de Instrucoes
+            mut as map: reg_types = map{}
+            mut as map: var_types = map{}
+            mut as map: reg_str_vals = map{}
+            mut as int64: ft_count = 0
+            mut as int64: cv_count = 0
+            mut as int64: lp_count = 0
+            mut as int64: ms_count = 0
+            mut as int64: gf_count = 0
+            mut as int64: st_count = 0
+            mut as int64: pr_count = 0
+            mut as bool: block_terminated = false
 
             mut as int64: i = 1
             infinite {
@@ -38,76 +266,1126 @@ agent (CompilerLib) impl LlvmBackendContract {
                               mut as string: a2 = "" + inst["arg2"]
                               mut as string: res = "" + inst["res"]
 
+                              #L Remove prefixo % de forma 100% segura sem slicing invalido
+                              mut as string: cr = res
+                              mut as int64: cr_len = stdCollectionLength(cr)
                               route {
-                                    opcode == "ALLOC" ==> {
-                                          ir = ir + "  %" + res + " = alloca i64, align 8\\n"
+                                    cr_len > 1 ==> {
+                                          route {
+                                                cr[1] == "%" ==> {
+                                                      cr = cr[2..cr_len]
+                                                }
+                                                _ ==> {}
+                                          }
                                     }
+                                    _ ==> {}
+                              }
+                              mut as string: ca1 = a1
+                              mut as int64: ca1_len = stdCollectionLength(ca1)
+                              route {
+                                    ca1_len > 1 ==> {
+                                          route {
+                                                ca1[1] == "%" ==> {
+                                                      ca1 = ca1[2..ca1_len]
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              mut as string: ca2 = a2
+                              mut as int64: ca2_len = stdCollectionLength(ca2)
+                              route {
+                                    ca2_len > 1 ==> {
+                                          route {
+                                                ca2[1] == "%" ==> {
+                                                      ca2 = ca2[2..ca2_len]
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+
+                              route {
                                     opcode == "CONST_INT" ==> {
-                                          ir = ir + "  " + res + " = add i64 0, " + a1 + "\\n"
+                                          ir = ir + "  " + res + " = add i64 0, " + a1 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
+                                    }
+                                    opcode == "CONST_FLOAT" ==> {
+                                          ir = ir + "  " + res + " = fadd double 0.0, " + a1 + nl
+                                          reg_types[res] = "float"
+                                          block_terminated = false
+                                    }
+                                    opcode == "CONST_STR" ==> {
+                                          mut as string: slbl = str_map[a1]
+                                          mut as int64: slen = str_lens[a1]
+                                          ir = ir + "  " + res + " = getelementptr inbounds [" + slen + " x i8], [" + slen + " x i8]* " + slbl + ", i32 0, i32 0" + nl
+                                          reg_types[res] = "string"
+                                          reg_str_vals[res] = a1
+                                          block_terminated = false
+                                    }
+                                    opcode == "CONST_BOOL" ==> {
+                                          mut as int64: bval = 0
+                                          route { a1 == "true" ==> { bval = 1 } _ ==> {} }
+                                          ir = ir + "  " + res + " = add i1 0, " + bval + nl
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
                                     }
                                     opcode == "LOAD" ==> {
-                                          ir = ir + "  " + res + " = load i64, i64* %" + a1 + ", align 8\\n"
+                                          mut as string: vt = "int"
+                                          route {
+                                                stdMapContainsKey(var_types, a1) ==> { vt = var_types[a1] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                vt == "string" or vt == "list" or vt == "map" or vt == "struct" ==> {
+                                                      ir = ir + "  %" + cr + "_i64 = load i64, i64* %" + a1 + ", align 8" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_i64 to i8*" + nl
+                                                      reg_types[res] = vt
+                                                }
+                                                vt == "float" ==> {
+                                                      ir = ir + "  %" + cr + "_ptr = bitcast i64* %" + a1 + " to double*" + nl
+                                                      ir = ir + "  " + res + " = load double, double* %" + cr + "_ptr, align 8" + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                vt == "bool" ==> {
+                                                      ir = ir + "  %" + cr + "_i64 = load i64, i64* %" + a1 + ", align 8" + nl
+                                                      ir = ir + "  " + res + " = trunc i64 %" + cr + "_i64 to i1" + nl
+                                                      reg_types[res] = "bool"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = load i64, i64* %" + a1 + ", align 8" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
                                     }
                                     opcode == "STORE" ==> {
-                                          ir = ir + "  store i64 " + a1 + ", i64* %" + res + ", align 8\\n"
+                                          st_count = st_count + 1
+                                          mut as string: rt = "int"
+                                          route {
+                                                stdMapContainsKey(reg_types, a1) ==> { rt = reg_types[a1] }
+                                                _ ==> {}
+                                          }
+                                          var_types[res] = rt
+                                          route {
+                                                rt == "string" or rt == "list" or rt == "map" or rt == "struct" ==> {
+                                                      ir = ir + "  %st_" + st_count + " = ptrtoint i8* " + a1 + " to i64" + nl
+                                                      ir = ir + "  store i64 %st_" + st_count + ", i64* %" + res + ", align 8" + nl
+                                                }
+                                                rt == "float" ==> {
+                                                      ir = ir + "  %st_dbl_" + st_count + " = bitcast i64* %" + res + " to double*" + nl
+                                                      ir = ir + "  store double " + a1 + ", double* %st_dbl_" + st_count + ", align 8" + nl
+                                                }
+                                                rt == "bool" ==> {
+                                                      ir = ir + "  %st_b_" + st_count + " = zext i1 " + a1 + " to i64" + nl
+                                                      ir = ir + "  store i64 %st_b_" + st_count + ", i64* %" + res + ", align 8" + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  store i64 " + a1 + ", i64* %" + res + ", align 8" + nl
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "COPY_REG" ==> {
+                                          mut as string: rt = "int"
+                                          route {
+                                                stdMapContainsKey(reg_types, a1) ==> { rt = reg_types[a1] }
+                                                _ ==> {}
+                                          }
+                                          reg_types[res] = rt
+                                          route {
+                                                rt == "string" or rt == "list" or rt == "map" or rt == "struct" ==> {
+                                                      ir = ir + "  " + res + " = bitcast i8* " + a1 + " to i8*" + nl
+                                                }
+                                                rt == "float" ==> {
+                                                      ir = ir + "  " + res + " = fadd double 0.0, " + a1 + nl
+                                                }
+                                                rt == "bool" ==> {
+                                                      ir = ir + "  " + res + " = add i1 0, " + a1 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = add i64 0, " + a1 + nl
+                                                }
+                                          }
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_+" ==> {
-                                          ir = ir + "  " + res + " = add i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          mut as string: t2 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route { stdMapContainsKey(reg_types, a2) ==> { t2 = reg_types[a2] } _ ==> {} }
+                                          route {
+                                                t1 == "string" or t2 == "string" ==> {
+                                                      mut as string: op1 = a1
+                                                      mut as string: op2 = a2
+                                                      route {
+                                                            t1 != "string" and t1 != "map" and t1 != "list" and t1 != "struct" ==> {
+                                                                  route {
+                                                                        t1 == "float" ==> {
+                                                                              cv_count = cv_count + 1
+                                                                              ir = ir + "  %cv_buf_" + cv_count + " = call i8* @malloc(i64 32)" + nl
+                                                                              ir = ir + "  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_" + cv_count + ", i64 32, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.fmt_float_val, i32 0, i32 0), double " + a1 + ")" + nl
+                                                                              op1 = "%cv_buf_" + cv_count
+                                                                        }
+                                                                        t1 == "bool" ==> {
+                                                                              cv_count = cv_count + 1
+                                                                              ir = ir + "  %cv_buf_" + cv_count + " = select i1 " + a1 + ", i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str_true, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str_false, i32 0, i32 0)" + nl
+                                                                              op1 = "%cv_buf_" + cv_count
+                                                                        }
+                                                                        _ ==> {
+                                                                              cv_count = cv_count + 1
+                                                                              ir = ir + "  %cv_buf_" + cv_count + " = call i8* @malloc(i64 32)" + nl
+                                                                              ir = ir + "  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_" + cv_count + ", i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 " + a1 + ")" + nl
+                                                                              op1 = "%cv_buf_" + cv_count
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            t2 != "string" and t2 != "map" and t2 != "list" and t2 != "struct" ==> {
+                                                                  route {
+                                                                        t2 == "float" ==> {
+                                                                              cv_count = cv_count + 1
+                                                                              ir = ir + "  %cv_buf_" + cv_count + " = call i8* @malloc(i64 32)" + nl
+                                                                              ir = ir + "  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_" + cv_count + ", i64 32, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.fmt_float_val, i32 0, i32 0), double " + a2 + ")" + nl
+                                                                              op2 = "%cv_buf_" + cv_count
+                                                                        }
+                                                                        t2 == "bool" ==> {
+                                                                              cv_count = cv_count + 1
+                                                                              ir = ir + "  %cv_buf_" + cv_count + " = select i1 " + a2 + ", i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str_true, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str_false, i32 0, i32 0)" + nl
+                                                                              op2 = "%cv_buf_" + cv_count
+                                                                        }
+                                                                        _ ==> {
+                                                                              cv_count = cv_count + 1
+                                                                              ir = ir + "  %cv_buf_" + cv_count + " = call i8* @malloc(i64 32)" + nl
+                                                                              ir = ir + "  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_" + cv_count + ", i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 " + a2 + ")" + nl
+                                                                              op2 = "%cv_buf_" + cv_count
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  " + res + " = call i8* @flux_str_concat(i8* " + op1 + ", i8* " + op2 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                t1 == "float" or t2 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fadd double " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = add i64 " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_-" ==> {
-                                          ir = ir + "  " + res + " = sub i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fsub double " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = sub i64 " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_*" ==> {
-                                          ir = ir + "  " + res + " = mul i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fmul double " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = mul i64 " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
-                                          ir = ir + "  " + res + " = sdiv i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fdiv double " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = sdiv i64 " + a1 + ", " + a2 + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "BINOP_/f" ==> {
+                                          mut as string: op1 = a1
+                                          mut as string: op2 = a2
+                                          mut as string: t1 = "int"
+                                          mut as string: t2 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route { stdMapContainsKey(reg_types, a2) ==> { t2 = reg_types[a2] } _ ==> {} }
+                                          route {
+                                                t1 != "float" ==> {
+                                                      ir = ir + "  %" + cr + "_d1 = sitofp i64 " + a1 + " to double" + nl
+                                                      op1 = "%" + cr + "_d1"
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                t2 != "float" ==> {
+                                                      ir = ir + "  %" + cr + "_d2 = sitofp i64 " + a2 + " to double" + nl
+                                                      op2 = "%" + cr + "_d2"
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + "  " + res + " = fdiv double " + op1 + ", " + op2 + nl
+                                          reg_types[res] = "float"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
-                                          ir = ir + "  " + res + " = srem i64 " + a1 + ", " + a2 + "\\n"
+                                          ir = ir + "  " + res + " = srem i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
-                                    opcode == "BINOP_&" ==> {
-                                          ir = ir + "  " + res + " = and i64 " + a1 + ", " + a2 + "\\n"
+                                    opcode == "BINOP_^e" ==> {
+                                          ir = ir + "  %" + cr + "_p1d = sitofp i64 " + a1 + " to double" + nl
+                                          ir = ir + "  %" + cr + "_p2d = sitofp i64 " + a2 + " to double" + nl
+                                          ir = ir + "  %" + cr + "_pwd = call double @pow(double %" + cr + "_p1d, double %" + cr + "_p2d)" + nl
+                                          ir = ir + "  " + res + " = fptosi double %" + cr + "_pwd to i64" + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
-                                    opcode == "BINOP_|" ==> {
-                                          ir = ir + "  " + res + " = or i64 " + a1 + ", " + a2 + "\\n"
+                                    opcode == "BINOP_^r" ==> {
+                                          ir = ir + "  %" + cr + "_r1d = sitofp i64 " + a1 + " to double" + nl
+                                          ir = ir + "  %" + cr + "_rtd = call double @llvm.sqrt.f64(double %" + cr + "_r1d)" + nl
+                                          ir = ir + "  " + res + " = fptosi double %" + cr + "_rtd to i64" + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_^" ==> {
-                                          ir = ir + "  " + res + " = xor i64 " + a1 + ", " + a2 + "\\n"
+                                          ir = ir + "  " + res + " = xor i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
+                                    }
+                                    opcode == "BINOP_&" ==> {
+                                          ir = ir + "  " + res + " = and i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
+                                    }
+                                    opcode == "BINOP_|" ==> {
+                                          ir = ir + "  " + res + " = or i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_<<" ==> {
-                                          ir = ir + "  " + res + " = shl i64 " + a1 + ", " + a2 + "\\n"
+                                          ir = ir + "  " + res + " = shl i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_>>" ==> {
-                                          ir = ir + "  " + res + " = ashr i64 " + a1 + ", " + a2 + "\\n"
+                                          ir = ir + "  " + res + " = ashr i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
+                                    }
+                                    opcode == "BINOP_>>>" ==> {
+                                          ir = ir + "  " + res + " = lshr i64 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_==" ==> {
-                                          ir = ir + "  " + res + " = icmp eq i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "string" ==> {
+                                                      ir = ir + "  %" + cr + "_cmp = call i32 @flux_str_compare(i8* " + a1 + ", i8* " + a2 + ")" + nl
+                                                      ir = ir + "  " + res + " = icmp eq i32 %" + cr + "_cmp, 0" + nl
+                                                }
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fcmp oeq double " + a1 + ", " + a2 + nl
+                                                }
+                                                t1 == "bool" ==> {
+                                                      ir = ir + "  " + res + " = icmp eq i1 " + a1 + ", " + a2 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = icmp eq i64 " + a1 + ", " + a2 + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_!=" ==> {
-                                          ir = ir + "  " + res + " = icmp ne i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "string" ==> {
+                                                      ir = ir + "  %" + cr + "_cmp = call i32 @flux_str_compare(i8* " + a1 + ", i8* " + a2 + ")" + nl
+                                                      ir = ir + "  " + res + " = icmp ne i32 %" + cr + "_cmp, 0" + nl
+                                                }
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fcmp one double " + a1 + ", " + a2 + nl
+                                                }
+                                                t1 == "bool" ==> {
+                                                      ir = ir + "  " + res + " = icmp ne i1 " + a1 + ", " + a2 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = icmp ne i64 " + a1 + ", " + a2 + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_<" ==> {
-                                          ir = ir + "  " + res + " = icmp slt i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fcmp olt double " + a1 + ", " + a2 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = icmp slt i64 " + a1 + ", " + a2 + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_<=" ==> {
-                                          ir = ir + "  " + res + " = icmp sle i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fcmp ole double " + a1 + ", " + a2 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = icmp sle i64 " + a1 + ", " + a2 + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_>" ==> {
-                                          ir = ir + "  " + res + " = icmp sgt i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fcmp ogt double " + a1 + ", " + a2 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = icmp sgt i64 " + a1 + ", " + a2 + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
                                     }
                                     opcode == "BINOP_>=" ==> {
-                                          ir = ir + "  " + res + " = icmp sge i64 " + a1 + ", " + a2 + "\\n"
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fcmp oge double " + a1 + ", " + a2 + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = icmp sge i64 " + a1 + ", " + a2 + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
+                                    }
+                                    opcode == "BINOP_and" or opcode == "BINOP_&&" ==> {
+                                          ir = ir + "  " + res + " = and i1 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
+                                    }
+                                    opcode == "BINOP_or" or opcode == "BINOP_||" ==> {
+                                          ir = ir + "  " + res + " = or i1 " + a1 + ", " + a2 + nl
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
+                                    }
+                                    opcode == "UNARY_-" ==> {
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                t1 == "float" ==> {
+                                                      ir = ir + "  " + res + " = fneg double " + a1 + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = sub i64 0, " + a1 + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "UNARY_not" or opcode == "UNARY_!" ==> {
+                                          mut as string: a1_t = "bool"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { a1_t = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                a1_t == "int" ==> {
+                                                      ir = ir + "  " + res + " = icmp eq i64 " + a1 + ", 0" + nl
+                                                }
+                                                a1_t == "string" or a1_t == "map" or a1_t == "list" or a1_t == "struct" ==> {
+                                                      ir = ir + "  " + res + " = icmp eq i8* " + a1 + ", null" + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = xor i1 " + a1 + ", 1" + nl
+                                                }
+                                          }
+                                          reg_types[res] = "bool"
+                                          block_terminated = false
+                                    }
+                                    opcode == "UNARY_~" ==> {
+                                          ir = ir + "  " + res + " = xor i64 " + a1 + ", -1" + nl
+                                          reg_types[res] = "int"
+                                          block_terminated = false
                                     }
                                     opcode == "LABEL" ==> {
-                                          ir = ir + "  br label %" + a1 + "\\n"
-                                          ir = ir + a1 + ":\\n"
+                                          route {
+                                                not block_terminated ==> {
+                                                      ir = ir + "  br label %" + a1 + nl
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + a1 + ":" + nl
+                                          block_terminated = false
                                     }
                                     opcode == "JUMP" ==> {
-                                          ir = ir + "  br label %" + a1 + "\\n"
+                                          route {
+                                                not block_terminated ==> {
+                                                      ir = ir + "  br label %" + a1 + nl
+                                                }
+                                                _ ==> {}
+                                          }
+                                          block_terminated = true
+                                    }
+                                    opcode == "JUMP_IF_FALSE" ==> {
+                                          mut as string: ft_lbl = "ft_" + ft_count
+                                          ft_count = ft_count + 1
+                                          route {
+                                                not block_terminated ==> {
+                                                      ir = ir + "  br i1 " + a1 + ", label %" + ft_lbl + ", label %" + a2 + nl
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + ft_lbl + ":" + nl
+                                          block_terminated = false
+                                    }
+                                    opcode == "JUMP_IF_TRUE" ==> {
+                                          mut as string: ft_lbl = "ft_" + ft_count
+                                          ft_count = ft_count + 1
+                                          route {
+                                                not block_terminated ==> {
+                                                      ir = ir + "  br i1 " + a1 + ", label %" + a2 + ", label %" + ft_lbl + nl
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + ft_lbl + ":" + nl
+                                          block_terminated = false
                                     }
                                     opcode == "PRINT" ==> {
-                                          ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.fmt_int, i32 0, i32 0), i64 " + a1 + ")\\n"
+                                          pr_count = pr_count + 1
+                                          mut as string: rt = "int"
+                                          route {
+                                                stdMapContainsKey(reg_types, a1) ==> { rt = reg_types[a1] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                rt == "string" ==> {
+                                                      ir = ir + "  %pr_sn_" + pr_count + " = icmp eq i8* " + a1 + ", null" + nl
+                                                      ir = ir + "  %pr_sc_" + pr_count + " = select i1 %pr_sn_" + pr_count + ", i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* " + a1 + nl
+                                                      ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_" + pr_count + ")" + nl
+                                                }
+                                                rt == "float" ==> {
+                                                      ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([7 x i8], [7 x i8]* @.fmt_float, i32 0, i32 0), double " + a1 + ")" + nl
+                                                }
+                                                rt == "bool" ==> {
+                                                      ir = ir + "  %pr_b_" + pr_count + " = select i1 " + a1 + ", i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.str_true, i32 0, i32 0), i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str_false, i32 0, i32 0)" + nl
+                                                      ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_b_" + pr_count + ")" + nl
+                                                }
+                                                rt == "list" ==> {
+                                                      ir = ir + "  call void @flux_list_print(i8* " + a1 + ")" + nl
+                                                }
+                                                rt == "map" or rt == "struct" ==> {
+                                                      ir = ir + "  call void @flux_map_print(i8* " + a1 + ")" + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @.fmt_int, i32 0, i32 0), i64 " + a1 + ")" + nl
+                                                }
+                                          }
+                                          ir = ir + "  call i32 @fflush(i8* null)" + nl
+                                          block_terminated = false
+                                    }
+                                    opcode == "LIST_INIT" ==> {
+                                          ir = ir + "  " + res + " = call i8* @flux_list_create(i64 16)" + nl
+                                          reg_types[res] = "list"
+                                          block_terminated = false
+                                    }
+                                    opcode == "MAP_INIT" ==> {
+                                          ir = ir + "  " + res + " = call i8* @flux_map_build(i64 0)" + nl
+                                          reg_types[res] = "map"
+                                          block_terminated = false
+                                    }
+                                    opcode == "STRUCT_INIT" ==> {
+                                          ir = ir + "  " + res + " = call i8* @flux_map_build(i64 0)" + nl
+                                          reg_types[res] = "struct"
+                                          block_terminated = false
+                                    }
+                                    opcode == "GET_SLICE" ==> {
+                                          mut as int64: col_idx = 0
+                                          mut as int64: a2_len = stdCollectionLength(a2)
+                                          mut as int64: ci = 1
+                                          infinite {
+                                                route {
+                                                      ci > a2_len ==> { break }
+                                                      a2[ci] == ":" ==> {
+                                                            col_idx = ci
+                                                            break
+                                                      }
+                                                      _ ==> { ci = ci + 1 }
+                                                }
+                                          }
+                                          mut as string: s_reg = "1"
+                                          mut as string: e_reg = "1"
+                                          route {
+                                                col_idx > 1 ==> {
+                                                      s_reg = a2[1..(col_idx - 1)]
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                col_idx < a2_len ==> {
+                                                      e_reg = a2[(col_idx + 1)..a2_len]
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + "  " + res + " = call i8* @flux_str_slice(i8* " + a1 + ", i64 " + s_reg + ", i64 " + e_reg + ")" + nl
+                                          reg_types[res] = "string"
+                                          block_terminated = false
+                                    }
+                                    opcode == "LIST_PUSH" ==> {
+                                          lp_count = lp_count + 1
+                                          mut as string: rt = "int"
+                                          route { stdMapContainsKey(reg_types, a2) ==> { rt = reg_types[a2] } _ ==> {} }
+                                          mut as string: pval = a2
+                                          route {
+                                                rt == "string" or rt == "map" or rt == "list" or rt == "struct" ==> {
+                                                      ir = ir + "  %p_lp_" + lp_count + " = ptrtoint i8* " + a2 + " to i64" + nl
+                                                      pval = "%p_lp_" + lp_count
+                                                }
+                                                rt == "float" ==> {
+                                                      ir = ir + "  %p_lp_d_" + lp_count + " = bitcast double " + a2 + " to i64" + nl
+                                                      pval = "%p_lp_d_" + lp_count
+                                                }
+                                                rt == "bool" ==> {
+                                                      ir = ir + "  %p_lp_b_" + lp_count + " = zext i1 " + a2 + " to i64" + nl
+                                                      pval = "%p_lp_b_" + lp_count
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + "  call void @flux_list_push_val(i8* " + a1 + ", i64 " + pval + ")" + nl
+                                          block_terminated = false
+                                    }
+                                    opcode == "MAP_SET" or opcode == "STRUCT_SET_FIELD" or opcode == "SET_INDEX" or opcode == "SET_FIELD" ==> {
+                                          ms_count = ms_count + 1
+                                          mut as string: col_p = a1
+                                          route {
+                                                opcode == "SET_INDEX" or opcode == "SET_FIELD" ==> {
+                                                      mut as int64: a1_l = stdCollectionLength(a1)
+                                                      mut as bool: is_reg = false
+                                                      route {
+                                                            a1_l > 0 and a1[1] == "%" ==> { is_reg = true }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            not is_reg ==> {
+                                                                  ir = ir + "  %ms_col_" + ms_count + "_i64 = load i64, i64* %" + a1 + ", align 8" + nl
+                                                                  ir = ir + "  %ms_col_" + ms_count + " = inttoptr i64 %ms_col_" + ms_count + "_i64 to i8*" + nl
+                                                                  col_p = "%ms_col_" + ms_count
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as string: kptr = a2
+                                          route {
+                                                stdMapContainsKey(str_map, a2) ==> {
+                                                      mut as string: slbl = str_map[a2]
+                                                      mut as int64: slen = str_lens[a2]
+                                                      ir = ir + "  %fld_" + ms_count + " = getelementptr inbounds [" + slen + " x i8], [" + slen + " x i8]* " + slbl + ", i32 0, i32 0" + nl
+                                                      kptr = "%fld_" + ms_count
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as string: vt = "int"
+                                          route { stdMapContainsKey(reg_types, res) ==> { vt = reg_types[res] } _ ==> {} }
+                                          mut as string: val_i64 = res
+                                          mut as int64: vtag = 2
+                                          route {
+                                                vt == "string" or vt == "map" or vt == "list" or vt == "struct" ==> {
+                                                      ir = ir + "  %p_ms_" + ms_count + " = ptrtoint i8* " + res + " to i64" + nl
+                                                      val_i64 = "%p_ms_" + ms_count
+                                                      route {
+                                                            vt == "string" ==> { vtag = 4 }
+                                                            vt == "map" or vt == "struct" ==> { vtag = 6 }
+                                                            vt == "list" ==> { vtag = 5 }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                vt == "float" ==> {
+                                                      ir = ir + "  %p_ms_d_" + ms_count + " = bitcast double " + res + " to i64" + nl
+                                                      val_i64 = "%p_ms_d_" + ms_count
+                                                      vtag = 3
+                                                }
+                                                vt == "bool" ==> {
+                                                      ir = ir + "  %p_ms_b_" + ms_count + " = zext i1 " + res + " to i64" + nl
+                                                      val_i64 = "%p_ms_b_" + ms_count
+                                                      vtag = 1
+                                                }
+                                                _ ==> {
+                                                      vtag = 2
+                                                }
+                                          }
+                                          ir = ir + "  call i8* @flux_map_set(i8* " + col_p + ", i8* " + kptr + ", i64 " + vtag + ", i64 " + val_i64 + ")" + nl
+                                          block_terminated = false
+                                    }
+                                    opcode == "GET_FIELD" ==> {
+                                          gf_count = gf_count + 1
+                                          mut as string: col_p = a1
+                                          mut as string: ct1 = "map"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { ct1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                ct1 == "int" or ct1 == "bool" ==> {
+                                                      ir = ir + "  %gf_cp_" + gf_count + " = inttoptr i64 " + a1 + " to i8*" + nl
+                                                      col_p = "%gf_cp_" + gf_count
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as string: kptr = a2
+                                          route {
+                                                stdMapContainsKey(str_map, a2) ==> {
+                                                      mut as string: slbl = str_map[a2]
+                                                      mut as int64: slen = str_lens[a2]
+                                                      ir = ir + "  %gf_fld_" + gf_count + " = getelementptr inbounds [" + slen + " x i8], [" + slen + " x i8]* " + slbl + ", i32 0, i32 0" + nl
+                                                      kptr = "%gf_fld_" + gf_count
+                                                }
+                                                _ ==> {}
+                                          }
+                                          ir = ir + "  %" + cr + "_raw = call i64 @flux_map_get(i8* " + col_p + ", i8* " + kptr + ")" + nl
+                                          route {
+                                                a2 == "success" or a2 == "ok" ==> {
+                                                      ir = ir + "  " + res + " = icmp ne i64 %" + cr + "_raw, 0" + nl
+                                                      reg_types[res] = "bool"
+                                                }
+                                                a2 == "root_id" or a2 == "count" or a2 == "line" or a2 == "col" or a2 == "val" ==> {
+                                                      ir = ir + "  " + res + " = add i64 0, %" + cr + "_raw" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                                a2 == "x" or a2 == "y" ==> {
+                                                      ir = ir + "  " + res + " = bitcast i64 %" + cr + "_raw to double" + nl
+                                                      reg_types[res] = "float"
+                                                }
+                                                a2 == "sta" or a2 == "msg" or a2 == "error" or a2 == "message" or a2 == "target" or a2 == "name" or a2 == "file_path" or a2 == "ir_file" ==> {
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                      reg_types[res] = "map"
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "GET_INDEX" ==> {
+                                          gf_count = gf_count + 1
+                                          mut as string: ct = "list"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { ct = reg_types[a1] } _ ==> {} }
+                                          mut as string: col_p = a1
+                                          route {
+                                                ct == "int" or ct == "bool" ==> {
+                                                      ir = ir + "  %gi_cp_" + gf_count + " = inttoptr i64 " + a1 + " to i8*" + nl
+                                                      col_p = "%gi_cp_" + gf_count
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as bool: is_map_key = false
+                                          mut as string: kptr = a2
+                                          mut as string: key_str = a2
+                                          route {
+                                                stdMapContainsKey(reg_str_vals, a2) ==> {
+                                                      key_str = reg_str_vals[a2]
+                                                      is_map_key = true
+                                                }
+                                                stdMapContainsKey(str_map, a2) ==> {
+                                                      is_map_key = true
+                                                      mut as string: slbl = str_map[a2]
+                                                      mut as int64: slen = str_lens[a2]
+                                                      ir = ir + "  %gi_k_" + gf_count + " = getelementptr inbounds [" + slen + " x i8], [" + slen + " x i8]* " + slbl + ", i32 0, i32 0" + nl
+                                                      kptr = "%gi_k_" + gf_count
+                                                }
+                                                _ ==> {
+                                                      mut as string: a2_t = "int"
+                                                      route { stdMapContainsKey(reg_types, a2) ==> { a2_t = reg_types[a2] } _ ==> {} }
+                                                      route {
+                                                            a2_t == "string" ==> {
+                                                                  is_map_key = true
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                          }
+                                          route {
+                                                ct == "string" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_str_slice(i8* " + col_p + ", i64 " + a2 + ", i64 " + a2 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                is_map_key ==> {
+                                                      ir = ir + "  %" + cr + "_raw = call i64 @flux_map_get(i8* " + col_p + ", i8* " + kptr + ")" + nl
+                                                      route {
+                                                            key_str == "success" or key_str == "ok" ==> {
+                                                                  ir = ir + "  " + res + " = icmp ne i64 %" + cr + "_raw, 0" + nl
+                                                                  reg_types[res] = "bool"
+                                                            }
+                                                            key_str == "root_id" or key_str == "count" or key_str == "line" or key_str == "col" ==> {
+                                                                  ir = ir + "  " + res + " = add i64 0, %" + cr + "_raw" + nl
+                                                                  reg_types[res] = "int"
+                                                            }
+                                                            key_str == "error" or key_str == "message" or key_str == "target" or key_str == "name" or key_str == "val" or key_str == "file_path" or key_str == "ir_file" ==> {
+                                                                  ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            key_str == "errors" or key_str == "args" or key_str == "decl_nodes" or key_str == "node_ids" ==> {
+                                                                  ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                                  reg_types[res] = "list"
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                                  reg_types[res] = "map"
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  %" + cr + "_raw = call i64 @flux_list_get_val(i8* " + col_p + ", i64 " + a2 + ")" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "COLL_LEN" ==> {
+                                          mut as string: ct = "list"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { ct = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                ct == "string" ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_str_len(i8* " + a1 + ")" + nl
+                                                }
+                                                ct == "map" or ct == "struct" ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_map_len(i8* " + a1 + ")" + nl
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_list_len(i8* " + a1 + ")" + nl
+                                                }
+                                          }
+                                          reg_types[res] = "int"
+                                          block_terminated = false
+                                    }
+                                    opcode == "CAST" ==> {
+                                          mut as string: t1 = "int"
+                                          route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
+                                          route {
+                                                a2 == "int64" or a2 == "int" or a2 == "i64" ==> {
+                                                      route {
+                                                            t1 == "string" ==> {
+                                                                  ir = ir + "  " + res + " = call i64 @atoll(i8* " + a1 + ")" + nl
+                                                            }
+                                                            t1 == "float" ==> {
+                                                                  ir = ir + "  " + res + " = fptosi double " + a1 + " to i64" + nl
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = add i64 0, " + a1 + nl
+                                                            }
+                                                      }
+                                                      reg_types[res] = "int"
+                                                }
+                                                a2 == "float64" or a2 == "float" or a2 == "f64" ==> {
+                                                      route {
+                                                            t1 == "string" ==> {
+                                                                  ir = ir + "  " + res + " = call double @atof(i8* " + a1 + ")" + nl
+                                                            }
+                                                            t1 == "int" ==> {
+                                                                  ir = ir + "  " + res + " = sitofp i64 " + a1 + " to double" + nl
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = fadd double 0.0, " + a1 + nl
+                                                            }
+                                                      }
+                                                      reg_types[res] = "float"
+                                                }
+                                                a2 == "string" ==> {
+                                                      route {
+                                                            t1 == "int" ==> {
+                                                                  cv_count = cv_count + 1
+                                                                  ir = ir + "  %cv_buf_" + cv_count + " = call i8* @malloc(i64 32)" + nl
+                                                                  ir = ir + "  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_" + cv_count + ", i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 " + a1 + ")" + nl
+                                                                  ir = ir + "  " + res + " = bitcast i8* %cv_buf_" + cv_count + " to i8*" + nl
+                                                            }
+                                                            t1 == "float" ==> {
+                                                                  cv_count = cv_count + 1
+                                                                  ir = ir + "  %cv_buf_" + cv_count + " = call i8* @malloc(i64 32)" + nl
+                                                                  ir = ir + "  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_" + cv_count + ", i64 32, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.fmt_float_val, i32 0, i32 0), double " + a1 + ")" + nl
+                                                                  ir = ir + "  " + res + " = bitcast i8* %cv_buf_" + cv_count + " to i8*" + nl
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = bitcast i8* " + a1 + " to i8*" + nl
+                                                            }
+                                                      }
+                                                      reg_types[res] = "string"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = add i64 0, " + a1 + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "CALL" ==> {
+                                          mut as list of data: cargs = []
+                                          mut as int64: a2_len = stdCollectionLength(a2)
+                                          mut as int64: lp = 1
+                                          mut as int64: a2_k = 1
+                                          route {
+                                                a2_len > 0 ==> {
+                                                      infinite {
+                                                            route {
+                                                                  a2_k > a2_len ==> {
+                                                                        route {
+                                                                              lp <= a2_len ==> {
+                                                                                    cargs = stdListPushBack(cargs, a2[lp..a2_len])
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        break
+                                                                  }
+                                                                  a2[a2_k] == "," ==> {
+                                                                        route {
+                                                                              a2_k > lp ==> {
+                                                                                    cargs = stdListPushBack(cargs, a2[lp..(a2_k - 1)])
+                                                                              }
+                                                                              _ ==> {
+                                                                                    cargs = stdListPushBack(cargs, "")
+                                                                              }
+                                                                        }
+                                                                        lp = a2_k + 1
+                                                                        a2_k = a2_k + 1
+                                                                  }
+                                                                  _ ==> { a2_k = a2_k + 1 }
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as int64: ncargs = stdCollectionLength(cargs)
+                                          mut as string: call_arg1 = ""
+                                          mut as string: call_arg2 = ""
+                                          mut as string: call_arg3 = ""
+                                          route { ncargs >= 1 ==> { call_arg1 = "" + cargs[1] } _ ==> {} }
+                                          route { ncargs >= 2 ==> { call_arg2 = "" + cargs[2] } _ ==> {} }
+                                          route { ncargs >= 3 ==> { call_arg3 = "" + cargs[3] } _ ==> {} }
+                                          route {
+                                                a1 == "CompilerLib::diagnosticExplain" ==> {
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_diagnosticExplain(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "CompilerLib::diagnosticGetHeader" ==> {
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_diagnosticGetHeader(i8* " + call_arg1 + ", i8* " + call_arg2 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "CompilerLib::diagnosticGetHint" ==> {
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_diagnosticGetHint(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "CompilerLib::parseFile" ==> {
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_parseFile(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "map"
+                                                }
+                                                a1 == "CompilerLib::parseDumpAst" ==> {
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_parseDumpAst(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "CompilerLib::semanticAnalyze" ==> {
+                                                      mut as string: sa_a2 = call_arg2
+                                                      mut as string: sa_a2_t = "int"
+                                                      route { stdMapContainsKey(reg_types, call_arg2) ==> { sa_a2_t = reg_types[call_arg2] } _ ==> {} }
+                                                      route {
+                                                            sa_a2_t != "int" ==> {
+                                                                  ir = ir + "  %" + cr + "_sa_i64 = ptrtoint i8* " + call_arg2 + " to i64" + nl
+                                                                  sa_a2 = "%" + cr + "_sa_i64"
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_semanticAnalyze(i8* " + call_arg1 + ", i64 " + sa_a2 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "map"
+                                                }
+                                                a1 == "CompilerLib::fmirBuildFromAst" ==> {
+                                                      mut as string: fb_a2 = call_arg2
+                                                      mut as string: fb_a2_t = "int"
+                                                      route { stdMapContainsKey(reg_types, call_arg2) ==> { fb_a2_t = reg_types[call_arg2] } _ ==> {} }
+                                                      route {
+                                                            fb_a2_t != "int" ==> {
+                                                                  ir = ir + "  %" + cr + "_fb_i64 = ptrtoint i8* " + call_arg2 + " to i64" + nl
+                                                                  fb_a2 = "%" + cr + "_fb_i64"
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_fmirBuildFromAst(i8* " + call_arg1 + ", i64 " + fb_a2 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "map"
+                                                }
+                                                a1 == "CompilerLib::fmirDumpText" ==> {
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_fmirDumpText(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "CompilerLib::backendCompile" ==> {
+                                                      mut as string: bc_a1 = call_arg1
+                                                      mut as string: bc_a2 = call_arg2
+                                                      mut as string: bc_a3 = call_arg3
+                                                      route {
+                                                            stdMapContainsKey(reg_types, call_arg1) ==> {
+                                                                  route { reg_types[call_arg1] == "int" ==> {
+                                                                        ir = ir + "  %" + cr + "_bca1 = inttoptr i64 " + call_arg1 + " to i8*" + nl
+                                                                        bc_a1 = "%" + cr + "_bca1"
+                                                                  } _ ==> {} }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdMapContainsKey(reg_types, call_arg2) ==> {
+                                                                  route { reg_types[call_arg2] == "int" ==> {
+                                                                        ir = ir + "  %" + cr + "_bca2 = inttoptr i64 " + call_arg2 + " to i8*" + nl
+                                                                        bc_a2 = "%" + cr + "_bca2"
+                                                                  } _ ==> {} }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdMapContainsKey(reg_types, call_arg3) ==> {
+                                                                  route { reg_types[call_arg3] == "int" ==> {
+                                                                        ir = ir + "  %" + cr + "_bca3 = inttoptr i64 " + call_arg3 + " to i8*" + nl
+                                                                        bc_a3 = "%" + cr + "_bca3"
+                                                                  } _ ==> {} }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  %" + cr + "_res = call %flux.result @f_backendCompile(i8* " + bc_a1 + ", i8* " + bc_a2 + ", i8* " + bc_a3 + ")" + nl
+                                                      ir = ir + "  %" + cr + "_val = extractvalue %flux.result %" + cr + "_res, 1" + nl
+                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_val to i8*" + nl
+                                                      reg_types[res] = "map"
+                                                }
+                                                a1 == "stdMapContainsKey" ==> {
+                                                      ir = ir + "  " + res + " = call i1 @flux_map_contains_key(i8* " + call_arg1 + ", i8* " + call_arg2 + ")" + nl
+                                                      reg_types[res] = "bool"
+                                                }
+                                                a1 == "stdIoFileExists" ==> {
+                                                      ir = ir + "  %" + cr + "_i64 = call i64 @flux_std_io_file_exists(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  " + res + " = trunc i64 %" + cr + "_i64 to i1" + nl
+                                                      reg_types[res] = "bool"
+                                                }
+                                                a1 == "stdIoReadFile" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_io_read_file(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "stdIoWriteFile" ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_std_io_write_file(i8* " + call_arg1 + ", i8* " + call_arg2 + ")" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                                a1 == "stdCollectionLength" or a1 == "stdStringByteLength" ==> {
+                                                      mut as string: arg1_t = "string"
+                                                      route { stdMapContainsKey(reg_types, call_arg1) ==> { arg1_t = reg_types[call_arg1] } _ ==> {} }
+                                                      route {
+                                                            arg1_t == "map" or arg1_t == "struct" ==> {
+                                                                  ir = ir + "  " + res + " = call i64 @flux_map_len(i8* " + call_arg1 + ")" + nl
+                                                            }
+                                                            arg1_t == "list" ==> {
+                                                                  ir = ir + "  " + res + " = call i64 @flux_list_len(i8* " + call_arg1 + ")" + nl
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = call i64 @flux_str_len(i8* " + call_arg1 + ")" + nl
+                                                            }
+                                                      }
+                                                      reg_types[res] = "int"
+                                                }
+                                                a1 == "stdOsExec" ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_std_os_exec(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                                a1 == "stdOsExit" ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_std_os_exit(i64 " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                                a1 == "stdRuntimeGetArgs" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_runtime_get_args(i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)" + nl
+                                                      reg_types[res] = "list"
+                                                }
+                                                a1 == "calc" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_map_build(i64 4)" + nl
+                                                      mut as string: slbl_nice = str_map["nice"]
+                                                      mut as int64: slen_nice = str_lens["nice"]
+                                                      ir = ir + "  %fld_nice_" + cr + " = getelementptr inbounds [" + slen_nice + " x i8], [" + slen_nice + " x i8]* " + slbl_nice + ", i32 0, i32 0" + nl
+                                                      ir = ir + "  %nice_i64_" + cr + " = ptrtoint i8* %fld_nice_" + cr + " to i64" + nl
+                                                      mut as string: slbl_sta = str_map["sta"]
+                                                      mut as int64: slen_sta = str_lens["sta"]
+                                                      ir = ir + "  %fld_sta_" + cr + " = getelementptr inbounds [" + slen_sta + " x i8], [" + slen_sta + " x i8]* " + slbl_sta + ", i32 0, i32 0" + nl
+                                                      ir = ir + "  call i8* @flux_map_set(i8* " + res + ", i8* %fld_sta_" + cr + ", i64 4, i64 %nice_i64_" + cr + ")" + nl
+
+                                                      mut as string: slbl_val = str_map["val"]
+                                                      mut as int64: slen_val = str_lens["val"]
+                                                      ir = ir + "  %fld_val_" + cr + " = getelementptr inbounds [" + slen_val + " x i8], [" + slen_val + " x i8]* " + slbl_val + ", i32 0, i32 0" + nl
+                                                      ir = ir + "  call i8* @flux_map_set(i8* " + res + ", i8* %fld_val_" + cr + ", i64 2, i64 " + call_arg1 + ")" + nl
+
+                                                      mut as string: slbl_msg = str_map["msg"]
+                                                      mut as int64: slen_msg = str_lens["msg"]
+                                                      ir = ir + "  %fld_msg_" + cr + " = getelementptr inbounds [" + slen_msg + " x i8], [" + slen_msg + " x i8]* " + slbl_msg + ", i32 0, i32 0" + nl
+                                                      mut as string: slbl_ok = str_map["ok"]
+                                                      mut as int64: slen_ok = str_lens["ok"]
+                                                      ir = ir + "  %fld_ok_" + cr + " = getelementptr inbounds [" + slen_ok + " x i8], [" + slen_ok + " x i8]* " + slbl_ok + ", i32 0, i32 0" + nl
+                                                      ir = ir + "  %ok_i64_" + cr + " = ptrtoint i8* %fld_ok_" + cr + " to i64" + nl
+                                                      ir = ir + "  call i8* @flux_map_set(i8* " + res + ", i8* %fld_msg_" + cr + ", i64 4, i64 %ok_i64_" + cr + ")" + nl
+
+                                                      reg_types[res] = "map"
+                                                }
+                                                _ ==> {
+                                                      ir = ir + "  " + res + " = add i64 0, 0" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                          }
+                                          block_terminated = false
+                                    }
+                                    opcode == "NOP" ==> {
+                                          block_terminated = false
                                     }
                                     _ ==> {}
                               }
@@ -116,8 +1394,13 @@ agent (CompilerLib) impl LlvmBackendContract {
                   }
             }
 
-            ir = ir + "  ret i32 0\\n"
-            ir = ir + "}\\n"
+            route {
+                  not block_terminated ==> {
+                        ir = ir + "  ret i32 0" + nl
+                  }
+                  _ ==> {}
+            }
+            ir = ir + "}" + nl
 
             emit(nice, ir, "ok")
       }

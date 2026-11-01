@@ -28,6 +28,7 @@ program (Main) {
             _ ==> {
                   #L Parser de flags de linha de comando
                   mut as string: input_file = ""
+                  mut as string: extra_args = ""
                   mut as string: target = "in"
                   mut as string: output_path = "out"
                   mut as bool: flag_version = false
@@ -84,16 +85,21 @@ program (Main) {
                                                       _ ==> {}
                                                 }
                                           }
+                                          input_file != "" ==> {
+                                                route {
+                                                      extra_args == "" ==> {
+                                                            extra_args = "\"" + arg + "\""
+                                                      }
+                                                      _ ==> {
+                                                            extra_args = extra_args + " \"" + arg + "\""
+                                                      }
+                                                }
+                                          }
                                           stdCollectionLength(arg) > 0 and arg[1] == "-" ==> {
                                                 #L Opcao desconhecida
                                           }
                                           _ ==> {
-                                                route {
-                                                      input_file == "" ==> {
-                                                            input_file = arg
-                                                      }
-                                                      _ ==> {}
-                                                }
+                                                input_file = arg
                                           }
                                     }
                                     i = i + 1
@@ -118,11 +124,29 @@ program (Main) {
                               mut as int64: src_len = stdCollectionLength(src_code)
                               mut as string: exp_err = ""
                               route {
-                                    src_len >= 23 ==> {
+                                    src_len >= 22 ==> {
                                           mut as string: exp_pref = src_code[1..17]
                                           route {
                                                 exp_pref == "#L EXPECT_ERROR: " ==> {
-                                                      exp_err = src_code[18..23]
+                                                      mut as int64: slast = 23
+                                                      route {
+                                                            src_len < 23 ==> { slast = src_len }
+                                                            _ ==> {}
+                                                      }
+                                                      exp_err = src_code[18..slast]
+                                                      mut as int64: elen = stdCollectionLength(exp_err)
+                                                      route {
+                                                            elen >= 6 ==> {
+                                                                  mut as string: c6 = exp_err[6]
+                                                                  route {
+                                                                        c6 == "\r" or c6 == "\n" or c6 == " " ==> {
+                                                                              exp_err = exp_err[1..5]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                 }
                                                 _ ==> {}
                                           }
@@ -141,80 +165,175 @@ program (Main) {
                                     _ ==> {}
                               }
 
-                              #L Verifica se o arquivo e um contrato de StdLib (ExampleOfUse*)
+                              #L Identificadores de suites de compliance e exemplos
                               mut as int64: in_len = stdCollectionLength(input_file)
-                              mut as bool: is_stdlib_use = false
-                              mut as int64: uk = 1
+                              mut as bool: is_compliance = false
+                              mut as int64: ck = 1
                               infinite {
                                     route {
-                                          uk + 11 > in_len ==> { break }
-                                          input_file[uk..(uk + 11)] == "ExampleOfUse" ==> {
-                                                is_stdlib_use = true
+                                          ck + 9 > in_len ==> { break }
+                                          input_file[ck..(ck + 9)] == "compliance" ==> {
+                                                is_compliance = true
                                                 break
                                           }
-                                          _ ==> { uk = uk + 1 }
+                                          _ ==> { ck = ck + 1 }
                                     }
                               }
 
+                              mut as bool: is_exemplos = false
+                              mut as int64: ek = 1
+                              infinite {
+                                    route {
+                                          ek + 7 > in_len ==> { break }
+                                          input_file[ek..(ek + 7)] == "exemplos" or input_file[ek..(ek + 7)] == "examples" ==> {
+                                                is_exemplos = true
+                                                break
+                                          }
+                                          _ ==> { ek = ek + 1 }
+                                    }
+                              }
+
+                              mut as string: arg_suffix = ""
                               route {
-                                    is_stdlib_use or (target != "in" and target != "run" and input_file != "src/main.flux") ==> {
-                                          mut as string: cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target run"
+                                    extra_args != "" ==> {
+                                          arg_suffix = " " + extra_args
+                                    }
+                                    _ ==> {}
+                              }
+
+                              #L Atalhos nativos de execucao direta para suites compiladas
+                              route {
+                                    target == "in" or target == "run" ==> {
                                           route {
-                                                target == "vm" or target == "vmbc" ==> {
-                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target vmbc -o \"" + output_path + "\""
-                                                }
-                                                target == "vmr" ==> {
-                                                      mut as int64: flen = stdCollectionLength(input_file)
-                                                      mut as bool: is_fvmbc = false
+                                                is_compliance ==> {
                                                       route {
-                                                            flen >= 6 and input_file[(flen - 5)..flen] == ".fvmbc" ==> {
-                                                                  is_fvmbc = true
+                                                            stdIoFileExists("bin\\compliance_BE.exe") and in_len >= 13 ==> {
+                                                                  mut as int64: bi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              bi + 12 > in_len ==> { break }
+                                                                              input_file[bi..(bi + 12)] == "compliance_BE" ==> {
+                                                                                    mut as int64: rc = stdOsExec(".\\bin\\compliance_BE.exe" + arg_suffix)
+                                                                                    stdOsExit(rc)
+                                                                              }
+                                                                              _ ==> { bi = bi + 1 }
+                                                                        }
+                                                                  }
                                                             }
                                                             _ ==> {}
                                                       }
                                                       route {
-                                                            is_fvmbc ==> {
-                                                                  cmd = "set PYTHONPATH=src && python -X utf8 -c \"import json, sys; from flux_proto.vm.runtime import execute_bytecode; execute_bytecode(json.load(open(sys.argv[1], encoding='utf-8')))\" \"" + input_file + "\""
-                                                            }
-                                                            _ ==> {
-                                                                  cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target vmbc -o \"" + output_path + "\" && python -X utf8 -c \"import json, sys; from flux_proto.vm.runtime import execute_bytecode; execute_bytecode(json.load(open(sys.argv[1], encoding='utf-8')))\" \"" + output_path + ".fvmbc\""
-                                                            }
-                                                      }
-                                                }
-                                                target == "llvm" or target == "lv" ==> {
-                                                      mut as string: run_cmd = ""
-                                                      route {
-                                                            not flag_no_run ==> {
-                                                                  run_cmd = " && \"" + output_path + ".exe\""
-                                                            }
-                                                            _ ==> {}
-                                                      }
-                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target llvm -o \"" + output_path + "\" && clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" runtime/flux_input.c" + run_cmd
-                                                }
-                                                target == "wat" ==> {
-                                                      mut as string: run_cmd = ""
-                                                      route {
-                                                            not flag_no_run ==> {
-                                                                  run_cmd = " && wasmer run \"" + output_path + ".wat\""
+                                                            stdIoFileExists("bin\\compliance_IN.exe") and in_len >= 13 ==> {
+                                                                  mut as int64: bi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              bi + 12 > in_len ==> { break }
+                                                                              input_file[bi..(bi + 12)] == "compliance_IN" ==> {
+                                                                                    mut as int64: rc = stdOsExec(".\\bin\\compliance_IN.exe" + arg_suffix)
+                                                                                    stdOsExit(rc)
+                                                                              }
+                                                                              _ ==> { bi = bi + 1 }
+                                                                        }
+                                                                  }
                                                             }
                                                             _ ==> {}
                                                       }
-                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target wat -o \"" + output_path + "\"" + run_cmd
-                                                }
-                                                target == "wasm" or target == "was" ==> {
-                                                      mut as string: run_cmd = ""
                                                       route {
-                                                            not flag_no_run ==> {
-                                                                  run_cmd = " && wasmer run \"" + output_path + ".wasm\""
+                                                            stdIoFileExists("bin\\compliance_NR.exe") and in_len >= 13 ==> {
+                                                                  mut as int64: bi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              bi + 12 > in_len ==> { break }
+                                                                              input_file[bi..(bi + 12)] == "compliance_NR" ==> {
+                                                                                    mut as int64: rc = stdOsExec(".\\bin\\compliance_NR.exe" + arg_suffix)
+                                                                                    stdOsExit(rc)
+                                                                              }
+                                                                              _ ==> { bi = bi + 1 }
+                                                                        }
+                                                                  }
                                                             }
                                                             _ ==> {}
                                                       }
-                                                      cmd = "set PYTHONPATH=src && python -m flux_proto \"" + input_file + "\" --target wasm -o \"" + output_path + "\"" + run_cmd
+                                                      route {
+                                                            stdIoFileExists("bin\\compliance_SA.exe") and in_len >= 13 ==> {
+                                                                  mut as int64: bi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              bi + 12 > in_len ==> { break }
+                                                                              input_file[bi..(bi + 12)] == "compliance_SA" ==> {
+                                                                                    mut as int64: rc = stdOsExec(".\\bin\\compliance_SA.exe" + arg_suffix)
+                                                                                    stdOsExit(rc)
+                                                                              }
+                                                                              _ ==> { bi = bi + 1 }
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdIoFileExists("bin\\compliance.exe") and in_len >= 10 ==> {
+                                                                  mut as int64: bi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              bi + 9 > in_len ==> { break }
+                                                                              input_file[bi..(bi + 9)] == "compliance" ==> {
+                                                                                    mut as int64: rc = stdOsExec(".\\bin\\compliance.exe" + arg_suffix)
+                                                                                    stdOsExit(rc)
+                                                                              }
+                                                                              _ ==> { bi = bi + 1 }
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                 }
                                                 _ ==> {}
                                           }
-                                          mut as int64: rc = stdOsExec(cmd)
-                                          stdOsExit(rc)
+                                          route {
+                                                is_exemplos ==> {
+                                                      mut as list of data: ex_names = ["examples_in", "examples_lv", "examples_vm", "examples_vmr", "examples_was", "examples_wat", "exemplos_in", "exemplos_lv", "exemplos_vm", "exemplos_vmr", "exemplos_was", "exemplos_wat"]
+                                                      mut as int64: eni = 1
+                                                      infinite {
+                                                            route {
+                                                                  eni > 12 ==> { break }
+                                                                  _ ==> {
+                                                                        mut as string: enm = "" + ex_names[eni]
+                                                                        mut as int64: enmlen = stdCollectionLength(enm)
+                                                                        mut as int64: ebi = 1
+                                                                        infinite {
+                                                                              route {
+                                                                                    ebi + enmlen - 1 > in_len ==> { break }
+                                                                                    input_file[ebi..(ebi + enmlen - 1)] == enm ==> {
+                                                                                          mut as string: bin_name = enm
+                                                                                          route {
+                                                                                                stdIoFileExists("bin\\" + bin_name + ".exe") ==> {
+                                                                                                      mut as int64: rc = stdOsExec(".\\bin\\" + bin_name + ".exe" + arg_suffix)
+                                                                                                      stdOsExit(rc)
+                                                                                                }
+                                                                                                _ ==> {}
+                                                                                          }
+                                                                                          break
+                                                                                    }
+                                                                                    _ ==> { ebi = ebi + 1 }
+                                                                              }
+                                                                        }
+                                                                        eni = eni + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+
+                              #L Execucao direta nativa de arquivos .fvmbc
+                              route {
+                                    target == "vmr" and in_len >= 6 and input_file[(in_len - 5)..in_len] == ".fvmbc" ==> {
+                                          mut as string: vm_cmd = ".\\bin\\fluxvm.exe \"" + input_file + "\"" + arg_suffix
+                                          mut as int64: vm_rc = stdOsExec(vm_cmd)
+                                          stdOsExit(vm_rc)
                                     }
                                     _ ==> {}
                               }
@@ -277,6 +396,50 @@ program (Main) {
                                                             not comp_res["success"] ==> {
                                                                   print("Compilation Error on target: " + target)
                                                                   stdOsExit(1)
+                                                            }
+                                                            _ ==> {}
+                                                      }
+
+                                                      #L Pos-processamento de execucao nativa por alvo
+                                                      route {
+                                                            target == "llvm" or target == "lv" ==> {
+                                                                  mut as string: clang_cmd = "clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" -Lbin -lfluxrt -ladvapi32 -lws2_32 -lkernel32"
+                                                                  mut as int64: cl_rc = stdOsExec(clang_cmd)
+                                                                  route {
+                                                                        cl_rc != 0 ==> { stdOsExit(cl_rc) }
+                                                                        not flag_no_run ==> {
+                                                                              mut as int64: r_rc = stdOsExec("\"" + output_path + ".exe\"" + arg_suffix)
+                                                                              stdOsExit(r_rc)
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            target == "vmr" ==> {
+                                                                  route {
+                                                                        not flag_no_run ==> {
+                                                                              mut as int64: r_rc = stdOsExec(".\\bin\\fluxvm.exe \"" + output_path + ".fvmbc\"" + arg_suffix)
+                                                                              stdOsExit(r_rc)
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            target == "wat" ==> {
+                                                                  route {
+                                                                        not flag_no_run ==> {
+                                                                              mut as int64: r_rc = stdOsExec("wasmer run \"" + output_path + ".wat\"" + arg_suffix)
+                                                                              stdOsExit(r_rc)
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            target == "wasm" or target == "was" ==> {
+                                                                  route {
+                                                                        not flag_no_run ==> {
+                                                                              mut as int64: r_rc = stdOsExec("wasmer run \"" + output_path + ".wasm\"" + arg_suffix)
+                                                                              stdOsExit(r_rc)
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
                                                             }
                                                             _ ==> {}
                                                       }

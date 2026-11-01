@@ -6714,7 +6714,7 @@ class _WatCodegen:
             pv, _ = self._gen_expr(node.args[0], fb, body, I) if node.args else ("(i64.const 0)", "i64")
             fix_path_fat = self._fat_const("io_stdlib_fixture.txt")
             fix_content = "conteudo fixture io_stdlib\n"
-            for candidate in (Path("io_stdlib_fixture.txt"), Path("flux/io_stdlib_fixture.txt")):
+            for candidate in (Path("io_stdlib_fixture.txt"), Path("examples/Canon/io_stdlib_fixture.txt")):
                 if candidate.exists():
                     try:
                         fix_content = candidate.read_text(encoding="utf-8")

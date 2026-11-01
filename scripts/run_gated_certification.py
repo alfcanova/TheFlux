@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FLUX_DIR = ROOT / "flux"
+FLUX_DIR = ROOT / "examples" / "Canon"
 NUMERICAL_DIR = ROOT / "examples" / "NumericalRecipes"
 SCIALGO_DIR = ROOT / "examples" / "SciAlgo"
 REPORT_MD = ROOT / "certification_report.md"
@@ -104,7 +104,7 @@ def generate_report(passed_gates: set[str], total_time: float):
 |:---|:---|:---:|:---:|:---:|
 | **Portão I** | Canônicos (`flux/`) | 376 | 2.256 | {'✅ 100% PASS' if 'Gate 1' in passed_gates else '❌ BLOQUEADO'} |
 | **Portão II** | NumericalRecipes (`examples/NumericalRecipes/`) | 205 | 1.230 | {'✅ 100% PASS' if 'Gate 2' in passed_gates else '❌ BLOQUEADO'} |
-| **Portão III** | SciAlgo (`examples/SciAlgo/`) | 1.741 | 10.446 | {'✅ 100% PASS' if 'Gate 3' in passed_gates else '❌ BLOQUEADO'} |
+| **Portão III** | SciAlgo (`examples/ScientificAlgorithms/`) | 1.741 | 10.446 | {'✅ 100% PASS' if 'Gate 3' in passed_gates else '❌ BLOQUEADO'} |
 
 ## Totalização Geral
 - **Programas Certificados:** 2.322

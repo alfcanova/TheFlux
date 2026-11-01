@@ -2364,7 +2364,7 @@ class LLVMCodegen:
         w.emit("ret i32 %c")
         w.end_function()
 
-        w.begin_function("flux_str_char_len", "i64", ["i8* %p"])
+        w.begin_function("flux_str_char_len", "i64", ["i8* %p"], linkage="linkonce_odr")
         w.new_block("entry")
         w.emit("%ip = alloca i64")
         w.emit("%np = alloca i64")
@@ -2396,7 +2396,7 @@ class LLVMCodegen:
         w.emit("ret i64 %cnr")
         w.end_function()
 
-        w.begin_function("flux_str_slice", "i8*", ["i8* %p", "i64 %s", "i64 %e"])
+        w.begin_function("flux_str_slice", "i8*", ["i8* %p", "i64 %s", "i64 %e"], linkage="linkonce_odr")
         w.new_block("entry")
         w.emit("%tot = call i64 @flux_str_char_len(i8* %p)")
         w.emit("%slo = icmp ult i64 %s, 1")
@@ -2408,12 +2408,9 @@ class LLVMCodegen:
         w.emit("%sgt = icmp ugt i64 %s, %e")
         w.emit("br i1 %sgt, label %ss_null, label %ss_ok")
         w.new_block("ss_null")
-        fn_s = w.get_string_global("flux_str_slice error: s=%lld, e=%lld, tot=%lld\\0A")
-        flen_s = _str_byte_len("flux_str_slice error: s=%lld, e=%lld, tot=%lld\n")
-        w.emit(f"call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([{flen_s} x i8], [{flen_s} x i8]* @{fn_s}, i32 0, i32 0), i64 %s, i64 %e, i64 %tot)")
-        w.emit("call i32 @fflush(i8* null)")
-        w.emit("call void @exit(i32 1)")
-        w.emit("unreachable")
+        w.emit("%empty_res = call i8* @malloc(i64 1)")
+        w.emit("store i8 0, i8* %empty_res")
+        w.emit("ret i8* %empty_res")
         w.new_block("ss_ok")
         w.emit("%sip = alloca i64")
         w.emit("%scpp = alloca i64")
@@ -2644,6 +2641,9 @@ class LLVMCodegen:
             self._w.declare_function("memcpy", "i8*", ["i8*", "i8*", "i64"])
             self._w.declare_function("memset", "i8*", ["i8*", "i32", "i64"])
             self._w.declare_function("strlen", "i64", ["i8*"])
+            self._w.declare_function("flux_str_concat", "i8*", ["i8*", "i8*"])
+            self._w.declare_function("flux_str_len", "i64", ["i8*"])
+            self._w.declare_function("flux_std_string_llvm_escape", "i8*", ["i8*"])
             self._w.declare_function("atoll", "i64", ["i8*"])
             self._w.declare_function("atof", "double", ["i8*"])
             self._w.declare_function("pow", "double", ["double", "double"])
@@ -7015,18 +7015,21 @@ class LLVMCodegen:
             rd = self._coerce_to_double(right_val, right_t)
             self._w.emit(f"{rv} = call i8* @flux_fmt_double(double {rd}, i8* {rbuf})")
             right_val, right_t = rv, "i8*"
-        buf = self._w.new_local("buf")
-        self._w.emit(f"{buf} = call i8* @malloc(i64 1024)")
-        fmt_str = fmt_of(left_t) + fmt_of(right_t)
-        fmt_name = self._w.get_string_global(fmt_str)
-        fmt_len = _str_byte_len(fmt_str)
-        call = self._w.new_local("call")
-        self._w.emit(
-            f"{call} = call i32 (i8*, i64, i8*, ...) @snprintf(i8* {buf}, i64 1024, "
-            f"i8* getelementptr inbounds ([{fmt_len} x i8], [{fmt_len} x i8]* @{fmt_name}, i32 0, i32 0), "
-            f"{left_t} {left_val}, {right_t} {right_val})"
-        )
-        return (buf, "i8*")
+        if left_t != "i8*":
+            lbuf = self._w.new_local("lbuf")
+            self._w.emit(f"{lbuf} = call i8* @malloc(i64 32)")
+            fmt_name_l = self._w.get_string_global("%lld")
+            self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {lbuf}, i64 32, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @{fmt_name_l}, i32 0, i32 0), {left_t} {left_val})")
+            left_val, left_t = lbuf, "i8*"
+        if right_t != "i8*":
+            rbuf = self._w.new_local("rbuf")
+            self._w.emit(f"{rbuf} = call i8* @malloc(i64 32)")
+            fmt_name_r = self._w.get_string_global("%lld")
+            self._w.emit(f"call i32 (i8*, i64, i8*, ...) @snprintf(i8* {rbuf}, i64 32, i8* getelementptr inbounds ([5 x i8], [5 x i8]* @{fmt_name_r}, i32 0, i32 0), {right_t} {right_val})")
+            right_val, right_t = rbuf, "i8*"
+        sconcat = self._w.new_local("sconcat")
+        self._w.emit(f"{sconcat} = call i8* @flux_str_concat(i8* {left_val}, i8* {right_val})")
+        return (sconcat, "i8*")
 
     def _gen_unary_op_text(self, node: UnaryOp) -> tuple[str, str]:
         val, t = self._emit_expr_text(node.operand)
@@ -7810,7 +7813,7 @@ class LLVMCodegen:
             return self._gen_std_thread_intrinsic(name, node.args)
         if name.startswith("stdGfx"):
             return self._gen_std_gfx_intrinsic(name, node.args)
-        if name.startswith(("stdSet", "stdList", "stdMap", "stdCollection")):
+        if name.startswith(("stdSet", "stdList", "stdMap", "stdCollection", "stdString")):
             return self._gen_std_collection_intrinsic(name, node.args)
         raise CodegenError(f"unsupported call to '{name}'")
 
@@ -9542,6 +9545,16 @@ class LLVMCodegen:
             tag, v64, _ = self._elem_encoding(t, v)
             return (tag, v64)
 
+        if name == "stdStringLlvmEscape":
+            s_val, s_t = self._emit_expr_text(args[0])
+            s_ptr = self._coerce_to(s_val, s_t, "i8*")
+            self._w.emit(f"{r} = call i8* @flux_std_string_llvm_escape(i8* {s_ptr})")
+            return (r, "i8*")
+        if name in ("stdStringByteLength", "stdStringByteLen"):
+            s_val, s_t = self._emit_expr_text(args[0])
+            s_ptr = self._coerce_to(s_val, s_t, "i8*")
+            self._w.emit(f"{r} = call i64 @flux_str_len(i8* {s_ptr})")
+            return (r, "i64")
         if name == "stdCollectionLength":
             arg_t = self._flux_type_of(args[0]) if args else ""
             if _is_string_type(arg_t):

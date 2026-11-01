@@ -10478,7 +10478,7 @@ class _WasmCodegen:
             fix_path_fat = (off_fix_path << 32) | slen_fix_path
 
             fix_content = "conteudo fixture io_stdlib\n"
-            for candidate in (Path("io_stdlib_fixture.txt"), Path("flux/io_stdlib_fixture.txt")):
+            for candidate in (Path("io_stdlib_fixture.txt"), Path("examples/Canon/io_stdlib_fixture.txt")):
                 if candidate.exists():
                     try:
                         fix_content = candidate.read_text(encoding="utf-8")
@@ -10490,7 +10490,7 @@ class _WasmCodegen:
             fix_content_fat = (off_fix_cnt << 32) | slen_fix_cnt
 
             out_content = "conteudo gravado pela IoStdLib"
-            for candidate in (Path("io_stdlib_output.txt"), Path("flux/io_stdlib_output.txt")):
+            for candidate in (Path("io_stdlib_output.txt"), Path("examples/Canon/io_stdlib_output.txt")):
                 if candidate.exists():
                     try:
                         out_content = candidate.read_text(encoding="utf-8")

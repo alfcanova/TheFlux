@@ -59,6 +59,36 @@ agent (CompilerLib) impl WasmBackendContract {
                                     opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
                                           body_hex = body_hex + "420142017f1a" #L i64.div_s, drop
                                     }
+                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
+                                          body_hex = body_hex + "42014201811a" #L i64.rem_s, drop
+                                    }
+                                    opcode == "BINOP_&" or opcode == "BINOP_band" ==> {
+                                          body_hex = body_hex + "42014201821a" #L i64.and, drop
+                                    }
+                                    opcode == "BINOP_|" or opcode == "BINOP_bor" ==> {
+                                          body_hex = body_hex + "42014201831a" #L i64.or, drop
+                                    }
+                                    opcode == "BINOP_^" or opcode == "BINOP_bxor" ==> {
+                                          body_hex = body_hex + "42014201841a" #L i64.xor, drop
+                                    }
+                                    opcode == "BINOP_==" ==> {
+                                          body_hex = body_hex + "42014201511a" #L i64.eq, drop
+                                    }
+                                    opcode == "BINOP_!=" ==> {
+                                          body_hex = body_hex + "42014201521a" #L i64.ne, drop
+                                    }
+                                    opcode == "BINOP_<" ==> {
+                                          body_hex = body_hex + "42014201531a" #L i64.lt_s, drop
+                                    }
+                                    opcode == "BINOP_<=" ==> {
+                                          body_hex = body_hex + "42014201541a" #L i64.le_s, drop
+                                    }
+                                    opcode == "BINOP_>" ==> {
+                                          body_hex = body_hex + "42014201551a" #L i64.gt_s, drop
+                                    }
+                                    opcode == "BINOP_>=" ==> {
+                                          body_hex = body_hex + "42014201561a" #L i64.ge_s, drop
+                                    }
                                     _ ==> {}
                               }
                               i = i + 1
@@ -85,7 +115,7 @@ agent (CompilerLib) impl WasmBackendContract {
       }
 
       op wasmCompileModule (as map: fmir_module, as string: output_path) as map ==> {
-            mut as string: hex_data = wasmGenerateHex(fmir_module)
+            mut as map: wat_res = watCompileModule(fmir_module, output_path)
             mut as string: wasm_file = output_path
             mut as int64: wlen = stdCollectionLength(wasm_file)
             mut as bool: needs_wasm_ext = true
@@ -100,12 +130,14 @@ agent (CompilerLib) impl WasmBackendContract {
                   _ ==> {}
             }
 
-            stdIoWriteHexFile(wasm_file, hex_data)
+            mut as string: wat_file = output_path + ".wat"
+            mut as string: cmd = "wat2wasm \"" + wat_file + "\" -o \"" + wasm_file + "\""
+            mut as int64: rc = stdOsExec(cmd)
 
             mut as map: res = map{}
             res["target"] = "wasm"
             res["wasm_file"] = wasm_file
-            res["success"] = true
+            res["success"] = (rc == 0)
             emit(nice, res, "ok")
       }
 }

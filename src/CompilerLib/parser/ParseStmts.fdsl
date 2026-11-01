@@ -362,7 +362,7 @@ agent (CompilerLib) impl ParseStmtsContract {
                                                                               rcv == "\\n" or rcv == "," or rctok["type"] == "NEWLINE" ==> {
                                                                                     ts = tokenStreamAdvance(ts)
                                                                               }
-                                                                              rcv == "." ==> {
+                                                                              rcv == "." and rctok["type"] == "OP" ==> {
                                                                                     ts = tokenStreamAdvance(ts)
                                                                                     mut as map: rf_name_tok = tokenStreamPeek(ts)
                                                                                     mut as string: rfld_name = "" + rf_name_tok["val"]
@@ -419,7 +419,7 @@ agent (CompilerLib) impl ParseStmtsContract {
                                                                                                       spv == "\\n" or spv == "," or sptok["type"] == "NEWLINE" ==> {
                                                                                                             ts = tokenStreamAdvance(ts)
                                                                                                       }
-                                                                                                      spv == "." ==> {
+                                                                                                      spv == "." and sptok["type"] == "OP" ==> {
                                                                                                             ts = tokenStreamAdvance(ts)
                                                                                                             mut as map: f_name_tok = tokenStreamPeek(ts)
                                                                                                             mut as string: fld_name = "" + f_name_tok["val"]
@@ -482,7 +482,7 @@ agent (CompilerLib) impl ParseStmtsContract {
                                                                                                       spv == "\\n" or spv == "," or sptok["type"] == "NEWLINE" ==> {
                                                                                                             ts = tokenStreamAdvance(ts)
                                                                                                       }
-                                                                                                      spv == "." ==> {
+                                                                                                      spv == "." and sptok["type"] == "OP" ==> {
                                                                                                             ts = tokenStreamAdvance(ts)
                                                                                                             mut as map: f_name_tok = tokenStreamPeek(ts)
                                                                                                             mut as string: fld_name = "" + f_name_tok["val"]
@@ -890,7 +890,7 @@ agent (CompilerLib) impl ParseStmtsContract {
                                     ar = astArenaAllocNode(ar, "ASSIGN", cval, 0, not_id, [])
                                     created_node_ids = stdListPushBack(created_node_ids, ar["last_id"])
                               }
-                              nxt_val == "." ==> {
+                              nxt_val == "." and nxt["type"] == "OP" ==> {
                                     mut as map: ts_dot = tokenStreamAdvance(ts_adv)
                                     mut as map: ftok = tokenStreamPeek(ts_dot)
                                     mut as string: fname = "" + ftok["val"]

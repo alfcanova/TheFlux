@@ -99,6 +99,7 @@ static const struct {
     {"ITER_NEXT", OP_ITER_NEXT},
     {"UNWRAP_NICE", OP_UNWRAP_NICE},
     {"SPY", OP_SPY},
+    {"NOP", OP_NOP},
     {NULL, OP_HALT}
 };
 
@@ -187,12 +188,12 @@ static FluxVal parse_json_value(const char **src, FvmArena *arena) {
         *src = p + 4;
         return fvm_val_nil();
     }
-    if (*p == '-' || (*p >= '0' && *p <= '9')) {
+    if (*p == '-' || *p == '+' || *p == '.' || (*p >= '0' && *p <= '9')) {
         char *end = NULL;
         /* Testa se é ponto flutuante */
         const char *t = p;
-        bool is_float = false;
-        if (*t == '-') t++;
+        bool is_float = (*t == '.');
+        if (*t == '-' || *t == '+') t++;
         while (*t >= '0' && *t <= '9') t++;
         if (*t == '.' || *t == 'e' || *t == 'E') is_float = true;
 
@@ -239,6 +240,15 @@ static FluxVal parse_json_value(const char **src, FvmArena *arena) {
                 *src = p;
                 return fvm_val_datetime(nanos.as.i64);
             }
+            if (tag && strcmp(tag, "#chr") == 0) {
+                p = skip_ws(look);
+                if (*p == ',') p++;
+                FluxVal cp = parse_json_value(&p, arena);
+                p = skip_ws(p);
+                if (*p == ']') p++;
+                *src = p;
+                return fvm_val_char((uint32_t)cp.as.i64);
+            }
         }
 
         /* Lista normal de strings ou valores */
@@ -262,6 +272,7 @@ static FluxVal parse_json_value(const char **src, FvmArena *arena) {
         return lst_val;
     }
 
+    if (*p) p++;
     *src = p;
     return fvm_val_nil();
 }
@@ -299,7 +310,11 @@ int fvm_program_load_json(FvmProgram *prog, FvmArena *arena, const char *json_te
 
         p = skip_ws(p);
         char *op_name = parse_json_string(&p, arena);
-        if (!op_name) break;
+        if (!op_name) {
+            while (*p && *p != ']' && *p != '[') p++;
+            if (*p == ']') p++;
+            continue;
+        }
 
         FvmOpcode opcode = fvm_opcode_from_str(op_name);
 
@@ -317,7 +332,7 @@ int fvm_program_load_json(FvmProgram *prog, FvmArena *arena, const char *json_te
             if (*p == ']') { p++; break; }
             if (*p == ',') { p++; continue; }
 
-            if (*p == '[') {
+            if ((opcode == OP_MAKE_STRUCT || opcode == OP_ENUM_NEW) && *p == '[') {
                 /* Array de campos / strings */
                 const char *arr_p = p + 1;
                 char **fields = (char **)fvm_arena_alloc(arena, sizeof(char *) * 32);
@@ -329,6 +344,8 @@ int fvm_program_load_json(FvmProgram *prog, FvmArena *arena, const char *json_te
                     char *fn = parse_json_string(&arr_p, arena);
                     if (fn && field_count < 32) {
                         fields[field_count++] = fn;
+                    } else {
+                        break;
                     }
                 }
                 inst.field_names = fields;
@@ -372,19 +389,36 @@ int fvm_program_load_json(FvmProgram *prog, FvmArena *arena, const char *json_te
             case OP_JZ:
             case OP_JNZ:
             case OP_JUMP_IF_NOT_MATCH:
-                inst.imm_int = (arg_idx > 0 && val_args[0].type == VAL_INT) ? (int32_t)val_args[0].as.i64 : 0;
+                if (arg_idx > 0 && val_args[0].type == VAL_INT) {
+                    inst.imm_int = (int32_t)val_args[0].as.i64;
+                } else if (arg_idx > 0 && str_args[0]) {
+                    inst.imm_int = (int32_t)atoi(str_args[0]);
+                } else {
+                    inst.imm_int = 0;
+                }
                 break;
             case OP_JUMP_IF_NOT_MATCH_DROP:
                 if (arg_idx > 1 && val_args[1].type == VAL_INT) {
                     inst.aux = (uint8_t)val_args[0].as.i64;
                     inst.imm_int = (int32_t)val_args[1].as.i64;
+                } else if (arg_idx > 1 && str_args[1]) {
+                    inst.aux = (uint8_t)atoi(str_args[0]);
+                    inst.imm_int = (int32_t)atoi(str_args[1]);
                 } else if (arg_idx > 0 && val_args[0].type == VAL_INT) {
                     inst.imm_int = (int32_t)val_args[0].as.i64;
+                } else if (arg_idx > 0 && str_args[0]) {
+                    inst.imm_int = (int32_t)atoi(str_args[0]);
                 }
                 break;
             case OP_PRINT:
             case OP_PRINTLN:
-                inst.imm_int = (arg_idx > 0 && val_args[0].type == VAL_INT) ? (int32_t)val_args[0].as.i64 : 1;
+                if (arg_idx > 0 && val_args[0].type == VAL_INT) {
+                    inst.imm_int = (int32_t)val_args[0].as.i64;
+                } else if (arg_idx > 0 && str_args[0]) {
+                    inst.imm_int = (int32_t)atoi(str_args[0]);
+                } else {
+                    inst.imm_int = 1;
+                }
                 break;
             case OP_CALL:
                 if (arg_idx > 0 && val_args[0].type == VAL_INT) {

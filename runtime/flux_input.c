@@ -2534,6 +2534,9 @@ char *flux_std_runtime_compiler_version(void) {
 
 static int g_flux_argc = 0;
 static char **g_flux_argv = NULL;
+extern void *flux_list_build(int64_t count, int64_t elem_tag);
+extern void *flux_list_push(void *list, int64_t tag, int64_t ival, const char *sval);
+extern int64_t flux_list_len(void *list);
 
 void flux_runtime_init_args(int argc, char **argv) {
     g_flux_argc = argc;
@@ -2541,6 +2544,8 @@ void flux_runtime_init_args(int argc, char **argv) {
 }
 
 void *flux_std_runtime_get_args(void *(*build)(int64_t, int64_t), void *(*push)(void*, int64_t, int64_t, const char*)) {
+    if (!build) build = (void *(*)(int64_t, int64_t))flux_list_build;
+    if (!push) push = (void *(*)(void*, int64_t, int64_t, const char*))flux_list_push;
     if (!build) return NULL;
     void *lst = build(0, 4);
     if (!push || !g_flux_argv) return lst;
@@ -4547,5 +4552,190 @@ char *flux_std_archive_list_files(const char *path, void *build_fn, void *push_f
     return (char *)lst;
 }
 
+char *flux_str_concat(const char *a, const char *b) {
+    if (!a) a = "";
+    if (!b) b = "";
+    size_t la = strlen(a);
+    size_t lb = strlen(b);
+    char *res = (char *)malloc(la + lb + 1);
+    if (!res) return NULL;
+    memcpy(res, a, la);
+    memcpy(res + la, b, lb);
+    res[la + lb] = '\0';
+    return res;
+}
+
+int flux_str_compare(const char *a, const char *b) {
+    if (!a) a = "";
+    if (!b) b = "";
+    return strcmp(a, b);
+}
+
+int64_t flux_str_len(const char *s) {
+    return s ? (int64_t)strlen(s) : 0;
+}
+
+int64_t flux_std_string_byte_length(const char *s) {
+    return s ? (int64_t)strlen(s) : 0;
+}
+
+int64_t flux_str_char_len(const char *s) {
+    if (!s) return 0;
+    int64_t count = 0;
+    const unsigned char *p = (const unsigned char *)s;
+    while (*p) {
+        if ((*p & 0xC0) != 0x80) count++;
+        p++;
+    }
+    return count;
+}
+
+char *flux_str_slice(const char *p, int64_t s, int64_t e) {
+    if (!p) return strdup("");
+    if (s < 1) s = 1;
+    if (s > e) return strdup("");
+
+    const unsigned char *u = (const unsigned char *)p;
+    int64_t cur = 0;
+
+    /* Find start of codepoint s */
+    while (*u) {
+        if ((*u & 0xC0) != 0x80) {
+            cur++;
+            if (cur == s) break;
+        }
+        u++;
+    }
+    if (!*u) return strdup("");
+    size_t start_byte = (size_t)(u - (const unsigned char *)p);
+
+    /* Find end of codepoint e: advance past codepoint e */
+    while (*u) {
+        if ((*u & 0xC0) != 0x80) {
+            if (cur > e) break;
+            cur++;
+        }
+        u++;
+    }
+    size_t end_byte = (size_t)(u - (const unsigned char *)p);
+
+    if (start_byte >= end_byte) return strdup("");
+    size_t len = end_byte - start_byte;
+    char *res = (char *)malloc(len + 1);
+    if (!res) return NULL;
+    memcpy(res, p + start_byte, len);
+    res[len] = '\0';
+    return res;
+}
 
 
+
+char *flux_std_string_llvm_escape(const char *s) {
+    if (!s) return strdup("");
+    size_t len = strlen(s);
+    char *res = (char *)malloc(len * 4 + 1);
+    if (!res) return NULL;
+    char *d = res;
+    static const char hex[] = "0123456789ABCDEF";
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c == '\\') {
+            *d++ = '\\'; *d++ = '5'; *d++ = 'C';
+        } else if (c == '"') {
+            *d++ = '\\'; *d++ = '2'; *d++ = '2';
+        } else if (c == '\n') {
+            *d++ = '\\'; *d++ = '0'; *d++ = 'A';
+        } else if (c == '\r') {
+            *d++ = '\\'; *d++ = '0'; *d++ = 'D';
+        } else if (c == '\t') {
+            *d++ = '\\'; *d++ = '0'; *d++ = '9';
+        } else if (c < 32 || c >= 127) {
+            *d++ = '\\';
+            *d++ = hex[(c >> 4) & 0x0F];
+            *d++ = hex[c & 0x0F];
+        } else {
+            *d++ = (char)c;
+        }
+    }
+    *d = '\0';
+    return res;
+}
+
+
+/* Fallback raw collection wrappers for LLVM native backend */
+typedef struct _raw_entry_t {
+    char *key;
+    int64_t val;
+} _raw_entry_t;
+
+typedef struct _raw_map_t {
+    _raw_entry_t *entries;
+    size_t count;
+    size_t cap;
+} _raw_map_t;
+
+void *flux_map_create(size_t cap) {
+    if (cap == 0) cap = 16;
+    _raw_map_t *m = (_raw_map_t *)malloc(sizeof(_raw_map_t));
+    if (!m) return NULL;
+    m->entries = (_raw_entry_t *)calloc(cap, sizeof(_raw_entry_t));
+    m->count = 0;
+    m->cap = cap;
+    return m;
+}
+
+extern int64_t flux_map_get(void *p, const char *key);
+extern void *flux_map_set(void *p, const char *key, int64_t vtag, int64_t vval);
+
+void flux_hashmap_set_val(void *map, const char *key, int64_t val) {
+    if (!map || !key) return;
+    flux_map_set(map, key, 1, val);
+}
+
+int64_t flux_hashmap_get_val(void *map, const char *key) {
+    if (!map || !key) return 0;
+    return flux_map_get(map, key);
+}
+
+typedef struct _raw_list_t {
+    int64_t *items;
+    size_t count;
+    size_t cap;
+} _raw_list_t;
+
+void *flux_list_create(size_t cap) {
+    if (cap == 0) cap = 16;
+    _raw_list_t *l = (_raw_list_t *)malloc(sizeof(_raw_list_t));
+    if (!l) return NULL;
+    l->items = (int64_t *)malloc(cap * sizeof(int64_t));
+    l->count = 0;
+    l->cap = cap;
+    return l;
+}
+
+void flux_list_push_val(void *list, int64_t val) {
+    if (!list) return;
+    _raw_list_t *l = (_raw_list_t *)list;
+    if (l->count >= l->cap) {
+        l->cap *= 2;
+        l->items = (int64_t *)realloc(l->items, l->cap * sizeof(int64_t));
+    }
+    l->items[l->count++] = val;
+}
+
+int64_t flux_list_get_val(void *list, int64_t index) {
+    if (!list) return 0;
+    _raw_list_t *l = (_raw_list_t *)list;
+    if (index >= 1 && (size_t)index <= l->count) {
+        return l->items[index - 1];
+    }
+    if (index >= 0 && (size_t)index < l->count) {
+        return l->items[index];
+    }
+    return 0;
+}
+
+int64_t flux_map_len(void *map) {
+    if (!map) return 0;
+    return flux_list_len(map);
+}

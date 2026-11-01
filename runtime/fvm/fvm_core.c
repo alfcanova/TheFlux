@@ -488,6 +488,9 @@ int fvm_execute_program(FvmState *vm, const FvmProgram *prog) {
                 break;
             }
 
+            case OP_NOP:
+                break;
+
             case OP_INPUT: {
                 /* Leitura de linha com salvaguarda estrita contra loops infinitos de EOF */
                 char line_buf[256] = {0};

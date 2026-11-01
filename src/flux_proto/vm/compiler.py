@@ -24,7 +24,7 @@ from flux_proto.interpreter.environment import DEFAULT_VALUES
 from flux_proto.parser.import_resolver import collect_op_aliases
 from flux_proto.interpreter.interpreter import (
     _COMPLEX_COMPONENTS, _nested_zeros, _parse_complex_literal, _parse_iso_nanos,
-    _tensor_dims, _tensor_flat_len,
+    _tensor_dims, _tensor_flat_len, _tensor_elem_type,
 )
 from flux_proto.vm.opcodes import Op
 from flux_proto.vm.runtime import _Chr, _DT, BUILTIN_NAMES, TensorVal
@@ -209,10 +209,12 @@ class Compiler:
     def _default_value(self, tname: str) -> object:
         if tname.startswith("string("):
             return ""
-        if tname.startswith("tensor"):
+        if tname.lower().startswith("tensor"):
             dims = _tensor_dims(tname)
             if dims:
-                return TensorVal(list(dims), [0] * _tensor_flat_len(dims))
+                et = _tensor_elem_type(tname)
+                zero = DEFAULT_VALUES.get(et, 0)
+                return TensorVal(list(dims), [zero] * _tensor_flat_len(dims))
         if tname == "datetime":
             return _DT(0)
         if tname in DEFAULT_VALUES:

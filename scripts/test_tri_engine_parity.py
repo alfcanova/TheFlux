@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FLUX_DIR = ROOT / "flux"
+FLUX_DIR = ROOT / "examples" / "Canon"
 BIN_FLUXC = ROOT / "bin" / "fluxc.exe"
 
 EXAMPLES = [

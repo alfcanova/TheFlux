@@ -395,16 +395,16 @@
   | Ok com valor: 42
   | Erro: falhou
   OK  ExampleOfEnum.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_IMP201_ModuleNotFound.flux:0,0 -> [IMP201 - MODULE_NOT_FOUND]: use 'ModuloInexistenteNoDisco': arquivo fdsl 'ModuloInexistenteNoDisco.fdsl' não encontrado na pasta 'fdsl'
+  | flux\ExampleOfError_IMP201_ModuleNotFound.flux:0,0 -> [IMP201 - MODULE_NOT_FOUND]: use 'ModuloInexistenteNoDisco': arquivo fdsl 'ModuloInexistenteNoDisco.fdsl' não encontrado na pasta 'fdsl'
   |   💡 Dica: Verifique se o caminho do arquivo .fdsl existe e está no diretório correto ou no FLUX_PATH
   OK  ExampleOfError_IMP201_ModuleNotFound.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_LEX001_InvalidHashComment.flux:2,1 -> [LEX001 - INVALID_HASH_COMMENT]: Invalid '#' - expected '#L' line comment, '#B...B#' block comment or '#D...D#' docstring (linha 2, coluna 1)
+  | flux\ExampleOfError_LEX001_InvalidHashComment.flux:2,1 -> [LEX001 - INVALID_HASH_COMMENT]: Invalid '#' - expected '#L' line comment, '#B...B#' block comment or '#D...D#' docstring (linha 2, coluna 1)
   |   💡 Dica: Utilize '#L' para comentários de linha única ou '#B ... B#' para blocos comentados
   OK  ExampleOfError_LEX001_InvalidHashComment.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_OWN501_CannotMutateImmutable.flux:4,7 -> [OWN501 - CANNOT_MUTATE_IMMUTABLE]: cannot reassign immutable variable 'TAXA' (linha 4, coluna 7)
+  | flux\ExampleOfError_OWN501_CannotMutateImmutable.flux:4,7 -> [OWN501 - CANNOT_MUTATE_IMMUTABLE]: cannot reassign immutable variable 'TAXA' (linha 4, coluna 7)
   |   💡 Dica: Declare a variável com 'mut as <tipo>:' se ela precisar ter seu valor modificado
   OK  ExampleOfError_OWN501_CannotMutateImmutable.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_OWN505_CollectionCannotBeImmutable.flux:3,30 -> [OWN505 - COLLECTION_CANNOT_BE_IMMUTABLE]: immutable declaration 'XS' cannot have collection type 'list of int64' (linha 3, coluna 30)
+  | flux\ExampleOfError_OWN505_CollectionCannotBeImmutable.flux:3,30 -> [OWN505 - COLLECTION_CANNOT_BE_IMMUTABLE]: immutable declaration 'XS' cannot have collection type 'list of int64' (linha 3, coluna 30)
   |   💡 Dica: Tipos list e set não podem ser imutáveis; declare utilizando 'mut as <tipo>:'
   OK  ExampleOfError_OWN505_CollectionCannotBeImmutable.flux
   | --- Divisao Inteira por Zero (MathStdLib) ---
@@ -440,31 +440,31 @@
   | fail
   | raiz quadrada de numero negativo
   OK  ExampleOfError_RT707_MathSqrtNegative.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_SEM303_UndefinedIdentifier.flux:3,7 -> [SEM303 - UNDEFINED_IDENTIFIER]: identificador não declarado: a variável 'x' precisa ser declarada com 'mut' ou 'imut' (linha 3, coluna 7)
+  | flux\ExampleOfError_SEM303_UndefinedIdentifier.flux:3,7 -> [SEM303 - UNDEFINED_IDENTIFIER]: identificador não declarado: a variável 'x' precisa ser declarada com 'mut' ou 'imut' (linha 3, coluna 7)
   |   💡 Dica: Declare a variável com 'mut as <tipo>:' ou 'imut as <tipo>:' antes de utilizá-la
   OK  ExampleOfError_SEM303_UndefinedIdentifier.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_SYN100_UnexpectedToken.flux:3,23 -> [SYN100 - UNEXPECTED_TOKEN]: Unexpected token in expression: EQEQ (linha 3, coluna 23)
+  | flux\ExampleOfError_SYN100_UnexpectedToken.flux:3,23 -> [SYN100 - UNEXPECTED_TOKEN]: Unexpected token in expression: EQEQ (linha 3, coluna 23)
   |   💡 Dica: Verifique a sintaxe ao redor do token indicado
   OK  ExampleOfError_SYN100_UnexpectedToken.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_SYN150_TensorRequiresShape.flux:3,21 -> [SYN150 - TENSOR_REQUIRES_SHAPE]: Tipo 'tensor' requer especificação das dimensões entre colchetes (ex: 'tensor[3,3] of float64') (linha 3, coluna 21)
+  | flux\ExampleOfError_SYN150_TensorRequiresShape.flux:3,21 -> [SYN150 - TENSOR_REQUIRES_SHAPE]: Tipo 'tensor' requer especificação das dimensões entre colchetes (ex: 'tensor[3,3] of float64') (linha 3, coluna 21)
   |   💡 Dica: Especifique as dimensões do tensor entre colchetes (ex: 'tensor[3,3] of float64')
   OK  ExampleOfError_SYN150_TensorRequiresShape.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_SYN160_ListRequiresOfType.flux:3,18 -> [SYN160 - LIST_REQUIRES_OF_TYPE]: Tipo 'list' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 18)
+  | flux\ExampleOfError_SYN160_ListRequiresOfType.flux:3,18 -> [SYN160 - LIST_REQUIRES_OF_TYPE]: Tipo 'list' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 18)
   |   💡 Dica: Especifique o tipo dos elementos com 'of <tipo>' (ex: 'list of int64')
   OK  ExampleOfError_SYN160_ListRequiresOfType.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_SYN161_SetRequiresOfType.flux:3,17 -> [SYN161 - SET_REQUIRES_OF_TYPE]: Tipo 'set' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 17)
+  | flux\ExampleOfError_SYN161_SetRequiresOfType.flux:3,17 -> [SYN161 - SET_REQUIRES_OF_TYPE]: Tipo 'set' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 17)
   |   💡 Dica: Especifique o tipo dos elementos com 'of <tipo>' (ex: 'set of string')
   OK  ExampleOfError_SYN161_SetRequiresOfType.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_TYP401_ExpectIntGotFloat.flux:3,21 -> [TYP401 - EXPECT_INT_GOT_FLOAT]: A variável esperava um inteiro e recebeu um número decimal (float) (linha 3, coluna 21)
+  | flux\ExampleOfError_TYP401_ExpectIntGotFloat.flux:3,21 -> [TYP401 - EXPECT_INT_GOT_FLOAT]: A variável esperava um inteiro e recebeu um número decimal (float) (linha 3, coluna 21)
   |   💡 Dica: Use 'trunc()' ou 'round()' para converter explicitamente o valor decimal para inteiro
   OK  ExampleOfError_TYP401_ExpectIntGotFloat.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_TYP402_ExpectIntGotComplex.flux:3,21 -> [TYP402 - EXPECT_INT_GOT_COMPLEX]: A variável esperava um inteiro e recebeu um número complexo (linha 3, coluna 21)
+  | flux\ExampleOfError_TYP402_ExpectIntGotComplex.flux:3,21 -> [TYP402 - EXPECT_INT_GOT_COMPLEX]: A variável esperava um inteiro e recebeu um número complexo (linha 3, coluna 21)
   |   💡 Dica: Números complexos possuem partes real e imaginária. Extraia a parte desejada (.real) antes de converter
   OK  ExampleOfError_TYP402_ExpectIntGotComplex.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_TYP411_ExpectComplexGotInt.flux:3,26 -> [TYP411 - EXPECT_COMPLEX_GOT_INT]: A variável esperava um número complexo e recebeu um número inteiro (linha 3, coluna 26)
+  | flux\ExampleOfError_TYP411_ExpectComplexGotInt.flux:3,26 -> [TYP411 - EXPECT_COMPLEX_GOT_INT]: A variável esperava um número complexo e recebeu um número inteiro (linha 3, coluna 26)
   |   💡 Dica: Adicione a parte imaginária explicitamente (ex: '+ 0i') ou use construtor complexo
   OK  ExampleOfError_TYP411_ExpectComplexGotInt.flux
-  | D:\Projetos\TheFlux\flux\ExampleOfError_TYP413_ExpectComplexGotString.flux:3,26 -> [TYP413 - EXPECT_COMPLEX_GOT_STRING]: A variável esperava um número complexo e recebeu texto (string) (linha 3, coluna 26)
+  | flux\ExampleOfError_TYP413_ExpectComplexGotString.flux:3,26 -> [TYP413 - EXPECT_COMPLEX_GOT_STRING]: A variável esperava um número complexo e recebeu texto (string) (linha 3, coluna 26)
   |   💡 Dica: Converta a string para complexo utilizando função de parsing apropriada
   OK  ExampleOfError_TYP413_ExpectComplexGotString.flux
   | === Fail: emit(fail) explicito ===
@@ -2924,8 +2924,8 @@
   | ==================================================
   |   Exemplo: IoInputContract (2 Operacoes)
   | ==================================================
-  | 1. readLn: andre
-  | 2. readLine: luiz
+  | 1. readLn: andre 
+  | 2. readLine: luiz 
   OK  ExampleOfUseIoStdLib_IoInputContract.flux
   | ==================================================
   |   Exemplo: IoPathContract (4 Operacoes)

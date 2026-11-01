@@ -29,7 +29,7 @@ if str(SRC) not in sys.path:
 from flux_proto.cli import main as run_flux
 
 LEGACY_TXT = ROOT / "docs" / "legacy_in.txt"
-FLUX_DIR = ROOT / "flux"
+FLUX_DIR = ROOT / "examples" / "Canon"
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",

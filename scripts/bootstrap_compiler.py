@@ -64,7 +64,7 @@ def run_boot_0() -> bool:
     # 2. Linka via Clang gerando o unico binario: bin/fluxc.exe
     clang = shutil.which("clang") or r"C:\Program Files\LLVM\bin\clang.exe"
     code, stdout, stderr = run_cmd([
-        clang, "-O2", "-Wno-deprecated-declarations", "-o", str(FLUXC_EXE), str(STAGE1_LL), str(RUNTIME_C)
+        clang, "-O2", "-Wno-deprecated-declarations", "-Wno-override-module", "-o", str(FLUXC_EXE), str(STAGE1_LL), "-Lbin", "-lfluxrt"
     ])
     if code != 0 or not FLUXC_EXE.exists():
         print(f"[-] FALHA no Boot-0 ao linkar Clang: {stderr}")
@@ -156,7 +156,7 @@ def run_stage2_check() -> bool:
     clang = shutil.which("clang") or r"C:\Program Files\LLVM\bin\clang.exe"
     stage2_exe = INTERMEDIATES_DIR / "stage2.exe"
     c_link, _, err_link = run_cmd([
-        clang, "-O2", "-Wno-deprecated-declarations", "-o", str(stage2_exe), str(target_ll), str(RUNTIME_C)
+        clang, "-O2", "-Wno-deprecated-declarations", "-Wno-override-module", "-o", str(stage2_exe), str(target_ll), "-Lbin", "-lfluxrt"
     ])
     if c_link == 0 and stage2_exe.exists():
         stage3_base = INTERMEDIATES_DIR / "stage3"

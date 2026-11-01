@@ -38,6 +38,14 @@ agent (CompilerLib) impl StdLibBridgeContract {
                         stdIoWriteFile(args[1], args[2])
                         res["val"] = true
                   }
+                  fname == "stdIoDeleteFile" and n >= 1 ==> {
+                        stdIoDeleteFile(args[1])
+                        res["val"] = true
+                  }
+                  fname == "stdIoCreateDir" and n >= 1 ==> {
+                        stdIoCreateDir(args[1])
+                        res["val"] = true
+                  }
                   fname == "stdIoListDir" and n >= 1 ==> {
                         res["val"] = stdIoListDir(args[1])
                   }
@@ -46,6 +54,9 @@ agent (CompilerLib) impl StdLibBridgeContract {
                   }
                   fname == "stdCollectionLength" and n >= 1 ==> {
                         res["val"] = stdCollectionLength(args[1])
+                  }
+                  fname == "stdStringByteLength" and n >= 1 ==> {
+                        res["val"] = stdStringByteLength(args[1])
                   }
                   fname == "stdRuntimeGetArgs" ==> {
                         res["val"] = stdRuntimeGetArgs()

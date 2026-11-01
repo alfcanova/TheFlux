@@ -1,5 +1,27 @@
 from __future__ import annotations
 
+def _std_string_llvm_escape(s):
+    if not isinstance(s, str):
+        return ""
+    b = s.encode("utf-8")
+    out = []
+    for byte in b:
+        if byte == 92:
+            out.append(r"\5C")
+        elif byte == 34:
+            out.append(r"\22")
+        elif byte == 10:
+            out.append(r"\0A")
+        elif byte == 13:
+            out.append(r"\0D")
+        elif byte == 9:
+            out.append(r"\09")
+        elif byte < 32 or byte >= 127:
+            out.append(f"\\{byte:02X}")
+        else:
+            out.append(chr(byte))
+    return "".join(out)
+
 import re
 from datetime import datetime as _dt, timedelta as _td, timezone as _tz
 from typing import Any
@@ -74,7 +96,7 @@ _DATETIME_RE = re.compile(
     r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}(?::?\d{2})?)?$"
 )
 
-_TENSOR_RE = re.compile(r"tensor\[([0-9,\s]+)\] of (\w+)")
+_TENSOR_RE = re.compile(r"tensor\[([0-9,\s]+)\] of (\w+)", re.IGNORECASE)
 
 
 def _tensor_dims(tname: str) -> list[int]:
@@ -757,6 +779,9 @@ _STDLIST = {
     "stdSetIsDisjoint": _std_set_is_disjoint,
     "stdSetToList": _std_set_to_list,
     "stdSetToSet": _std_set_to_set,
+    "stdStringByteLength": (lambda s: len(s.encode("utf-8")) if isinstance(s, str) else 0),
+    "stdStringByteLen": (lambda s: len(s.encode("utf-8")) if isinstance(s, str) else 0),
+    "stdStringLlvmEscape": _std_string_llvm_escape,
     "stdCollectionLength": _std_collection_length,
     "stdCollectionIsEmpty": _std_collection_is_empty,
     "stdCollectionContains": _std_collection_contains,
@@ -2200,6 +2225,10 @@ class Interpreter:
             return Value("int64", osh.os_memory_total())
         if name == "stdOsMemoryFree":
             return Value("int64", osh.os_memory_free())
+        if name == "stdOsExit":
+            import sys
+            code = int(self._eval(raw_args[0]).data) if raw_args else 0
+            sys.exit(code)
         raise InterpreterError(f"unknown os intrinsic '{name}'")
 
     def _eval_net_intrinsic(self, name: str, raw_args: list[ASTNode]) -> Value:

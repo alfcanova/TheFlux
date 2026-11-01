@@ -16,6 +16,26 @@ agent (CompilerLib) impl ParseTypesContract {
 
             #L Verifica se e colecao (list of, map of, set of)
             route {
+                  type_name == "string" ==> {
+                        mut as map: m_lp = tokenStreamMatch(ts, "OP", "(")
+                        route {
+                              m_lp["matched"] ==> {
+                                    ts = m_lp["stream"]
+                                    mut as map: sz_tok = tokenStreamPeek(ts)
+                                    mut as string: sz_val = "" + sz_tok["val"]
+                                    ts = tokenStreamAdvance(ts)
+                                    mut as map: m_rp = tokenStreamMatch(ts, "OP", ")")
+                                    route {
+                                          m_rp["matched"] ==> { ts = m_rp["stream"] }
+                                          _ ==> {}
+                                    }
+                                    ar = astArenaAllocNode(ar, "TYPE_PRIMITIVE", "string(" + sz_val + ")", 0, 0, [])
+                              }
+                              _ ==> {
+                                    ar = astArenaAllocNode(ar, "TYPE_PRIMITIVE", type_name, 0, 0, [])
+                              }
+                        }
+                  }
                   type_name == "list" or type_name == "set" or type_name == "map" ==> {
                         mut as map: m_of = tokenStreamMatch(ts, "KEYWORD", "of")
                         route {

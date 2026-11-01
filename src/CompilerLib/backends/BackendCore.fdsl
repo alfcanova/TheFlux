@@ -17,14 +17,32 @@ agent (CompilerLib) impl BackendContract {
                         emit(nice, res, "ok")
                   }
                   target == "vm" or target == "vmbc" ==> {
-                        mut as map: res = vmCompileFmir(fmir_module)
+                        mut as string: json_bc = vmEmitBytecodeJson(fmir_module)
+                        mut as string: fpath = out_path
+                        mut as int64: flen = stdCollectionLength(fpath)
+                        mut as bool: needs_ext = true
+                        route {
+                              flen >= 6 ==> {
+                                    needs_ext = (fpath[(flen - 5)..flen] != ".fvmbc")
+                              }
+                              _ ==> {}
+                        }
+                        route {
+                              needs_ext ==> { fpath = fpath + ".fvmbc" }
+                              _ ==> {}
+                        }
+                        stdIoWriteFile(fpath, json_bc)
+                        mut as map: res = map{}
+                        res["target"] = "vm"
+                        res["path"] = fpath
+                        res["success"] = true
                         emit(nice, res, "ok")
                   }
                   target == "vmr" ==> {
                         mut as map: res = vmrEmitAndReload(fmir_module, out_path)
                         emit(nice, res, "ok")
                   }
-                  target == "llvm" ==> {
+                  target == "llvm" or target == "lv" ==> {
                         mut as map: res = llvmCompileModule(fmir_module, out_path)
                         emit(nice, res, "ok")
                   }
@@ -32,7 +50,7 @@ agent (CompilerLib) impl BackendContract {
                         mut as map: res = watCompileModule(fmir_module, out_path)
                         emit(nice, res, "ok")
                   }
-                  target == "wasm" ==> {
+                  target == "wasm" or target == "was" ==> {
                         mut as map: res = wasmCompileModule(fmir_module, out_path)
                         emit(nice, res, "ok")
                   }

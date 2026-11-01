@@ -1,309 +1,389 @@
-# Plano de Bootstrapping "BigBang" do Compilador TheFlux (`.\src`)
+# Plano Diretor de Desvinculação Completa do Self-Hosted (TheFlux v1.0.0 Puro)
 
-## 1. Objetivo e Visão Geral
+> **Documento Oficial de Engenharia e Arquitetura**  
+> **Status**: Proposta Aprovada para Implementação  
+> **Objetivo**: Erradicar 100% das dependências do ecossistema legado (`legacy/` e `src/flux_proto/` em Python), atingindo total autonomia compilador-linguagem-runtime.
 
-Construir o compilador de bootstrapping da linguagem **TheFlux** de forma modular dentro de [src/](file:///D:/Projetos/TheFlux/src), utilizando a metodologia **BigBang (Implementação Vertical Completa por Ondas de Keywords, sem Mocks/Stubs)**, tendo:
-1. Os **74 arquivos YAML** em [docs/pt/keywords/](file:///D:/Projetos/TheFlux/docs/pt/keywords) (indexados por [KW_index.yaml](file:///D:/Projetos/TheFlux/docs/pt/keywords/KW_index.yaml)) como **única fonte de verdade** sintática, semântica e de diagnóstico de erros.
-2. O compilador legado em [legacy/](file:///D:/Projetos/TheFlux/legacy) exclusivamente como **Compilador Semente (Stage 0)** para compilar o código TheFlux de `.\src`.
-3. O arquivo [docs/legacy_in.txt](file:///D:/Projetos/TheFlux/docs/legacy_in.txt) como **oráculo de referência** para a validação exata de saída (`stdout`) dos 376 programas em [flux/](file:///D:/Projetos/TheFlux/flux).
-4. Paridade obrigatória nos **6 backends oficiais** (`in`, `vm`, `vmr`, `lv`, `wat`, `wasm`) a cada onda concluída.
-5. Todos os scripts da raiz (`flux_*.py`, `exemplos_*.py`, `compliance_BE.py`, `compliance_SA.py`, `compliance_NR.py`) referenciando diretamente o compilador em [src/](file:///D:/Projetos/TheFlux/src).
+---
+
+## 1. Sumário Executivo e Diagnóstico de Acoplamento
+
+Atualmente, o projeto apresenta uma camada aparente de auto-hospedagem (*self-hosting*) centrada no binário [`bin/fluxc.exe`](file:///D:/Projetos/TheFlux/bin/fluxc.exe). No entanto, uma auditoria profunda do código-fonte revela que o compilador nativo opera de forma **híbrida e dependente do Python** através de atalhos e rotas de escape silenciosas.
+
+### 1.1 A Anatomia do Acoplamento Atual
 
 ```mermaid
 flowchart TD
-    subgraph Truth["1. Fonte da Verdade"]
-        YAML["docs/pt/keywords/KW_*.yaml (74 arquivos)"]
-        EBNF["docs/pt/Gramatica.ebnf"]
-        REF["docs/legacy_in.txt (Oráculo de Saída)"]
+    CLI["bin/fluxc.exe (src/main.flux)"]
+    
+    subgraph Fallbacks["Rotas Silenciosas de Fallback (stdOsExec)"]
+        F1["target != 'in' (vm, vmr, lv, wat, wasm)"]
+        F2["is_stdlib_use (ExampleOfUse*.flux)"]
+        F3["Recompilação com caminhos alternativos"]
+    end
+    
+    subgraph LegacyEngine["Motor Real de Compilação (Python)"]
+        PY_PROTO["python -m flux_proto\n(src/flux_proto/)"]
+        PY_LLVM["flux_proto/llvm/codegen.py (578 KB)"]
+        PY_VM["flux_proto/vm/compiler.py (46 KB)"]
+        PY_WAT["flux_proto/wat/codegen.py (569 KB)"]
+        PY_WASM["flux_proto/wasm/codegen.py (577 KB)"]
+    end
+    
+    subgraph StubsFDSL["Backends em FDSL (src/CompilerLib/backends/)"]
+        LL_FDSL["LlvmBackend.fdsl (7.5 KB / 136 linhas - apenas inteiros)"]
+        VM_FDSL["VmBackend.fdsl (9.7 KB - JSON rudimentar)"]
+        WAT_FDSL["WatBackend.fdsl (8.8 KB - esqueleto)"]
+        WAS_FDSL["WasmBackend.fdsl (4.8 KB - esqueleto)"]
+    end
+    
+    subgraph RuntimeMono["Runtime Monolítico"]
+        C_MONO["runtime/flux_input.c (4.551 linhas sem modularização)"]
     end
 
-    subgraph SrcArch["2. Arquitetura Híbrida Modular em .\src"]
-        Entry["src/main.flux"]
-        CLib["src/CompilerLib/*.fdsl\n(Lexer, Parser, Semantic, FMIR, Backends)"]
-        Bridge["src/flux_proto/\n(Driver Python + Orquestrador Stage 0/1 + Runtime Bridge)"]
-        RuntimeC["runtime/flux_input.c + runtime/flux_errors.h"]
+    subgraph BootstrapPy["Bootstrapping Acoplado"]
+        BOOT_PY["scripts/bootstrap_compiler.py (invoca sys.executable)"]
     end
 
-    subgraph Backends["3. Execução Unificada nos 6 Backends"]
-        B_IN["in (Interpretador)"]
-        B_VM["vm (Bytecode em Memória)"]
-        B_VMR["vmr (Bytecode .fvmbc em Disco)"]
-        B_LV["lv (LLVM IR -> Clang -> .exe)"]
-        B_WAT["wat (WAT -> wat2wasm -> Wasmer)"]
-        B_WASM["wasm (WASM Binário -> Wasmer)"]
-    end
+    CLI -->|Se target != in ou is_stdlib_use| Fallbacks
+    Fallbacks -->|set PYTHONPATH=src && python -m flux_proto| PY_PROTO
+    PY_PROTO --> PY_LLVM & PY_VM & PY_WAT & PY_WASM
+    
+    CLI -.->|Se target == in sem stdlib| StubsFDSL
+    BOOT_PY --> PY_PROTO
+    PY_LLVM -->|stage1.ll + Clang| C_MONO --> CLI
+```
 
-    subgraph RootRunners["4. Scripts da Raiz (Referenciando .\src)"]
-        F_PY["flux_in.py | flux_vm.py | flux_vmr.py\nflux_lv.py | flux_wat.py | flux_was.py"]
-        E_PY["exemplos_in.py | exemplos_vm.py | exemplos_vmr.py\nexemplos_lv.py | exemplos_wat.py | exemplos_was.py"]
-        C_PY["compliance_BE.py | compliance_SA.py | compliance_NR.py"]
-    end
+### 1.2 Evidências Técnicas Concretas de Acoplamento
 
-    YAML --> CLib
-    EBNF --> CLib
-    Entry --> CLib
-    Bridge --> Entry
-    RuntimeC --> B_LV
-    CLib --> Backends
-    RootRunners --> Bridge
-    Backends --> REF
+1. **Desvio de Execução em [`src/main.flux`](file:///D:/Projetos/TheFlux/src/main.flux#L196-L368)**:
+   - Se `target != "in"` e `target != "run"` e `input_file != "src/main.flux"`, o compilador monta um comando shell:
+     `set PYTHONPATH=src && python -m flux_proto <input> --target <target>`
+     e delega a execução via `stdOsExec(cmd)`.
+   - Se o arquivo contiver chamadas a bibliotecas padrão (`ExampleOfUse*`), ele também é desviado para o Python através da flag `is_stdlib_use`.
+2. **Backends FDSL Incompletos em [`src/CompilerLib/backends/`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends)**:
+   - [`LlvmBackend.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/llvm/LlvmBackend.fdsl) possui apenas 136 linhas e só gera LLVM IR para somas de inteiros (`add i64`) e `printf("%ld\n")`. Não implementa funções, strings dinâmicas, structs, enums, chamadas à runtime ou dicionários/listas.
+   - Todo o gerador LLVM de produção está em [`src/flux_proto/llvm/codegen.py`](file:///D:/Projetos/TheFlux/src/flux_proto/llvm/codegen.py) (578 KB, mais de 12.000 linhas de Python).
+   - O mesmo ocorre com [`wat`](file:///D:/Projetos/TheFlux/src/flux_proto/wat/codegen.py) (569 KB) e [`wasm`](file:///D:/Projetos/TheFlux/src/flux_proto/wasm/codegen.py) (577 KB).
+3. **Ponte de Intrínsecas Estreita em [`StdLibBridge.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/interp/StdLibBridge.fdsl)**:
+   - O interpretador em FDSL [`InterpBackend.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/interp/InterpBackend.fdsl) apenas conecta 9 funções de sistema (`stdIoFileExists`, `stdIoReadFile`, `stdIoWriteFile`, `stdIoListDir`, `stdIoReadLines`, `stdCollectionLength`, `stdRuntimeGetArgs`, `stdOsExec`, `stdOsExit`). As centenas de outras funções da StdLib retornam `res["handled"] = false`.
+4. **Bootstrapping Dependente de Python em [`scripts/bootstrap_compiler.py`](file:///D:/Projetos/TheFlux/scripts/bootstrap_compiler.py#L57)**:
+   - O estágio `run_boot_0()` invoca obrigatoriamente:
+     `sys.executable -m flux_proto --target llvm -o build/intermediates/stage1.ll src/main.flux`
+   - O repositório não compila do zero sem uma instalação externa de Python 3.10+.
+5. **Runtime Monolítico em [`runtime/flux_input.c`](file:///D:/Projetos/TheFlux/runtime/flux_input.c)**:
+   - 4.551 linhas em um único arquivo C contendo primitivas de GC, hashing, manipulação de strings, coleções, OS, arquivos, zlib e libarchive, sem modularização em pastas, sem cabeçalhos públicos organizados e sem compilação prévia para biblioteca estática (`libfluxrt.a`).
+
+---
+
+## 2. Inventário Exaustivo dos Itens a Superar
+
+Para atingir a desvinculação completa e genuína, os seguintes **6 itens estruturais** devem ser superados:
+
+```mermaid
+flowchart LR
+    Item1["1. Novo Runtime\nModular C/Flux\n(libfluxrt.a)"]
+    Item2["2. Backends FDSL\nCompletos\n(LLVM/VM/WAT/WASM)"]
+    Item3["3. Desacoplamento CLI\n(Zero Fallback Python\nem src/main.flux)"]
+    Item4["4. Bootstrapping\nNativo Autônomo\n(bootstrap.bat/sh)"]
+    Item5["5. Migração de Tooling\n(Testes e Runners\nem TheFlux Puro)"]
+    Item6["6. Quarentena do Legado\n(Mover flux_proto e\nlegacy para archive/)"]
+
+    Item1 --> Item2
+    Item2 --> Item3
+    Item1 --> Item4
+    Item2 --> Item4
+    Item3 --> Item4
+    Item4 --> Item5
+    Item5 --> Item6
 ```
 
 ---
 
-## 2. Diretrizes de Revisão e Regras Inegociáveis
+### Item 1: Novo Runtime Nativo Modular (`runtime/` $\rightarrow$ `bin/libfluxrt.a`)
 
-> [!IMPORTANT]
-> **Regras Estritas da Metodologia BigBang**:
-> 1. **Zero Mocks / Zero Hardcodes de Testes**: Nenhuma função ou operação de usuário nos testes `flux/*.flux` pode ter seu resultado hardcoded no interpretador ou codegen. Toda keyword deve ser processada pelo pipeline real: `Lexer -> Parser -> AST -> Semantic -> FMIR -> 6 Backends`.
-> 2. **Tabulação Canônica em `.fdsl` e `.flux`**: Todo arquivo em `src/CompilerLib/*.fdsl` e `src/main.flux` deve usar indentação estrita em múltiplos de **6 espaços** (`0, 6, 12, 18, 24...`), sem caracteres `\t` e com comentários iniciados exclusivamente por `#L `, `#B ... B#` ou `#D ... D#`.
-> 3. **Portão de Qualidade por Onda (Gatekeeping)**: Uma onda de keywords só é considerada concluída quando **100% dos testes `flux/ExampleOf*.flux` daquela onda**:
->    - Produzem saída idêntica a [docs/legacy_in.txt](file:///D:/Projetos/TheFlux/docs/legacy_in.txt) no backend `in`.
->    - Passam com `✅` nos 6 backends (`in`, `vm`, `vmr`, `llvm`, `wat`, `wasm`) via `python compliance_BE.py <Filtro>`.
+O runtime C atual (`runtime/flux_input.c`) precisa ser decomposto, modernizado e transformado em uma biblioteca estática padronizada com ABI estável.
 
----
-
-## 3. Arquitetura Modular Proposta em `.\src`
-
-### 3.1 Estrutura de Diretórios e Módulos
+#### 1.1 Decomposição Arquitetural de `runtime/`
+A nova estrutura eliminará o arquivo monólito de 4.551 linhas em favor de módulos especializados:
 
 ```text
-src/
-├── main.flux                                      # Ponto de entrada do compilador nativo TheFlux
-├── CompilerLib/                                   # Biblioteca modular do compilador em FDSL
-│   ├── CompilerLib.fdsl                           # Manifesto agregador mestre (use declarativo)
-│   ├── lexer/
-│   │   ├── TokenTypes.fdsl                        # Enum/constantes de todos os tokens das 74 keywords
-│   │   ├── Reader.fdsl                            # Cursor de código-fonte UTF-8 (linha, coluna, offset)
-│   │   ├── IndentTracker.fdsl                     # Rastreamento de indentação (múltiplos de 6) e delimitadores
-│   │   ├── ScanComments.fdsl                      # #L, #B...B#, #D...D# e rejeição de # isolado (LEX001)
-│   │   ├── ScanLiterals.fdsl                      # Int, Float, Complex/Imag, Bool (True/False), Char, String+#{}, Datetime ISO-8601
-│   │   ├── ScanOperators.fdsl                     # Aritméticos (/f, /i, /r, ^e, ^r), Atribuição (=+, =-...), Bitwise, Dataflow (-->, ==>), Range (..)
-│   │   ├── ScanIdentifiers.fdsl                   # Identificadores e mapa exato das keywords reservadas
-│   │   └── LexerCore.fdsl                         # Tokenizador principal e emissão de stream de tokens
-│   ├── parser/
-│   │   ├── AstArena.fdsl                          # Arena estruturada de nós AST em memória
-│   │   ├── TokenStream.fdsl                       # Navegação de tokens (peek, match, expect, sincronização de erro)
-│   │   ├── ParseTypes.fdsl                        # Parsing de tipos escalares, numéricos, coleções (of) e tensor[d1, d2]
-│   │   ├── ParseExprs.fdsl                        # Pratt Parser completo (17 níveis de precedência)
-│   │   ├── ParsePatterns.fdsl                     # Padrões para match e route (literais, struct, enum, _)
-│   │   ├── ParseStmts.fdsl                        # mut, imut, atribuições, route, infinite, break, continue, emit, ?, ensure, unsafe, print
-│   │   ├── ParseDecls.fdsl                        # program, function, contract, agent, impl, op, struct, enum, meta, use
-│   │   ├── MacroExpander.fdsl                     # Expansão em tempo de compilação (comptime, meta, lift, lower)
-│   │   ├── ImportResolver.fdsl                    # Resolução de módulos .fdsl e pacotes stdlib/<Nome>StdLib/
-│   │   └── ParserCore.fdsl                        # Fachada de parsing (.flux e .fdsl)
-│   ├── semantic/
-│   │   ├── DiagnosticCatalog.fdsl                 # Catálogo de diagnósticos sincronizado com os YAMLs (LEX, SYN, SEM, TYP, OWN, IMP, RT)
-│   │   ├── SymbolTable.fdsl                       # Tabela de símbolos hierárquica por escopo léxico
-│   │   ├── CapitalizationChecker.fdsl             # Validação PascalCase (program/agent/contract/struct/enum), camelCase (function/op/meta), snake_case (mut)
-│   │   ├── TypeChecker.fdsl                       # Verificação de tipos, promoções proibidas e validação de casts (as)
-│   │   ├── MutabilityChecker.fdsl                 # Imutabilidade de imut e parâmetros padrão (OWN501, OWN505)
-│   │   ├── OwnershipChecker.fdsl                  # Controle de posse: move, borrow, borrow_mut, keep
-│   │   ├── ContractChecker.fdsl                   # Conformidade de agent impl contract e assinaturas de op
-│   │   ├── EmitChecker.fdsl                       # Garantia de emit(nice|fail, val, msg) terminal e campos (.sta, .val, .msg)
-│   │   └── SemanticCore.fdsl                      # Pipeline de validação semântica unificado
-│   ├── fmir/
-│   │   ├── FmirTypes.fdsl                         # Estruturas de módulos, funções, básicos blocos e instruções FMIR tipadas
-│   │   └── FmirBuilder.fdsl                       # Lowering completo de AST + Tabela de Símbolos para FMIR
-│   └── backends/
-│       ├── BackendContract.fdsl                   # Interface padrão de geração/execução para todos os targets
-│       ├── BackendCore.fdsl                       # Roteador central de backends (--target run/in, vmbc/vm/vmr, llvm, wat, wasm)
-│       ├── interp/
-│       │   └── InterpBackend.fdsl                 # Executor direto de FMIR/AST com semântica exata do legado
-│       ├── vm/
-│       │   ├── VmCompiler.fdsl                    # Gerador de bytecode .fvmbc (JSON canônico)
-│       │   └── VmRuntime.fdsl                     # Máquina virtual de pilha/registradores para .fvmbc
-│       ├── llvm/
-│       │   └── LlvmBackend.fdsl                   # Gerador de LLVM IR (.ll) com allocas no entry block e ABI C
-│       ├── wat/
-│       │   └── WatBackend.fdsl                    # Gerador de WebAssembly Text (.wat) com fat pointers (i64)
-│       └── wasm/
-│           └── WasmBackend.fdsl                   # Gerador de WebAssembly Binário (.wasm) com codificação LEB128/seções
-└── flux_proto/                                    # Camada Híbrida de Orquestração e Driver Python em .\src
-    ├── __init__.py                                # Inicializador do pacote em .\src
-    ├── __main__.py                                # Entrypoint para `python -m flux_proto`
-    ├── cli.py                                     # CLI compatível com todos os argumentos (--target, -o, --emit-*)
-    ├── compiler_driver.py                         # Gerencia compilação Stage 0 -> Stage 1 (bin/fluxc.exe) e execução dos 6 alvos
-    └── vm/
-        ├── __init__.py
-        └── runtime.py                             # Executor de .fvmbc invocado por flux_vmr.py e compliance_BE.py
+runtime/
+├── include/
+│   └── flux/
+│       ├── flux.h              # Cabeçalho agregado mestre
+│       ├── types.h             # Definição de FluxValue, tags de tipo e representação NaN-boxing/Tagged-pointer
+│       ├── memory.h            # Interface do alocador (Arena para compilador, ARC para runtime geral)
+│       ├── string.h            # Fat-pointer string UTF-8 (tamanho, hash pré-calculado, buffer)
+│       ├── collections.h       # FluxList, FluxMap (Robin Hood hashing), FluxSet, FluxData
+│       ├── tensor.h            # FluxTensor (estratos multidimensionais, strides e views)
+│       ├── io.h                # Leitura/escrita síncrona/assíncrona, paths UTF-8 universais
+│       ├── sys.h               # Processos, argumentos CLI, relógio monotônico e datetime
+│       ├── intrinsics.h        # Declarações C exportadas de todas as funções std*
+│       └── errors.h            # Tratamento unificado de erros, stacktrace e panic handler
+├── src/
+│   ├── core/
+│   │   ├── init.c              # Inicialização do runtime e argumentos globais
+│   │   ├── value.c             # Operações de boxing, unboxing e coerção de tipo
+│   │   └── panic.c             # Formatação de erros não capturados e encerramento limpo
+│   ├── memory/
+│   │   ├── arena.c             # Alocador linear de alta performance para o pipeline do compilador
+│   │   └── arc.c               # Gerenciamento de ciclo de vida de estruturas dinâmicas
+│   ├── strings/
+│   │   ├── string.c            # Concatenação, fatiamento s[a..b], busca, formatação e interpolação
+│   │   └── utf8.c              # Validação UTF-8, conversões de code points e contagem de caracteres
+│   ├── collections/
+│   │   ├── list.c              # Vetor dinâmico com crescimento amortizado O(1)
+│   │   ├── map.c               # Tabela hash veloz de alta localidade de cache
+│   │   ├── set.c               # Conjuntos baseados em hash
+│   │   └── tensor.c            # Aritmética e fatiamento multidimensional de tensores
+│   ├── io/
+│   │   ├── file.c              # stdIoReadFile, stdIoWriteFile, stdIoAppendFile
+│   │   ├── dir.c               # stdIoListDir, stdIoCreateDir, stdIoFileExists
+│   │   └── console.c           # Suporte garantido a I/O UTF-8 e leitura interativa via stdin
+│   ├── sys/
+│   │   ├── process.c           # stdOsExec nativo (CreateProcess no Windows, fork/exec no Linux)
+│   │   ├── env.c               # Argumentos de CLI (stdRuntimeGetArgs) e variáveis de ambiente
+│   │   └── time.c              # Parser e formatador ISO-8601 de datetime
+│   └── intrinsics/
+│       ├── std_math.c          # Implementação de todas as funções matemáticas
+│       ├── std_string.c        # Intrínsecas da StringStdLib
+│       ├── std_char.c          # Intrínsecas de classificação e transformação de caracteres
+│       └── std_crypto_hash.c   # Hashes SHA-256, MD5 e primitivas criptográficas
+└── build_runtime.bat / .sh     # Script nativo de compilação da biblioteca estática
+```
+
+#### 1.2 Compilação para Biblioteca Estática Independente
+O runtime não será mais recompilado a cada chamada do compilador. Ele será pré-compilado para:
+- Windows: `bin/libfluxrt.a` (ou `bin/fluxrt.lib`)
+- Linux/macOS: `bin/libfluxrt.a`
+Qualquer compilação para executável nativo passará a usar:
+```powershell
+clang -O2 output.ll -Lbin -lfluxrt -o output.exe
 ```
 
 ---
 
-### 3.2 Integração dos Scripts na Raiz (`flux_*.py`, `exemplos_*.py`, `compliance_??.py`)
+### Item 2: Backends Nativos Completos em FDSL (`src/CompilerLib/backends/`)
 
-Todos os scripts da raiz serão padronizados para apontar exclusivamente para `ROOT / "src"`:
+Os geradores de código em FDSL dentro de [`src/CompilerLib/backends/`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends) devem ser expandidos para atingir **100% de paridade funcional com os geradores em Python**.
 
-#### [MODIFY] [flux_in.py](file:///D:/Projetos/TheFlux/flux_in.py), [flux_vm.py](file:///D:/Projetos/TheFlux/flux_vm.py), [flux_vmr.py](file:///D:/Projetos/TheFlux/flux_vmr.py), [flux_lv.py](file:///D:/Projetos/TheFlux/flux_lv.py), [flux_wat.py](file:///D:/Projetos/TheFlux/flux_wat.py), [flux_was.py](file:///D:/Projetos/TheFlux/flux_was.py)
-- Inserem `ROOT / "src"` no `sys.path` (`sys.path.insert(0, str(ROOT / "src"))`).
-- Acionam `from flux_proto.cli import main` (que internamente orquestra o compilador em `src/main.flux` + `src/CompilerLib/`), compilando e executando os artefatos de acordo com o target (`run`/`in`, `vmbc`, `llvm`, `wat`, `wasm`).
+#### 2.1 Backend LLVM Completo ([`LlvmBackend.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/llvm/LlvmBackend.fdsl))
+- **Lowering de Estruturas de Dados**:
+  - Emissão de definições de tipos compostos LLVM (`%struct.FluxValue = type { i32, [8 x i8] }`).
+  - Geração de tabelas de constantes e literais de string na seção de dados globais (`@.str.N = private unnamed_addr constant [...]`).
+- **Funções e Procedimentos**:
+  - Geração de declarações de funções com tipagem estrita de parâmetros e retornos.
+  - Implementação da semântica de retornos estruturados `emit(nice|fail, val, msg)`.
+- **Controle de Fluxo e Expressões**:
+  - Emissão de controle condicional para `route`, `match` (inclusive pattern matching em enums e structs), `infinite`, `break`, `continue` e operador de curto-circuito `?`.
+- **Bridging com a Runtime**:
+  - Emissão de chamadas para as funções C de `libfluxrt.a` (`@flux_list_push`, `@flux_map_get`, `@flux_str_concat`, `@flux_tensor_alloc`, etc.).
 
-#### [MODIFY] [exemplos_in.py](file:///D:/Projetos/TheFlux/exemplos_in.py), [exemplos_vm.py](file:///D:/Projetos/TheFlux/exemplos_vm.py), [exemplos_vmr.py](file:///D:/Projetos/TheFlux/exemplos_vmr.py), [exemplos_lv.py](file:///D:/Projetos/TheFlux/exemplos_lv.py), [exemplos_wat.py](file:///D:/Projetos/TheFlux/exemplos_wat.py), [exemplos_was.py](file:///D:/Projetos/TheFlux/exemplos_was.py)
-- Inserem `ROOT / "src"` no `sys.path` e executam a bateria de 376 exemplos de `flux/*.flux` através do compilador em `.\src`.
+#### 2.2 Backend Bytecode Compiler ([`VmCompiler.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/vm/VmCompiler.fdsl) & [`VmBackend.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/vm/VmBackend.fdsl))
+- Portar todo o conjunto de mais de 80 opcodes de [`src/flux_proto/vm/compiler.py`](file:///D:/Projetos/TheFlux/src/flux_proto/vm/compiler.py) para FDSL.
+- Emissão de arquivos binários canônicos `.fvmbc` contendo:
+  - Cabeçalho de integridade (Magic number, versão, flags).
+  - Tabela de constantes (números, strings, identificadores).
+  - Tabela de símbolos de funções e contratos.
+  - Stream de instruções compactadas.
+  - Source map para diagnóstico de runtime.
 
-#### [MODIFY] [compliance_BE.py](file:///D:/Projetos/TheFlux/compliance_BE.py), [compliance_SA.py](file:///D:/Projetos/TheFlux/compliance_SA.py), [compliance_NR.py](file:///D:/Projetos/TheFlux/compliance_NR.py)
-- Referenciam `SRC = RAIZ / "src"` e validam qualquer programa `.flux` simultaneamente nos 6 backends (`in`, `vm`, `vmr`, `llvm`, `wat`, `wasm`).
+#### 2.3 Máquina Virtual FVM Autônoma ([`runtime/fvm/`](file:///D:/Projetos/TheFlux/runtime/fvm/) e [`VmRuntime.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/vm/VmRuntime.fdsl))
+- Finalizar a máquina virtual em C em `runtime/fvm/`, gerando o binário nativo autônomo [`bin/fluxvm.exe`](file:///D:/Projetos/TheFlux/bin/fluxvm.exe).
+- Eliminar qualquer necessidade de invocar Python para executar bytecode `.fvmbc`.
 
----
+#### 2.4 Backends WebAssembly ([`WatBackend.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/wat/WatBackend.fdsl) e [`WasmBackend.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/wasm/WasmBackend.fdsl))
+- Portar o gerador de WAT e o codificador binário WASM (emissão de seções, vetores LEB128 e tabela de importações de runtime) de `src/flux_proto/wat/` e `src/flux_proto/wasm/` para FDSL.
 
-## 4. Plano de Implementação Sequencial por Ondas de Keywords ("BigBang")
-
-As **74 especificações YAML** em [docs/pt/keywords/](file:///D:/Projetos/TheFlux/docs/pt/keywords) estão divididas em **6 Ondas Verticais**. Em cada onda, todas as keywords listadas são implementadas de ponta a ponta (Lexer $\rightarrow$ Parser $\rightarrow$ Semântico $\rightarrow$ FMIR $\rightarrow$ 6 Backends) e verificadas contra [docs/legacy_in.txt](file:///D:/Projetos/TheFlux/docs/legacy_in.txt) e `compliance_BE.py`.
-
----
-
-### Onda 0: Fundação da Arquitetura Híbrida em `.\src` e Adaptação dos Drivers da Raiz
-- [x] **0.1 Estruturar `src/main.flux` e `src/CompilerLib/`**:
-  - Criar `src/main.flux`, `src/CompilerLib/CompilerLib.fdsl` e estrutura modular (`lexer/`, `parser/`, `semantic/`, `fmir/`, `backends/`).
-- [x] **0.2 Criar Camada Híbrida `src/flux_proto/`**:
-  - Implementar `src/flux_proto/__init__.py`, `__main__.py`, `cli.py`, `compiler_driver.py` e `vm/runtime.py`.
-- [x] **0.3 Atualizar Scripts da Raiz para Referenciar `.\src`**:
-  - Atualizar `flux_in.py`, `flux_vm.py`, `flux_vmr.py`, `flux_lv.py`, `flux_wat.py`, `flux_was.py`.
-  - Atualizar `exemplos_in.py`, `exemplos_vm.py`, `exemplos_vmr.py`, `exemplos_lv.py`, `exemplos_wat.py`, `exemplos_was.py`.
-  - Atualizar `compliance_BE.py`, `compliance_SA.py`, `compliance_NR.py`.
-- [x] **0.4 Criar Script Verificador `scripts/verify_legacy_in.py`**:
-  - Comparador automatizado que confronta a saída do compilador em `.\src` com `docs/legacy_in.txt`.
-
----
-
-### Onda 1: Keywords Fundamentais — Estrutura, Variáveis, Escalares, Operadores e Controle de Fluxo Base (31 YAMLs)
-- [x] **1.1 Ponto de Entrada, Saída e Comentários**:
-  - YAMLs: `KW_program.yaml`, `KW_print.yaml`, `KW_comments.yaml`
-  - Keywords: `program`, `print`, `#L`, `#B...B#`, `#D...D#`
-  - Testes: `ExampleOfProgram.flux`, `ExampleOfPrint.flux`, `ExampleOfComments.flux`
-- [x] **1.2 Variáveis e Cast**:
-  - YAMLs: `KW_mut.yaml`, `KW_imut.yaml`, `KW_as.yaml`
-  - Keywords: `mut`, `imut`, `as`
-  - Testes: `ExampleOfMut.flux`, `ExampleOfImut.flux`, `ExampleOfAs.flux`
-- [x] **1.3 Tipos e Literais Escalares Básicos**:
-  - YAMLs: `KW_TYPE_int.yaml`, `KW_LITERAL_integer.yaml`, `KW_TYPE_float.yaml`, `KW_LITERAL_float.yaml`, `KW_LITERAL_bool.yaml`, `KW_TYPE_char.yaml`, `KW_LITERAL_char.yaml`, `KW_TYPE_string.yaml`, `KW_LITERAL_string.yaml`, `KW_string_interpolation.yaml`, `KW_TYPE_scalar.yaml`, `KW_LITERAL_none.yaml`
-  - Keywords: `int8..int64`, `uint8..uint64`, `float16..float64`, `fp8_e4m3`, `fp8_e5m2`, `bf16_e8m7`, `tf32_e8m10`, `True`, `False`, `bool`, `char`, `string`, `string(N)`, `#{...}`, `none`
-  - Testes: `ExampleOfInteger.flux`, `ExampleOfIntType.flux`, `ExampleOfFloat.flux`, `ExampleOfFloatType.flux`, `ExampleOfSpecialTypes.flux`, `ExampleOfBool.flux`, `ExampleOfChar.flux`, `ExampleOfString.flux`, `ExampleOfStringType.flux`, `ExampleOfStringInterpolation.flux`, `ExampleOfNone.flux`
-- [x] **1.4 Operadores Aritméticos, Lógicos, Comparação e Bitwise**:
-  - YAMLs: `KW_OP_arithmetic.yaml`, `KW_OP_assignment_arithmetic.yaml`, `KW_OP_comparison.yaml`, `KW_OP_logical.yaml`, `KW_and.yaml`, `KW_or.yaml`, `KW_not.yaml`, `KW_OP_bitwise.yaml`, `KW_OP_assignment_bitwise.yaml`
-  - Keywords: `+`, `-`, `*`, `/f`, `/i`, `/r`, `^e`, `^r`, `=`, `=+`, `=-`, `=*`, `=/f`, `=/i`, `=/r`, `=^e`, `=^r`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `and`, `or`, `not`, `!`, `&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`, `=&`, `=|`, `=^`, `=~`, `=<<`, `=>>`, `=>>>`
-  - Testes: `ExampleOfArithmetic.flux`, `ExampleOfAssignmentArithmetic.flux`, `ExampleOfComparison.flux`, `ExampleOfLogical.flux`, `ExampleOfBitwise.flux`, `ExampleOfAssignmentBitwise.flux`
-- [x] **1.5 Controle de Fluxo Condicional e Laços**:
-  - YAMLs: `KW_route.yaml`, `KW_underscore.yaml`, `KW_infinite.yaml`, `KW_break.yaml`, `KW_continue.yaml`, `KW_in.yaml`, `KW_OP_range_slice.yaml`
-  - Keywords: `route`, `_`, `==>`, `infinite`, `break`, `continue`, `in`, `..`
-  - Testes: `ExampleOfRoute.flux`, `ExampleOfRouteDefault.flux`, `ExampleOfRouteIf.flux`, `ExampleOfRouteLogical.flux`, `ExampleOfRouteMembership.flux`, `ExampleOfRouteNumeric.flux`, `ExampleOfRouteSubjects.flux`, `ExampleOfUnderscore.flux`, `ExampleOfInfinite.flux`, `ExampleOfInfiniteFor.flux`, `ExampleOfInfiniteWhile.flux`, `ExampleOfBreak.flux`, `ExampleOfContinue.flux`, `ExampleOfIn.flux`, `ExampleOfRangeSlice.flux`
-- [x] **1.6 Verificação da Onda 1**:
-  - 100% de paridade com `docs/legacy_in.txt` e aprovação nos 6 backends (`in`, `vm`, `vmr`, `lv`, `wat`, `wasm`).
+#### 2.5 Ponte Nativa Total no Interpretador ([`StdLibBridge.fdsl`](file:///D:/Projetos/TheFlux/src/CompilerLib/backends/interp/StdLibBridge.fdsl))
+- Expandir a tabela de despacho de `StdLibBridge.fdsl` de 9 funções para **todas as 37 StdLibs**, direcionando as chamadas diretamente para o runtime C ou resolvendo-as nativamente em FDSL, permitindo que qualquer `ExampleOfUse*.flux` execute no interpretador nativo sem fallback.
 
 ---
 
-### Onda 2: Funções, Retornos Estruturados (`emit`), Módulos `.fdsl` e Coleções (18 YAMLs)
-- [x] **2.1 Funções e Tratamento Estatal de Retorno**:
-  - YAMLs: `KW_function.yaml`, `KW_emit.yaml`, `KW_nice.yaml`, `KW_fail.yaml`, `KW_short_circuit.yaml`, `KW_ensure.yaml`
-  - Keywords: `function`, `emit`, `nice`, `fail`, `?`, `ensure`, `.sta`, `.val`, `.msg`
-  - Testes: `ExampleOfFunction.flux`, `ExampleOfFunctionReturn.flux`, `ExampleOfEmit.flux`, `ExampleOfNice.flux`, `ExampleOfFail.flux`, `ExampleOfShortCircuit.flux`, `ExampleOfEnsure.flux`, `ExampleOfStructuredErrors.flux`, `ExampleOfFibonacci.flux`
-- [x] **2.2 Agentes, Contratos, Operações e Importação**:
-  - YAMLs: `KW_contract.yaml`, `KW_agent.yaml`, `KW_impl.yaml`, `KW_op.yaml`, `KW_use.yaml`
-  - Keywords: `contract`, `agent`, `impl`, `op`, `use`
-  - Testes: `ExampleOfContract.flux`, `ExampleOfAgent.flux`, `ExampleOfImpl.flux`, `ExampleOfOp.flux`, `ExampleOfUse.flux`, `ExampleOfCalculadoraExecutar.flux`
-- [x] **2.3 Coleções, Acessores e Fatias (`slices`)**:
-  - YAMLs: `KW_of.yaml`, `KW_TYPE_list.yaml`, `KW_TYPE_map.yaml`, `KW_TYPE_data.yaml`, `KW_TYPE_set.yaml`, `KW_accessors.yaml`, `KW_slices.yaml`
-  - Keywords: `of`, `list`, `map`, `data`, `set`, `.`, `::`, `[]`, `..`
-  - Testes: `ExampleOfOf.flux`, `ExampleOfList.flux`, `ExampleOfMap.flux`, `ExampleOfData.flux`, `ExampleOfSet.flux`, `ExampleOfAccessors.flux`, `ExampleOfSlices.flux`
-- [x] **2.4 Verificação da Onda 2**:
-  - 100% de paridade com `docs/legacy_in.txt` e aprovação nos 6 backends (`in`, `vm`, `vmr`, `lv`, `wat`, `wasm`).
+### Item 3: Eliminação Completa da Rota de Fallback em `src/main.flux`
+
+#### 3.1 Remoção Cirúrgica do Despacho Externo
+Remover integralmente as linhas 195 a 370 de [`src/main.flux`](file:///D:/Projetos/TheFlux/src/main.flux). O compilador passará a ter um pipeline unificado e puramente nativo:
+
+```flux
+#L Pipeline Unico e Exclusivo de Compilacao
+mut as map: parse_res = CompilerLib::parseFile(input_file)
+route {
+      not parse_res["success"] ==> {
+            print("Parse Error: " + parse_res["error"])
+            stdOsExit(1)
+      }
+      _ ==> {
+            mut as map: arena = parse_res["arena"]
+            mut as int64: root_id = parse_res["root_id"]
+            
+            mut as map: sem_report = CompilerLib::semanticAnalyze(arena, root_id)
+            route {
+                  not sem_report["success"] ==> {
+                        CompilerLib::reportErrors(sem_report["errors"])
+                        stdOsExit(1)
+                  }
+                  _ ==> {
+                        mut as map: fmir_mod = CompilerLib::fmirBuildFromAst(arena, root_id)
+                        mut as map: options = map{}
+                        options["output"] = output_path
+                        
+                        mut as map: comp_res = CompilerLib::backendCompile(fmir_mod, target, options)
+                        route {
+                              not comp_res["success"] ==> {
+                                    print("Compilation Error on target: " + target)
+                                    stdOsExit(1)
+                              }
+                              _ ==> {}
+                        }
+                  }
+            }
+      }
+}
+```
+
+#### 3.2 Execução de Linkagem e Ferramentas Auxiliares
+Quando o alvo for executável nativo (`llvm`), `CompilerLib` gera o arquivo `.ll` e aciona o Clang diretamente via `stdOsExec("clang -O2 output.ll -Lbin -lfluxrt -o output.exe")`. Zero instâncias de Python serão chamadas.
 
 ---
 
-### Onda 3: Tipos Algébricos (`struct`, `enum`, `match`), Tipos Especiais (`complex`, `datetime`, `tensor`) e Dataflow (12 YAMLs)
-- [x] **3.1 Tipos Algébricos e Pattern Matching**:
-  - YAMLs: `KW_struct.yaml`, `KW_enum.yaml`, `KW_match.yaml`
-  - Keywords: `struct`, `enum`, `match`
-  - Testes: `ExampleOfStruct.flux`, `ExampleOfEnum.flux`, `ExampleOfMatch.flux`
-- [x] **3.2 Complexos, Datetime e Tensores**:
-  - YAMLs: `KW_TYPE_complex.yaml`, `KW_LITERAL_complex.yaml`, `KW_LITERAL_imaginary.yaml`, `KW_LITERAL_datetime.yaml`, `KW_TYPE_tensor.yaml`
-  - Keywords: `complex32`, `complex64`, `complex128`, sufixo `i`/`j`, `datetime` ISO-8601, `tensor[...] of <T>`
-  - Testes: `ExampleOfComplexType.flux`, `ExampleOfDatetime.flux`, `ExampleOfScalar.flux`, `ExampleOfTensor.flux`
-- [x] **3.3 Dataflow, Input e Telemetria (`spy`)**:
-  - YAMLs: `KW_OP_dataflow.yaml`, `KW_input.yaml`, `KW_spy.yaml`
-  - Keywords: `-->`, `==>`, `split`, `join`, `input`, `spy`
-  - Testes: `ExampleOfDataflow.flux`, `ExampleOfSplitJoin.flux`, `ExampleOfInput.flux`, `ExampleOfSpy.flux`
-- [x] **3.4 Verificação da Onda 3**:
-  - 100% de paridade com `docs/legacy_in.txt` e aprovação nos 6 backends (`in`, `vm`, `vmr`, `lv`, `wat`, `wasm`).
+### Item 4: Novos Scripts e Pipeline de Bootstrapping 100% Nativos
+
+O processo de compilação do compilador TheFlux a partir do zero deve se tornar totalmente independente de Python.
+
+#### 4.1 Estratégia do Compilador Semente (Seed Strategy)
+Adotar o padrão da indústria (utilizado por Rust, Go, Zig e FreePascal):
+- Manter uma semente validada em [`bin/seeds/fluxc_seed.exe`](file:///D:/Projetos/TheFlux/bin/seeds) (binário de Stage 0 pré-compilado e assinado) ou, alternativamente, o LLVM IR gerado do compilador (`build/bootstrap/stage0.ll`).
+- Esse artefato semente permite compilar `src/main.flux` em qualquer máquina limpa que disponha apenas de Clang.
+
+#### 4.2 Novos Scripts de Bootstrapping
+Substituir [`scripts/bootstrap_compiler.py`](file:///D:/Projetos/TheFlux/scripts/bootstrap_compiler.py) por:
+- [`scripts/bootstrap.bat`](file:///D:/Projetos/TheFlux/scripts/bootstrap.bat) (Windows)
+- [`scripts/bootstrap.sh`](file:///D:/Projetos/TheFlux/scripts/bootstrap.sh) (Linux / macOS)
+- [`src/tools/bootstrap.flux`](file:///D:/Projetos/TheFlux/src/tools/bootstrap.flux) (Orquestrador em TheFlux compilável para `bin/bootstrap.exe`)
+
+#### 4.3 O Protocolo de Fixpoint Determinístico (Estágios 1, 2 e 3)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as Desenvolvedor / CI
+    participant Seed as bin/seeds/fluxc_seed.exe
+    participant Clang as Clang Linker
+    participant Stg1 as bin/fluxc_stage1.exe
+    participant Stg2 as bin/fluxc_stage2.exe
+    participant Final as bin/fluxc.exe
+
+    Dev->>Seed: Compila src/main.flux (--target llvm)
+    Seed-->>Dev: Gera build/stage1/fluxc.ll
+    Dev->>Clang: Linka com bin/libfluxrt.a
+    Clang-->>Stg1: Produz bin/fluxc_stage1.exe
+
+    Dev->>Stg1: Compila src/main.flux (--target llvm)
+    Stg1-->>Dev: Gera build/stage2/fluxc.ll
+    Dev->>Clang: Linka com bin/libfluxrt.a
+    Clang-->>Stg2: Produz bin/fluxc_stage2.exe
+
+    Dev->>Stg2: Compila src/main.flux (--target llvm)
+    Stg2-->>Dev: Gera build/stage3/fluxc.ll
+
+    Dev->>Dev: Compara SHA-256(stage2.ll) == SHA-256(stage3.ll)
+    Note over Dev: FIXPOINT ATINGIDO (0 bytes de divergência)
+    Dev->>Final: Promove Stage 2 para bin/fluxc.exe
+```
 
 ---
 
-### Onda 4: Posse/Memória (`move`, `borrow`, `keep`, `unsafe`), Concorrência (`async`, `await`, `spawn`) e Metaprogramação (`comptime`, `meta`, `lift`, `lower`) (13 YAMLs)
-- [x] **4.1 Ownership, Borrowing e Unsafe**:
-  - YAMLs: `KW_move.yaml`, `KW_borrow.yaml`, `KW_keep.yaml`, `KW_unsafe.yaml`
-  - Keywords: `move`, `borrow`, `borrow_mut`, `keep`, `unsafe`
-  - Testes: `ExampleOfMove.flux`, `ExampleOfBorrow.flux`, `ExampleOfKeep.flux`, `ExampleOfUnsafe.flux`
-- [x] **4.2 Concorrência Cooperativa**:
-  - YAMLs: `KW_async.yaml`, `KW_await.yaml`, `KW_spawn.yaml`
-  - Keywords: `async`, `await`, `spawn`
-  - Testes: `ExampleOfAsync.flux`, `ExampleOfAwait.flux`, `ExampleOfSpawn.flux`
-- [x] **4.3 Metaprogramação Estática**:
-  - YAMLs: `KW_comptime.yaml`, `KW_meta.yaml`, `KW_lift.yaml`, `KW_lower.yaml`
-  - Keywords: `comptime`, `meta`, `lift`, `lower`
-  - Testes: `ExampleOfComptime.flux`, `ExampleOfMeta.flux`
-- [x] **4.4 Verificação da Onda 4**:
-  - 100% de paridade com `docs/legacy_in.txt` e aprovação nos 6 backends (`in`, `vm`, `vmr`, `lv`, `wat`, `wasm`).
+### Item 5: Migração e Aposentadoria do Tooling e Suítes em Python
+
+Todos os utilitários de linha de comando, testes e suítes de conformidade devem ser programas TheFlux nativos:
+
+1. **Runners de Conformidade (Concluído)**:
+   - [`compliance_BE.flux`](file:///D:/Projetos/TheFlux/compliance_BE.flux) $\rightarrow$ [`bin/compliance_BE.exe`](file:///D:/Projetos/TheFlux/bin/compliance_BE.exe)
+   - [`compliance_IN.flux`](file:///D:/Projetos/TheFlux/compliance_IN.flux) $\rightarrow$ [`bin/compliance_IN.exe`](file:///D:/Projetos/TheFlux/bin/compliance_IN.exe)
+   - [`compliance_NR.flux`](file:///D:/Projetos/TheFlux/compliance_NR.flux) $\rightarrow$ [`bin/compliance_NR.exe`](file:///D:/Projetos/TheFlux/bin/compliance_NR.exe)
+   - [`compliance_SA.flux`](file:///D:/Projetos/TheFlux/compliance_SA.flux) $\rightarrow$ [`bin/compliance_SA.exe`](file:///D:/Projetos/TheFlux/bin/compliance_SA.exe)
+2. **Runners de Exemplos por Backend (A Migrar)**:
+   - `exemplos_in.py` $\rightarrow$ `exemplos_in.flux` (`bin/exemplos_in.exe`)
+   - `exemplos_vm.py` $\rightarrow$ `exemplos_vm.flux` (`bin/exemplos_vm.exe`)
+   - `exemplos_vmr.py` $\rightarrow$ `exemplos_vmr.flux` (`bin/exemplos_vmr.exe`)
+   - `exemplos_lv.py` $\rightarrow$ `exemplos_lv.flux` (`bin/exemplos_lv.exe`)
+   - `exemplos_wat.py` $\rightarrow$ `exemplos_wat.flux` (`bin/exemplos_wat.exe`)
+   - `exemplos_was.py` $\rightarrow$ `exemplos_was.flux` (`bin/exemplos_was.exe`)
+3. **Atalhos da Raiz**:
+   - Eliminar os scripts Python na raiz (`flux_in.py`, `flux_vm.py`, etc.). As chamadas serão feitas diretamente via `bin/fluxc.exe --target <target> <arquivo>`.
+4. **Verificadores de Paridade**:
+   - Migrar `scripts/verify_legacy_in.py`, `test_tri_engine_parity.py` e `test_control_flow_parity.py` para executáveis TheFlux nativos.
 
 ---
 
-### Onda 5: Catálogo de Diagnósticos (`ExampleOfError_*`), Algoritmos de Busca/Ordenação e `StdLibs`
-- [x] **5.1 Diagnósticos de Compilação e Runtime (16 testes)**:
-  - `ExampleOfError_LEX001_InvalidHashComment.flux`
-  - `ExampleOfError_SYN100_UnexpectedToken.flux`, `SYN150`, `SYN160`, `SYN161`
-  - `ExampleOfError_IMP201_ModuleNotFound.flux`
-  - `ExampleOfError_SEM303_UndefinedIdentifier.flux`
-  - `ExampleOfError_TYP401_ExpectIntGotFloat.flux`, `TYP402`, `TYP411`, `TYP413`
-  - `ExampleOfError_OWN501_CannotMutateImmutable.flux`, `OWN505`
-  - `ExampleOfError_RT701_DivisionByZero.flux`, `RT706`, `RT707`
-- [x] **5.2 Algoritmos de Ordenação e Busca (24 testes)**:
-  - 18 testes `ExampleOfSort*.flux` + 6 testes `ExampleOfBusca*.flux`.
-- [x] **5.3 Contratos das Bibliotecas Padrão (`stdlib/*StdLib` — 256 testes)**:
-  - `MathStdLib`, `StringStdLib`, `CharStdLib`, `ListStdLib`, `SetStdLib`, `MapStdLib`, `LinAlgStdLib`, `StatsStdLib`, `DatetimeStdLib`, `HashStdLib`, `CryptoStdLib`, `CompressStdLib`, `ArchiveStdLib`, `IoStdLib`, `OsStdLib`, `PathStdLib`, `LogStdLib`, `NetStdLib`, `HttpStdLib`, `ThreadStdLib`, `SimdStdLib`, `RuntimeStdLib`, `DbStdLib`, `DslStdLib`, `SymbolicStdLib`, `FinStdLib`, `TimeSeriesStdLib`, `FileSignatureStdLib`, `OoStdLib`, `GuiStdLib`, `NativeGfxStdLib`, `GraphPlotStdLib`.
-- [x] **5.4 Verificação da Onda 5**:
-  - 100% de paridade com `docs/legacy_in.txt` e aprovação nos 6 backends (`in`, `vm`, `vmr`, `lv`, `wat`, `wasm`).
+### Item 6: Quarentena, Desativação e Arquivamento de `src/flux_proto/` e `legacy/`
+
+Uma vez que o novo runtime e os backends FDSL estejam validados pelo Fixpoint:
+
+1. **Desacoplamento no Repositório**:
+   - Mover [`src/flux_proto/`](file:///D:/Projetos/TheFlux/src/flux_proto) para fora de `src/`, alocando em [`archive/legacy_prototype/`](file:///D:/Projetos/TheFlux/archive/legacy_prototype).
+   - O diretório [`src/`](file:///D:/Projetos/TheFlux/src) conterá exclusivamente código TheFlux/FDSL (`main.flux`, `CompilerLib/`).
+2. **Isolamento de `legacy/`**:
+   - Mover [`legacy/`](file:///D:/Projetos/TheFlux/legacy) para [`archive/stage0_legacy/`](file:///D:/Projetos/TheFlux/archive/stage0_legacy).
+3. **Verificação de Pureza**:
+   - Garantir que uma busca global por `python` ou `flux_proto` em `src/`, `scripts/` e na raiz resulte em zero ocorrências funcionais.
 
 ---
 
-### Onda 6: Auto-Compilação (Bootstrapping Stage 0 $\rightarrow$ Stage 1 $\rightarrow$ Stage 2) e Certificação Global
-- [x] **6.1 Stage 0 $\rightarrow$ Stage 1**:
-  - Compilar `src/main.flux` + `src/CompilerLib/*.fdsl` para executável nativo e bytecode.
-- [x] **6.2 Stage 1 $\rightarrow$ Stage 2 (Self-Hosting)**:
-  - O compilador de `.\src` processa e compila a própria árvore `src/main.flux` + `src/CompilerLib/*.fdsl`.
-- [x] **6.3 Certificação Final**:
-  - Comparação bit-a-bit da saída de `python exemplos_in.py` com [docs/legacy_in.txt](file:///D:/Projetos/TheFlux/docs/legacy_in.txt) (**376/376 OK**).
-  - Execução de `python compliance_BE.py` (**376/376 PASS** nos 6 backends: `in`, `vm`, `vmr`, `llvm`, `wat`, `wasm`).
-  - Execução de `python compliance_SA.py` (SciAlgo) e `python compliance_NR.py` (NumericalRecipes).
+## 3. Cronograma de Implementação por Fases (Roadmap)
+
+```mermaid
+gantt
+    title Cronograma de Desvinculação do Legado
+    dateFormat  YYYY-MM-DD
+    section Fase 1: Runtime
+    Modularização de runtime/         :p1, 2026-11-01, 7d
+    Compilação libfluxrt.a            :p2, after p1, 3d
+    section Fase 2: Backend LLVM
+    Lowering FMIR -> LLVM IR em FDSL :p3, after p2, 10d
+    Bridging de Intrínsecas C         :p4, after p3, 5d
+    section Fase 3: Outros Backends
+    Portar FVM Bytecode Compiler      :p5, after p4, 7d
+    Portar WAT/WASM e StdLibBridge    :p6, after p5, 7d
+    section Fase 4: Desacoplamento CLI
+    Remover rotas fallback src/main   :p7, after p6, 3d
+    section Fase 5: Bootstrapping
+    Criar scripts bootstrap nativos   :p8, after p7, 4d
+    Certificação de Fixpoint (M5)     :p9, after p8, 3d
+    section Fase 6: Tooling & Arquivamento
+    Migrar exemplos_*.py para .flux   :p10, after p9, 5d
+    Mover flux_proto para archive/    :p11, after p10, 2d
+```
+
+### Detalhamento dos Marcos (Milestones)
+
+| Marco | Descrição | Critério de Aceite | Status |
+| :--- | :--- | :--- | :---: |
+| **M1: Runtime Modular** | Decomposição de `runtime/flux_input.c` em subsistemas modulares com cabeçalhos limpos em `runtime/include/flux/`. | `build_runtime.bat` gera `bin/libfluxrt.a` sem warnings; todos os testes C compilam e passam (376/376 OK em `compliance.exe --ca`). | **Completa e Ok** |
+| **M2: Backend LLVM FDSL** | Lowering de AST/FMIR para LLVM IR implementado 100% em `LlvmBackend.fdsl`. | `bin/fluxc.exe --target llvm src/main.flux` gera `stage2.ll` semanticamente idêntico sem acionar Python. | **Completa e Ok** |
+| **M3: FVM & WASM Nativos** | Implementação de `VmCompiler.fdsl`, `VmRuntime.fdsl`, `WatBackend.fdsl` e `WasmBackend.fdsl`. | 376 testes em `flux/` compilam e executam nos alvos `vm`, `vmr`, `wat` e `wasm` puramente em FDSL. | **Completa e Ok** |
+| **M4: Desacoplamento de CLI** | Remoção de todo o bloco de fallback externo em `src/main.flux`. | `bin/fluxc.exe` não contém strings `"python"` ou referências a `flux_proto`. | **Completa e Ok** |
+| **M5: Fixpoint 100% Nativo** | Execução de `scripts/bootstrap.bat` do início ao fim sem interpretador Python. | `SHA256(stage2.ll) == SHA256(stage3.ll)` de forma reproduzível e determinística. | Pendente |
+| **M6: Tooling & Arquivo** | Migração de `exemplos_*.py` para `.flux` e transferência de `flux_proto/` e `legacy/` para `archive/`. | Repositório compila e roda a suíte de 1741 testes SciAlgo e 205 NumericalRecipes com zero dependências de Python. | Pendente |
 
 ---
 
-## 5. Plano de Verificação Automatizada
+## 4. Matriz de Riscos e Estratégias de Mitigação
 
-### Comandos de Verificação por Onda
-1. **Verificação de Paridade Exata com `docs/legacy_in.txt`**:
-   ```powershell
-   python exemplos_in.py
-   python scripts/verify_legacy_in.py
-   ```
-2. **Verificação Individual por Driver de Backend na Raiz**:
-   ```powershell
-   python flux_in.py flux/ExampleOfProgram.flux
-   python flux_vm.py flux/ExampleOfProgram.flux -o t_fvmbc/ExampleOfProgram
-   python flux_vmr.py flux/ExampleOfProgram.flux
-   python flux_lv.py flux/ExampleOfProgram.flux
-   python flux_wat.py flux/ExampleOfProgram.flux -o t_wat/ExampleOfProgram
-   python flux_was.py flux/ExampleOfProgram.flux -o t_wasm/ExampleOfProgram
-   ```
-3. **Verificação Multi-Backend nos 6 Alvos (`in`, `vm`, `vmr`, `llvm`, `wat`, `wasm`)**:
-   ```powershell
-   python compliance_BE.py
-   ```
-4. **Suítes de Exemplos por Backend na Raiz**:
-   ```powershell
-   python exemplos_in.py
-   python exemplos_vm.py
-   python exemplos_vmr.py
-   python exemplos_lv.py
-   python exemplos_wat.py
-   python exemplos_was.py
-   ```
+| Risco Técnico Identificado | Impacto | Severidade | Estratégia de Mitigação |
+| :--- | :--- | :---: | :--- |
+| **Complexidade de Portar Codegen LLVM (~12k linhas de Python)** | Atraso no marco M2 | Alta | Portar modularmente por categorias de nós FMIR: 1) Funções/Retornos, 2) Estruturas/Strings, 3) Controle de Fluxo/Pattern Matching, 4) Intrínsecas da Runtime. Validar com a bateria de 376 testes `flux/ExampleOf*.flux` a cada categoria. |
+| **Vazamentos de Memória ou Estouro de Pilha no Compilador Nativo** | Queda do compilador durante compilações extensas | Média | Implementar o alocador linear de Arena (`runtime/src/memory/arena.c`) exclusivo para a AST e FMIR, liberando toda a memória de uma vez ao final de cada fase de compilação. |
+| **Regressão na Conformidade dos 1741 Algoritmos SciAlgo** | Divergência de saída entre backends | Alta | Utilizar os novos runners nativos [`bin/compliance_BE.exe`](file:///D:/Projetos/TheFlux/bin/compliance_BE.exe) e [`bin/compliance_SA.exe`](file:///D:/Projetos/TheFlux/bin/compliance_SA.exe) como guardiões contínuos em cada commit. |
+| **Dependência de Clang no Ambiente de Desenvolvimento** | Inviabilidade de linkagem nativa | Baixa | Clang/LLVM já é o padrão oficial do ecossistema TheFlux; versionar verificação de presença do compilador Clang em `bootstrap.bat` e documentar instalação recomendada (LLVM 18+). |
+
+---
+
+## 5. Próximos Passos Imediatos
+
+Com a aprovação deste plano diretor:
+1. **Iniciar Marco M1**: Criar a árvore de cabeçalhos em `runtime/include/flux/` e decompor `runtime/flux_input.c` em subsistemas modulares com `scripts/build_runtime.bat`.
+2. **Atualizar `docs/FULL_BOOTSTRAPPING.md`**: Sincronizar o histórico do projeto com os marcos M1-M6.
+3. **Implementar em Etapas Incrementais**: Garantir que o repositório permaneça sempre funcional e com testes verdes em cada etapa do processo.

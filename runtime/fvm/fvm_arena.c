@@ -319,6 +319,27 @@ char *fvm_val_to_str(FvmArena *arena, FluxVal v) {
             free(dyn);
             return res;
         }
+        case VAL_MAP: {
+            FvmMap *m = (FvmMap *)v.as.ptr;
+            if (!m || m->count == 0) return fvm_arena_strdup(arena, "map{}");
+            char *dyn = NULL; size_t dlen = 0, dcap = 0;
+            append_str(&dyn, &dlen, &dcap, "map{");
+            bool first = true;
+            for (uint32_t b = 0; b < m->bucket_count; b++) {
+                for (FvmMapEntry *e = m->buckets[b]; e; e = e->next) {
+                    if (!first) append_str(&dyn, &dlen, &dcap, ", ");
+                    first = false;
+                    append_str(&dyn, &dlen, &dcap, e->key ? e->key : "");
+                    append_str(&dyn, &dlen, &dcap, ": ");
+                    char *val_str = fvm_val_to_str(arena, e->val);
+                    append_str(&dyn, &dlen, &dcap, val_str);
+                }
+            }
+            append_str(&dyn, &dlen, &dcap, "}");
+            char *res = fvm_arena_strdup(arena, dyn);
+            free(dyn);
+            return res;
+        }
         default:
             return fvm_arena_strdup(arena, "<value>");
     }

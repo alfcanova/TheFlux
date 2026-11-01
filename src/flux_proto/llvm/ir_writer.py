@@ -63,7 +63,7 @@ class IRWriter:
             params += ", ..." if params else "..."
         self._lines.append(f"declare {return_type} @{name}({params})")
 
-    def begin_function(self, name: str, return_type: str, param_types: list[str] | None = None) -> None:
+    def begin_function(self, name: str, return_type: str, param_types: list[str] | None = None, linkage: str = "") -> None:
         self._current_func = name
         self._in_function = True
         self._local_idx = 0
@@ -71,7 +71,8 @@ class IRWriter:
         self._entry_insert_index: int | None = None
         params = ", ".join(p for p in (param_types or []))
         self._lines.append(f"")
-        self._lines.append(f"define {return_type} @{name}({params}) {{")
+        link_prefix = f"{linkage} " if linkage else ""
+        self._lines.append(f"define {link_prefix}{return_type} @{name}({params}) {{")
 
     def end_function(self) -> None:
         self._lines.append("}")

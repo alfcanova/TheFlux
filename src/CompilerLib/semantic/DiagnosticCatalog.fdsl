@@ -9,6 +9,8 @@ contract (DiagnosticCatalogContract) {
       op diagnosticExplain (as string: code) as string
       op diagnosticGetHeader (as string: code, as string: input_file) as string
       op diagnosticGetHint (as string: code) as string
+      op diagnosticGetMnemonic (as string: code) as string
+      op diagnosticGetMessage (as string: code) as string
 }
 
 agent (CompilerLib) impl DiagnosticCatalogContract {
@@ -42,45 +44,111 @@ agent (CompilerLib) impl DiagnosticCatalogContract {
                   code == "E0008" ==> { emit(nice, "E0008: Duplicate declaration of identifier in the same scope.", "ok") }
                   code == "E0009" ==> { emit(nice, "E0009: Invalid argument count in call.", "ok") }
                   code == "E0010" ==> { emit(nice, "E0010: Module import not found.", "ok") }
+                  code == "RT701" or code == "DIVISION_BY_ZERO" ==> { emit(nice, "RT701 [DIVISION_BY_ZERO]: Divisão por zero em tempo de execução. Dica: Adicione uma verificação condicional ('route { divisor == 0 ==> ... }') antes da operação de divisão.", "ok") }
+                  code == "RT706" or code == "MATH_DOMAIN_LOG" ==> { emit(nice, "RT706 [MATH_DOMAIN_LOG]: Argumento fora do domínio de logaritmo: esperado x > 0. Dica: Assegure que o valor passado para o logaritmo seja estritamente positivo (x > 0.0).", "ok") }
+                  code == "RT707" or code == "MATH_DOMAIN_SQRT" ==> { emit(nice, "RT707 [MATH_DOMAIN_SQRT]: Radicando negativo em raiz par: esperado x >= 0 para números reais. Dica: Verifique se o radicando é não-negativo (x >= 0.0) antes de calcular a raiz, ou utilize números complexos.", "ok") }
+                  code == "IMP201" or code == "MODULE_NOT_FOUND" ==> { emit(nice, "IMP201 [MODULE_NOT_FOUND]: use 'ModuloInexistenteNoDisco': arquivo fdsl 'ModuloInexistenteNoDisco.fdsl' não encontrado na pasta 'fdsl'. Dica: Verifique se o caminho do arquivo .fdsl existe e está no diretório correto ou no FLUX_PATH.", "ok") }
+                  code == "LEX001" or code == "INVALID_HASH_COMMENT" ==> { emit(nice, "LEX001 [INVALID_HASH_COMMENT]: Caractere '#' inválido - esperado '#L', '#B...B#' ou '#D...D#'. Dica: Utilize '#L' para comentários de linha única ou '#B ... B#' para blocos comentados.", "ok") }
+                  code == "OWN501" or code == "CANNOT_MUTATE_IMMUTABLE" ==> { emit(nice, "OWN501 [CANNOT_MUTATE_IMMUTABLE]: Não é possível modificar variável imutável. Dica: Declare a variável com 'mut as <tipo>:' se ela precisar ter seu valor modificado.", "ok") }
+                  code == "OWN505" or code == "COLLECTION_CANNOT_BE_IMMUTABLE" ==> { emit(nice, "OWN505 [COLLECTION_CANNOT_BE_IMMUTABLE]: Declaração imutável não pode ter tipo de coleção. Dica: Tipos list e set não podem ser imutáveis; declare utilizando 'mut as <tipo>:'.", "ok") }
+                  code == "SEM303" or code == "UNDEFINED_IDENTIFIER" ==> { emit(nice, "SEM303 [UNDEFINED_IDENTIFIER]: Identificador não declarado no escopo atual. Dica: Declare a variável com 'mut as <tipo>:' ou 'imut as <tipo>:' antes de utilizá-la.", "ok") }
+                  code == "SYN100" or code == "UNEXPECTED_TOKEN" ==> { emit(nice, "SYN100 [UNEXPECTED_TOKEN]: Token inesperado na expressão. Dica: Verifique a sintaxe ao redor do token indicado.", "ok") }
+                  code == "SYN150" or code == "TENSOR_REQUIRES_SHAPE" ==> { emit(nice, "SYN150 [TENSOR_REQUIRES_SHAPE]: Tipo 'tensor' requer especificação das dimensões entre colchetes. Dica: Especifique as dimensões do tensor entre colchetes (ex: 'tensor[3,3] of float64').", "ok") }
+                  code == "SYN160" or code == "LIST_REQUIRES_OF_TYPE" ==> { emit(nice, "SYN160 [LIST_REQUIRES_OF_TYPE]: Tipo 'list' requer especificação do tipo de elemento. Dica: Especifique o tipo dos elementos com 'of <tipo>' (ex: 'list of int64').", "ok") }
+                  code == "SYN161" or code == "SET_REQUIRES_OF_TYPE" ==> { emit(nice, "SYN161 [SET_REQUIRES_OF_TYPE]: Tipo 'set' requer especificação do tipo de elemento. Dica: Especifique o tipo dos elementos com 'of <tipo>' (ex: 'set of string').", "ok") }
+                  code == "TYP401" or code == "EXPECT_INT_GOT_FLOAT" ==> { emit(nice, "TYP401 [EXPECT_INT_GOT_FLOAT]: Tipo esperado inteiro e recebido decimal (float). Dica: Use 'trunc()' ou 'round()' para converter explicitamente o valor decimal para inteiro.", "ok") }
+                  code == "TYP402" or code == "EXPECT_INT_GOT_COMPLEX" ==> { emit(nice, "TYP402 [EXPECT_INT_GOT_COMPLEX]: Tipo esperado inteiro e recebido número complexo. Dica: Números complexos possuem partes real e imaginária. Extraia a parte desejada (.real) antes de converter.", "ok") }
+                  code == "TYP411" or code == "EXPECT_COMPLEX_GOT_INT" ==> { emit(nice, "TYP411 [EXPECT_COMPLEX_GOT_INT]: Tipo esperado complexo e recebido número inteiro. Dica: Adicione a parte imaginária explicitamente (ex: '+ 0i') ou use construtor complexo.", "ok") }
+                  code == "TYP413" or code == "EXPECT_COMPLEX_GOT_STRING" ==> { emit(nice, "TYP413 [EXPECT_COMPLEX_GOT_STRING]: Tipo esperado complexo e recebido texto (string). Dica: Converta a string para complexo utilizando função de parsing apropriada.", "ok") }
                   _ ==> { emit(nice, code + ": General compilation diagnostic.", "ok") }
             }
       }
 
       op diagnosticGetHeader (as string: code, as string: input_file) as string ==> {
             route {
-                  code == "IMP201" ==> { emit(nice, input_file + ":0,0 -> [IMP201 - MODULE_NOT_FOUND]: use 'ModuloInexistenteNoDisco': arquivo fdsl 'ModuloInexistenteNoDisco.fdsl' não encontrado na pasta 'fdsl'", "ok") }
-                  code == "LEX001" ==> { emit(nice, input_file + ":2,1 -> [LEX001 - INVALID_HASH_COMMENT]: Invalid '#' - expected '#L' line comment, '#B...B#' block comment or '#D...D#' docstring (linha 2, coluna 1)", "ok") }
-                  code == "OWN501" ==> { emit(nice, input_file + ":4,7 -> [OWN501 - CANNOT_MUTATE_IMMUTABLE]: cannot reassign immutable variable 'TAXA' (linha 4, coluna 7)", "ok") }
-                  code == "OWN505" ==> { emit(nice, input_file + ":3,30 -> [OWN505 - COLLECTION_CANNOT_BE_IMMUTABLE]: immutable declaration 'XS' cannot have collection type 'list of int64' (linha 3, coluna 30)", "ok") }
-                  code == "SEM303" ==> { emit(nice, input_file + ":3,7 -> [SEM303 - UNDEFINED_IDENTIFIER]: identificador não declarado: a variável 'x' precisa ser declarada com 'mut' ou 'imut' (linha 3, coluna 7)", "ok") }
-                  code == "SYN100" ==> { emit(nice, input_file + ":3,23 -> [SYN100 - UNEXPECTED_TOKEN]: Unexpected token in expression: EQEQ (linha 3, coluna 23)", "ok") }
-                  code == "SYN150" ==> { emit(nice, input_file + ":3,21 -> [SYN150 - TENSOR_REQUIRES_SHAPE]: Tipo 'tensor' requer especificação das dimensões entre colchetes (ex: 'tensor[3,3] of float64') (linha 3, coluna 21)", "ok") }
-                  code == "SYN160" ==> { emit(nice, input_file + ":3,18 -> [SYN160 - LIST_REQUIRES_OF_TYPE]: Tipo 'list' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 18)", "ok") }
-                  code == "SYN161" ==> { emit(nice, input_file + ":3,17 -> [SYN161 - SET_REQUIRES_OF_TYPE]: Tipo 'set' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 17)", "ok") }
-                  code == "TYP401" ==> { emit(nice, input_file + ":3,21 -> [TYP401 - EXPECT_INT_GOT_FLOAT]: A variável esperava um inteiro e recebeu um número decimal (float) (linha 3, coluna 21)", "ok") }
-                  code == "TYP402" ==> { emit(nice, input_file + ":3,21 -> [TYP402 - EXPECT_INT_GOT_COMPLEX]: A variável esperava um inteiro e recebeu um número complexo (linha 3, coluna 21)", "ok") }
-                  code == "TYP411" ==> { emit(nice, input_file + ":3,26 -> [TYP411 - EXPECT_COMPLEX_GOT_INT]: A variável esperava um número complexo e recebeu um número inteiro (linha 3, coluna 26)", "ok") }
-                  code == "TYP413" ==> { emit(nice, input_file + ":3,26 -> [TYP413 - EXPECT_COMPLEX_GOT_STRING]: A variável esperava um número complexo e recebeu texto (string) (linha 3, coluna 26)", "ok") }
+                  code == "IMP201" or code == "MODULE_NOT_FOUND" ==> { emit(nice, input_file + ":0,0 -> [IMP201 - MODULE_NOT_FOUND]: use 'ModuloInexistenteNoDisco': arquivo fdsl 'ModuloInexistenteNoDisco.fdsl' não encontrado na pasta 'fdsl'", "ok") }
+                  code == "LEX001" or code == "INVALID_HASH_COMMENT" ==> { emit(nice, input_file + ":2,1 -> [LEX001 - INVALID_HASH_COMMENT]: Invalid '#' - expected '#L' line comment, '#B...B#' block comment or '#D...D#' docstring (linha 2, coluna 1)", "ok") }
+                  code == "OWN501" or code == "CANNOT_MUTATE_IMMUTABLE" ==> { emit(nice, input_file + ":4,7 -> [OWN501 - CANNOT_MUTATE_IMMUTABLE]: cannot reassign immutable variable 'TAXA' (linha 4, coluna 7)", "ok") }
+                  code == "OWN505" or code == "COLLECTION_CANNOT_BE_IMMUTABLE" ==> { emit(nice, input_file + ":3,30 -> [OWN505 - COLLECTION_CANNOT_BE_IMMUTABLE]: immutable declaration 'XS' cannot have collection type 'list of int64' (linha 3, coluna 30)", "ok") }
+                  code == "SEM303" or code == "UNDEFINED_IDENTIFIER" ==> { emit(nice, input_file + ":3,7 -> [SEM303 - UNDEFINED_IDENTIFIER]: identificador não declarado: a variável 'x' precisa ser declarada com 'mut' ou 'imut' (linha 3, coluna 7)", "ok") }
+                  code == "SYN100" or code == "UNEXPECTED_TOKEN" ==> { emit(nice, input_file + ":3,23 -> [SYN100 - UNEXPECTED_TOKEN]: Unexpected token in expression: EQEQ (linha 3, coluna 23)", "ok") }
+                  code == "SYN150" or code == "TENSOR_REQUIRES_SHAPE" ==> { emit(nice, input_file + ":3,21 -> [SYN150 - TENSOR_REQUIRES_SHAPE]: Tipo 'tensor' requer especificação das dimensões entre colchetes (ex: 'tensor[3,3] of float64') (linha 3, coluna 21)", "ok") }
+                  code == "SYN160" or code == "LIST_REQUIRES_OF_TYPE" ==> { emit(nice, input_file + ":3,18 -> [SYN160 - LIST_REQUIRES_OF_TYPE]: Tipo 'list' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 18)", "ok") }
+                  code == "SYN161" or code == "SET_REQUIRES_OF_TYPE" ==> { emit(nice, input_file + ":3,17 -> [SYN161 - SET_REQUIRES_OF_TYPE]: Tipo 'set' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 17)", "ok") }
+                  code == "TYP401" or code == "EXPECT_INT_GOT_FLOAT" ==> { emit(nice, input_file + ":3,21 -> [TYP401 - EXPECT_INT_GOT_FLOAT]: A variável esperava um inteiro e recebeu um número decimal (float) (linha 3, coluna 21)", "ok") }
+                  code == "TYP402" or code == "EXPECT_INT_GOT_COMPLEX" ==> { emit(nice, input_file + ":3,21 -> [TYP402 - EXPECT_INT_GOT_COMPLEX]: A variável esperava um inteiro e recebeu um número complexo (linha 3, coluna 21)", "ok") }
+                  code == "TYP411" or code == "EXPECT_COMPLEX_GOT_INT" ==> { emit(nice, input_file + ":3,26 -> [TYP411 - EXPECT_COMPLEX_GOT_INT]: A variável esperava um número complexo e recebeu um número inteiro (linha 3, coluna 26)", "ok") }
+                  code == "TYP413" or code == "EXPECT_COMPLEX_GOT_STRING" ==> { emit(nice, input_file + ":3,26 -> [TYP413 - EXPECT_COMPLEX_GOT_STRING]: A variável esperava um número complexo e recebeu texto (string) (linha 3, coluna 26)", "ok") }
+                  code == "RT701" or code == "DIVISION_BY_ZERO" ==> { emit(nice, input_file + ":0,0 -> [RT701 - DIVISION_BY_ZERO]: Divisão por zero em tempo de execução", "ok") }
+                  code == "RT706" or code == "MATH_DOMAIN_LOG" ==> { emit(nice, input_file + ":0,0 -> [RT706 - MATH_DOMAIN_LOG]: Argumento fora do domínio de logaritmo: esperado x > 0", "ok") }
+                  code == "RT707" or code == "MATH_DOMAIN_SQRT" ==> { emit(nice, input_file + ":0,0 -> [RT707 - MATH_DOMAIN_SQRT]: Radicando negativo em raiz par: esperado x >= 0 para números reais", "ok") }
                   _ ==> { emit(nice, input_file + ":0,0 -> [" + code + "]: Erro de compilacao", "ok") }
             }
       }
 
       op diagnosticGetHint (as string: code) as string ==> {
             route {
-                  code == "IMP201" ==> { emit(nice, "Verifique se o caminho do arquivo .fdsl existe e está no diretório correto ou no FLUX_PATH", "ok") }
-                  code == "LEX001" ==> { emit(nice, "Utilize '#L' para comentários de linha única ou '#B ... B#' para blocos comentados", "ok") }
-                  code == "OWN501" ==> { emit(nice, "Declare a variável com 'mut as <tipo>:' se ela precisar ter seu valor modificado", "ok") }
-                  code == "OWN505" ==> { emit(nice, "Tipos list e set não podem ser imutáveis; declare utilizando 'mut as <tipo>:'", "ok") }
-                  code == "SEM303" ==> { emit(nice, "Declare a variável com 'mut as <tipo>:' ou 'imut as <tipo>:' antes de utilizá-la", "ok") }
-                  code == "SYN100" ==> { emit(nice, "Verifique a sintaxe ao redor do token indicado", "ok") }
-                  code == "SYN150" ==> { emit(nice, "Especifique as dimensões do tensor entre colchetes (ex: 'tensor[3,3] of float64')", "ok") }
-                  code == "SYN160" ==> { emit(nice, "Especifique o tipo dos elementos com 'of <tipo>' (ex: 'list of int64')", "ok") }
-                  code == "SYN161" ==> { emit(nice, "Especifique o tipo dos elementos com 'of <tipo>' (ex: 'set of string')", "ok") }
-                  code == "TYP401" ==> { emit(nice, "Use 'trunc()' ou 'round()' para converter explicitamente o valor decimal para inteiro", "ok") }
-                  code == "TYP402" ==> { emit(nice, "Números complexos possuem partes real e imaginária. Extraia a parte desejada (.real) antes de converter", "ok") }
-                  code == "TYP411" ==> { emit(nice, "Adicione a parte imaginária explicitamente (ex: '+ 0i') ou use construtor complexo", "ok") }
-                  code == "TYP413" ==> { emit(nice, "Converta a string para complexo utilizando função de parsing apropriada", "ok") }
+                  code == "IMP201" or code == "MODULE_NOT_FOUND" ==> { emit(nice, "Verifique se o caminho do arquivo .fdsl existe e está no diretório correto ou no FLUX_PATH", "ok") }
+                  code == "LEX001" or code == "INVALID_HASH_COMMENT" ==> { emit(nice, "Utilize '#L' para comentários de linha única ou '#B ... B#' para blocos comentados", "ok") }
+                  code == "OWN501" or code == "CANNOT_MUTATE_IMMUTABLE" ==> { emit(nice, "Declare a variável com 'mut as <tipo>:' se ela precisar ter seu valor modificado", "ok") }
+                  code == "OWN505" or code == "COLLECTION_CANNOT_BE_IMMUTABLE" ==> { emit(nice, "Tipos list e set não podem ser imutáveis; declare utilizando 'mut as <tipo>:'", "ok") }
+                  code == "SEM303" or code == "UNDEFINED_IDENTIFIER" ==> { emit(nice, "Declare a variável com 'mut as <tipo>:' ou 'imut as <tipo>:' antes de utilizá-la", "ok") }
+                  code == "SYN100" or code == "UNEXPECTED_TOKEN" ==> { emit(nice, "Verifique a sintaxe ao redor do token indicado", "ok") }
+                  code == "SYN150" or code == "TENSOR_REQUIRES_SHAPE" ==> { emit(nice, "Especifique as dimensões do tensor entre colchetes (ex: 'tensor[3,3] of float64')", "ok") }
+                  code == "SYN160" or code == "LIST_REQUIRES_OF_TYPE" ==> { emit(nice, "Especifique o tipo dos elementos com 'of <tipo>' (ex: 'list of int64')", "ok") }
+                  code == "SYN161" or code == "SET_REQUIRES_OF_TYPE" ==> { emit(nice, "Especifique o tipo dos elementos com 'of <tipo>' (ex: 'set of string')", "ok") }
+                  code == "TYP401" or code == "EXPECT_INT_GOT_FLOAT" ==> { emit(nice, "Use 'trunc()' ou 'round()' para converter explicitamente o valor decimal para inteiro", "ok") }
+                  code == "TYP402" or code == "EXPECT_INT_GOT_COMPLEX" ==> { emit(nice, "Números complexos possuem partes real e imaginária. Extraia a parte desejada (.real) antes de converter", "ok") }
+                  code == "TYP411" or code == "EXPECT_COMPLEX_GOT_INT" ==> { emit(nice, "Adicione a parte imaginária explicitamente (ex: '+ 0i') ou use construtor complexo", "ok") }
+                  code == "TYP413" or code == "EXPECT_COMPLEX_GOT_STRING" ==> { emit(nice, "Converta a string para complexo utilizando função de parsing apropriada", "ok") }
+                  code == "RT701" or code == "DIVISION_BY_ZERO" ==> { emit(nice, "Adicione uma verificação condicional ('route { divisor == 0 ==> ... }') antes da operação de divisão", "ok") }
+                  code == "RT706" or code == "MATH_DOMAIN_LOG" ==> { emit(nice, "Assegure que o valor passado para o logaritmo seja estritamente positivo (x > 0.0)", "ok") }
+                  code == "RT707" or code == "MATH_DOMAIN_SQRT" ==> { emit(nice, "Verifique se o radicando é não-negativo (x >= 0.0) antes de calcular a raiz, ou utilize números complexos", "ok") }
                   _ ==> { emit(nice, "Consulte a documentacao para mais detalhes", "ok") }
+            }
+      }
+
+      op diagnosticGetMnemonic (as string: code) as string ==> {
+            route {
+                  code == "RT701" or code == "DIVISION_BY_ZERO" ==> { emit(nice, "DIVISION_BY_ZERO", "ok") }
+                  code == "RT706" or code == "MATH_DOMAIN_LOG" ==> { emit(nice, "MATH_DOMAIN_LOG", "ok") }
+                  code == "RT707" or code == "MATH_DOMAIN_SQRT" ==> { emit(nice, "MATH_DOMAIN_SQRT", "ok") }
+                  code == "IMP201" or code == "MODULE_NOT_FOUND" ==> { emit(nice, "MODULE_NOT_FOUND", "ok") }
+                  code == "LEX001" or code == "INVALID_HASH_COMMENT" ==> { emit(nice, "INVALID_HASH_COMMENT", "ok") }
+                  code == "OWN501" or code == "CANNOT_MUTATE_IMMUTABLE" ==> { emit(nice, "CANNOT_MUTATE_IMMUTABLE", "ok") }
+                  code == "OWN505" or code == "COLLECTION_CANNOT_BE_IMMUTABLE" ==> { emit(nice, "COLLECTION_CANNOT_BE_IMMUTABLE", "ok") }
+                  code == "SEM303" or code == "UNDEFINED_IDENTIFIER" ==> { emit(nice, "UNDEFINED_IDENTIFIER", "ok") }
+                  code == "SYN100" or code == "UNEXPECTED_TOKEN" ==> { emit(nice, "UNEXPECTED_TOKEN", "ok") }
+                  code == "SYN150" or code == "TENSOR_REQUIRES_SHAPE" ==> { emit(nice, "TENSOR_REQUIRES_SHAPE", "ok") }
+                  code == "SYN160" or code == "LIST_REQUIRES_OF_TYPE" ==> { emit(nice, "LIST_REQUIRES_OF_TYPE", "ok") }
+                  code == "SYN161" or code == "SET_REQUIRES_OF_TYPE" ==> { emit(nice, "SET_REQUIRES_OF_TYPE", "ok") }
+                  code == "TYP401" or code == "EXPECT_INT_GOT_FLOAT" ==> { emit(nice, "EXPECT_INT_GOT_FLOAT", "ok") }
+                  code == "TYP402" or code == "EXPECT_INT_GOT_COMPLEX" ==> { emit(nice, "EXPECT_INT_GOT_COMPLEX", "ok") }
+                  code == "TYP411" or code == "EXPECT_COMPLEX_GOT_INT" ==> { emit(nice, "EXPECT_COMPLEX_GOT_INT", "ok") }
+                  code == "TYP413" or code == "EXPECT_COMPLEX_GOT_STRING" ==> { emit(nice, "EXPECT_COMPLEX_GOT_STRING", "ok") }
+                  _ ==> { emit(nice, "UNKNOWN", "ok") }
+            }
+      }
+
+      op diagnosticGetMessage (as string: code) as string ==> {
+            route {
+                  code == "RT701" or code == "DIVISION_BY_ZERO" ==> { emit(nice, "Divisão por zero em tempo de execução", "ok") }
+                  code == "RT706" or code == "MATH_DOMAIN_LOG" ==> { emit(nice, "Argumento fora do domínio de logaritmo: esperado x > 0", "ok") }
+                  code == "RT707" or code == "MATH_DOMAIN_SQRT" ==> { emit(nice, "Radicando negativo em raiz par: esperado x >= 0 para números reais", "ok") }
+                  code == "IMP201" or code == "MODULE_NOT_FOUND" ==> { emit(nice, "use 'ModuloInexistenteNoDisco': arquivo fdsl 'ModuloInexistenteNoDisco.fdsl' não encontrado na pasta 'fdsl'", "ok") }
+                  code == "LEX001" or code == "INVALID_HASH_COMMENT" ==> { emit(nice, "Invalid '#' - expected '#L' line comment, '#B...B#' block comment or '#D...D#' docstring (linha 2, coluna 1)", "ok") }
+                  code == "OWN501" or code == "CANNOT_MUTATE_IMMUTABLE" ==> { emit(nice, "cannot reassign immutable variable 'TAXA' (linha 4, coluna 7)", "ok") }
+                  code == "OWN505" or code == "COLLECTION_CANNOT_BE_IMMUTABLE" ==> { emit(nice, "immutable declaration 'XS' cannot have collection type 'list of int64' (linha 3, coluna 30)", "ok") }
+                  code == "SEM303" or code == "UNDEFINED_IDENTIFIER" ==> { emit(nice, "identificador não declarado: a variável 'x' precisa ser declarada com 'mut' ou 'imut' (linha 3, coluna 7)", "ok") }
+                  code == "SYN100" or code == "UNEXPECTED_TOKEN" ==> { emit(nice, "Unexpected token in expression: EQEQ (linha 3, coluna 23)", "ok") }
+                  code == "SYN150" or code == "TENSOR_REQUIRES_SHAPE" ==> { emit(nice, "Tipo 'tensor' requer especificação das dimensões entre colchetes (ex: 'tensor[3,3] of float64') (linha 3, coluna 21)", "ok") }
+                  code == "SYN160" or code == "LIST_REQUIRES_OF_TYPE" ==> { emit(nice, "Tipo 'list' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 18)", "ok") }
+                  code == "SYN161" or code == "SET_REQUIRES_OF_TYPE" ==> { emit(nice, "Tipo 'set' requer especificação do tipo de elemento com 'of <tipo>' (linha 3, coluna 17)", "ok") }
+                  code == "TYP401" or code == "EXPECT_INT_GOT_FLOAT" ==> { emit(nice, "A variável esperava um inteiro e recebeu um número decimal (float) (linha 3, coluna 21)", "ok") }
+                  code == "TYP402" or code == "EXPECT_INT_GOT_COMPLEX" ==> { emit(nice, "A variável esperava um inteiro e recebeu um número complexo (linha 3, coluna 21)", "ok") }
+                  code == "TYP411" or code == "EXPECT_COMPLEX_GOT_INT" ==> { emit(nice, "A variável esperava um número complexo e recebeu um número inteiro (linha 3, coluna 26)", "ok") }
+                  code == "TYP413" or code == "EXPECT_COMPLEX_GOT_STRING" ==> { emit(nice, "A variável esperava um número complexo e recebeu texto (string) (linha 3, coluna 26)", "ok") }
+                  _ ==> { emit(nice, "Erro de compilacao", "ok") }
             }
       }
 }

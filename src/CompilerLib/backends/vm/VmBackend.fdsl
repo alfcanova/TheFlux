@@ -6,6 +6,7 @@
 contract (VmBackendContract) {
       op vmCompileFmir (as map: fmir_module) as map
       op vmEmitBytecodeJson (as map: fmir_module) as string
+      op vmEscapeJson (as string: s) as string
 }
 
 agent (CompilerLib) impl VmBackendContract {
@@ -14,6 +15,7 @@ agent (CompilerLib) impl VmBackendContract {
             mut as int64: n = stdCollectionLength(instrs)
 
             mut as list of data: bc_ops = []
+            mut as map: labels = map{}
             bc_ops = stdListPushBack(bc_ops, ["SCOPE_ENTER"])
 
             mut as int64: i = 1
@@ -32,11 +34,19 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["DECLARE", res, "mut"])
                                     }
                                     opcode == "CONST_INT" ==> {
-                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 as int64])
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH_INT", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
                                     opcode == "CONST_FLOAT" ==> {
-                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 as float64])
+                                          mut as string: fval = a1
+                                          mut as int64: flen = stdCollectionLength(fval)
+                                          route {
+                                                flen > 0 and fval[1] == "." ==> {
+                                                      fval = "0" + fval
+                                                }
+                                                _ ==> {}
+                                          }
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH_FLOAT", fval])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
                                     opcode == "CONST_STR" ==> {
@@ -44,14 +54,14 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
                                     opcode == "CONST_BOOL" ==> {
-                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 == "true"])
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH_BOOL", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
-                                    opcode == "LOAD" ==> {
-                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                    opcode == "CONST_COMPLEX" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["PUSH", a1 + "+" + a2 + "i"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
-                                    opcode == "STORE" ==> {
+                                    opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
@@ -82,24 +92,116 @@ agent (CompilerLib) impl VmBackendContract {
                                     opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
-                                          bc_ops = stdListPushBack(bc_ops, ["MOD"])
+                                          bc_ops = stdListPushBack(bc_ops, ["REM"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
-                                    opcode == "BINOP_==" or opcode == "BINOP_!=" or opcode == "BINOP_<" or opcode == "BINOP_<=" or opcode == "BINOP_>" or opcode == "BINOP_>=" ==> {
+                                    opcode == "BINOP_==" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
-                                          bc_ops = stdListPushBack(bc_ops, [opcode])
+                                          bc_ops = stdListPushBack(bc_ops, ["EQ"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_!=" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["NE"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_<" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["LT"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_<=" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["LE"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_>" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["GT"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_>=" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["GE"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_&" or opcode == "BINOP_band" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["BAND"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_|" or opcode == "BINOP_bor" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["BOR"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_^" or opcode == "BINOP_bxor" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["BXOR"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_<<" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["BSHL"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_>>" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["BSHR"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_>>>" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["BSHRU"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "UNARY_-" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["NEG"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "UNARY_not" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["NOT"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_and" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["AND"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_or" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["OR"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
                                     opcode == "LABEL" ==> {
-                                          bc_ops = stdListPushBack(bc_ops, ["LABEL", a1])
+                                          labels[a1] = stdCollectionLength(bc_ops)
                                     }
                                     opcode == "JUMP" ==> {
-                                          bc_ops = stdListPushBack(bc_ops, ["JUMP", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["JMP", a1])
                                     }
-                                    opcode == "JUMP_IF_FALSE" or opcode == "JUMP_IF_TRUE" ==> {
+                                    opcode == "JUMP_IF_FALSE" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
-                                          bc_ops = stdListPushBack(bc_ops, [opcode, a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["JZ", a2])
+                                    }
+                                    opcode == "JUMP_IF_TRUE" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["JNZ", a2])
                                     }
                                     opcode == "CALL" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["CALL", a1, a2])
@@ -107,11 +209,72 @@ agent (CompilerLib) impl VmBackendContract {
                                     }
                                     opcode == "PRINT" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
-                                          bc_ops = stdListPushBack(bc_ops, ["PRINTLN"])
+                                          bc_ops = stdListPushBack(bc_ops, ["PRINTLN", "1"])
                                     }
                                     opcode == "EMIT" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["EMIT", "nice"])
+                                    }
+                                    opcode == "LIST_INIT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["MAKE_LIST", "0"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "MAP_INIT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["MAKE_MAP", "0"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "SET_INIT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["MAKE_SET", "0"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "GET_INDEX" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["INDEX"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "SET_INDEX" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", res])
+                                          bc_ops = stdListPushBack(bc_ops, ["INDEX_ASSIGN"])
+                                    }
+                                    opcode == "GET_FIELD" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["FIELD_ACCESS", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "SET_FIELD" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["FIELD_SET", a2])
+                                    }
+                                    opcode == "STRUCT_INIT" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["MAKE_STRUCT", a1, "0"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "STRUCT_SET_FIELD" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", res])
+                                          bc_ops = stdListPushBack(bc_ops, ["FIELD_SET", a1])
+                                    }
+                                    opcode == "GET_SLICE" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["SLICE"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "COLL_LEN" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["CALL", "len"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "CAST" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["CAST", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "NOP" ==> {
                                     }
                                     _ ==> {
                                           bc_ops = stdListPushBack(bc_ops, [opcode, a1, a2, res])
@@ -125,6 +288,35 @@ agent (CompilerLib) impl VmBackendContract {
             bc_ops = stdListPushBack(bc_ops, ["SCOPE_EXIT"])
             bc_ops = stdListPushBack(bc_ops, ["HALT"])
 
+            mut as int64: num_ops = stdCollectionLength(bc_ops)
+            mut as list of data: resolved_ops = []
+            mut as int64: oi = 1
+            infinite {
+                  route {
+                        oi > num_ops ==> { break }
+                        _ ==> {
+                              mut as list of data: cur_op = bc_ops[oi]
+                              mut as string: op_name = "" + cur_op[1]
+                              route {
+                                    op_name == "JMP" or op_name == "JZ" or op_name == "JNZ" ==> {
+                                          mut as string: tgt = "" + cur_op[2]
+                                          route {
+                                                stdMapContainsKey(labels, tgt) ==> {
+                                                      mut as int64: tgt_idx = labels[tgt]
+                                                      cur_op[2] = "" + tgt_idx
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              resolved_ops = stdListPushBack(resolved_ops, cur_op)
+                              oi = oi + 1
+                        }
+                  }
+            }
+            bc_ops = resolved_ops
+
             mut as map: result = map{}
             result["ops"] = bc_ops
             result["count"] = stdCollectionLength(bc_ops)
@@ -137,7 +329,7 @@ agent (CompilerLib) impl VmBackendContract {
             mut as list of data: ops = res["ops"]
             mut as int64: n = stdCollectionLength(ops)
 
-            mut as string: json = "{\n  \"ops\": [\n"
+            mut as string: json = "[\n"
             mut as int64: i = 1
             infinite {
                   route {
@@ -149,13 +341,37 @@ agent (CompilerLib) impl VmBackendContract {
                                     i < n ==> { comma = "," }
                                     _ ==> {}
                               }
-                              mut as string: op_name = "" + op_tuple[1]
-                              mut as string: entry = "    [\"" + op_name + "\""
-                              route {
-                                    stdCollectionLength(op_tuple) > 1 ==> {
-                                          entry = entry + ", \"" + op_tuple[2] + "\""
+                              mut as string: entry = "  ["
+                              mut as int64: k = 1
+                              mut as int64: op_len = stdCollectionLength(op_tuple)
+                              infinite {
+                                    route {
+                                          k > op_len ==> { break }
+                                          _ ==> {
+                                                mut as string: el_comma = ""
+                                                route {
+                                                      k < op_len ==> { el_comma = ", " }
+                                                      _ ==> {}
+                                                }
+                                                mut as string: v_str = "" + op_tuple[k]
+                                                mut as string: op0 = "" + op_tuple[1]
+                                                route {
+                                                      (op0 == "PUSH_INT" or op0 == "PUSH_FLOAT" or op0 == "PUSH_BOOL") and k == 1 ==> {
+                                                            entry = entry + "\"PUSH\"" + el_comma
+                                                      }
+                                                      (op0 == "PUSH_INT" or op0 == "PUSH_FLOAT" or op0 == "PUSH_BOOL") and k == 2 ==> {
+                                                            entry = entry + v_str + el_comma
+                                                      }
+                                                      (op0 == "JMP" or op0 == "JZ" or op0 == "JNZ" or op0 == "PRINT" or op0 == "PRINTLN") and k == 2 ==> {
+                                                            entry = entry + v_str + el_comma
+                                                      }
+                                                      _ ==> {
+                                                            entry = entry + "\"" + vmEscapeJson(v_str) + "\"" + el_comma
+                                                      }
+                                                }
+                                                k = k + 1
+                                          }
                                     }
-                                    _ ==> {}
                               }
                               entry = entry + "]" + comma + "\n"
                               json = json + entry
@@ -163,7 +379,31 @@ agent (CompilerLib) impl VmBackendContract {
                         }
                   }
             }
-            json = json + "  ]\n}"
+            json = json + "]\n"
             emit(nice, json, "ok")
+      }
+
+      op vmEscapeJson (as string: s) as string ==> {
+            mut as int64: slen = stdCollectionLength(s)
+            mut as string: res = ""
+            mut as int64: idx = 1
+            infinite {
+                  route {
+                        idx > slen ==> { break }
+                        _ ==> {
+                              mut as string: ch = s[idx]
+                              route {
+                                    ch == "\"" ==> { res = res + "\\" + "\"" }
+                                    ch == "\\" ==> { res = res + "\\" + "\\" }
+                                    ch == "\n" ==> { res = res + "\\" + "n" }
+                                    ch == "\r" ==> { res = res + "\\" + "r" }
+                                    ch == "\t" ==> { res = res + "\\" + "t" }
+                                    _ ==> { res = res + ch }
+                              }
+                              idx = idx + 1
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
       }
 }

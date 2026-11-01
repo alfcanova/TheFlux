@@ -102,6 +102,7 @@ typedef enum {
     OP_ITER_NEXT,
     OP_UNWRAP_NICE,
     OP_SPY,
+    OP_NOP,
     OP_COUNT
 } FvmOpcode;
 

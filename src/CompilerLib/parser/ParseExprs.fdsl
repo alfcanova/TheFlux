@@ -84,7 +84,7 @@ agent (CompilerLib) impl ParseExprsContract {
                               }
                         }
                   }
-                  cval == "." ==> {
+                  cval == "." and ctype == "OP" ==> {
                         mut as map: ftok = tokenStreamPeek(ts)
                         mut as string: fv = "" + ftok["val"]
                         ts = tokenStreamAdvance(ts)
@@ -249,8 +249,9 @@ agent (CompilerLib) impl ParseExprsContract {
                               _ ==> {
                                     mut as map: ptok = tokenStreamPeek(ts)
                                     mut as string: pv = "" + ptok["val"]
+                                    mut as string: pt = "" + ptok["type"]
                                     mut as int64: pv_len = stdCollectionLength(pv)
-                                    mut as bool: is_record = (pv == "." or (pv_len > 1 and pv[1] == "."))
+                                    mut as bool: is_record = ((pv == "." and pt == "OP") or (pv_len > 1 and pv[1] == "."))
                                     route {
                                           is_record ==> {
                                                 mut as list of data: kv_ids = []
@@ -270,7 +271,7 @@ agent (CompilerLib) impl ParseExprsContract {
                                                                   mut as string: dot_key_str = ""
                                                                   mut as int64: mv_len = stdCollectionLength(mv)
                                                                   route {
-                                                                        mv == "." ==> {
+                                                                        mv == "." and m_tok["type"] == "OP" ==> {
                                                                               is_dot_key = true
                                                                               ts = tokenStreamAdvance(ts)
                                                                               mut as map: kn_tok = tokenStreamPeek(ts)
@@ -369,7 +370,7 @@ agent (CompilerLib) impl ParseExprsContract {
                                                       mut as string: dot_key_str = ""
                                                       mut as int64: mv_len = stdCollectionLength(mv)
                                                       route {
-                                                            mv == "." ==> {
+                                                            mv == "." and m_tok["type"] == "OP" ==> {
                                                                   is_dot_key = true
                                                                   ts = tokenStreamAdvance(ts)
                                                                   mut as map: kn_tok = tokenStreamPeek(ts)
@@ -442,8 +443,9 @@ agent (CompilerLib) impl ParseExprsContract {
                                     #L  Verifica se e instanciacao de struct com .campo:
                                     mut as map: peek_arg = tokenStreamPeek(ts)
                                     mut as string: pav = "" + peek_arg["val"]
+                                    mut as string: pat = "" + peek_arg["type"]
                                     route {
-                                          pav == "." ==> {
+                                          pav == "." and pat == "OP" ==> {
                                                 mut as list of data: field_pairs = []
                                                 infinite {
                                                       mut as map: ftok = tokenStreamPeek(ts)
@@ -456,7 +458,7 @@ agent (CompilerLib) impl ParseExprsContract {
                                                             fv == "," or fv == "\\n" or ftok["type"] == "NEWLINE" ==> {
                                                                   ts = tokenStreamAdvance(ts)
                                                             }
-                                                            fv == "." ==> {
+                                                            fv == "." and ftok["type"] == "OP" ==> {
                                                                   ts = tokenStreamAdvance(ts)
                                                                   mut as map: fntok = tokenStreamPeek(ts)
                                                                   mut as string: fname = "" + fntok["val"]
@@ -578,7 +580,7 @@ agent (CompilerLib) impl ParseExprsContract {
 
                   route {
                         #L  1. Acesso a campo ou chamada com ponto: .campo ou .metodo(...)
-                        cval == "." ==> {
+                        cval == "." and ctype == "OP" ==> {
                               ts = tokenStreamAdvance(ts)
                               mut as map: ftok = tokenStreamPeek(ts)
                               mut as string: fname = "" + ftok["val"]
@@ -642,8 +644,9 @@ agent (CompilerLib) impl ParseExprsContract {
                                           }
                                           mut as map: peek_arg2 = tokenStreamPeek(ts)
                                           mut as string: pav2 = "" + peek_arg2["val"]
+                                          mut as string: pat2 = "" + peek_arg2["type"]
                                           route {
-                                                pav2 == "." ==> {
+                                                pav2 == "." and pat2 == "OP" ==> {
                                                       mut as list of data: field_pairs2 = []
                                                       infinite {
                                                             mut as map: ftok2 = tokenStreamPeek(ts)
@@ -656,7 +659,7 @@ agent (CompilerLib) impl ParseExprsContract {
                                                                   fv2 == "," or fv2 == "\\n" or ftok2["type"] == "NEWLINE" ==> {
                                                                         ts = tokenStreamAdvance(ts)
                                                                   }
-                                                                  fv2 == "." ==> {
+                                                                  fv2 == "." and ftok2["type"] == "OP" ==> {
                                                                         ts = tokenStreamAdvance(ts)
                                                                         mut as map: fntok2 = tokenStreamPeek(ts)
                                                                         mut as string: fname2 = "" + fntok2["val"]
@@ -893,7 +896,7 @@ agent (CompilerLib) impl ParseExprsContract {
             mut as string: cval = "" + cur["val"]
 
             route {
-                  cval == "-" or cval == "+" or cval == "not" or cval == "!" or cval == "~" or cval == "&" or cval == "*" ==> {
+                  (ctype == "OP" or ctype == "KEYWORD") and (cval == "-" or cval == "+" or cval == "not" or cval == "!" or cval == "~" or cval == "&" or cval == "*") ==> {
                         mut as map: ts = tokenStreamAdvance(stream)
                         mut as string: u_op = cval
                         mut as map: u_res = parseUnary(ts, arena)
