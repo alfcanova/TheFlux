@@ -50,9 +50,17 @@ artifacts/
 # ------------------------------------------------------------------------------
 # 5. Saídas de Compilação, Binários e Intermediários do Compilador
 # ------------------------------------------------------------------------------
-intermediates/
 temp/
-scratch/
+
+# Bancos de dados em dbs/ (preservando .gitkeep)
+dbs/*
+!dbs/.gitkeep
+build/*.db*
+build/*.kv
+build/*.unqlite
+build/*.duckdb
+build/*.kuzu*
+build/*.obx*
 build/intermediates/*
 !build/intermediates/.gitkeep
 build/intermediates/tmp/*

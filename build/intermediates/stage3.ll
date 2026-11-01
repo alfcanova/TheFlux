@@ -146,7 +146,7 @@ declare i64 @flux_std_datetime_monotonic_elapsed(i64)
 @.str.78 = private unnamed_addr constant [6 x i8] c"error\00", align 1
 @.str.79 = private unnamed_addr constant [6 x i8] c"arena\00", align 1
 @.str.80 = private unnamed_addr constant [8 x i8] c"root_id\00", align 1
-@.str.81 = private unnamed_addr constant [19 x i8] c"intermediates/ast/\00", align 1
+@.str.81 = private unnamed_addr constant [25 x i8] c"build/intermediates/ast/\00", align 1
 @.str.82 = private unnamed_addr constant [6 x i8] c".json\00", align 1
 @.str.83 = private unnamed_addr constant [7 x i8] c"errors\00", align 1
 @.str.84 = private unnamed_addr constant [7 x i8] c"output\00", align 1
@@ -1460,7 +1460,7 @@ ft_55:
   %t677 = inttoptr i64 %t677_val to i8*
   %st_85 = ptrtoint i8* %t677 to i64
   store i64 %st_85, i64* %ast_json, align 8
-  %t678 = getelementptr inbounds [19 x i8], [19 x i8]* @.str.81, i32 0, i32 0
+  %t678 = getelementptr inbounds [25 x i8], [25 x i8]* @.str.81, i32 0, i32 0
   %t679_i64 = load i64, i64* %input_file, align 8
   %t679 = inttoptr i64 %t679_i64 to i8*
   %t680 = call i8* @flux_str_concat(i8* %t678, i8* %t679)

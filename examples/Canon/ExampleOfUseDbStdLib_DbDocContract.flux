@@ -5,7 +5,7 @@ program (ExampleOfUseDbStdLib_DbDocContract) {
       println("  Exemplo: DbDocContract (Documentos NoSQL JSON)")
       println("==================================================")
 
-      mut as data: c = dbDocOpen("scratch/flux_docs.unqlite")
+      mut as data: c = dbDocOpen("dbs/flux_docs.unqlite")
       println("1. docOpen (> 0): " + (c != 0))
 
       mut as int64: cnt_before = dbDocCount(c, "clientes")
@@ -29,6 +29,6 @@ program (ExampleOfUseDbStdLib_DbDocContract) {
       mut as bool: ok_close = dbDocClose(c)
       println("8. docClose: " + ok_close)
 
-      mut as data: c2 = docOpen("scratch/flux_docs.unqlite")
+      mut as data: c2 = docOpen("dbs/flux_docs.unqlite")
       println("9. Alias docClose: " + docClose(c2))
 }

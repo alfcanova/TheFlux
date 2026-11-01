@@ -1853,7 +1853,7 @@
   ["STORE", "%t677"],
   ["LOAD", "%t677"],
   ["STORE", "ast_json"],
-  ["PUSH", "intermediates/ast/"],
+  ["PUSH", "build/intermediates/ast/"],
   ["STORE", "%t678"],
   ["LOAD", "input_file"],
   ["STORE", "%t679"],

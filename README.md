@@ -93,7 +93,7 @@ A linguagem conta com **37 bibliotecas padrão contratuais** organizadas pelos 4
 
 ### 📊 2. Estruturas & Estados
 - `DateTimeStdLib/`: Manipulação de datas, horas, fusos horários e relógio monotônico de alta precisão (6 domínios).
-- `DbStdLib/`: Motores embutidos multi-modelo com persistência física em disco (`scratch/`, 7 domínios):
+- `DbStdLib/`: Motores embutidos multi-modelo com persistência física em disco (`dbs/`, 7 domínios):
   - *Relacional (SQL)*: SQLite 3.53.4
   - *Colunar / OLAP*: DuckDB
   - *Chave-Valor*: LevelDB 1.23
@@ -151,7 +151,7 @@ use DbStdLib
 
 program (ExemploBancoDeDados) {
       #L Inicialização de banco relacional embutido SQLite
-      mut as map: db = dbOpen("scratch/dados_app.db", "sqlite")
+      mut as map: db = dbOpen("dbs/dados_app.db", "sqlite")
       mut as bool: criado = dbExec(db, "CREATE TABLE IF NOT EXISTS sensores (id INT PRIMARY KEY, valor REAL)")
       mut as bool: inserido = dbExec(db, "INSERT INTO sensores VALUES (1, 98.6)")
       println("Tabela criada: " + criado + ", Dado inserido: " + inserido)
@@ -183,13 +183,14 @@ TheFlux/
 ├── examples/                    # Suítes canônicas científicas (SciAlgo e NumericalRecipes)
 │   ├── NumericalRecipes/        # 205 algoritmos dos 22 capítulos da 3ª edição com 100% de paridade
 │   └── SciAlgo/                 # 1.741 algoritmos científicos em 13 domínios com 100% de paridade
+├── build/                       # Intermediários de compilação (build/intermediates/)
+├── dbs/                         # Bancos de dados embutidos físicos padrão (DbStdLib)
 ├── fdsl/                        # Agentes de exemplo e DSLs modulares em subpastas
 │   ├── asm_dsl/                 # DSL de Assembly Inline (Lexer, Semantic, AST, Executor)
 │   ├── calc_dsl/                # DSL de Cálculo Aritmético (Lexer, Semantic, AST, Executor)
 │   ├── logo_dsl/                # DSL Logo de Navegação 2D (Lexer, Semantic, AST, Executor)
 │   └── rule_dsl/                # DSL de Regras de Negócio (Lexer, Semantic, AST, Executor)
 ├── flux/                        # 360 programas e suítes canônicas de teste (.flux)
-├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
 ├── lib/                         # Bibliotecas estáticas (libfluxrt, libfluxcompiler) e dinâmicas (DBs)
 ├── runtime/                     # Runtime C modular (include/flux/, src/)
 ├── src/                         # Compilador auto-hospedado nativo TheFlux / FDSL

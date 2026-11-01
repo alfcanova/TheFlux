@@ -5,7 +5,7 @@ program (ExampleOfUseDbStdLib_DbSqlContract) {
       println("  Exemplo: DbSqlContract (SQLite 3.53.4)")
       println("==================================================")
 
-      mut as data: c = dbSqlOpen("scratch/flux_relacional.db")
+      mut as data: c = dbSqlOpen("dbs/flux_relacional.db")
       println("1. sqlOpen (> 0): " + (c != 0))
 
       mut as bool: ex_before = dbSqlTableExists(c, "usuarios")
@@ -38,6 +38,6 @@ program (ExampleOfUseDbStdLib_DbSqlContract) {
       mut as bool: ok_close = dbSqlClose(c)
       println("11. close: " + ok_close)
 
-      mut as data: c2 = sqlOpen("scratch/flux_relacional.db")
+      mut as data: c2 = sqlOpen("dbs/flux_relacional.db")
       println("12. Alias sqlClose: " + sqlClose(c2))
 }

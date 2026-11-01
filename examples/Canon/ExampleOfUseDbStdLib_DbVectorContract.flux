@@ -5,7 +5,7 @@ program (ExampleOfUseDbStdLib_DbVectorContract) {
       println("  Exemplo: DbVectorContract (Vetores ObjectBox 5.3.2)")
       println("==================================================")
 
-      mut as data: c = dbVectorOpen("scratch/flux_vectors.obx", 4, "euclidean")
+      mut as data: c = dbVectorOpen("dbs/flux_vectors.obx", 4, "euclidean")
       println("1. vectorOpen (> 0): " + (c != 0))
 
       mut as int64: cnt_before = dbVectorCount(c)
@@ -29,6 +29,6 @@ program (ExampleOfUseDbStdLib_DbVectorContract) {
       mut as bool: ok_close = dbVectorClose(c)
       println("8. vectorClose: " + ok_close)
 
-      mut as data: c2 = vectorOpen("scratch/flux_vectors.obx", 4, "euclidean")
+      mut as data: c2 = vectorOpen("dbs/flux_vectors.obx", 4, "euclidean")
       println("9. Alias vectorClose: " + vectorClose(c2))
 }

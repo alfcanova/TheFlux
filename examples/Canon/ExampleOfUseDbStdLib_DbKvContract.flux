@@ -5,7 +5,7 @@ program (ExampleOfUseDbStdLib_DbKvContract) {
       println("  Exemplo: DbKvContract (Chave-Valor UnQLite/LevelDB)")
       println("==================================================")
 
-      mut as data: c = dbKvOpen("unqlite", "scratch/flux_kv.kv")
+      mut as data: c = dbKvOpen("unqlite", "dbs/flux_kv.kv")
       println("1. kvOpen (> 0): " + (c != 0))
 
       mut as bool: ex_before = dbKvExists(c, "sessao:101")
@@ -30,7 +30,7 @@ program (ExampleOfUseDbStdLib_DbKvContract) {
       println("8. kvClose: " + ok_close)
 
       #L Aliases
-      mut as data: c2 = kvOpen("unqlite", "scratch/flux_kv.kv")
+      mut as data: c2 = kvOpen("unqlite", "dbs/flux_kv.kv")
       println("9. Alias kvExists: " + kvExists(c2, "sessao:101"))
       println("10. Alias kvClose: " + kvClose(c2))
 }

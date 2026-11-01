@@ -6,7 +6,7 @@ program (ExampleOfUseDbStdLib_WithIoInspection) {
       println("  Exemplo: DbStdLib integrada com IoStdLib")
       println("==================================================")
 
-      mut as string: db_path = "scratch/flux_demo_io.db"
+      mut as string: db_path = "dbs/flux_demo_io.db"
 
       mut as bool: ex_before = fileExists(db_path)
       println("1. fileExists antes: " + ex_before)

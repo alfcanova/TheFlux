@@ -403,7 +403,7 @@ program (ExamplesVmr) {
                                                                   mut as string: dsub = nome[di..(di + 7)]
                                                                   route {
                                                                         dsub == "DbStdLib" ==> {
-                                                                              stdOsExec("cmd /c del /q /f scratch\\flux_*.db* scratch\\flux_*.kv scratch\\flux_*.unqlite scratch\\flux_*.duckdb scratch\\flux_*.kuzu scratch\\flux_*.obx 2>nul")
+                                                                              stdOsExec("cmd /c del /q /f dbs\\flux_*.db* dbs\\flux_*.kv dbs\\flux_*.unqlite dbs\\flux_*.duckdb dbs\\flux_*.kuzu dbs\\flux_*.obx 2>nul")
                                                                               break
                                                                         }
                                                                         _ ==> { di = di + 1 }

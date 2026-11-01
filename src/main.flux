@@ -353,7 +353,7 @@ program (Main) {
                                           route {
                                                 flag_emit_ast ==> {
                                                       mut as string: ast_json = CompilerLib::parseDumpAst(parse_res)
-                                                      stdIoWriteFile("intermediates/ast/" + input_file + ".json", ast_json)
+                                                      stdIoWriteFile("build/intermediates/ast/" + input_file + ".json", ast_json)
                                                 }
                                                 _ ==> {}
                                           }

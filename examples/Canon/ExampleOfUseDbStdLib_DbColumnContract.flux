@@ -5,7 +5,7 @@ program (ExampleOfUseDbStdLib_DbColumnContract) {
       println("  Exemplo: DbColumnContract (Colunar DuckDB 1.5.6)")
       println("==================================================")
 
-      mut as data: c = dbColumnOpen("scratch/flux_columnar.duckdb")
+      mut as data: c = dbColumnOpen("dbs/flux_columnar.duckdb")
       println("1. columnOpen (> 0): " + (c != 0))
 
       mut as bool: ok_create = dbColumnExecute(c, "CREATE TABLE metricas (id INT, valor DOUBLE)")
@@ -29,6 +29,6 @@ program (ExampleOfUseDbStdLib_DbColumnContract) {
       mut as bool: ok_close = dbColumnClose(c)
       println("8. columnClose: " + ok_close)
 
-      mut as data: c2 = columnOpen("scratch/flux_columnar.duckdb")
+      mut as data: c2 = columnOpen("dbs/flux_columnar.duckdb")
       println("9. Alias columnClose: " + columnClose(c2))
 }
