@@ -1,140 +1,109 @@
 /* ==============================================================================
- * TheFlux Native Runtime: Fast Hash Map
+ * TheFlux Native Runtime: Fast Map (List-backed map conforming to Flux SIMD)
  * Source: runtime/src/collections/map.c
  * ============================================================================== */
 
 #include "flux/collections.h"
-#include "flux/string.h"
+#include "flux/types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define INITIAL_MAP_CAP 16
+typedef struct {
+    int64_t key_ptr;
+    int64_t tag;
+    int64_t val;
+} flux_map_entry_t;
 
-FluxMap *flux_map_create(size_t initial_cap) {
-    if (initial_cap == 0) initial_cap = INITIAL_MAP_CAP;
-    FluxMap *map = (FluxMap *)malloc(sizeof(FluxMap));
-    if (!map) return NULL;
-    map->entries = (FluxMapEntry *)calloc(initial_cap, sizeof(FluxMapEntry));
-    map->count = 0;
-    map->capacity = initial_cap;
-    return map;
-}
-
-static void map_resize(FluxMap *map, size_t new_cap) {
-    FluxMapEntry *old_entries = map->entries;
-    size_t old_cap = map->capacity;
-
-    map->entries = (FluxMapEntry *)calloc(new_cap, sizeof(FluxMapEntry));
-    map->capacity = new_cap;
-    map->count = 0;
-
-    for (size_t i = 0; i < old_cap; i++) {
-        if (old_entries[i].occupied) {
-            flux_hashmap_set(map, old_entries[i].key, old_entries[i].value);
-            free(old_entries[i].key);
-        }
-    }
-    free(old_entries);
-}
-
-void flux_hashmap_set(FluxMap *map, const char *key, FluxValue val) {
-    if (!map || !key) return;
-    if (map->count * 2 >= map->capacity) {
-        map_resize(map, map->capacity * 2);
-    }
-    uint32_t hash = flux_str_hash(key);
-    size_t idx = hash % map->capacity;
-
-    while (map->entries[idx].occupied) {
-        if (strcmp(map->entries[idx].key, key) == 0) {
-            map->entries[idx].value = val;
-            return;
-        }
-        idx = (idx + 1) % map->capacity;
-    }
-
-    map->entries[idx].key = strdup(key);
-    map->entries[idx].value = val;
-    map->entries[idx].hash = hash;
-    map->entries[idx].occupied = true;
-    map->count++;
-}
-
-bool flux_hashmap_get(FluxMap *map, const char *key, FluxValue *out) {
-    if (!map || !key || map->count == 0) return false;
-    uint32_t hash = flux_str_hash(key);
-    size_t idx = hash % map->capacity;
-
-    while (map->entries[idx].occupied) {
-        if (strcmp(map->entries[idx].key, key) == 0) {
-            if (out) *out = map->entries[idx].value;
-            return true;
-        }
-        idx = (idx + 1) % map->capacity;
-    }
-    return false;
-}
-
-bool flux_hashmap_has(FluxMap *map, const char *key) {
-    return flux_hashmap_get(map, key, NULL);
-}
-
+extern void *flux_list_build(int64_t n, int64_t tag);
 extern int64_t flux_list_len(void *p);
-size_t flux_map_len(FluxMap *map) {
-    if (!map) return 0;
-    return map->count;
-}
-
-void flux_map_free(FluxMap *map) {
-    if (!map) return;
-    for (size_t i = 0; i < map->capacity; i++) {
-        if (map->entries[i].occupied) {
-            free(map->entries[i].key);
-        }
-    }
-    free(map->entries);
-    free(map);
-}
 
 void *flux_map_build(int64_t cap) {
-    return flux_map_create((size_t)(cap > 0 ? cap : 16));
+    flux_simd_list_t *h = (flux_simd_list_t *)flux_list_build(cap > 0 ? cap : 8, 7);
+    if (!h) return NULL;
+    h->len = 0;
+    h->kind = 2; /* 2 = map */
+    return h;
+}
+
+static void map_grow(flux_simd_list_t *map, int64_t min_cap) {
+    if (map->cap >= min_cap) return;
+    int64_t new_cap = map->cap * 2;
+    if (new_cap < min_cap) new_cap = min_cap;
+    flux_map_entry_t *new_entries = (flux_map_entry_t *)realloc(
+        (void *)(uintptr_t)map->data_ptr,
+        (size_t)new_cap * sizeof(flux_map_entry_t)
+    );
+    if (new_entries) {
+        map->data_ptr = (int64_t)(uintptr_t)new_entries;
+        map->cap = new_cap;
+    }
+}
+
+static int64_t map_find_entry(flux_simd_list_t *map, const char *key) {
+    if (!map || !key || map->len <= 0 || !map->data_ptr) return -1;
+    flux_map_entry_t *entries = (flux_map_entry_t *)(uintptr_t)map->data_ptr;
+    for (int64_t i = 0; i < map->len; i++) {
+        const char *k = (const char *)(uintptr_t)entries[i].key_ptr;
+        if (k && strcmp(k, key) == 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void *flux_map_set(void *p, const char *key, int64_t vtag, int64_t vval) {
     if (!p || !key) return p;
-    FluxMap *map = (FluxMap *)p;
-    FluxValue val;
-    val.tag = (FluxTypeTag)vtag;
-    val.as.ival = vval;
-    flux_hashmap_set(map, key, val);
+    flux_simd_list_t *map = (flux_simd_list_t *)p;
+    int64_t idx = map_find_entry(map, key);
+    flux_map_entry_t *entries = (flux_map_entry_t *)(uintptr_t)map->data_ptr;
+    if (idx >= 0) {
+        entries[idx].tag = vtag;
+        entries[idx].val = vval;
+        return p;
+    }
+    map_grow(map, map->len + 1);
+    entries = (flux_map_entry_t *)(uintptr_t)map->data_ptr;
+    int64_t n = map->len;
+    entries[n].key_ptr = (int64_t)(uintptr_t)strdup(key);
+    entries[n].tag = vtag;
+    entries[n].val = vval;
+    map->len = n + 1;
     return p;
 }
 
 int64_t flux_map_get(void *p, const char *key) {
     if (!p || !key) return 0;
-    FluxMap *map = (FluxMap *)p;
-    FluxValue out;
-    if (flux_hashmap_get(map, key, &out)) {
-        return out.as.ival;
+    flux_simd_list_t *map = (flux_simd_list_t *)p;
+    int64_t idx = map_find_entry(map, key);
+    if (idx >= 0) {
+        flux_map_entry_t *entries = (flux_map_entry_t *)(uintptr_t)map->data_ptr;
+        return entries[idx].val;
     }
     return 0;
 }
 
 int64_t flux_map_get_tag(void *p, const char *key) {
     if (!p || !key) return 0;
-    FluxMap *map = (FluxMap *)p;
-    FluxValue out;
-    if (flux_hashmap_get(map, key, &out)) {
-        return (int64_t)out.tag;
+    flux_simd_list_t *map = (flux_simd_list_t *)p;
+    int64_t idx = map_find_entry(map, key);
+    if (idx >= 0) {
+        flux_map_entry_t *entries = (flux_map_entry_t *)(uintptr_t)map->data_ptr;
+        return entries[idx].tag;
     }
     return 0;
 }
 
 bool flux_map_contains_key(void *p, const char *key) {
     if (!p || !key) return false;
-    FluxMap *map = (FluxMap *)p;
-    return flux_hashmap_has(map, key);
+    flux_simd_list_t *map = (flux_simd_list_t *)p;
+    return map_find_entry(map, key) >= 0;
+}
+
+size_t flux_map_len(void *p) {
+    if (!p) return 0;
+    flux_simd_list_t *map = (flux_simd_list_t *)p;
+    return (size_t)map->len;
 }
 
 void flux_hashmap_set_val(void *map, const char *key, int64_t val) {
@@ -150,37 +119,26 @@ void flux_map_print(void *p) {
         printf("{}\n");
         return;
     }
-    FluxMap *map = (FluxMap *)p;
-    FluxValue v_val, v_sta, v_msg;
-    if (flux_hashmap_get(map, "sta", &v_sta) && flux_hashmap_get(map, "msg", &v_msg) && flux_hashmap_get(map, "val", &v_val)) {
-        if (v_val.tag == FLUX_TYPE_STRING) {
-            printf("%s\n", v_val.as.sval ? v_val.as.sval : "");
-        } else if (v_val.tag == FLUX_TYPE_FLOAT64) {
-            printf("%.17g\n", v_val.as.fval);
-        } else if (v_val.tag == FLUX_TYPE_BOOL) {
-            printf("%s\n", v_val.as.bval ? "true" : "false");
-        } else {
-            printf("%lld\n", (long long)v_val.as.ival);
-        }
-        return;
-    }
+    flux_simd_list_t *map = (flux_simd_list_t *)p;
+    flux_map_entry_t *entries = (flux_map_entry_t *)(uintptr_t)map->data_ptr;
     printf("{");
-    size_t printed = 0;
-    for (size_t i = 0; i < map->capacity; i++) {
-        if (map->entries[i].occupied) {
-            if (printed > 0) printf(", ");
-            printf("\"%s\": ", map->entries[i].key ? map->entries[i].key : "");
-            FluxValue v = map->entries[i].value;
-            if (v.tag == FLUX_TYPE_STRING) {
-                printf("\"%s\"", v.as.sval ? v.as.sval : "");
-            } else if (v.tag == FLUX_TYPE_FLOAT64) {
-                printf("%.17g", v.as.fval);
-            } else if (v.tag == FLUX_TYPE_BOOL) {
-                printf("%s", v.as.bval ? "true" : "false");
-            } else {
-                printf("%lld", (long long)v.as.ival);
-            }
-            printed++;
+    for (int64_t i = 0; i < map->len; i++) {
+        if (i > 0) printf(", ");
+        const char *k = (const char *)(uintptr_t)entries[i].key_ptr;
+        printf("\"%s\": ", k ? k : "");
+        int64_t tag = entries[i].tag;
+        int64_t val = entries[i].val;
+        if (tag == 4) {
+            char *s = (char *)(uintptr_t)val;
+            printf("\"%s\"", s ? s : "");
+        } else if (tag == 3) {
+            double d;
+            memcpy(&d, &val, sizeof(double));
+            printf("%.17g", d);
+        } else if (tag == 2) {
+            printf("%s", val ? "true" : "false");
+        } else {
+            printf("%lld", (long long)val);
         }
     }
     printf("}\n");

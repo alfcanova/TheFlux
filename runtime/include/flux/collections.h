@@ -19,7 +19,7 @@ typedef struct {
     size_t capacity;
 } FluxList;
 
-FluxList *flux_list_create(size_t initial_cap);
+void *flux_list_create(size_t initial_cap);
 void flux_list_append(FluxList *list, FluxValue val);
 FluxValue flux_list_get(FluxList *list, size_t index);
 void flux_list_set(FluxList *list, size_t index, FluxValue val);
@@ -44,7 +44,7 @@ FluxMap *flux_map_create(size_t initial_cap);
 void flux_hashmap_set(FluxMap *map, const char *key, FluxValue val);
 bool flux_hashmap_get(FluxMap *map, const char *key, FluxValue *out);
 bool flux_hashmap_has(FluxMap *map, const char *key);
-size_t flux_map_len(FluxMap *map);
+size_t flux_map_len(void *map);
 void flux_map_free(FluxMap *map);
 
 /* Set */

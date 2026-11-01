@@ -56,7 +56,6 @@ build/intermediates/*
 !build/intermediates/.gitkeep
 build/intermediates/tmp/*
 !build/intermediates/tmp/.gitkeep
-bin/
 
 # Pastas de testes t_* preservadas via .gitkeep
 t_fvmbc/*

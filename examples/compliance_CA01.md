@@ -43,7 +43,7 @@
 | ExampleOfData.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfDataflow.flux                                              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfDatetime.flux                                              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfEmit.flux                                                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfEmit.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 4
 
@@ -51,11 +51,11 @@
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfEnsure.flux                                                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfEnum.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfFail.flux                                                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfFail.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfFibonacci.flux                                             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfFloat.flux                                                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfFloatType.flux                                             |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfFunction.flux                                              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfFunction.flux                                              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfFunctionReturn.flux                                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfImpl.flux                                                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfImut.flux                                                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -84,11 +84,11 @@
 | ExampleOfMeta.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ❌  |  ❌  |   ❌   |
 | ExampleOfMove.flux                                                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfMut.flux                                                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfNice.flux                                                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfNice.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfNone.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfOf.flux                                                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfOp.flux                                                    |  ✅  |  ✅  |  ✅  |  ❌  |  ❌  |  ❌  |   ❌   |
-| ExampleOfPrint.flux                                                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfPrint.flux                                                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 7
 
@@ -110,7 +110,7 @@
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfSet.flux                                                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfShortCircuit.flux                                          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfShortCircuit.flux                                          |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfSlices.flux                                                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfSortBitonic.flux                                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfSortBogo.flux                                              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -148,7 +148,7 @@
 | ExampleOfStringInterpolation.flux                                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfStringType.flux                                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfStruct.flux                                                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfStructuredErrors.flux                                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfStructuredErrors.flux                                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 11
 
@@ -223,7 +223,7 @@
 | ExampleOfUseDebugStdLib_DebugStateContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseDslStdLib_DslAsmContract.flux                           |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseDslStdLib_DslAstContract.flux                           |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseDslStdLib_DslExecutionContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseDslStdLib_DslExecutionContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 16
 
@@ -231,9 +231,9 @@
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseDslStdLib_DslLexerContract.flux                         |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseDslStdLib_DslParserContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseDslStdLib_DslSandboxContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseDslStdLib_DslSandboxContract.flux                       |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseDslStdLib_LogoDsl.flux                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseDslStdLib_UserDslFolder.flux                            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseDslStdLib_UserDslFolder.flux                            |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseFileSignatureStdLib_FileAuthSignatureContract.flux      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseFileSignatureStdLib_FileDirectorySignatureContract.flux |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseFileSignatureStdLib_FileFormatSignatureContract.flux    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -244,10 +244,10 @@
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
-| ExampleOfUseFinStdLib_FinComparisonContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseFinStdLib_FinDecimalContract.flux                       |  ❌  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseFinStdLib_FinDepreciationContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseFinStdLib_FinFormatContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseFinStdLib_FinComparisonContract.flux                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinDecimalContract.flux                       |  ❌  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinDepreciationContract.flux                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinFormatContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseFinStdLib_FinRateContract.flux                          |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseFinStdLib_FinTimeValueOfMoneyContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseFormatStdLib_FormatCsvContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -265,7 +265,7 @@
 | ExampleOfUseFsmStdLib_FsmExecutionContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseFsmStdLib_FsmExportContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseFsmStdLib_FsmQueryContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseGfxStdLib_GfxCameraContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseGfxStdLib_GfxCameraContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseGfxStdLib_GfxCollisionContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseGfxStdLib_GfxColorContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseGfxStdLib_GfxConstantsContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -327,7 +327,7 @@
 | ExampleOfUseLinAlgStdLib_MatrixDecompositionContract.flux           |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseLinAlgStdLib_MatrixEigenContract.flux                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseLinAlgStdLib_MatrixEigenvectors.flux                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseLinAlgStdLib_MatrixFactoryContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_MatrixFactoryContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseLinAlgStdLib_MatrixQRContract.flux                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 23
@@ -335,22 +335,22 @@
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseLinAlgStdLib_MatrixSVDContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseLinAlgStdLib_Tensor3x3x3.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_Tensor3x3x3.flux                           |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseLinAlgStdLib_TensorArithmeticContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_TensorCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseLinAlgStdLib_TensorEinsumContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseLinAlgStdLib_TensorElementwiseContract.flux             |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseLinAlgStdLib_TensorMathContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorMultilinearContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorReductionContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseLinAlgStdLib_TensorStridesContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_TensorMultilinearContract.flux             |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_TensorReductionContract.flux               |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_TensorStridesContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 24
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseLinAlgStdLib_TensorTransformContract.flux               |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseLinAlgStdLib_VectorGeometryContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseLinAlgStdLib_VectorGeometryContract.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseListStdLib_ListAccessContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseListStdLib_ListAggregateContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseListStdLib_ListBasicContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -396,7 +396,7 @@
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseMathStdLib_AngleConversionContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ❌  |  ❌  |   ❌   |
 | ExampleOfUseMathStdLib_BasicArithmeticContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseMathStdLib_CombinatoricsContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseMathStdLib_CombinatoricsContract.flux                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseMathStdLib_ExponentialLogContract.flux                  |  ✅  |  ✅  |  ✅  |  ❌  |  ❌  |  ❌  |   ❌   |
 | ExampleOfUseMathStdLib_FloatElementaryContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseMathStdLib_HyperbolicContract.flux                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
@@ -415,9 +415,9 @@
 | ExampleOfUseNetStdLib_NetIpContract.flux                            |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseNetStdLib_NetSocketContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseNetStdLib_NetUrlContract.flux                           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseOoStdLib_OoCastingContract.flux                         |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseOoStdLib_OoDispatchContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseOoStdLib_OoIntrospectionContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOoStdLib_OoCastingContract.flux                         |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseOoStdLib_OoDispatchContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseOoStdLib_OoIntrospectionContract.flux                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseOoStdLib_OoLifecycleContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 29
@@ -426,7 +426,7 @@
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseOoStdLib_OoValidationContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseOoStdlib_EncapsulamentoImutabilidadeCampos.flux         |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseOoStdlib_EncapsulamentoModuloAgente.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseOoStdlib_EncapsulamentoModuloAgente.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseOoStdlib_HerancaComportamentoContratos.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseOoStdlib_HerancaDadosComposicao.flux                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseOoStdlib_PolimorfismoDinamico.flux                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
@@ -471,7 +471,7 @@
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseRuntimeStdLib_RuntimeHostContract.flux                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseRuntimeStdLib_RuntimeMemoryContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseRuntimeStdLib_RuntimeTypeContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseRuntimeStdLib_RuntimeTypeContract.flux                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSetStdLib_SetAccessContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSetStdLib_SetAggregateContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSetStdLib_SetAlgebraContract.flux                       |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
@@ -488,11 +488,11 @@
 | ExampleOfUseSetStdLib_SetTransformContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSetStdLib_SetUtilityContract.flux                       |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSimdStdLib_SimdMaskContract.flux                        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseSimdStdLib_SimdMatrixContract.flux                      |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSimdStdLib_SimdMatrixContract.flux                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSimdStdLib_SimdVectorArithmeticContract.flux            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSimdStdLib_SimdVectorReductionContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStatStdLib_StatCentralTendencyContract.flux             |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseStatStdLib_StatCorrelationContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatCorrelationContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseStatStdLib_StatDispersionContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 
 ### Tabela de conformidade — página 34
@@ -503,7 +503,7 @@
 | ExampleOfUseStatStdLib_StatInferenceContract.flux                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseStatStdLib_StatOrderAndQuantilesContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStatStdLib_StatShapeContract.flux                       |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseStatStdLib_StatSummaryContract.flux                     |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStatStdLib_StatSummaryContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseStringStdLib_StringAccessContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringBasicContract.flux                   |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringMutationContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -517,21 +517,21 @@
 | ExampleOfUseStringStdLib_StringTransformContract.flux               |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringUtilityContract.flux                 |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStringStdLib_StringValidationContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseStructStdLib_StructConversionContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseStructStdLib_StructConversionContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseStructStdLib_StructCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStructStdLib_StructIntrospectionContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseStructStdLib_StructMemoryContract.flux                  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicCalculusContract.flux            |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicCoreContract.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseSymbolicStdLib_SymbolicFormatContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicFormatContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 
 ### Tabela de conformidade — página 36
 
 | arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
 | ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
 | ExampleOfUseSymbolicStdLib_SymbolicMatrixContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
-| ExampleOfUseSymbolicStdLib_SymbolicPolyContract.flux                |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
-| ExampleOfUseSymbolicStdLib_SymbolicSolverContract.flux              |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
+| ExampleOfUseSymbolicStdLib_SymbolicPolyContract.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseSymbolicStdLib_SymbolicSolverContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
 | ExampleOfUseSymbolicStdLib_SymbolicSubstitutionContract.flux        |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicTransformContract.flux           |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
 | ExampleOfUseSymbolicStdLib_SymbolicValidationContract.flux          |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |  ✅  |   ✅   |
@@ -565,16 +565,52 @@
 
 ### Resumo de Conformidade:
 
--    POSITIVOS : ✅  236 of  360 — ✅
+-    POSITIVOS : ✅  202 of  360 — ✅
 -  DIAGNÓSTICO : ✅   16 of   16 — ✅
 -           IN : ✅  373 of  376 — ✅
 -           VM : ✅  376 of  376 — ✅
 -          VMR : ✅  376 of  376 — ✅
--         LLVM : ✅  253 of  376 — ✅
+-         LLVM : ✅  218 of  376 — ✅
 -          WAT : ✅  368 of  376 — ✅
 -         WASM : ✅  368 of  376 — ✅
--  TOTAL GERAL : ✅ 2114 of 2256 — ✅
+-  TOTAL GERAL : ✅ 2079 of 2256 — ✅
 
 ### Regressão:
 
-Nenhuma regressão detectada.
+| arquivo                                                             |  in   |  vm  |  vmr | llvm |  wat | wasm  | result |
+| ------------------------------------------------------------------- | ----- | ---- | ---- | ---- | ---- | ----- | ------ |
+| ExampleOfEmit.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfFail.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfFunction.flux                                              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfNice.flux                                                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfPrint.flux                                                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfShortCircuit.flux                                          |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfStructuredErrors.flux                                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseDslStdLib_DslExecutionContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseDslStdLib_DslSandboxContract.flux                       |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseDslStdLib_UserDslFolder.flux                            |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinComparisonContract.flux                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinDecimalContract.flux                       |  ❌  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinDepreciationContract.flux                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseFinStdLib_FinFormatContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseGfxStdLib_GfxCameraContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_MatrixFactoryContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_Tensor3x3x3.flux                           |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_TensorCoreContract.flux                    |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_TensorMultilinearContract.flux             |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_TensorReductionContract.flux               |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_TensorStridesContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseLinAlgStdLib_VectorGeometryContract.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseMathStdLib_CombinatoricsContract.flux                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseOoStdLib_OoCastingContract.flux                         |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseOoStdLib_OoDispatchContract.flux                        |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseOoStdLib_OoIntrospectionContract.flux                   |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseOoStdlib_EncapsulamentoModuloAgente.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseRuntimeStdLib_RuntimeTypeContract.flux                  |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseSimdStdLib_SimdMatrixContract.flux                      |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseStatStdLib_StatCorrelationContract.flux                 |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseStatStdLib_StatSummaryContract.flux                     |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseStructStdLib_StructConversionContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseSymbolicStdLib_SymbolicFormatContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseSymbolicStdLib_SymbolicPolyContract.flux                |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |
+| ExampleOfUseSymbolicStdLib_SymbolicSolverContract.flux              |  ✅  |  ✅  |  ✅  |  ❌  |  ✅  |  ✅  |   ❌   |

@@ -365,7 +365,7 @@ gantt
 | **M2: Backend LLVM FDSL** | Lowering de AST/FMIR para LLVM IR implementado 100% em `LlvmBackend.fdsl`. | `bin/fluxc.exe --target llvm src/main.flux` gera `stage2.ll` semanticamente idêntico sem acionar Python. | **Completa e Ok** |
 | **M3: FVM & WASM Nativos** | Implementação de `VmCompiler.fdsl`, `VmRuntime.fdsl`, `WatBackend.fdsl` e `WasmBackend.fdsl`. | 376 testes em `flux/` compilam e executam nos alvos `vm`, `vmr`, `wat` e `wasm` puramente em FDSL. | **Completa e Ok** |
 | **M4: Desacoplamento de CLI** | Remoção de todo o bloco de fallback externo em `src/main.flux`. | `bin/fluxc.exe` não contém strings `"python"` ou referências a `flux_proto`. | **Completa e Ok** |
-| **M5: Fixpoint 100% Nativo** | Execução de `scripts/bootstrap.bat` do início ao fim sem interpretador Python. | `SHA256(stage2.ll) == SHA256(stage3.ll)` de forma reproduzível e determinística. | Pendente |
+| **M5: Fixpoint 100% Nativo** | Execução de `scripts/bootstrap.bat` do início ao fim sem interpretador Python. | `SHA256(stage2.ll) == SHA256(stage3.ll)` de forma reproduzível e determinística. | **Completa e Ok** |
 | **M6: Tooling & Arquivo** | Migração de `exemplos_*.py` para `.flux` e transferência de `flux_proto/` e `legacy/` para `archive/`. | Repositório compila e roda a suíte de 1741 testes SciAlgo e 205 NumericalRecipes com zero dependências de Python. | Pendente |
 
 ---

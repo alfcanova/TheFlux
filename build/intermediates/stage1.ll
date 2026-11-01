@@ -1627,7 +1627,7 @@ arm_51_0_body:
   %sconcat.770 = call i8* @flux_str_concat(i8* %sconcat.769, i8* getelementptr inbounds ([8 x i8], [8 x i8]* @.str.86, i32 0, i32 0))
   %t771 = load i8*, i8** %s_output_path.15
   %sconcat.772 = call i8* @flux_str_concat(i8* %sconcat.770, i8* %t771)
-  %sconcat.773 = call i8* @flux_str_concat(i8* %sconcat.772, i8* getelementptr inbounds ([51 x i8], [51 x i8]* @.str.87, i32 0, i32 0))
+  %sconcat.773 = call i8* @flux_str_concat(i8* %sconcat.772, i8* getelementptr inbounds ([66 x i8], [66 x i8]* @.str.87, i32 0, i32 0))
   store i8* %sconcat.773, i8** %s_clang_cmd.767
   %t776 = load i8*, i8** %s_clang_cmd.767
   %os_exec.775 = call i64 @flux_std_os_exec(i8* %t776)
@@ -65552,7 +65552,7 @@ entry:
 @.str.84 = private unnamed_addr constant [3 x i8] c"lv\00"
 @.str.85 = private unnamed_addr constant [65 x i8] c"clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \22\00"
 @.str.86 = private unnamed_addr constant [8 x i8] c".exe\22 \22\00"
-@.str.87 = private unnamed_addr constant [51 x i8] c".ll\22 -Lbin -lfluxrt -ladvapi32 -lws2_32 -lkernel32\00"
+@.str.87 = private unnamed_addr constant [66 x i8] c".ll\22 -Lbin -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32\00"
 @.str.88 = private unnamed_addr constant [6 x i8] c".exe\22\00"
 @.str.89 = private unnamed_addr constant [8 x i8] c".fvmbc\22\00"
 @.str.90 = private unnamed_addr constant [4 x i8] c"wat\00"

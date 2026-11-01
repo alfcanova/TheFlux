@@ -1,92 +1,88 @@
 /* ==============================================================================
- * TheFlux Native Runtime: Dynamic Vector / List
+ * TheFlux Native Runtime: Dynamic Vector / List (Conforming to Flux SIMD)
  * Source: runtime/src/collections/list.c
  * ============================================================================== */
 
 #include "flux/collections.h"
+#include "flux/types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define INITIAL_LIST_CAP 8
+void *flux_list_build(int64_t n, int64_t tag) {
+    flux_simd_list_t *h = (flux_simd_list_t *)malloc(sizeof(flux_simd_list_t));
+    if (!h) return NULL;
+    int64_t cap = (n + 1 > 1) ? (n + 1) : 1;
+    flux_simd_row_t *d = (flux_simd_row_t *)malloc((size_t)cap * sizeof(flux_simd_row_t));
+    h->len = n;
+    h->cap = cap;
+    h->tag = tag;
+    h->data_ptr = (int64_t)(uintptr_t)d;
+    h->kind = 0; /* 0 = list */
+    return h;
+}
 
-FluxList *flux_list_create(size_t initial_cap) {
-    if (initial_cap == 0) initial_cap = INITIAL_LIST_CAP;
-    FluxList *list = (FluxList *)malloc(sizeof(FluxList));
+static void list_grow(flux_simd_list_t *lst, int64_t min_cap) {
+    if (lst->cap >= min_cap) return;
+    int64_t new_cap = lst->cap * 2;
+    if (new_cap < min_cap) new_cap = min_cap;
+    flux_simd_row_t *new_rows = (flux_simd_row_t *)realloc(
+        (void *)(uintptr_t)lst->data_ptr,
+        (size_t)new_cap * sizeof(flux_simd_row_t)
+    );
+    if (new_rows) {
+        lst->data_ptr = (int64_t)(uintptr_t)new_rows;
+        lst->cap = new_cap;
+    }
+}
+
+void *flux_list_create(size_t initial_cap) {
+    flux_simd_list_t *lst = (flux_simd_list_t *)flux_list_build(0, 0);
+    if (lst && initial_cap > 1) {
+        list_grow(lst, (int64_t)initial_cap);
+    }
+    return lst;
+}
+
+void *flux_list_push(void *list, int64_t tag, int64_t ival, const char *sval) {
     if (!list) return NULL;
-    list->items = (FluxValue *)malloc(sizeof(FluxValue) * initial_cap);
-    list->length = 0;
-    list->capacity = initial_cap;
+    flux_simd_list_t *l = (flux_simd_list_t *)list;
+    list_grow(l, l->len + 1);
+    flux_simd_row_t *rows = (flux_simd_row_t *)(uintptr_t)l->data_ptr;
+    int64_t n = l->len;
+    rows[n].tag = tag;
+    rows[n].val = (tag == 4 && sval) ? (int64_t)(uintptr_t)sval : ival;
+    rows[n].sval = (int64_t)(uintptr_t)sval;
+    l->len = n + 1;
     return list;
 }
 
-void flux_list_append(FluxList *list, FluxValue val) {
-    if (!list) return;
-    if (list->length >= list->capacity) {
-        size_t new_cap = list->capacity * 2;
-        FluxValue *new_items = (FluxValue *)realloc(list->items, sizeof(FluxValue) * new_cap);
-        if (!new_items) return;
-        list->items = new_items;
-        list->capacity = new_cap;
-    }
-    list->items[list->length++] = val;
-}
-
-FluxValue flux_list_get(FluxList *list, size_t index) {
-    if (!list || index >= list->length) {
-        FluxValue nil_val;
-        nil_val.tag = FLUX_TYPE_NIL;
-        nil_val.as.pval = NULL;
-        return nil_val;
-    }
-    return list->items[index];
-}
-
-void flux_list_set(FluxList *list, size_t index, FluxValue val) {
-    if (!list || index >= list->length) return;
-    list->items[index] = val;
-}
-
-size_t flux_list_count(FluxList *list) {
-    return list ? list->length : 0;
-}
-
-void flux_list_free(FluxList *list) {
-    if (!list) return;
-    if (list->items) free(list->items);
-    free(list);
-}
-
-void *flux_list_build(int64_t cap, int64_t elem_tag) {
-    (void)elem_tag;
-    return flux_list_create((size_t)(cap > 0 ? cap : 16));
-}
-
 void flux_list_push_val(void *list, int64_t val) {
-    if (!list) return;
-    FluxList *l = (FluxList *)list;
-    FluxValue v;
-    v.tag = FLUX_TYPE_INT64;
-    v.as.ival = val;
-    flux_list_append(l, v);
+    flux_list_push(list, 1, val, NULL);
 }
 
 int64_t flux_list_get_val(void *list, int64_t index) {
     if (!list) return 0;
-    FluxList *l = (FluxList *)list;
-    if (index >= 1 && (size_t)index <= l->length) {
-        return l->items[index - 1].as.ival;
+    flux_simd_list_t *l = (flux_simd_list_t *)list;
+    /* TheFlux uses 1-based indexing for collections */
+    if (index >= 1 && index <= l->len) {
+        flux_simd_row_t *rows = (flux_simd_row_t *)(uintptr_t)l->data_ptr;
+        if (!rows) return 0;
+        return rows[index - 1].val;
     }
-    if (index >= 0 && (size_t)index < l->length) {
-        return l->items[index].as.ival;
+    /* 0-based fallback if index == 0 */
+    if (index == 0 && l->len > 0) {
+        flux_simd_row_t *rows = (flux_simd_row_t *)(uintptr_t)l->data_ptr;
+        if (!rows) return 0;
+        return rows[0].val;
     }
     return 0;
 }
 
 int64_t flux_list_len(void *list) {
     if (!list) return 0;
-    FluxList *l = (FluxList *)list;
-    return (int64_t)l->length;
+    flux_simd_list_t *l = (flux_simd_list_t *)list;
+    return l->len;
 }
 
 void flux_list_print(void *p) {
@@ -94,19 +90,24 @@ void flux_list_print(void *p) {
         printf("[]\n");
         return;
     }
-    FluxList *list = (FluxList *)p;
+    flux_simd_list_t *list = (flux_simd_list_t *)p;
+    flux_simd_row_t *rows = (flux_simd_row_t *)(uintptr_t)list->data_ptr;
     printf("[");
-    for (size_t i = 0; i < list->length; i++) {
+    for (int64_t i = 0; i < list->len; i++) {
         if (i > 0) printf(", ");
-        FluxValue v = list->items[i];
-        if (v.tag == FLUX_TYPE_STRING) {
-            printf("\"%s\"", v.as.sval ? v.as.sval : "");
-        } else if (v.tag == FLUX_TYPE_FLOAT64) {
-            printf("%.17g", v.as.fval);
-        } else if (v.tag == FLUX_TYPE_BOOL) {
-            printf("%s", v.as.bval ? "true" : "false");
+        int64_t tag = rows[i].tag;
+        int64_t val = rows[i].val;
+        if (tag == 4) {
+            char *s = (char *)(uintptr_t)val;
+            printf("\"%s\"", s ? s : "");
+        } else if (tag == 3) {
+            double d;
+            memcpy(&d, &val, sizeof(double));
+            printf("%.17g", d);
+        } else if (tag == 2) {
+            printf("%s", val ? "true" : "false");
         } else {
-            printf("%lld", (long long)v.as.ival);
+            printf("%lld", (long long)val);
         }
     }
     printf("]\n");
