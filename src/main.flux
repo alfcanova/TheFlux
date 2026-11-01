@@ -403,7 +403,7 @@ program (Main) {
                                                       #L Pos-processamento de execucao nativa por alvo
                                                       route {
                                                             target == "llvm" or target == "lv" ==> {
-                                                                  mut as string: clang_cmd = "clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" -Lbin -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32"
+                                                                  mut as string: clang_cmd = "clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32"
                                                                   mut as int64: cl_rc = stdOsExec(clang_cmd)
                                                                   route {
                                                                         cl_rc != 0 ==> { stdOsExit(cl_rc) }

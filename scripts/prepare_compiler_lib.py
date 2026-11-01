@@ -3,7 +3,7 @@ import re
 with open('build/intermediates/stage1.ll', 'r', encoding='utf-8') as f:
     s = f.read()
 
-# 1. Update clang command in stage1 to link -lfluxcompiler
+# 1. Update clang command in stage1 to link -Llib -lfluxcompiler
 s = s.replace(
     '([51 x i8], [51 x i8]* @.str.87, i32 0, i32 0)',
     '([66 x i8], [66 x i8]* @.str.87, i32 0, i32 0)',
@@ -11,7 +11,12 @@ s = s.replace(
 )
 s = s.replace(
     '@.str.87 = private unnamed_addr constant [51 x i8] c".ll\\22 -Lbin -lfluxrt -ladvapi32 -lws2_32 -lkernel32\\00"',
+    '@.str.87 = private unnamed_addr constant [66 x i8] c".ll\\22 -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32\\00"',
+    1
+)
+s = s.replace(
     '@.str.87 = private unnamed_addr constant [66 x i8] c".ll\\22 -Lbin -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32\\00"',
+    '@.str.87 = private unnamed_addr constant [66 x i8] c".ll\\22 -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32\\00"',
     1
 )
 

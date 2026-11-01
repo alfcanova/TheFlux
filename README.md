@@ -178,6 +178,7 @@ O compilador TheFlux suporta resolução modular recursiva em subpastas dentro d
 
 ```text
 TheFlux/
+├── bin/                         # Executáveis nativos (fluxc, fluxvm, compliance runners)
 ├── docs/                        # Especificação EBNF, gramática, manuais de DB e documentação técnica
 ├── examples/                    # Suítes canônicas científicas (SciAlgo e NumericalRecipes)
 │   ├── NumericalRecipes/        # 205 algoritmos dos 22 capítulos da 3ª edição com 100% de paridade
@@ -189,7 +190,8 @@ TheFlux/
 │   └── rule_dsl/                # DSL de Regras de Negócio (Lexer, Semantic, AST, Executor)
 ├── flux/                        # 360 programas e suítes canônicas de teste (.flux)
 ├── intermediates/               # Saídas intermediárias (ast, lexer, llvm, semantic, wasm, wat)
-├── runtime/                     # Runtime C modular (include/flux/, src/) e libfluxrt.a
+├── lib/                         # Bibliotecas estáticas (libfluxrt, libfluxcompiler) e dinâmicas (DBs)
+├── runtime/                     # Runtime C modular (include/flux/, src/)
 ├── src/                         # Compilador auto-hospedado nativo TheFlux / FDSL
 │   ├── CompilerLib/             # Lexer, Parser, AST, Semântica, FMIR e Backends (LLVM/VM/WAT/WASM)
 │   ├── Fvm/                     # Compilador e Máquina Virtual Bytecode (.fvmbc) em FDSL

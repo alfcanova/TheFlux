@@ -25,18 +25,18 @@ bash scripts/build_runtime.sh
 
 # 2. Boot-0.5: Compiler Library
 echo "[+] [Boot-0.5] Empacotando libfluxcompiler.a..."
-mkdir -p build/intermediates bin
+mkdir -p build/intermediates bin lib
 if [ -f "build/intermediates/stage1_compiler.ll" ]; then
     clang -O2 -Wno-deprecated-declarations -Wno-override-module -c build/intermediates/stage1_compiler.ll -o build/intermediates/stage1_compiler.o
 fi
 
-rm -f bin/libfluxcompiler.a bin/fluxcompiler.lib
-llvm-ar rc bin/libfluxcompiler.a build/intermediates/stage1_compiler.o
-cp -f bin/libfluxcompiler.a bin/fluxcompiler.lib 2>/dev/null || true
+rm -f lib/libfluxcompiler.a lib/fluxcompiler.lib
+llvm-ar rc lib/libfluxcompiler.a build/intermediates/stage1_compiler.o
+cp -f lib/libfluxcompiler.a lib/fluxcompiler.lib 2>/dev/null || true
 
 if [ ! -f "bin/fluxc" ] && [ ! -f "bin/fluxc.exe" ]; then
     echo "[+] [Boot-0.8] Linkando bin/fluxc a partir de stage1.ll..."
-    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin/fluxc.exe build/intermediates/stage1.ll -Lbin -lfluxcompiler -lfluxrt -lm
+    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin/fluxc.exe build/intermediates/stage1.ll -Llib -lfluxcompiler -lfluxrt -lm
 fi
 
 FLUXC_BIN="./bin/fluxc.exe"

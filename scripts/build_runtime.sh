@@ -5,11 +5,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "=============================================================================="
-echo "[TheFlux] Compilando Runtime Modular C para bin/libfluxrt.a (Marco M1)"
+echo "[TheFlux] Compilando Runtime Modular C para lib/libfluxrt.a (Marco M1)"
 echo "=============================================================================="
 
 mkdir -p "$ROOT_DIR/build/runtime"
-mkdir -p "$ROOT_DIR/bin"
+mkdir -p "$ROOT_DIR/lib"
 
 CFLAGS="-O2 -Wno-deprecated-declarations -Wno-override-module -Wno-incompatible-pointer-types -I$ROOT_DIR/runtime/include"
 
@@ -24,5 +24,6 @@ clang $CFLAGS -c $ROOT_DIR/runtime/src/io/*.c
 clang $CFLAGS -c $ROOT_DIR/runtime/src/sys/*.c
 clang $CFLAGS -c $ROOT_DIR/runtime/src/intrinsics/*.c
 
-llvm-ar rcs "$ROOT_DIR/bin/libfluxrt.a" *.o
-echo "[OK] bin/libfluxrt.a gerado com sucesso."
+llvm-ar rcs "$ROOT_DIR/lib/libfluxrt.a" *.o
+cp -f "$ROOT_DIR/lib/libfluxrt.a" "$ROOT_DIR/lib/fluxrt.lib" 2>/dev/null || true
+echo "[OK] lib/libfluxrt.a e lib/fluxrt.lib gerados com sucesso."

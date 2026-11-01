@@ -155,11 +155,11 @@ runtime/
 
 #### 1.2 Compilação para Biblioteca Estática Independente
 O runtime não será mais recompilado a cada chamada do compilador. Ele será pré-compilado para:
-- Windows: `bin/libfluxrt.a` (ou `bin/fluxrt.lib`)
-- Linux/macOS: `bin/libfluxrt.a`
+- Windows: `lib/libfluxrt.a` (ou `lib/fluxrt.lib`)
+- Linux/macOS: `lib/libfluxrt.a`
 Qualquer compilação para executável nativo passará a usar:
 ```powershell
-clang -O2 output.ll -Lbin -lfluxrt -o output.exe
+clang -O2 output.ll -Llib -lfluxcompiler -lfluxrt -o output.exe
 ```
 
 ---
@@ -244,7 +244,7 @@ route {
 ```
 
 #### 3.2 Execução de Linkagem e Ferramentas Auxiliares
-Quando o alvo for executável nativo (`llvm`), `CompilerLib` gera o arquivo `.ll` e aciona o Clang diretamente via `stdOsExec("clang -O2 output.ll -Lbin -lfluxrt -o output.exe")`. Zero instâncias de Python serão chamadas.
+Quando o alvo for executável nativo (`llvm`), `CompilerLib` gera o arquivo `.ll` e aciona o Clang diretamente via `stdOsExec("clang -O2 output.ll -Llib -lfluxcompiler -lfluxrt -o output.exe")`. Zero instâncias de Python serão chamadas.
 
 ---
 
@@ -277,12 +277,12 @@ sequenceDiagram
 
     Dev->>Seed: Compila src/main.flux (--target llvm)
     Seed-->>Dev: Gera build/stage1/fluxc.ll
-    Dev->>Clang: Linka com bin/libfluxrt.a
+    Dev->>Clang: Linka com lib/libfluxrt.a e lib/libfluxcompiler.a
     Clang-->>Stg1: Produz bin/fluxc_stage1.exe
 
     Dev->>Stg1: Compila src/main.flux (--target llvm)
     Stg1-->>Dev: Gera build/stage2/fluxc.ll
-    Dev->>Clang: Linka com bin/libfluxrt.a
+    Dev->>Clang: Linka com lib/libfluxrt.a e lib/libfluxcompiler.a
     Clang-->>Stg2: Produz bin/fluxc_stage2.exe
 
     Dev->>Stg2: Compila src/main.flux (--target llvm)

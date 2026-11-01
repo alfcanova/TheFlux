@@ -31,21 +31,22 @@ if errorlevel 1 (
 echo [+] [Boot-0.5] Empacotando biblioteca do compilador (libfluxcompiler.a)...
 if not exist "build\intermediates" mkdir "build\intermediates"
 if not exist "bin" mkdir "bin"
+if not exist "lib" mkdir "lib"
 
 if exist "build\intermediates\stage1_compiler.ll" (
     clang -O2 -Wno-deprecated-declarations -Wno-override-module -c build\intermediates\stage1_compiler.ll -o build\intermediates\stage1_compiler.o
     if errorlevel 1 goto fail
 )
 
-del /q /f bin\libfluxcompiler.a bin\fluxcompiler.lib 2>nul
-llvm-ar rc bin\libfluxcompiler.a build\intermediates\stage1_compiler.o
+del /q /f lib\libfluxcompiler.a lib\fluxcompiler.lib 2>nul
+llvm-ar rc lib\libfluxcompiler.a build\intermediates\stage1_compiler.o
 if errorlevel 1 goto fail
-copy /y bin\libfluxcompiler.a bin\fluxcompiler.lib >nul 2>&1
+copy /y lib\libfluxcompiler.a lib\fluxcompiler.lib >nul 2>&1
 
 :: Se fluxc.exe nao existir em bin, linka a partir de stage1.ll
 if not exist "bin\fluxc.exe" (
     echo [+] [Boot-0.8] Linkando bin\fluxc.exe a partir de stage1.ll...
-    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin\fluxc.exe build\intermediates\stage1.ll -Lbin -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32
+    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin\fluxc.exe build\intermediates\stage1.ll -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32
     if errorlevel 1 goto fail
 )
 

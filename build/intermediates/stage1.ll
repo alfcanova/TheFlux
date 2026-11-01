@@ -65552,7 +65552,7 @@ entry:
 @.str.84 = private unnamed_addr constant [3 x i8] c"lv\00"
 @.str.85 = private unnamed_addr constant [65 x i8] c"clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \22\00"
 @.str.86 = private unnamed_addr constant [8 x i8] c".exe\22 \22\00"
-@.str.87 = private unnamed_addr constant [66 x i8] c".ll\22 -Lbin -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32\00"
+@.str.87 = private unnamed_addr constant [66 x i8] c".ll\22 -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32\00"
 @.str.88 = private unnamed_addr constant [6 x i8] c".exe\22\00"
 @.str.89 = private unnamed_addr constant [8 x i8] c".fvmbc\22\00"
 @.str.90 = private unnamed_addr constant [4 x i8] c"wat\00"
