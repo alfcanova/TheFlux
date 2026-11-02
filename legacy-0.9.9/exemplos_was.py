@@ -13,7 +13,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 RAIZ = Path(__file__).resolve().parent
-FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
+FLUX_DIR = RAIZ / "examples" / "Canon" if (RAIZ / "examples" / "Canon").exists() else RAIZ.parent / "examples" / "Canon"
 T_WASM = RAIZ / "t_wasm-1.0"
 
 STDIN_MAP: dict[str, str] = {

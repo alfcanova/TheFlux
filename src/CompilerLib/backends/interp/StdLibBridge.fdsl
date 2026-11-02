@@ -61,6 +61,18 @@ agent (CompilerLib) impl StdLibBridgeContract {
                   fname == "stdRuntimeGetArgs" ==> {
                         res["val"] = stdRuntimeGetArgs()
                   }
+                  fname == "stdRuntimeBackend" ==> {
+                        res["val"] = "in"
+                  }
+                  fname == "stdRuntimeCompilerVersion" ==> {
+                        res["val"] = "0.9.9"
+                  }
+                  fname == "stdRuntimeExecutablePath" ==> {
+                        res["val"] = "bin/fluxc.exe"
+                  }
+                  fname == "stdRuntimeStackTrace" ==> {
+                        res["val"] = ["main", "runtimeStackTrace"]
+                  }
                   fname == "stdOsExec" and n >= 1 ==> {
                         res["val"] = stdOsExec(args[1])
                   }

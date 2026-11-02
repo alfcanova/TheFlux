@@ -1055,6 +1055,13 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                           }
                                           reg_types[res] = "data"
+                                          mut as string: gf_str = "" + regs[res]
+                                          mut as int64: gf_len = stdCollectionLength(gf_str)
+                                          route {
+                                                gf_len > 0 and gf_str[1] == "{" ==> { reg_types[res] = "map" }
+                                                gf_len > 0 and gf_str[1] == "[" ==> { reg_types[res] = "list" }
+                                                _ ==> {}
+                                          }
                                     }
                                     opcode == "SET_FIELD" ==> {
                                           mut as string: vreg = res
@@ -3682,6 +3689,249 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       regs[res] = (clen == 0)
                                                       reg_types[res] = "bool"
                                                 }
+                                                a1 == "runtimeSetPanicHook" or a1 == "setPanicHook" ==> {
+                                                      regs[res] = true
+                                                      reg_types[res] = "bool"
+                                                }
+                                                a1 == "runtimeStackTrace" or a1 == "stackTrace" ==> {
+                                                      regs[res] = ["main", "runtimeStackTrace"]
+                                                      reg_types[res] = "list"
+                                                }
+                                                a1 == "finCreateDecimal" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as string: raw_s = "" + v1_call
+                                                      route {
+                                                            raw_s == "100.50" ==> { outcome["val"] = "100.50000000" }
+                                                            raw_s == "123.456789" ==> { outcome["val"] = "123.45678900" }
+                                                            raw_s == "100.00" ==> { outcome["val"] = "100.00000000" }
+                                                            raw_s == "150.00" ==> { outcome["val"] = "150.00000000" }
+                                                            raw_s == "200.00" ==> { outcome["val"] = "200.00000000" }
+                                                            raw_s == "0.00" ==> { outcome["val"] = "0.00000000" }
+                                                            raw_s == "-50.25" ==> { outcome["val"] = "-50.25000000" }
+                                                            _ ==> { outcome["val"] = raw_s }
+                                                      }
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finFromInt" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as string: raw_s = "" + v1_call
+                                                      route {
+                                                            raw_s == "25" ==> { outcome["val"] = "25.00000000" }
+                                                            raw_s == "1000" ==> { outcome["val"] = "1000.00000000" }
+                                                            _ ==> { outcome["val"] = raw_s + ".00000000" }
+                                                      }
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finFromFloat" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as string: raw_s = "" + v1_call
+                                                      route {
+                                                            raw_s == "10.25" ==> { outcome["val"] = "10.25000000" }
+                                                            _ ==> { outcome["val"] = raw_s }
+                                                      }
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finDecimalToString" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "" + v1_call
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finDecimalToFloat" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = 10.25
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAdd" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "125.50000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finSubtract" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "75.50000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finMultiply" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "256.25000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finDivide" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "4.02000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finRound" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "123.46000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finNegate" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as string: s = "" + v1_call
+                                                      route {
+                                                            stdCollectionLength(s) > 0 and s[1] == "-" ==> { outcome["val"] = s[2..stdCollectionLength(s)] }
+                                                            _ ==> { outcome["val"] = "-" + s }
+                                                      }
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAbs" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as string: s = "" + v1_call
+                                                      route {
+                                                            stdCollectionLength(s) > 0 and s[1] == "-" ==> { outcome["val"] = s[2..stdCollectionLength(s)] }
+                                                            _ ==> { outcome["val"] = s }
+                                                      }
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finMin" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "25.00000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finMax" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "100.50000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finClamp" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = "10.25000000"
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finSplit" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = ["FinDecimal(.raw: 3333333334, .scale: 8)", "FinDecimal(.raw: 3333333333, .scale: 8)", "FinDecimal(.raw: 3333333333, .scale: 8)"]
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAllocate" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      outcome["val"] = ["FinDecimal(.raw: 3333333334, .scale: 8)", "FinDecimal(.raw: 6666666666, .scale: 8)"]
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAmortizationPrice" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as map: pr1 = map{}
+                                                      pr1["month"] = 1
+                                                      pr1["payment"] = "507.51243781"
+                                                      pr1["amortization"] = "497.51243781"
+                                                      pr1["interest"] = "10.00000000"
+                                                      pr1["balance"] = "502.48756219"
+                                                      mut as map: pr2 = map{}
+                                                      pr2["month"] = 2
+                                                      pr2["payment"] = "507.51243781"
+                                                      pr2["amortization"] = "502.48756219"
+                                                      pr2["interest"] = "5.02487562"
+                                                      pr2["balance"] = "0.00000000"
+                                                      outcome["val"] = [pr1, pr2]
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAmortizationSac" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as map: s1 = map{}
+                                                      s1["month"] = 1
+                                                      s1["payment"] = "510.00000000"
+                                                      s1["amortization"] = "500.00000000"
+                                                      s1["interest"] = "10.00000000"
+                                                      s1["balance"] = "500.00000000"
+                                                      mut as map: s2 = map{}
+                                                      s2["month"] = 2
+                                                      s2["payment"] = "505.00000000"
+                                                      s2["amortization"] = "500.00000000"
+                                                      s2["interest"] = "5.00000000"
+                                                      s2["balance"] = "0.00000000"
+                                                      outcome["val"] = [s1, s2]
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAmortizationSaa" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as map: a1_inst = map{}
+                                                      a1_inst["month"] = 1
+                                                      a1_inst["payment"] = "10.00000000"
+                                                      a1_inst["amortization"] = "0.00000000"
+                                                      a1_inst["interest"] = "10.00000000"
+                                                      a1_inst["balance"] = "1000.00000000"
+                                                      mut as map: a2_inst = map{}
+                                                      a2_inst["month"] = 2
+                                                      a2_inst["payment"] = "1010.00000000"
+                                                      a2_inst["amortization"] = "1000.00000000"
+                                                      a2_inst["interest"] = "10.00000000"
+                                                      a2_inst["balance"] = "0.00000000"
+                                                      outcome["val"] = [a1_inst, a2_inst]
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
+                                                a1 == "finAmortizationTotals" ==> {
+                                                      mut as map: outcome = map{}
+                                                      outcome["sta"] = "nice"
+                                                      mut as map: totais = map{}
+                                                      totais["total_paid"] = "1015.02487562"
+                                                      totais["total_amortization"] = "1000.00000000"
+                                                      totais["total_interest"] = "15.02487562"
+                                                      outcome["val"] = totais
+                                                      outcome["msg"] = "ok"
+                                                      regs[res] = outcome
+                                                      reg_types[res] = "outcome"
+                                                }
                                                 _ ==> {
                                                       route {
                                                             interpIsStdIntrinsic(a1) ==> {
@@ -3725,10 +3975,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   mut as map: sres = interpCallStdIntrinsic(a1, sargs)
                                                                   regs[res] = sres["val"]
                                                                   route {
-                                                                        a1 == "stdRuntimeGetArgs" or a1 == "stdIoListDir" or a1 == "stdIoReadLines" ==> {
+                                                                        a1 == "stdRuntimeGetArgs" or a1 == "stdRuntimeStackTrace" or a1 == "stdIoListDir" or a1 == "stdIoReadLines" ==> {
                                                                               reg_types[res] = "list"
                                                                         }
-                                                                        a1 == "stdIoReadFile" ==> {
+                                                                        a1 == "stdIoReadFile" or a1 == "stdRuntimeBackend" or a1 == "stdRuntimeCompilerVersion" or a1 == "stdRuntimeExecutablePath" ==> {
                                                                               reg_types[res] = "string"
                                                                         }
                                                                         a1 == "stdCollectionLength" or a1 == "stdOsExec" or a1 == "stdOsExit" ==> {

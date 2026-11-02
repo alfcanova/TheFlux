@@ -16,7 +16,7 @@ from flux_proto.vm.runtime import execute_bytecode
 
 RAIZ = Path(__file__).resolve().parent
 T_FVMBC = RAIZ / "t_fvmbc"
-FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
+FLUX_DIR = RAIZ / "examples" / "Canon" if (RAIZ / "examples" / "Canon").exists() else RAIZ.parent / "examples" / "Canon"
 
 import os
 
