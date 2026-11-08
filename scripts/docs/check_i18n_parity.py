@@ -60,6 +60,7 @@ DOCS_MAP_PT_TO_EN: dict[str, str] = {
     "ReleaseNotes_0.5.0.md": "ReleaseNotes_0.5.0.md",
     "ReleaseNotes_0.7.5.md": "ReleaseNotes_0.7.5.md",
     "ReleaseNotes_0.9.9.md": "ReleaseNotes_0.9.9.md",
+    "ReleaseNotes_1.0.0.md": "ReleaseNotes_1.0.0.md",
     "TheFlux.md": "TheFlux.md",
 }
 DOCS_MAP_EN_TO_PT: dict[str, str] = {v: k for k, v in DOCS_MAP_PT_TO_EN.items()}
