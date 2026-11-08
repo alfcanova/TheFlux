@@ -1,7 +1,7 @@
 #L ==============================================================================
 #L TheFlux Native Compiler: Entrypoint
 #L Arquivo: src/main.flux
-#L Versao: 0.9.9
+#L Versao: 1.0.0
 #L ==============================================================================
 
 use RuntimeStdLib
@@ -13,7 +13,7 @@ program (Main) {
 
       route {
             n_args < 1 ==> {
-                  print("TheFlux Compiler v0.9.9")
+                  print("TheFlux Compiler v1.0.0")
                   print("Usage: fluxc [options] <input.flux>")
                   print("Options:")
                   print("  --version, -v               Display compiler version")
@@ -109,7 +109,7 @@ program (Main) {
 
                   route {
                         flag_version ==> {
-                              print("0.9.9")
+                              print("1.0.0")
                         }
                         explain_code != "" ==> {
                               mut as string: explanation = CompilerLib::diagnosticExplain(explain_code)

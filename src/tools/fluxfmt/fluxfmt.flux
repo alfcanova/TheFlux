@@ -1,7 +1,7 @@
 #L ==============================================================================
 #L TheFlux Canonical Code Formatter: fluxfmt
 #L Arquivo: src/tools/fluxfmt/fluxfmt.flux
-#L Versao: 0.9.9
+#L Versao: 1.0.0
 #L ==============================================================================
 
 use RuntimeStdLib
@@ -12,7 +12,7 @@ use ListStdLib
 use MapStdLib
 
 function (fmtPrintHelp) () as int64 {
-      print("fluxfmt - Utilitario de Formatacao Canonica TheFlux (v0.9.9)")
+      print("fluxfmt - Utilitario de Formatacao Canonica TheFlux (v1.0.0)")
       print("")
       print("Sintaxe:")
       print("  fluxfmt [flags] [caminho ...]")
@@ -31,7 +31,7 @@ function (fmtPrintHelp) () as int64 {
       print("  -s, --simplify           Simplifica codigo (# -> #L, parenteses superfluos em rotas)")
       print("  -e, --all-errors         Reporta todos os erros lexicos/estruturais sem abortar cedo")
       print("  -r, --recursive          Percorre subdiretorios recursivamente")
-      print("  -v, --version            Exibe a versao (fluxfmt version 0.9.9)")
+      print("  -v, --version            Exibe a versao (fluxfmt version 1.0.0)")
       print("  -h, --help               Exibe esta mensagem de ajuda")
       print("")
       print("Exemplos:")
@@ -1820,7 +1820,7 @@ program (FluxFmt) {
                   stdOsExit(hrc)
             }
             flag_version ==> {
-                  print("fluxfmt version 0.9.9")
+                  print("fluxfmt version 1.0.0")
                   stdOsExit(0)
             }
             _ ==> {}

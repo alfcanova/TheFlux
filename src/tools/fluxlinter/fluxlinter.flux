@@ -1,11 +1,11 @@
 #L ==============================================================================
-#L TheFlux Tool: fluxlinter (v0.9.9)
+#L TheFlux Tool: fluxlinter (v1.0.0)
 #L Utilitario de Analise Estatica e Linter Canônico para TheFlux
 #L Inspirado na arquitetura do Clippy do ecossistema Rust (rustc)
 #L ==============================================================================
 
 function (linterPrintHelp) () as int64 {
-      print("fluxlinter - Utilitario de Analise Estatica e Linter TheFlux (v0.9.9)")
+      print("fluxlinter - Utilitario de Analise Estatica e Linter TheFlux (v1.0.0)")
       print("Inspirado no Clippy do rustc: analise estatica profunda, AST e sugestoes")
       print("")
       print("Sintaxe:")
@@ -32,7 +32,7 @@ function (linterPrintHelp) () as int64 {
       print("  -r, --recursive           Percorre subdiretorios recursivamente")
       print("  -l, --list, --list-lints  Lista todos os lints disponiveis")
       print("  -e, --explain <lint>      Exibe documentacao completa do lint especificado")
-      print("  -v, --version             Exibe a versao (fluxlinter version 0.9.9)")
+      print("  -v, --version             Exibe a versao (fluxlinter version 1.0.0)")
       print("  -h, --help                Exibe esta mensagem de ajuda")
       print("")
       print("Categorias Disponiveis:")
@@ -52,12 +52,12 @@ function (linterPrintHelp) () as int64 {
 }
 
 function (linterPrintVersion) () as int64 {
-      print("fluxlinter version 0.9.9")
+      print("fluxlinter version 1.0.0")
       emit(nice, 0, "ok")
 }
 
 function (linterPrintList) () as int64 {
-      print("Lints Registrados no fluxlinter (v0.9.9):")
+      print("Lints Registrados no fluxlinter (v1.0.0):")
       print("")
       print("Nome do Lint                               Categoria     Padrao   Descricao")
       print("-----------------------------------------  ------------  -------  ---------------------------------------")

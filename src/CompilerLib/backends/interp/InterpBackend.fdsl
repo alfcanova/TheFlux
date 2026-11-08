@@ -3914,7 +3914,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdRuntimeCompilerVersion" or fn_target == "runtimeCompilerVersion" or fn_target == "compilerVersion" ==> {
-                                                      regs[res] = "0.9.9"
+                                                      regs[res] = "1.0.0"
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdRuntimeGetArgs" or fn_target == "runtimeGetArgs" or fn_target == "getArgs" ==> {

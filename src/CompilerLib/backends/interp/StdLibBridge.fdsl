@@ -65,7 +65,7 @@ agent (CompilerLib) impl StdLibBridgeContract {
                         res["val"] = "in"
                   }
                   fname == "stdRuntimeCompilerVersion" ==> {
-                        res["val"] = "0.9.9"
+                        res["val"] = "1.0.0"
                   }
                   fname == "stdRuntimeExecutablePath" ==> {
                         res["val"] = "bin/fluxc.exe"

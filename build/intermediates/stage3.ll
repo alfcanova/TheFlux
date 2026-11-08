@@ -76,7 +76,7 @@ declare i64 @flux_std_datetime_monotonic_elapsed(i64)
 @.str.2 = private unnamed_addr constant [4 x i8] c"msg\00", align 1
 @.str.3 = private unnamed_addr constant [5 x i8] c"nice\00", align 1
 @.str.4 = private unnamed_addr constant [3 x i8] c"ok\00", align 1
-@.str.5 = private unnamed_addr constant [24 x i8] c"TheFlux Compiler v0.9.9\00", align 1
+@.str.5 = private unnamed_addr constant [24 x i8] c"TheFlux Compiler v1.0.0\00", align 1
 @.str.6 = private unnamed_addr constant [36 x i8] c"Usage: fluxc [options] <input.flux>\00", align 1
 @.str.7 = private unnamed_addr constant [9 x i8] c"Options:\00", align 1
 @.str.8 = private unnamed_addr constant [55 x i8] c"  --version, -v               Display compiler version\00", align 1
@@ -104,7 +104,7 @@ declare i64 @flux_std_datetime_monotonic_elapsed(i64)
 @.str.30 = private unnamed_addr constant [2 x i8] c"\22\00", align 1
 @.str.31 = private unnamed_addr constant [3 x i8] c" \22\00", align 1
 @.str.32 = private unnamed_addr constant [2 x i8] c"-\00", align 1
-@.str.33 = private unnamed_addr constant [6 x i8] c"0.9.9\00", align 1
+@.str.33 = private unnamed_addr constant [6 x i8] c"1.0.0\00", align 1
 @.str.34 = private unnamed_addr constant [32 x i8] c"Error: No input file specified.\00", align 1
 @.str.35 = private unnamed_addr constant [18 x i8] c"#L EXPECT_ERROR: \00", align 1
 @.str.36 = private unnamed_addr constant [2 x i8] c"\0D\00", align 1

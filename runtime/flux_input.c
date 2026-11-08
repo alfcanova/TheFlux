@@ -2529,7 +2529,7 @@ char *flux_std_runtime_backend(void) {
 }
 
 char *flux_std_runtime_compiler_version(void) {
-    return "0.9.9";
+    return "1.0.0";
 }
 
 static int g_flux_argc = 0;

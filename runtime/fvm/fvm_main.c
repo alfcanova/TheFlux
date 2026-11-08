@@ -13,7 +13,7 @@
 #include "fvm_parser.h"
 #include "../flux_service.h"
 
-#define FLUXVM_VERSION "0.9.9"
+#define FLUXVM_VERSION "1.0.0"
 
 static void print_usage(void) {
     printf("TheFlux Virtual Machine (fluxvm) v%s\n", FLUXVM_VERSION);
