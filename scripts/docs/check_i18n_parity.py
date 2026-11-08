@@ -136,40 +136,40 @@ def verificar_paridade_docs_docx(pt_dir: Path, en_dir: Path) -> tuple[int, list[
 
 def verificar_paridade_docs_stdlib(pt_docs_dir: Path, en_docs_dir: Path) -> tuple[int, list[str]]:
     divergencias = []
-    pt_stdlib = pt_docs_dir / "stdlib"
-    en_stdlib = en_docs_dir / "stdlib"
+    pt_stdlib = pt_docs_dir / "stdlibs" if (pt_docs_dir / "stdlibs").exists() else pt_docs_dir / "stdlib"
+    en_stdlib = en_docs_dir / "stdlibs" if (en_docs_dir / "stdlibs").exists() else en_docs_dir / "stdlib"
 
     if not pt_stdlib.exists() or not pt_stdlib.is_dir():
-        return 0, ["Diretório docs/pt_BR/stdlib inexistente"]
+        return 0, ["Diretório de StdLibs em docs/pt_BR inexistente"]
     if not en_stdlib.exists() or not en_stdlib.is_dir():
-        return 0, ["Diretório docs/en/stdlib inexistente"]
+        return 0, ["Diretório de StdLibs em docs/en inexistente"]
 
     pt_files = {f for f in os.listdir(pt_stdlib) if f.endswith(".md")}
     en_files = {f for f in os.listdir(en_stdlib) if f.endswith(".md")}
 
     apenas_pt = pt_files - en_files
     for f in sorted(apenas_pt):
-        divergencias.append(f"Documento de StdLib presente apenas em PT: docs/pt_BR/stdlib/{f}")
+        divergencias.append(f"Documento de StdLib presente apenas em PT: {pt_stdlib.name}/{f}")
 
     apenas_en = en_files - pt_files
     for f in sorted(apenas_en):
-        divergencias.append(f"Documento de StdLib presente apenas em EN: docs/en/stdlib/{f}")
+        divergencias.append(f"Documento de StdLib presente apenas em EN: {en_stdlib.name}/{f}")
 
     for f in sorted(pt_files & en_files):
         f_pt = pt_stdlib / f
         f_en = en_stdlib / f
         if f_pt.stat().st_size == 0:
-            divergencias.append(f"Documento de StdLib vazio em PT: docs/pt_BR/stdlib/{f}")
+            divergencias.append(f"Documento de StdLib vazio em PT: {pt_stdlib.name}/{f}")
         if f_en.stat().st_size == 0:
-            divergencias.append(f"Documento de StdLib vazio em EN: docs/en/stdlib/{f}")
+            divergencias.append(f"Documento de StdLib vazio em EN: {en_stdlib.name}/{f}")
 
     permitidos = pt_files | {".gitkeep"}
     for item in os.listdir(pt_stdlib):
         if item not in permitidos:
-            divergencias.append(f"Arquivo inesperado em docs/pt_BR/stdlib: {item}")
+            divergencias.append(f"Arquivo inesperado em docs/pt_BR/{pt_stdlib.name}: {item}")
     for item in os.listdir(en_stdlib):
         if item not in permitidos:
-            divergencias.append(f"Arquivo inesperado em docs/en/stdlib: {item}")
+            divergencias.append(f"Arquivo inesperado em docs/en/{en_stdlib.name}: {item}")
 
     return len(pt_files & en_files), divergencias
 
@@ -180,13 +180,13 @@ def verificar_arquivos_estranhos_em_pastas_de_idioma(pt_dir: Path, en_dir: Path)
         set(DOCS_MAP_PT_TO_EN.keys())
         | set(DOCS_EBNF_MAP_PT_TO_EN.keys())
         | set(DOCS_DOCX_MAP_PT_TO_EN.keys())
-        | {"keywords", "stdlib", "tools"}
+        | {"keywords", "stdlib", "stdlibs", "tools"}
     )
     permitidos_en = (
         set(DOCS_MAP_EN_TO_PT.keys())
         | set(DOCS_EBNF_MAP_PT_TO_EN.values())
         | set(DOCS_DOCX_MAP_PT_TO_EN.values())
-        | {"keywords", "stdlib", "tools"}
+        | {"keywords", "stdlib", "stdlibs", "tools"}
     )
 
     for item in os.listdir(pt_dir):

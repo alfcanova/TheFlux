@@ -25,8 +25,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 STDLIB_DIR = REPO_ROOT / "stdlib"
-DOCS_PT_DIR = REPO_ROOT / "docs" / "pt_BR" / "stdlib"
-DOCS_EN_DIR = REPO_ROOT / "docs" / "en" / "stdlib"
+DOCS_PT_DIR = REPO_ROOT / "docs" / "pt_BR" / ("stdlibs" if (REPO_ROOT / "docs" / "pt_BR" / "stdlibs").exists() else "stdlib")
+DOCS_EN_DIR = REPO_ROOT / "docs" / "en" / ("stdlibs" if (REPO_ROOT / "docs" / "en" / "stdlibs").exists() else "stdlib")
 
 # Mapeamento canônico dos 4 Pilares Arquiteturais
 PILLARS_DATA = {
