@@ -140,13 +140,13 @@ def verificar_arquivos_estranhos_em_pastas_de_idioma(pt_dir: Path, en_dir: Path)
         set(DOCS_MAP_PT_TO_EN.keys())
         | set(DOCS_EBNF_MAP_PT_TO_EN.keys())
         | set(DOCS_DOCX_MAP_PT_TO_EN.keys())
-        | {"keywords", "stdlib"}
+        | {"keywords", "stdlib", "tools"}
     )
     permitidos_en = (
         set(DOCS_MAP_EN_TO_PT.keys())
         | set(DOCS_EBNF_MAP_PT_TO_EN.values())
         | set(DOCS_DOCX_MAP_PT_TO_EN.values())
-        | {"keywords", "stdlib"}
+        | {"keywords", "stdlib", "tools"}
     )
 
     for item in os.listdir(pt_dir):
