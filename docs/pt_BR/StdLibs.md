@@ -15,20 +15,20 @@
 
 ## 📦 0. Catálogo das 37 Bibliotecas Padrão pelos 4 Pilares Arquiteturais
 
-|--------------------------|----------------------------|------------------------------|---------------------------|
-| 🔤 1. Núcleo, Texto & OO | 📊 2. Estruturas & Estados | 🧮 3. Matemática & Gráficos | 🌐 4. Sistema, I/O & Rede |
-|--------------------------|----------------------------|------------------------------|---------------------------|
-| ✅`CharStdLib`           | ✅ `CompressStdLib`       | ✅ `FinStdLib`               | ✅ `ArchiveStdLib`        |
-| ✅`ConvertStdLib`        | ✅ `DateTimeStdLib`       | ✅ `GraphPlotStdLib`         | ✅ `GfxStdLib`            |
-| ✅`DebugStdLib`          | ✅ `DbStdLib`             | ✅ `HashStdLib`              | ✅ `GuiStdLib`            |
-| ✅`DslStdLib`            | ✅ `FsmStdLib`            | ✅ `LinAlgStdLib`            | ✅ `IoStdLib`             |
-| ✅`FileSignatureStdLib`  | ✅ `ListStdLib`           | ✅ `MathStdLib`              | ✅ `LowLevelStdLib`       |
-| ✅`OoStdLib`             | ✅ `RandomStdLib`         | ✅ `SimdStdLib`              | ✅ `NativeGfxStdLib`      |
-| ✅`FormatStdLib`         | ✅ `MapStdLib`            | ✅ `PhysStdLib`              | ✅ `NetStdLib`            |
-| ✅`RegexStdLib`          | ✅ `SetStdLib`            | ✅ `StatStdLib`              | ✅ `OsStdLib`             |
-| ✅`StringStdLib`         | ✅ `StructStdLib`         | ✅ `SymbolicStdLib`          | ✅ `RuntimeStdLib`        |
-|                          |                            |                              | ✅ `ThreadStdLib`         |
-|--------------------------|----------------------------|------------------------------|---------------------------|
+|----------------------------------------------------|--------------------------------------------------------|----------------------------------------------------|----------------------------------------------------------|
+| 🔤 1. Núcleo, Texto & OO                           | 📊 2. Estruturas & Estados                             | 🧮 3. Matemática & Gráficos                        | 🌐 4. Sistema, I/O & Rede                                |
+|----------------------------------------------------|--------------------------------------------------------|----------------------------------------------------|----------------------------------------------------------|
+| ✅ [`CharStdLib`](stdlib/CharStdLib.md)             | ✅ [`CompressStdLib`](stdlib/CompressStdLib.md)         | ✅ [`FinStdLib`](stdlib/FinStdLib.md)               | ✅ [`ArchiveStdLib`](stdlib/ArchiveStdLib.md)             |
+| ✅ [`ConvertStdLib`](stdlib/ConvertStdLib.md)       | ✅ [`DateTimeStdLib`](stdlib/DateTimeStdLib.md)         | ✅ [`GraphPlotStdLib`](stdlib/GraphPlotStdLib.md)   | ✅ [`GfxStdLib`](stdlib/GfxStdLib.md)                     |
+| ✅ [`DebugStdLib`](stdlib/DebugStdLib.md)           | ✅ [`DbStdLib`](stdlib/DbStdLib.md)                     | ✅ [`HashStdLib`](stdlib/HashStdLib.md)             | ✅ [`GuiStdLib`](stdlib/GuiStdLib.md)                     |
+| ✅ [`DslStdLib`](stdlib/DslStdLib.md)               | ✅ [`FsmStdLib`](stdlib/FsmStdLib.md)                   | ✅ [`LinAlgStdLib`](stdlib/LinAlgStdLib.md)         | ✅ [`IoStdLib`](stdlib/IoStdLib.md)                       |
+| ✅ [`FileSignatureStdLib`](stdlib/FileSignatureStdLib.md) | ✅ [`ListStdLib`](stdlib/ListStdLib.md)           | ✅ [`MathStdLib`](stdlib/MathStdLib.md)             | ✅ [`LowLevelStdLib`](stdlib/LowLevelStdLib.md)           |
+| ✅ [`OoStdLib`](stdlib/OoStdLib.md)                 | ✅ [`RandomStdLib`](stdlib/RandomStdLib.md)             | ✅ [`SimdStdLib`](stdlib/SimdStdLib.md)             | ✅ [`NativeGfxStdLib`](stdlib/NativeGfxStdLib.md)         |
+| ✅ [`FormatStdLib`](stdlib/FormatStdLib.md)         | ✅ [`MapStdLib`](stdlib/MapStdLib.md)                   | ✅ [`PhysStdLib`](stdlib/PhysStdLib.md)             | ✅ [`NetStdLib`](stdlib/NetStdLib.md)                     |
+| ✅ [`RegexStdLib`](stdlib/RegexStdLib.md)           | ✅ [`SetStdLib`](stdlib/SetStdLib.md)                   | ✅ [`StatStdLib`](stdlib/StatStdLib.md)             | ✅ [`OsStdLib`](stdlib/OsStdLib.md)                       |
+| ✅ [`StringStdLib`](stdlib/StringStdLib.md)         | ✅ [`StructStdLib`](stdlib/StructStdLib.md)             | ✅ [`SymbolicStdLib`](stdlib/SymbolicStdLib.md)     | ✅ [`RuntimeStdLib`](stdlib/RuntimeStdLib.md)             |
+|                                                    |                                                        |                                                    | ✅ [`ThreadStdLib`](stdlib/ThreadStdLib.md)               |
+|----------------------------------------------------|--------------------------------------------------------|----------------------------------------------------|----------------------------------------------------------|
 
 *Total: 37 Bibliotecas Padrão em FDSL (`.fdsl`) com 100% de paridade multi-backend nos 6 alvos oficiais.*
 
