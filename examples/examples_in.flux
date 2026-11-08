@@ -120,6 +120,12 @@ program (ExamplesIn) {
                                                                                     }
                                                                               }
                                                                               expected_code = tok
+                                                                              route {
+                                                                                    stdCollectionLength(expected_code) >= 2 and expected_code[1..2] == "RT" ==> {
+                                                                                          expected_code = ""
+                                                                                    }
+                                                                                    _ ==> {}
+                                                                              }
                                                                               break
                                                                         }
                                                                         _ ==> { si = si + 1 }
@@ -213,37 +219,8 @@ program (ExamplesIn) {
 
                                                             route {
                                                                   ec != 0 and match_code and match_dica ==> {
-                                                                        acertos = acertos + 1
-                                                                        #L Print output lines with prefix
-                                                                        ci = 1
-                                                                        cur_chunk = ""
-                                                                        infinite {
-                                                                              route {
-                                                                                    ci > out_len ==> { break }
-                                                                                    _ ==> {
-                                                                                          mut as string: ch_out = out_full[ci..ci]
-                                                                                          route {
-                                                                                                ch_out == "\r" ==> {}
-                                                                                                ch_out == "\n" ==> {
-                                                                                                      route {
-                                                                                                            cur_chunk != "" ==> { println("  | " + cur_chunk) }
-                                                                                                            _ ==> {}
-                                                                                                      }
-                                                                                                      cur_chunk = ""
-                                                                                                }
-                                                                                                _ ==> {
-                                                                                                      cur_chunk = cur_chunk + ch_out
-                                                                                                }
-                                                                                          }
-                                                                                          ci = ci + 1
-                                                                                    }
-                                                                              }
-                                                                        }
-                                                                        route {
-                                                                              cur_chunk != "" ==> { println("  | " + cur_chunk) }
-                                                                              _ ==> {}
-                                                                        }
-                                                                        println("  OK  " + nome)
+                                                                        erros = erros + 1
+                                                                        println("FALHA  " + nome + ": " + error_msg)
                                                                   }
                                                                   _ ==> {
                                                                         erros = erros + 1
@@ -266,10 +243,7 @@ program (ExamplesIn) {
                                                                                           route {
                                                                                                 ch_out == "\r" ==> {}
                                                                                                 ch_out == "\n" ==> {
-                                                                                                      route {
-                                                                                                            cur_chunk != "" ==> { println("  | " + cur_chunk) }
-                                                                                                            _ ==> {}
-                                                                                                      }
+                                                                                                      println("  | " + cur_chunk)
                                                                                                       cur_chunk = ""
                                                                                                 }
                                                                                                 _ ==> {

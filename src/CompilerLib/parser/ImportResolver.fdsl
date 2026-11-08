@@ -4,13 +4,39 @@
 #L ==============================================================================
 
 contract (ImportResolverContract) {
+      op importNormalizeModName (as string: name) as string
       op importResolveFile (as string: base_path, as string: module_name) as string
       op importResolveRelative (as string: base_path, as string: module_name) as string
       op importLoadSource (as string: resolved_path, as string: module_name) as string
 }
 
 agent (CompilerLib) impl ImportResolverContract {
+      op importNormalizeModName (as string: name) as string ==> {
+            mut as string: res = ""
+            mut as int64: n = stdCollectionLength(name)
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        i + 1 <= n and name[i] == ":" and name[i + 1] == ":" ==> {
+                              res = res + "/"
+                              i = i + 2
+                        }
+                        name[i] == "\\" ==> {
+                              res = res + "/"
+                              i = i + 1
+                        }
+                        _ ==> {
+                              res = res + name[i]
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
       op importResolveRelative (as string: base_path, as string: module_name) as string ==> {
+            mut as string: mod = importNormalizeModName(module_name)
             mut as int64: blen = stdCollectionLength(base_path)
             mut as int64: last_sep = 0
             mut as int64: bi = 1
@@ -27,7 +53,7 @@ agent (CompilerLib) impl ImportResolverContract {
             route {
                   last_sep > 1 ==> {
                         mut as string: dir_pref = base_path[1..last_sep]
-                        mut as string: cand = dir_pref + module_name
+                        mut as string: cand = dir_pref + mod
                         route {
                               stdIoFileExists(cand) ==> { emit(nice, cand, "ok") }
                               stdIoFileExists(cand + ".fdsl") ==> { emit(nice, cand + ".fdsl", "ok") }
@@ -36,34 +62,58 @@ agent (CompilerLib) impl ImportResolverContract {
                   }
                   _ ==> {}
             }
-            emit(nice, importResolveFile(base_path, module_name), "ok")
-      }
-
-      op importResolveFile (as string: base_path, as string: module_name) as string ==> {
-            mut as string: mod = module_name
-            mut as int64: mlen = stdCollectionLength(mod)
-            mut as bool: has_ext = false
+            mut as string: direct_res = importResolveFile(base_path, mod)
             route {
-                  mlen >= 5 ==> {
-                        has_ext = (mod[(mlen - 4)..mlen] == ".fdsl") or (mod[(mlen - 4)..mlen] == ".flux")
+                  direct_res != "" ==> { emit(nice, direct_res, "ok") }
+                  _ ==> {}
+            }
+            mut as int64: mlen = stdCollectionLength(module_name)
+            mut as int64: cpos = 0
+            mut as int64: mi = 1
+            infinite {
+                  route {
+                        mi >= mlen ==> { break }
+                        module_name[mi] == ":" and module_name[mi + 1] == ":" ==> {
+                              cpos = mi
+                              break
+                        }
+                        _ ==> { mi = mi + 1 }
+                  }
+            }
+            route {
+                  cpos > 1 ==> {
+                        mut as string: base_agent = module_name[1..(cpos - 1)]
+                        emit(nice, importResolveRelative(base_path, base_agent), "ok")
                   }
                   _ ==> {}
             }
+            emit(nice, "", "ok")
+      }
+
+      op importResolveFile (as string: base_path, as string: module_name) as string ==> {
+            mut as string: raw_mod = importNormalizeModName(module_name)
+            mut as string: clean_name = raw_mod
+            mut as int64: clen = stdCollectionLength(clean_name)
             route {
-                  has_ext ==> {}
-                  _ ==> { mod = mod + ".fdsl" }
+                  clen >= 5 and (clean_name[(clen - 4)..clen] == ".fdsl" or clean_name[(clen - 4)..clen] == ".flux") ==> {
+                        clean_name = clean_name[1..(clen - 5)]
+                  }
+                  _ ==> {}
             }
+
+            mut as string: mod = clean_name + ".fdsl"
 
             #L 1. Checagem direta
             route {
+                  stdIoFileExists(raw_mod) ==> { emit(nice, raw_mod, "ok") }
                   stdIoFileExists(mod) ==> { emit(nice, mod, "ok") }
                   _ ==> {}
             }
 
-            #L 2. stdlib
-            mut as string: p_stdlib = "stdlib/" + module_name + "/" + mod
+            #L 2. stdlib modular e direto
+            mut as string: p_stdlib_mod = "stdlib/" + clean_name + "/" + clean_name + ".fdsl"
             route {
-                  stdIoFileExists(p_stdlib) ==> { emit(nice, p_stdlib, "ok") }
+                  stdIoFileExists(p_stdlib_mod) ==> { emit(nice, p_stdlib_mod, "ok") }
                   _ ==> {}
             }
             mut as string: p_stdlib_direct = "stdlib/" + mod
@@ -72,10 +122,10 @@ agent (CompilerLib) impl ImportResolverContract {
                   _ ==> {}
             }
 
-            #L 3. src
-            mut as string: p_src = "src/" + module_name + "/" + mod
+            #L 3. src modular e direto
+            mut as string: p_src_mod = "src/" + clean_name + "/" + clean_name + ".fdsl"
             route {
-                  stdIoFileExists(p_src) ==> { emit(nice, p_src, "ok") }
+                  stdIoFileExists(p_src_mod) ==> { emit(nice, p_src_mod, "ok") }
                   _ ==> {}
             }
             mut as string: p_src_direct = "src/" + mod
@@ -111,35 +161,34 @@ agent (CompilerLib) impl ImportResolverContract {
                   _ ==> {}
             }
 
-            #L 5. Fallback para Embedded StdLib
-            route {
-                  isStdLibAgent(module_name) ==> {
-                        emit(nice, "__EMBEDDED__:" + module_name, "ok")
-                  }
-                  _ ==> {
-                        emit(nice, "", "ok")
+            mut as int64: mlen = stdCollectionLength(module_name)
+            mut as int64: cpos = 0
+            mut as int64: mi = 1
+            infinite {
+                  route {
+                        mi >= mlen ==> { break }
+                        module_name[mi] == ":" and module_name[mi + 1] == ":" ==> {
+                              cpos = mi
+                              break
+                        }
+                        _ ==> { mi = mi + 1 }
                   }
             }
-      }
-
-      op importLoadSource (as string: resolved_path, as string: module_name) as string ==> {
-            mut as int64: rlen = stdCollectionLength(resolved_path)
-            mut as bool: is_emb = false
             route {
-                  rlen >= 13 ==> {
-                        is_emb = (resolved_path[1..13] == "__EMBEDDED__:")
+                  cpos > 1 ==> {
+                        mut as string: base_agent = module_name[1..(cpos - 1)]
+                        emit(nice, importResolveFile(base_path, base_agent), "ok")
                   }
                   _ ==> {}
             }
+
+            emit(nice, "", "ok")
+      }
+
+      op importLoadSource (as string: resolved_path, as string: module_name) as string ==> {
             route {
-                  is_emb ==> {
-                        emit(nice, getStdLibStubSource(module_name), "ok")
-                  }
                   resolved_path != "" and stdIoFileExists(resolved_path) ==> {
                         emit(nice, stdIoReadFile(resolved_path), "ok")
-                  }
-                  isStdLibAgent(module_name) ==> {
-                        emit(nice, getStdLibStubSource(module_name), "ok")
                   }
                   _ ==> {
                         emit(nice, "", "ok")

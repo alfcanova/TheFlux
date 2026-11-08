@@ -1,0 +1,29 @@
+{
+  "comments": {
+    "lineComment": "#L ",
+    "blockComment": ["#B", "B#"]
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] }
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["\"", "\""],
+    ["'", "'"]
+  ],
+  "indentationRules": {
+    "increaseIndentPattern": "^.*(\\{|\\broute\\b|\\bprogram\\b|\\bcontract\\b|\\bagent\\b|\\bfunction\\b|\\bop\\b|\\binfinite\\b|==>)\\s*$",
+    "decreaseIndentPattern": "^\\s*\\}"
+  }
+}

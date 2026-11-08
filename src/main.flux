@@ -155,7 +155,7 @@ program (Main) {
                               }
 
                               route {
-                                    exp_err != "" ==> {
+                                    exp_err != "" and exp_err != "RT701" and exp_err != "RT706" and exp_err != "RT707" ==> {
                                           mut as string: err_hdr = CompilerLib::diagnosticGetHeader(exp_err, input_file)
                                           mut as string: err_hint = CompilerLib::diagnosticGetHint(exp_err)
                                           print(err_hdr)

@@ -88,10 +88,7 @@ program (ExamplesVmr) {
                                                                               route {
                                                                                     ch_o == "\r" ==> {}
                                                                                     ch_o == "\n" ==> {
-                                                                                          route {
-                                                                                                cur_chunk != "" ==> { println("  | " + cur_chunk) }
-                                                                                                _ ==> {}
-                                                                                          }
+                                                                                          println("  | " + cur_chunk)
                                                                                           cur_chunk = ""
                                                                                     }
                                                                                     _ ==> {

@@ -83,7 +83,7 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["MUL"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
-                                    opcode == "BINOP_/" or opcode == "BINOP_/i" or opcode == "BINOP_/f" ==> {
+                                    opcode == "BINOP_/i" or opcode == "BINOP_/f" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
                                           bc_ops = stdListPushBack(bc_ops, ["DIV"])

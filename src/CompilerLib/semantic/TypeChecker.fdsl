@@ -38,7 +38,17 @@ agent (CompilerLib) impl TypeCheckerContract {
                         res["valid"] = true
                         res["error"] = ""
                   }
-                  op_sym == "+" or op_sym == "-" or op_sym == "*" or op_sym == "/" or op_sym == "%" ==> {
+                  op_sym == "/f" ==> {
+                        res["result_type"] = "float64"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  op_sym == "/i" ==> {
+                        res["result_type"] = "int64"
+                        res["valid"] = true
+                        res["error"] = ""
+                  }
+                  op_sym == "+" or op_sym == "-" or op_sym == "*" or op_sym == "/r" or op_sym == "%" ==> {
                         route {
                               left_type == "float64" or right_type == "float64" ==> {
                                     res["result_type"] = "float64"

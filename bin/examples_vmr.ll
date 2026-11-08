@@ -42,11 +42,17 @@ declare i64 @flux_map_get(i8*, i8*)
 declare i64 @flux_map_get_tag(i8*, i8*)
 declare i1 @flux_map_contains_key(i8*, i8*)
 declare i64 @flux_map_len(i8*)
-declare i64 @flux_std_io_read_file(i8*)
+declare i8* @flux_std_io_read_file(i8*)
 declare i64 @flux_std_io_write_file(i8*, i8*)
 declare i64 @flux_std_io_file_exists(i8*)
+declare i64 @flux_std_io_dir_exists(i8*)
+declare i8* @flux_std_io_list_dir(i8*, i8* (i64, i64)*, i8* (i8*, i64, i64, i8*)*)
+declare i8* @flux_std_io_path_join(i8*, i8*)
+declare i8* @flux_std_io_path_base_name(i8*)
+declare i8* @flux_std_io_path_dir_name(i8*)
 declare i64 @flux_std_io_delete_file(i8*)
 declare i64 @flux_std_os_exec(i8*)
+declare i8* @flux_std_os_exec_output(i8*)
 declare i64 @flux_std_os_exit(i64)
 declare i8* @flux_list_build(i64, i64)
 declare i8* @flux_list_push(i8*, i64, i64, i8*)
@@ -464,197 +470,186 @@ route_arm_182:
   %t189 = icmp eq i32 %t189_cmp, 0
   br i1 %t189, label %ft_17, label %route_arm_186
 ft_17:
-  %t192_i64 = load i64, i64* %cur_chunk, align 8
-  %t192 = inttoptr i64 %t192_i64 to i8*
-  %t193 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %t194_cmp = call i32 @flux_str_compare(i8* %t192, i8* %t193)
-  %t194 = icmp ne i32 %t194_cmp, 0
-  br i1 %t194, label %ft_18, label %route_arm_191
-ft_18:
-  %t195 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.38, i32 0, i32 0
-  %t196_i64 = load i64, i64* %cur_chunk, align 8
-  %t196 = inttoptr i64 %t196_i64 to i8*
-  %t197 = call i8* @flux_str_concat(i8* %t195, i8* %t196)
-  %pr_sn_1 = icmp eq i8* %t197, null
-  %pr_sc_1 = select i1 %pr_sn_1, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t197
+  %t190 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.38, i32 0, i32 0
+  %t191_i64 = load i64, i64* %cur_chunk, align 8
+  %t191 = inttoptr i64 %t191_i64 to i8*
+  %t192 = call i8* @flux_str_concat(i8* %t190, i8* %t191)
+  %pr_sn_1 = icmp eq i8* %t192, null
+  %pr_sc_1 = select i1 %pr_sn_1, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t192
   call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_1)
   call i32 @fflush(i8* null)
-  br label %route_end_190
-route_arm_191:
-  br label %route_end_190
-route_end_190:
-  %t199 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %st_34 = ptrtoint i8* %t199 to i64
+  %t193 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %st_34 = ptrtoint i8* %t193 to i64
   store i64 %st_34, i64* %cur_chunk, align 8
   br label %route_end_181
 route_arm_186:
-  %t201_i64 = load i64, i64* %cur_chunk, align 8
-  %t201 = inttoptr i64 %t201_i64 to i8*
-  %t202_i64 = load i64, i64* %ch_o, align 8
-  %t202 = inttoptr i64 %t202_i64 to i8*
-  %t203 = call i8* @flux_str_concat(i8* %t201, i8* %t202)
-  %st_35 = ptrtoint i8* %t203 to i64
+  %t195_i64 = load i64, i64* %cur_chunk, align 8
+  %t195 = inttoptr i64 %t195_i64 to i8*
+  %t196_i64 = load i64, i64* %ch_o, align 8
+  %t196 = inttoptr i64 %t196_i64 to i8*
+  %t197 = call i8* @flux_str_concat(i8* %t195, i8* %t196)
+  %st_35 = ptrtoint i8* %t197 to i64
   store i64 %st_35, i64* %cur_chunk, align 8
   br label %route_end_181
 route_end_181:
-  %t204 = load i64, i64* %ci, align 8
-  %t205 = add i64 0, 1
-  %t206 = add i64 %t204, %t205
-  store i64 %t206, i64* %ci, align 8
+  %t198 = load i64, i64* %ci, align 8
+  %t199 = add i64 0, 1
+  %t200 = add i64 %t198, %t199
+  store i64 %t200, i64* %ci, align 8
   br label %route_end_171
 route_end_171:
   br label %loop_start_170
 loop_end_170:
-  %t209_i64 = load i64, i64* %cur_chunk, align 8
-  %t209 = inttoptr i64 %t209_i64 to i8*
-  %t210 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %t211_cmp = call i32 @flux_str_compare(i8* %t209, i8* %t210)
-  %t211 = icmp ne i32 %t211_cmp, 0
-  br i1 %t211, label %ft_19, label %route_arm_208
-ft_19:
-  %t212 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.38, i32 0, i32 0
-  %t213_i64 = load i64, i64* %cur_chunk, align 8
-  %t213 = inttoptr i64 %t213_i64 to i8*
-  %t214 = call i8* @flux_str_concat(i8* %t212, i8* %t213)
-  %pr_sn_2 = icmp eq i8* %t214, null
-  %pr_sc_2 = select i1 %pr_sn_2, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t214
+  %t203_i64 = load i64, i64* %cur_chunk, align 8
+  %t203 = inttoptr i64 %t203_i64 to i8*
+  %t204 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %t205_cmp = call i32 @flux_str_compare(i8* %t203, i8* %t204)
+  %t205 = icmp ne i32 %t205_cmp, 0
+  br i1 %t205, label %ft_18, label %route_arm_202
+ft_18:
+  %t206 = getelementptr inbounds [5 x i8], [5 x i8]* @.str.38, i32 0, i32 0
+  %t207_i64 = load i64, i64* %cur_chunk, align 8
+  %t207 = inttoptr i64 %t207_i64 to i8*
+  %t208 = call i8* @flux_str_concat(i8* %t206, i8* %t207)
+  %pr_sn_2 = icmp eq i8* %t208, null
+  %pr_sc_2 = select i1 %pr_sn_2, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t208
   call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_2)
   call i32 @fflush(i8* null)
-  br label %route_end_207
-route_arm_208:
-  br label %route_end_207
-route_end_207:
-  %t216 = getelementptr inbounds [7 x i8], [7 x i8]* @.str.39, i32 0, i32 0
-  %t217_i64 = load i64, i64* %nome, align 8
-  %t217 = inttoptr i64 %t217_i64 to i8*
-  %t218 = call i8* @flux_str_concat(i8* %t216, i8* %t217)
-  %pr_sn_3 = icmp eq i8* %t218, null
-  %pr_sc_3 = select i1 %pr_sn_3, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t218
+  br label %route_end_201
+route_arm_202:
+  br label %route_end_201
+route_end_201:
+  %t210 = getelementptr inbounds [7 x i8], [7 x i8]* @.str.39, i32 0, i32 0
+  %t211_i64 = load i64, i64* %nome, align 8
+  %t211 = inttoptr i64 %t211_i64 to i8*
+  %t212 = call i8* @flux_str_concat(i8* %t210, i8* %t211)
+  %pr_sn_3 = icmp eq i8* %t212, null
+  %pr_sc_3 = select i1 %pr_sn_3, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t212
   call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_3)
   call i32 @fflush(i8* null)
   br label %route_end_160
 route_arm_161:
-  %t220 = load i64, i64* %erros, align 8
-  %t221 = add i64 0, 1
-  %t222 = add i64 %t220, %t221
-  store i64 %t222, i64* %erros, align 8
-  %t223 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %st_38 = ptrtoint i8* %t223 to i64
+  %t214 = load i64, i64* %erros, align 8
+  %t215 = add i64 0, 1
+  %t216 = add i64 %t214, %t215
+  store i64 %t216, i64* %erros, align 8
+  %t217 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %st_38 = ptrtoint i8* %t217 to i64
   store i64 %st_38, i64* %last_line, align 8
-  %t224 = add i64 0, 1
-  store i64 %t224, i64* %ci, align 8
-  %t225 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %st_40 = ptrtoint i8* %t225 to i64
+  %t218 = add i64 0, 1
+  store i64 %t218, i64* %ci, align 8
+  %t219 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %st_40 = ptrtoint i8* %t219 to i64
   store i64 %st_40, i64* %cur_chunk, align 8
-  br label %loop_start_226
-loop_start_226:
+  br label %loop_start_220
+loop_start_220:
+  %t223 = load i64, i64* %ci, align 8
+  %t224 = load i64, i64* %out_len, align 8
+  %t225 = icmp sgt i64 %t223, %t224
+  br i1 %t225, label %ft_19, label %route_arm_222
+ft_19:
+  br label %loop_end_220
+route_arm_222:
+  %t227_i64 = load i64, i64* %out_full, align 8
+  %t227 = inttoptr i64 %t227_i64 to i8*
+  %t228 = load i64, i64* %ci, align 8
   %t229 = load i64, i64* %ci, align 8
-  %t230 = load i64, i64* %out_len, align 8
-  %t231 = icmp sgt i64 %t229, %t230
-  br i1 %t231, label %ft_20, label %route_arm_228
-ft_20:
-  br label %loop_end_226
-route_arm_228:
-  %t233_i64 = load i64, i64* %out_full, align 8
-  %t233 = inttoptr i64 %t233_i64 to i8*
-  %t234 = load i64, i64* %ci, align 8
-  %t235 = load i64, i64* %ci, align 8
-  %t236 = call i8* @flux_str_slice(i8* %t233, i64 %t234, i64 %t235)
-  %st_41 = ptrtoint i8* %t236 to i64
+  %t230 = call i8* @flux_str_slice(i8* %t227, i64 %t228, i64 %t229)
+  %st_41 = ptrtoint i8* %t230 to i64
   store i64 %st_41, i64* %ch_o, align 8
-  %t239_i64 = load i64, i64* %ch_o, align 8
-  %t239 = inttoptr i64 %t239_i64 to i8*
-  %t240 = getelementptr inbounds [2 x i8], [2 x i8]* @.str.25, i32 0, i32 0
-  %t241_cmp = call i32 @flux_str_compare(i8* %t239, i8* %t240)
-  %t241 = icmp eq i32 %t241_cmp, 0
-  br i1 %t241, label %ft_21, label %route_arm_238
+  %t233_i64 = load i64, i64* %ch_o, align 8
+  %t233 = inttoptr i64 %t233_i64 to i8*
+  %t234 = getelementptr inbounds [2 x i8], [2 x i8]* @.str.25, i32 0, i32 0
+  %t235_cmp = call i32 @flux_str_compare(i8* %t233, i8* %t234)
+  %t235 = icmp eq i32 %t235_cmp, 0
+  br i1 %t235, label %ft_20, label %route_arm_232
+ft_20:
+  br label %route_end_231
+route_arm_232:
+  %t237_i64 = load i64, i64* %ch_o, align 8
+  %t237 = inttoptr i64 %t237_i64 to i8*
+  %t238 = getelementptr inbounds [2 x i8], [2 x i8]* @.str.24, i32 0, i32 0
+  %t239_cmp = call i32 @flux_str_compare(i8* %t237, i8* %t238)
+  %t239 = icmp eq i32 %t239_cmp, 0
+  br i1 %t239, label %ft_21, label %route_arm_236
 ft_21:
-  br label %route_end_237
-route_arm_238:
-  %t243_i64 = load i64, i64* %ch_o, align 8
-  %t243 = inttoptr i64 %t243_i64 to i8*
-  %t244 = getelementptr inbounds [2 x i8], [2 x i8]* @.str.24, i32 0, i32 0
-  %t245_cmp = call i32 @flux_str_compare(i8* %t243, i8* %t244)
-  %t245 = icmp eq i32 %t245_cmp, 0
-  br i1 %t245, label %ft_22, label %route_arm_242
+  %t242_i64 = load i64, i64* %cur_chunk, align 8
+  %t242 = inttoptr i64 %t242_i64 to i8*
+  %t243 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %t244_cmp = call i32 @flux_str_compare(i8* %t242, i8* %t243)
+  %t244 = icmp ne i32 %t244_cmp, 0
+  br i1 %t244, label %ft_22, label %route_arm_241
 ft_22:
-  %t248_i64 = load i64, i64* %cur_chunk, align 8
-  %t248 = inttoptr i64 %t248_i64 to i8*
-  %t249 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %t250_cmp = call i32 @flux_str_compare(i8* %t248, i8* %t249)
-  %t250 = icmp ne i32 %t250_cmp, 0
-  br i1 %t250, label %ft_23, label %route_arm_247
-ft_23:
-  %t251_i64 = load i64, i64* %cur_chunk, align 8
-  %t251 = inttoptr i64 %t251_i64 to i8*
-  %st_42 = ptrtoint i8* %t251 to i64
+  %t245_i64 = load i64, i64* %cur_chunk, align 8
+  %t245 = inttoptr i64 %t245_i64 to i8*
+  %st_42 = ptrtoint i8* %t245 to i64
   store i64 %st_42, i64* %last_line, align 8
-  br label %route_end_246
-route_arm_247:
-  br label %route_end_246
-route_end_246:
-  %t253 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %st_43 = ptrtoint i8* %t253 to i64
+  br label %route_end_240
+route_arm_241:
+  br label %route_end_240
+route_end_240:
+  %t247 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %st_43 = ptrtoint i8* %t247 to i64
   store i64 %st_43, i64* %cur_chunk, align 8
-  br label %route_end_237
-route_arm_242:
-  %t255_i64 = load i64, i64* %cur_chunk, align 8
-  %t255 = inttoptr i64 %t255_i64 to i8*
-  %t256_i64 = load i64, i64* %ch_o, align 8
-  %t256 = inttoptr i64 %t256_i64 to i8*
-  %t257 = call i8* @flux_str_concat(i8* %t255, i8* %t256)
-  %st_44 = ptrtoint i8* %t257 to i64
+  br label %route_end_231
+route_arm_236:
+  %t249_i64 = load i64, i64* %cur_chunk, align 8
+  %t249 = inttoptr i64 %t249_i64 to i8*
+  %t250_i64 = load i64, i64* %ch_o, align 8
+  %t250 = inttoptr i64 %t250_i64 to i8*
+  %t251 = call i8* @flux_str_concat(i8* %t249, i8* %t250)
+  %st_44 = ptrtoint i8* %t251 to i64
   store i64 %st_44, i64* %cur_chunk, align 8
-  br label %route_end_237
-route_end_237:
-  %t258 = load i64, i64* %ci, align 8
-  %t259 = add i64 0, 1
-  %t260 = add i64 %t258, %t259
-  store i64 %t260, i64* %ci, align 8
-  br label %route_end_227
-route_end_227:
-  br label %loop_start_226
-loop_end_226:
-  %t263_i64 = load i64, i64* %cur_chunk, align 8
-  %t263 = inttoptr i64 %t263_i64 to i8*
-  %t264 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %t265_cmp = call i32 @flux_str_compare(i8* %t263, i8* %t264)
-  %t265 = icmp ne i32 %t265_cmp, 0
-  br i1 %t265, label %ft_24, label %route_arm_262
-ft_24:
-  %t266_i64 = load i64, i64* %cur_chunk, align 8
-  %t266 = inttoptr i64 %t266_i64 to i8*
-  %st_46 = ptrtoint i8* %t266 to i64
+  br label %route_end_231
+route_end_231:
+  %t252 = load i64, i64* %ci, align 8
+  %t253 = add i64 0, 1
+  %t254 = add i64 %t252, %t253
+  store i64 %t254, i64* %ci, align 8
+  br label %route_end_221
+route_end_221:
+  br label %loop_start_220
+loop_end_220:
+  %t257_i64 = load i64, i64* %cur_chunk, align 8
+  %t257 = inttoptr i64 %t257_i64 to i8*
+  %t258 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %t259_cmp = call i32 @flux_str_compare(i8* %t257, i8* %t258)
+  %t259 = icmp ne i32 %t259_cmp, 0
+  br i1 %t259, label %ft_23, label %route_arm_256
+ft_23:
+  %t260_i64 = load i64, i64* %cur_chunk, align 8
+  %t260 = inttoptr i64 %t260_i64 to i8*
+  %st_46 = ptrtoint i8* %t260 to i64
   store i64 %st_46, i64* %last_line, align 8
-  br label %route_end_261
-route_arm_262:
-  br label %route_end_261
-route_end_261:
-  %t270_i64 = load i64, i64* %last_line, align 8
-  %t270 = inttoptr i64 %t270_i64 to i8*
-  %t271 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %t272_cmp = call i32 @flux_str_compare(i8* %t270, i8* %t271)
-  %t272 = icmp eq i32 %t272_cmp, 0
-  br i1 %t272, label %ft_25, label %route_arm_269
-ft_25:
-  %t273 = getelementptr inbounds [17 x i8], [17 x i8]* @.str.40, i32 0, i32 0
-  %st_47 = ptrtoint i8* %t273 to i64
+  br label %route_end_255
+route_arm_256:
+  br label %route_end_255
+route_end_255:
+  %t264_i64 = load i64, i64* %last_line, align 8
+  %t264 = inttoptr i64 %t264_i64 to i8*
+  %t265 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %t266_cmp = call i32 @flux_str_compare(i8* %t264, i8* %t265)
+  %t266 = icmp eq i32 %t266_cmp, 0
+  br i1 %t266, label %ft_24, label %route_arm_263
+ft_24:
+  %t267 = getelementptr inbounds [17 x i8], [17 x i8]* @.str.40, i32 0, i32 0
+  %st_47 = ptrtoint i8* %t267 to i64
   store i64 %st_47, i64* %last_line, align 8
-  br label %route_end_268
-route_arm_269:
-  br label %route_end_268
-route_end_268:
-  %t275 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.41, i32 0, i32 0
-  %t276_i64 = load i64, i64* %nome, align 8
-  %t276 = inttoptr i64 %t276_i64 to i8*
-  %t277 = call i8* @flux_str_concat(i8* %t275, i8* %t276)
-  %t278 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.42, i32 0, i32 0
-  %t279 = call i8* @flux_str_concat(i8* %t277, i8* %t278)
-  %t280_i64 = load i64, i64* %last_line, align 8
-  %t280 = inttoptr i64 %t280_i64 to i8*
-  %t281 = call i8* @flux_str_concat(i8* %t279, i8* %t280)
-  %pr_sn_4 = icmp eq i8* %t281, null
-  %pr_sc_4 = select i1 %pr_sn_4, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t281
+  br label %route_end_262
+route_arm_263:
+  br label %route_end_262
+route_end_262:
+  %t269 = getelementptr inbounds [8 x i8], [8 x i8]* @.str.41, i32 0, i32 0
+  %t270_i64 = load i64, i64* %nome, align 8
+  %t270 = inttoptr i64 %t270_i64 to i8*
+  %t271 = call i8* @flux_str_concat(i8* %t269, i8* %t270)
+  %t272 = getelementptr inbounds [3 x i8], [3 x i8]* @.str.42, i32 0, i32 0
+  %t273 = call i8* @flux_str_concat(i8* %t271, i8* %t272)
+  %t274_i64 = load i64, i64* %last_line, align 8
+  %t274 = inttoptr i64 %t274_i64 to i8*
+  %t275 = call i8* @flux_str_concat(i8* %t273, i8* %t274)
+  %pr_sn_4 = icmp eq i8* %t275, null
+  %pr_sc_4 = select i1 %pr_sn_4, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t275
   call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_4)
   call i32 @fflush(i8* null)
   br label %route_end_160
@@ -663,64 +658,64 @@ route_end_160:
 route_arm_101:
   br label %route_end_100
 route_end_100:
-  %t283 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %st_48 = ptrtoint i8* %t283 to i64
+  %t277 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %st_48 = ptrtoint i8* %t277 to i64
   store i64 %st_48, i64* %cur_fname, align 8
   br label %route_end_91
 route_arm_96:
-  %t285_i64 = load i64, i64* %cur_fname, align 8
-  %t285 = inttoptr i64 %t285_i64 to i8*
-  %t286_i64 = load i64, i64* %ch, align 8
-  %t286 = inttoptr i64 %t286_i64 to i8*
-  %t287 = call i8* @flux_str_concat(i8* %t285, i8* %t286)
-  %st_49 = ptrtoint i8* %t287 to i64
+  %t279_i64 = load i64, i64* %cur_fname, align 8
+  %t279 = inttoptr i64 %t279_i64 to i8*
+  %t280_i64 = load i64, i64* %ch, align 8
+  %t280 = inttoptr i64 %t280_i64 to i8*
+  %t281 = call i8* @flux_str_concat(i8* %t279, i8* %t280)
+  %st_49 = ptrtoint i8* %t281 to i64
   store i64 %st_49, i64* %cur_fname, align 8
   br label %route_end_91
 route_end_91:
-  %t288 = load i64, i64* %li, align 8
-  %t289 = add i64 0, 1
-  %t290 = add i64 %t288, %t289
-  store i64 %t290, i64* %li, align 8
+  %t282 = load i64, i64* %li, align 8
+  %t283 = add i64 0, 1
+  %t284 = add i64 %t282, %t283
+  store i64 %t284, i64* %li, align 8
   br label %route_end_81
 route_end_81:
   br label %loop_start_80
 loop_end_80:
-  %t291 = getelementptr inbounds [64 x i8], [64 x i8]* @.str.43, i32 0, i32 0
-  %t292 = call i64 @flux_std_os_exec(i8* %t291)
-  %t293 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %pr_sn_5 = icmp eq i8* %t293, null
-  %pr_sc_5 = select i1 %pr_sn_5, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t293
+  %t285 = getelementptr inbounds [64 x i8], [64 x i8]* @.str.43, i32 0, i32 0
+  %t286 = call i64 @flux_std_os_exec(i8* %t285)
+  %t287 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %pr_sn_5 = icmp eq i8* %t287, null
+  %pr_sc_5 = select i1 %pr_sn_5, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t287
   call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_5)
   call i32 @fflush(i8* null)
-  %t294 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
-  %t295 = load i64, i64* %acertos, align 8
+  %t288 = getelementptr inbounds [1 x i8], [1 x i8]* @.str.20, i32 0, i32 0
+  %t289 = load i64, i64* %acertos, align 8
   %cv_buf_1 = call i8* @malloc(i64 32)
-  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_1, i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 %t295)
-  %t296 = call i8* @flux_str_concat(i8* %t294, i8* %cv_buf_1)
-  %t297 = getelementptr inbounds [11 x i8], [11 x i8]* @.str.44, i32 0, i32 0
-  %t298 = call i8* @flux_str_concat(i8* %t296, i8* %t297)
-  %t299 = load i64, i64* %erros, align 8
+  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_1, i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 %t289)
+  %t290 = call i8* @flux_str_concat(i8* %t288, i8* %cv_buf_1)
+  %t291 = getelementptr inbounds [11 x i8], [11 x i8]* @.str.44, i32 0, i32 0
+  %t292 = call i8* @flux_str_concat(i8* %t290, i8* %t291)
+  %t293 = load i64, i64* %erros, align 8
   %cv_buf_2 = call i8* @malloc(i64 32)
-  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_2, i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 %t299)
-  %t300 = call i8* @flux_str_concat(i8* %t298, i8* %cv_buf_2)
-  %t301 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.45, i32 0, i32 0
-  %t302 = call i8* @flux_str_concat(i8* %t300, i8* %t301)
-  %pr_sn_6 = icmp eq i8* %t302, null
-  %pr_sc_6 = select i1 %pr_sn_6, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t302
+  call i32 (i8*, i64, i8*, ...) @snprintf(i8* %cv_buf_2, i64 32, i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_int_val, i32 0, i32 0), i64 %t293)
+  %t294 = call i8* @flux_str_concat(i8* %t292, i8* %cv_buf_2)
+  %t295 = getelementptr inbounds [10 x i8], [10 x i8]* @.str.45, i32 0, i32 0
+  %t296 = call i8* @flux_str_concat(i8* %t294, i8* %t295)
+  %pr_sn_6 = icmp eq i8* %t296, null
+  %pr_sc_6 = select i1 %pr_sn_6, i8* getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0), i8* %t296
   call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.fmt_str, i32 0, i32 0), i8* %pr_sc_6)
   call i32 @fflush(i8* null)
-  %t305 = load i64, i64* %erros, align 8
-  %t306 = add i64 0, 0
-  %t307 = icmp eq i64 %t305, %t306
-  br i1 %t307, label %ft_26, label %route_arm_304
-ft_26:
-  %t308 = add i64 0, 0
-  %t309 = call i64 @flux_std_os_exit(i64 %t308)
-  br label %route_end_303
-route_arm_304:
-  %t311 = add i64 0, 1
-  %t312 = call i64 @flux_std_os_exit(i64 %t311)
-  br label %route_end_303
-route_end_303:
+  %t299 = load i64, i64* %erros, align 8
+  %t300 = add i64 0, 0
+  %t301 = icmp eq i64 %t299, %t300
+  br i1 %t301, label %ft_25, label %route_arm_298
+ft_25:
+  %t302 = add i64 0, 0
+  %t303 = call i64 @flux_std_os_exit(i64 %t302)
+  br label %route_end_297
+route_arm_298:
+  %t305 = add i64 0, 1
+  %t306 = call i64 @flux_std_os_exit(i64 %t305)
+  br label %route_end_297
+route_end_297:
   ret i32 0
 }

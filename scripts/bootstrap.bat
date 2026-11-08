@@ -21,7 +21,7 @@ if errorlevel 1 (
 
 :: 2. Portao Boot-0: Compilacao da Runtime Modular C
 echo [+] [Boot-0] Compilando Runtime Modular C (libfluxrt.a)...
-call build_runtime.bat
+call scripts\build_runtime.bat
 if errorlevel 1 (
     echo [ERRO] Falha ao compilar runtime modular.
     exit /b 1
@@ -42,13 +42,12 @@ del /q /f lib\libfluxcompiler.a lib\fluxcompiler.lib 2>nul
 llvm-ar rc lib\libfluxcompiler.a build\intermediates\stage1_compiler.o
 if errorlevel 1 goto fail
 copy /y lib\libfluxcompiler.a lib\fluxcompiler.lib >nul 2>&1
+if errorlevel 1 goto fail
 
-:: Se fluxc.exe nao existir em bin, linka a partir de stage1.ll
-if not exist "bin\fluxc.exe" (
-    echo [+] [Boot-0.8] Linkando bin\fluxc.exe a partir de stage1.ll...
-    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin\fluxc.exe build\intermediates\stage1.ll -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32
-    if errorlevel 1 goto fail
-)
+:: Linka bin\fluxc.exe a partir de stage1.ll e libfluxcompiler atualizado
+echo [+] [Boot-0.8] Linkando bin\fluxc.exe a partir de stage1.ll e libfluxcompiler...
+clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin\fluxc.exe build\intermediates\stage1.ll -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32
+if errorlevel 1 goto fail
 
 :: 4. Portao Boot-1: Validacao de Autonomia do Compilador Nativo (bin/fluxc.exe)
 echo [+] [Boot-1] Verificando autonomia e CLI de bin/fluxc.exe...
@@ -70,6 +69,9 @@ if errorlevel 1 (
 echo [OK] Portao Boot-1 Aprovado: bin/fluxc.exe operacional e autonomo.
 
 :: 5. Portao Boot-2: Fixpoint e Certificacao Deterministica (M5)
+echo [+] [Boot-2] Limpando artefatos intermediarios anteriores (stage2.* / stage3.*)...
+del /q /f build\intermediates\stage2.* build\intermediates\stage3.* 2>nul
+
 echo [+] [Boot-2] Iniciando Certificacao de Fixpoint (Stage 1 -^> Stage 2 -^> Stage 3)...
 
 :: Stage 1 -> Stage 2
@@ -119,7 +121,52 @@ echo ===========================================================================
 
 :: Promover Stage 2 para compilador de producao bin/fluxc.exe
 echo [+] Promovendo build/intermediates/stage2.exe para bin/fluxc.exe...
-copy /y build\intermediates\stage2.exe bin\fluxc.exe >nul 2>&1
+copy /y build\intermediates\stage2.exe bin\fluxc.exe
+if errorlevel 1 (
+    echo [ERRO] Falha ao promover stage2.exe para bin/fluxc.exe. Verifique se o executavel esta em uso.
+    goto fail
+)
+
+:: 5.5. Portao Boot-3: Auto-Teste Funcional Semantico Pos-Promocao
+echo [+] [Boot-3] Executando Auto-Teste Funcional Semantico no bin/fluxc.exe promovido...
+(
+echo function ^(bootFat^) ^(as int64: n^) as int64 {
+echo       route {
+echo             n ^<= 1 ==^> { emit^(nice, 1, "base"^) }
+echo             _ ==^> { emit^(nice, n * bootFat^(n - 1^), "rec"^) }
+echo       }
+echo }
+echo function ^(bootDiv^) ^(as int64: a, as int64: b^) as int64 {
+echo       mut as int64: q = ^(a /i b^) ? {
+echo             ==^> emit^(fail, 0, "div_zero"^)
+echo             ==^> emit^(nice, q, "div_ok"^)
+echo       }
+echo }
+echo program ^(BootSelfTest^) {
+echo       print^(bootFat^(5^)^)
+echo       mut as int64: r0 = bootDiv^(21, 0^)
+echo       print^(r0.sta + ":" + r0.msg^)
+echo       mut as int64: r1 = bootDiv^(21, 3^)
+echo       print^(r1.sta + ":" + r1.val^)
+echo }
+) > build\intermediates\boot3_selftest.flux
+
+bin\fluxc.exe build\intermediates\boot3_selftest.flux > build\intermediates\boot3_out.txt 2>&1
+if errorlevel 1 (
+    echo [ERRO] Portao Boot-3 falhou na execucao de boot3_selftest.flux!
+    type build\intermediates\boot3_out.txt
+    del /q /f build\intermediates\boot3_selftest.flux build\intermediates\boot3_out.txt 2>nul
+    goto fail
+)
+findstr /c:"120" build\intermediates\boot3_out.txt >nul 2>&1
+if errorlevel 1 goto boot3_fail
+findstr /c:"fail:div_zero" build\intermediates\boot3_out.txt >nul 2>&1
+if errorlevel 1 goto boot3_fail
+findstr /c:"nice:7" build\intermediates\boot3_out.txt >nul 2>&1
+if errorlevel 1 goto boot3_fail
+
+del /q /f build\intermediates\boot3_selftest.flux build\intermediates\boot3_out.txt 2>nul
+echo [OK] Portao Boot-3 Aprovado: Recursao universal e Short Circuit verificados em Stage 2!
 
 :: 6. Compilacao do FluxVM Nativo
 echo [+] Compilando bin/fluxvm.exe via Clang...
@@ -134,6 +181,12 @@ echo ===========================================================================
 echo [TheFlux] BOOTSTRAPPING CONCLUIDO COM EXITO 100%% NATIVO (MARCO M5)!
 echo ==============================================================================
 exit /b 0
+
+:boot3_fail
+echo [ERRO] Portao Boot-3 reprovado: saida semantica divergente do esperado!
+type build\intermediates\boot3_out.txt
+del /q /f build\intermediates\boot3_selftest.flux build\intermediates\boot3_out.txt 2>nul
+goto fail
 
 :fail
 echo ==============================================================================

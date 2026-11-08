@@ -5,6 +5,8 @@
 #L ==============================================================================
 
 contract (LlvmBackendContract) {
+      op llvmMangleSymbol (as string: agent_name, as string: op_name) as string
+      op llvmEmitInstrs (as list of data: instrs, as bool: is_main, as list of data: fn_params, as list of data: fn_ptypes, as string: fn_ret_type, as map: str_map, as map: str_lens, as map: fn_table, as bool: has_uf) as string
       op llvmGenerateIr (as map: fmir_module) as string
       op llvmCompileModule (as map: fmir_module, as string: output_path) as map
       op llvmEscapeString (as string: s) as string
@@ -12,6 +14,17 @@ contract (LlvmBackendContract) {
 }
 
 agent (CompilerLib) impl LlvmBackendContract {
+      op llvmMangleSymbol (as string: agent_name, as string: op_name) as string ==> {
+            mut as string: sym = "uf_" + op_name
+            route {
+                  agent_name != "" ==> {
+                        sym = "uf_" + agent_name + "__" + op_name
+                  }
+                  _ ==> {}
+            }
+            emit(nice, sym, "ok")
+      }
+
       op llvmEscapeString (as string: s) as string ==> {
             mut as string: res = stdStringLlvmEscape(s)
             emit(nice, res, "ok")
@@ -22,211 +35,55 @@ agent (CompilerLib) impl LlvmBackendContract {
             emit(nice, blen + 1, "ok")
       }
 
-      op llvmGenerateIr (as map: fmir_module) as string ==> {
+      op llvmEmitInstrs (as list of data: instrs, as bool: is_main, as list of data: fn_params, as list of data: fn_ptypes, as string: fn_ret_type, as map: str_map, as map: str_lens, as map: fn_table, as bool: has_uf) as string ==> {
             mut as string: nl = "\n"
-            mut as string: mod_name = "" + fmir_module["name"]
-            mut as list of data: instrs = fmir_module["instructions"]
-            mut as int64: n = stdCollectionLength(instrs)
-
-            #L 1. Primeira Passagem: Coleta de strings literais e identificacao de registradores
-            mut as map: str_map = map{}
-            mut as map: str_lens = map{}
-            mut as map: str_escaped = map{}
-            mut as list of data: str_list = []
-            mut as int64: str_count = 0
-            mut as list of data: common_strs = ["sta", "val", "msg", "nice", "ok"]
-            mut as int64: csi = 1
-            infinite {
-                  route {
-                        csi > 5 ==> { break }
-                        _ ==> {
-                              mut as string: cs_val = "" + common_strs[csi]
-                              route {
-                                    not stdMapContainsKey(str_map, cs_val) ==> {
-                                          mut as string: lbl = "@.str." + str_count
-                                          str_map[cs_val] = lbl
-                                          str_lens[cs_val] = llvmStringByteLength(cs_val)
-                                          str_escaped[cs_val] = llvmEscapeString(cs_val) + "\\00"
-                                          str_list = stdListPushBack(str_list, cs_val)
-                                          str_count = str_count + 1
-                                    }
-                                    _ ==> {}
-                              }
-                              csi = csi + 1
-                        }
+            mut as string: ir = "entry:" + nl
+            route {
+                  is_main ==> {
+                        ir = ir + "  call void @flux_runtime_init_args(i32 %argc, i8** %argv)" + nl
                   }
+                  _ ==> {}
             }
-
+            mut as int64: n = stdCollectionLength(instrs)
             mut as map: alloc_map = map{}
             mut as list of data: alloc_list = []
-
-            mut as map: reg_def_counts = map{}
-
-            mut as int64: pi = 1
+            mut as int64: n_fparams = stdCollectionLength(fn_params)
+            mut as int64: fpi = 1
             infinite {
                   route {
-                        pi > n ==> { break }
+                        fpi > n_fparams ==> { break }
                         _ ==> {
-                              mut as map: inst = instrs[pi]
-                              mut as string: opcode = "" + inst["op"]
-                              mut as string: a1 = "" + inst["arg1"]
-                              mut as string: a2 = "" + inst["arg2"]
-                              mut as string: res = "" + inst["res"]
-
+                              mut as string: fp_name = "" + fn_params[fpi]
                               route {
-                                    opcode == "CONST_STR" ==> {
-                                          route {
-                                                not stdMapContainsKey(str_map, a1) ==> {
-                                                      mut as string: lbl = "@.str." + str_count
-                                                      str_map[a1] = lbl
-                                                      str_lens[a1] = llvmStringByteLength(a1)
-                                                      str_escaped[a1] = llvmEscapeString(a1) + "\\00"
-                                                      str_list = stdListPushBack(str_list, a1)
-                                                      str_count = str_count + 1
-                                                }
-                                                _ ==> {}
-                                          }
-                                    }
-                                    opcode == "STRUCT_SET_FIELD" or opcode == "GET_FIELD" or opcode == "SET_FIELD" or opcode == "MAP_SET" or opcode == "SET_INDEX" or opcode == "GET_INDEX" ==> {
-                                          mut as int64: a2_l = stdCollectionLength(a2)
-                                          route {
-                                                a2_l > 0 and a2[1] != "%" and not stdMapContainsKey(str_map, a2) ==> {
-                                                      mut as string: lbl = "@.str." + str_count
-                                                      str_map[a2] = lbl
-                                                      str_lens[a2] = llvmStringByteLength(a2)
-                                                      str_escaped[a2] = llvmEscapeString(a2) + "\\00"
-                                                      str_list = stdListPushBack(str_list, a2)
-                                                      str_count = str_count + 1
-                                                }
-                                                _ ==> {}
-                                          }
-                                    }
-                                    opcode == "ALLOC" ==> {
-                                          route {
-                                                res != "" and not stdMapContainsKey(alloc_map, res) ==> {
-                                                      alloc_map[res] = true
-                                                      alloc_list = stdListPushBack(alloc_list, res)
-                                                }
-                                                _ ==> {}
-                                          }
+                                    fp_name != "" and not stdMapContainsKey(alloc_map, fp_name) ==> {
+                                          alloc_map[fp_name] = true
+                                          alloc_list = stdListPushBack(alloc_list, fp_name)
                                     }
                                     _ ==> {}
                               }
-
-                              mut as int64: res_l = stdCollectionLength(res)
+                              fpi = fpi + 1
+                        }
+                  }
+            }
+            mut as int64: api = 1
+            infinite {
+                  route {
+                        api > n ==> { break }
+                        _ ==> {
+                              mut as map: ainst = instrs[api]
+                              mut as string: aop = "" + ainst["op"]
+                              mut as string: ares = "" + ainst["res"]
                               route {
-                                    res_l > 1 ==> {
-                                          route {
-                                                res[1] == "%" ==> {
-                                                      mut as int64: cur_c = 0
-                                                      route {
-                                                            stdMapContainsKey(reg_def_counts, res) ==> {
-                                                                  cur_c = reg_def_counts[res]
-                                                            }
-                                                            _ ==> {}
-                                                      }
-                                                      reg_def_counts[res] = cur_c + 1
-                                                }
-                                                _ ==> {}
-                                          }
+                                    aop == "ALLOC" and ares != "" and not stdMapContainsKey(alloc_map, ares) ==> {
+                                          alloc_map[ares] = true
+                                          alloc_list = stdListPushBack(alloc_list, ares)
                                     }
                                     _ ==> {}
                               }
-                              pi = pi + 1
+                              api = api + 1
                         }
                   }
             }
-
-            #L 2. Emissao de Cabecalho do Modulo e Declaracoes Externas
-            mut as string: ir = "; ModuleID = '" + mod_name + "'" + nl
-            ir = ir + "target triple = \"x86_64-pc-windows-msvc\"" + nl + nl
-
-            ir = ir + "%flux.result = type { i8*, i64, double, i8* }" + nl + nl
-            ir = ir + "declare %flux.result @f_diagnosticExplain(i8*)" + nl
-            ir = ir + "declare %flux.result @f_diagnosticGetHeader(i8*, i8*)" + nl
-            ir = ir + "declare %flux.result @f_diagnosticGetHint(i8*)" + nl
-            ir = ir + "declare %flux.result @f_parseFile(i8*)" + nl
-            ir = ir + "declare %flux.result @f_parseDumpAst(i8*)" + nl
-            ir = ir + "declare %flux.result @f_semanticAnalyze(i8*, i64)" + nl
-            ir = ir + "declare %flux.result @f_fmirBuildFromAst(i8*, i64)" + nl
-            ir = ir + "declare %flux.result @f_fmirDumpText(i8*)" + nl
-            ir = ir + "declare %flux.result @f_backendCompile(i8*, i8*, i8*)" + nl + nl
-
-            ir = ir + "declare void @flux_runtime_init_args(i32, i8**)" + nl
-            ir = ir + "declare i32 @printf(i8*, ...)" + nl
-            ir = ir + "declare i32 @fflush(i8*)" + nl
-            ir = ir + "declare void @exit(i32)" + nl
-            ir = ir + "declare i8* @malloc(i64)" + nl
-            ir = ir + "declare void @free(i8*)" + nl
-            ir = ir + "declare i64 @strlen(i8*)" + nl
-            ir = ir + "declare i32 @strcmp(i8*, i8*)" + nl
-            ir = ir + "declare i32 @snprintf(i8*, i64, i8*, ...)" + nl
-            ir = ir + "declare double @pow(double, double)" + nl
-            ir = ir + "declare double @llvm.sqrt.f64(double)" + nl
-            ir = ir + "declare i8* @flux_str_concat(i8*, i8*)" + nl
-            ir = ir + "declare i32 @flux_str_compare(i8*, i8*)" + nl
-            ir = ir + "declare i8* @flux_str_slice(i8*, i64, i64)" + nl
-            ir = ir + "declare i64 @flux_str_len(i8*)" + nl
-            ir = ir + "declare i8* @flux_list_create(i64)" + nl
-            ir = ir + "declare void @flux_list_push_val(i8*, i64)" + nl
-            ir = ir + "declare i64 @flux_list_get_val(i8*, i64)" + nl
-            ir = ir + "declare i64 @flux_list_get(i8*, i64)" + nl
-            ir = ir + "declare void @flux_list_set(i8*, i64, i64)" + nl
-            ir = ir + "declare i64 @flux_list_len(i8*)" + nl
-            ir = ir + "declare i8* @flux_map_build(i64)" + nl
-            ir = ir + "declare void @flux_list_print(i8*)" + nl
-            ir = ir + "declare void @flux_map_print(i8*)" + nl
-            ir = ir + "declare i8* @flux_map_set(i8*, i8*, i64, i64)" + nl
-            ir = ir + "declare i64 @flux_map_get(i8*, i8*)" + nl
-            ir = ir + "declare i64 @flux_map_get_tag(i8*, i8*)" + nl
-            ir = ir + "declare i1 @flux_map_contains_key(i8*, i8*)" + nl
-            ir = ir + "declare i64 @flux_map_len(i8*)" + nl
-            ir = ir + "declare i64 @flux_std_io_read_file(i8*)" + nl
-            ir = ir + "declare i64 @flux_std_io_write_file(i8*, i8*)" + nl
-            ir = ir + "declare i64 @flux_std_io_file_exists(i8*)" + nl
-            ir = ir + "declare i64 @flux_std_io_delete_file(i8*)" + nl
-            ir = ir + "declare i64 @flux_std_os_exec(i8*)" + nl
-            ir = ir + "declare i64 @flux_std_os_exit(i64)" + nl
-            ir = ir + "declare i8* @flux_list_build(i64, i64)" + nl
-            ir = ir + "declare i8* @flux_list_push(i8*, i64, i64, i8*)" + nl
-            ir = ir + "declare i8* @flux_std_runtime_get_args(i8* (i64, i64)*, i8* (i8*, i64, i64, i8*)*)" + nl
-            ir = ir + "declare i64 @flux_std_datetime_now()" + nl
-            ir = ir + "declare i64 @flux_std_datetime_monotonic_now()" + nl
-            ir = ir + "declare i64 @flux_std_datetime_monotonic_elapsed(i64)" + nl + nl
-
-            #L Format strings globais
-            ir = ir + "@.fmt_int = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\", align 1" + nl
-            ir = ir + "@.fmt_int_val = private unnamed_addr constant [4 x i8] c\"%ld\\00\", align 1" + nl
-            ir = ir + "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\", align 1" + nl
-            ir = ir + "@.fmt_str_val = private unnamed_addr constant [3 x i8] c\"%s\\00\", align 1" + nl
-            ir = ir + "@.fmt_float = private unnamed_addr constant [7 x i8] c\"%.17g\\0A\\00\", align 1" + nl
-            ir = ir + "@.fmt_float_val = private unnamed_addr constant [6 x i8] c\"%.17g\\00\", align 1" + nl
-            ir = ir + "@.str_true = private unnamed_addr constant [5 x i8] c\"true\\00\", align 1" + nl
-            ir = ir + "@.str_false = private unnamed_addr constant [6 x i8] c\"false\\00\", align 1" + nl
-            ir = ir + "@.str_empty = private unnamed_addr constant [1 x i8] c\"\\00\", align 1" + nl + nl
-
-            #L Tabela de strings constantes
-            mut as int64: n_strs = stdCollectionLength(str_list)
-            mut as int64: si = 1
-            infinite {
-                  route {
-                        si > n_strs ==> { break }
-                        _ ==> {
-                              mut as string: s_raw = "" + str_list[si]
-                              mut as string: s_lbl = str_map[s_raw]
-                              mut as int64: s_len = str_lens[s_raw]
-                              mut as string: s_esc = str_escaped[s_raw]
-                              ir = ir + s_lbl + " = private unnamed_addr constant [" + s_len + " x i8] c\"" + s_esc + "\", align 1" + nl
-                              si = si + 1
-                        }
-                  }
-            }
-            ir = ir + nl
-
-            #L 3. Funcao Principal @main
-            ir = ir + "define i32 @main(i32 %argc, i8** %argv) {" + nl
-            ir = ir + "entry:" + nl
-            ir = ir + "  call void @flux_runtime_init_args(i32 %argc, i8** %argv)" + nl
 
             #L Alocacoes de variaveis locais
             mut as int64: n_allocs = stdCollectionLength(alloc_list)
@@ -237,6 +94,19 @@ agent (CompilerLib) impl LlvmBackendContract {
                         _ ==> {
                               mut as string: vname = "" + alloc_list[ai]
                               ir = ir + "  %" + vname + " = alloca i64, align 8" + nl
+                              route {
+                                    has_uf ==> {
+                                          mut as string: sl_n = str_map["nice"]
+                                          mut as int64: ln_n = str_lens["nice"]
+                                          mut as string: sl_o = str_map["ok"]
+                                          mut as int64: ln_o = str_lens["ok"]
+                                          ir = ir + "  %" + vname + "__sta = alloca i8*, align 8" + nl
+                                          ir = ir + "  %" + vname + "__msg = alloca i8*, align 8" + nl
+                                          ir = ir + "  store i8* getelementptr inbounds ([" + ln_n + " x i8], [" + ln_n + " x i8]* " + sl_n + ", i32 0, i32 0), i8** %" + vname + "__sta, align 8" + nl
+                                          ir = ir + "  store i8* getelementptr inbounds ([" + ln_o + " x i8], [" + ln_o + " x i8]* " + sl_o + ", i32 0, i32 0), i8** %" + vname + "__msg, align 8" + nl
+                                    }
+                                    _ ==> {}
+                              }
                               ai = ai + 1
                         }
                   }
@@ -246,6 +116,36 @@ agent (CompilerLib) impl LlvmBackendContract {
             mut as map: reg_types = map{}
             mut as map: var_types = map{}
             mut as map: reg_str_vals = map{}
+            mut as map: reg_sta_regs = map{}
+            mut as map: reg_msg_regs = map{}
+            mut as int64: n_fptypes = stdCollectionLength(fn_ptypes)
+            mut as int64: spi = 1
+            infinite {
+                  route {
+                        spi > n_fparams ==> { break }
+                        _ ==> {
+                              mut as string: sp_name = "" + fn_params[spi]
+                              mut as string: sp_type = "int"
+                              route {
+                                    spi <= n_fptypes ==> {
+                                          mut as string: decl_spt = "" + fn_ptypes[spi]
+                                          mut as int64: dspt_len = stdCollectionLength(decl_spt)
+                                          route {
+                                                dspt_len >= 4 and decl_spt[1..4] == "list" ==> { sp_type = "list" }
+                                                decl_spt == "float64" or decl_spt == "float32" or decl_spt == "float" ==> { sp_type = "float" }
+                                                decl_spt == "int64" or decl_spt == "int32" or decl_spt == "int" ==> { sp_type = "int" }
+                                                decl_spt != "" and decl_spt != "data" ==> { sp_type = decl_spt }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              var_types[sp_name] = sp_type
+                              ir = ir + "  store i64 %in_" + spi + ", i64* %" + sp_name + ", align 8" + nl
+                              spi = spi + 1
+                        }
+                  }
+            }
             mut as int64: ft_count = 0
             mut as int64: cv_count = 0
             mut as int64: lp_count = 0
@@ -253,6 +153,7 @@ agent (CompilerLib) impl LlvmBackendContract {
             mut as int64: gf_count = 0
             mut as int64: st_count = 0
             mut as int64: pr_count = 0
+            mut as int64: em_count = 0
             mut as bool: block_terminated = false
 
             mut as int64: i = 1
@@ -360,6 +261,15 @@ agent (CompilerLib) impl LlvmBackendContract {
                                                       reg_types[res] = "int"
                                                 }
                                           }
+                                          route {
+                                                has_uf ==> {
+                                                      ir = ir + "  %" + cr + "_vsta = load i8*, i8** %" + a1 + "__sta, align 8" + nl
+                                                      ir = ir + "  %" + cr + "_vmsg = load i8*, i8** %" + a1 + "__msg, align 8" + nl
+                                                      reg_sta_regs[res] = "%" + cr + "_vsta"
+                                                      reg_msg_regs[res] = "%" + cr + "_vmsg"
+                                                }
+                                                _ ==> {}
+                                          }
                                           block_terminated = false
                                     }
                                     opcode == "STORE" ==> {
@@ -387,6 +297,23 @@ agent (CompilerLib) impl LlvmBackendContract {
                                                       ir = ir + "  store i64 " + a1 + ", i64* %" + res + ", align 8" + nl
                                                 }
                                           }
+                                          route {
+                                                has_uf ==> {
+                                                      route {
+                                                            stdMapContainsKey(reg_sta_regs, a1) ==> {
+                                                                  ir = ir + "  store i8* " + reg_sta_regs[a1] + ", i8** %" + res + "__sta, align 8" + nl
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdMapContainsKey(reg_msg_regs, a1) ==> {
+                                                                  ir = ir + "  store i8* " + reg_msg_regs[a1] + ", i8** %" + res + "__msg, align 8" + nl
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
                                           block_terminated = false
                                     }
                                     opcode == "COPY_REG" ==> {
@@ -396,6 +323,14 @@ agent (CompilerLib) impl LlvmBackendContract {
                                                 _ ==> {}
                                           }
                                           reg_types[res] = rt
+                                          route {
+                                                stdMapContainsKey(reg_sta_regs, a1) ==> { reg_sta_regs[res] = reg_sta_regs[a1] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                stdMapContainsKey(reg_msg_regs, a1) ==> { reg_msg_regs[res] = reg_msg_regs[a1] }
+                                                _ ==> {}
+                                          }
                                           route {
                                                 rt == "string" or rt == "list" or rt == "map" or rt == "struct" ==> {
                                                       ir = ir + "  " + res + " = bitcast i8* " + a1 + " to i8*" + nl
@@ -513,13 +448,26 @@ agent (CompilerLib) impl LlvmBackendContract {
                                           }
                                           block_terminated = false
                                     }
-                                    opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
+                                    opcode == "BINOP_/i" ==> {
                                           mut as string: t1 = "int"
                                           route { stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] } _ ==> {} }
                                           route {
                                                 t1 == "float" ==> {
                                                       ir = ir + "  " + res + " = fdiv double " + a1 + ", " + a2 + nl
                                                       reg_types[res] = "float"
+                                                }
+                                                has_uf ==> {
+                                                      mut as string: sl_f = str_map["fail"]
+                                                      mut as int64: ln_f = str_lens["fail"]
+                                                      mut as string: sl_n = str_map["nice"]
+                                                      mut as int64: ln_n = str_lens["nice"]
+                                                      ir = ir + "  %" + cr + "_dz = icmp eq i64 " + a2 + ", 0" + nl
+                                                      ir = ir + "  %" + cr + "_sd = select i1 %" + cr + "_dz, i64 1, i64 " + a2 + nl
+                                                      ir = ir + "  %" + cr + "_qt = sdiv i64 " + a1 + ", %" + cr + "_sd" + nl
+                                                      ir = ir + "  " + res + " = select i1 %" + cr + "_dz, i64 0, i64 %" + cr + "_qt" + nl
+                                                      ir = ir + "  %" + cr + "_dsta = select i1 %" + cr + "_dz, i8* getelementptr inbounds ([" + ln_f + " x i8], [" + ln_f + " x i8]* " + sl_f + ", i32 0, i32 0), i8* getelementptr inbounds ([" + ln_n + " x i8], [" + ln_n + " x i8]* " + sl_n + ", i32 0, i32 0)" + nl
+                                                      reg_sta_regs[res] = "%" + cr + "_dsta"
+                                                      reg_types[res] = "int"
                                                 }
                                                 _ ==> {
                                                       ir = ir + "  " + res + " = sdiv i64 " + a1 + ", " + a2 + nl
@@ -767,6 +715,30 @@ agent (CompilerLib) impl LlvmBackendContract {
                                           }
                                           block_terminated = true
                                     }
+                                    opcode == "SHORT_CIRCUIT_BRANCH" ==> {
+                                          ft_count = ft_count + 1
+                                          route {
+                                                not block_terminated ==> {
+                                                      route {
+                                                            stdMapContainsKey(reg_sta_regs, a1) ==> {
+                                                                  mut as string: sl_f = str_map["fail"]
+                                                                  mut as int64: ln_f = str_lens["fail"]
+                                                                  ir = ir + "  %sc_cmp_" + ft_count + " = call i32 @flux_str_compare(i8* " + reg_sta_regs[a1] + ", i8* getelementptr inbounds ([" + ln_f + " x i8], [" + ln_f + " x i8]* " + sl_f + ", i32 0, i32 0))" + nl
+                                                                  ir = ir + "  %sc_isf_" + ft_count + " = icmp eq i32 %sc_cmp_" + ft_count + ", 0" + nl
+                                                                  ir = ir + "  br i1 %sc_isf_" + ft_count + ", label %" + a2 + ", label %" + res + nl
+                                                            }
+                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "bool" ==> {
+                                                                  ir = ir + "  br i1 " + a1 + ", label %" + res + ", label %" + a2 + nl
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  br label %" + res + nl
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          block_terminated = true
+                                    }
                                     opcode == "JUMP_IF_FALSE" ==> {
                                           mut as string: ft_lbl = "ft_" + ft_count
                                           ft_count = ft_count + 1
@@ -960,47 +932,92 @@ agent (CompilerLib) impl LlvmBackendContract {
                                     }
                                     opcode == "GET_FIELD" ==> {
                                           gf_count = gf_count + 1
-                                          mut as string: col_p = a1
-                                          mut as string: ct1 = "map"
-                                          route { stdMapContainsKey(reg_types, a1) ==> { ct1 = reg_types[a1] } _ ==> {} }
                                           route {
-                                                ct1 == "int" or ct1 == "bool" ==> {
-                                                      ir = ir + "  %gf_cp_" + gf_count + " = inttoptr i64 " + a1 + " to i8*" + nl
-                                                      col_p = "%gf_cp_" + gf_count
-                                                }
-                                                _ ==> {}
-                                          }
-                                          mut as string: kptr = a2
-                                          route {
-                                                stdMapContainsKey(str_map, a2) ==> {
-                                                      mut as string: slbl = str_map[a2]
-                                                      mut as int64: slen = str_lens[a2]
-                                                      ir = ir + "  %gf_fld_" + gf_count + " = getelementptr inbounds [" + slen + " x i8], [" + slen + " x i8]* " + slbl + ", i32 0, i32 0" + nl
-                                                      kptr = "%gf_fld_" + gf_count
-                                                }
-                                                _ ==> {}
-                                          }
-                                          ir = ir + "  %" + cr + "_raw = call i64 @flux_map_get(i8* " + col_p + ", i8* " + kptr + ")" + nl
-                                          route {
-                                                a2 == "success" or a2 == "ok" ==> {
-                                                      ir = ir + "  " + res + " = icmp ne i64 %" + cr + "_raw, 0" + nl
-                                                      reg_types[res] = "bool"
-                                                }
-                                                a2 == "root_id" or a2 == "count" or a2 == "line" or a2 == "col" or a2 == "val" ==> {
-                                                      ir = ir + "  " + res + " = add i64 0, %" + cr + "_raw" + nl
-                                                      reg_types[res] = "int"
-                                                }
-                                                a2 == "x" or a2 == "y" ==> {
-                                                      ir = ir + "  " + res + " = bitcast i64 %" + cr + "_raw to double" + nl
-                                                      reg_types[res] = "float"
-                                                }
-                                                a2 == "sta" or a2 == "msg" or a2 == "error" or a2 == "message" or a2 == "target" or a2 == "name" or a2 == "file_path" or a2 == "ir_file" ==> {
-                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
-                                                      reg_types[res] = "string"
+                                                has_uf and stdMapContainsKey(reg_sta_regs, a1) and (a2 == "sta" or a2 == "msg" or a2 == "val") ==> {
+                                                      route {
+                                                            a2 == "sta" ==> {
+                                                                  ir = ir + "  " + res + " = bitcast i8* " + reg_sta_regs[a1] + " to i8*" + nl
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            a2 == "msg" ==> {
+                                                                  mut as string: m_src = ""
+                                                                  route {
+                                                                        stdMapContainsKey(reg_msg_regs, a1) ==> { m_src = reg_msg_regs[a1] }
+                                                                        _ ==> {
+                                                                              mut as string: sl_o = str_map["ok"]
+                                                                              mut as int64: ln_o = str_lens["ok"]
+                                                                              ir = ir + "  %gf_ok_" + gf_count + " = getelementptr inbounds [" + ln_o + " x i8], [" + ln_o + " x i8]* " + sl_o + ", i32 0, i32 0" + nl
+                                                                              m_src = "%gf_ok_" + gf_count
+                                                                        }
+                                                                  }
+                                                                  ir = ir + "  " + res + " = bitcast i8* " + m_src + " to i8*" + nl
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  mut as string: vt_gf = "int"
+                                                                  route { stdMapContainsKey(reg_types, a1) ==> { vt_gf = reg_types[a1] } _ ==> {} }
+                                                                  reg_types[res] = vt_gf
+                                                                  route {
+                                                                        vt_gf == "string" or vt_gf == "list" or vt_gf == "map" or vt_gf == "struct" ==> {
+                                                                              ir = ir + "  " + res + " = bitcast i8* " + a1 + " to i8*" + nl
+                                                                        }
+                                                                        vt_gf == "float" ==> {
+                                                                              ir = ir + "  " + res + " = fadd double 0.0, " + a1 + nl
+                                                                        }
+                                                                        vt_gf == "bool" ==> {
+                                                                              ir = ir + "  " + res + " = add i1 0, " + a1 + nl
+                                                                        }
+                                                                        _ ==> {
+                                                                              ir = ir + "  " + res + " = add i64 0, " + a1 + nl
+                                                                        }
+                                                                  }
+                                                            }
+                                                      }
                                                 }
                                                 _ ==> {
-                                                      ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
-                                                      reg_types[res] = "map"
+                                                      mut as string: col_p = a1
+                                                      mut as string: ct1 = "map"
+                                                      route { stdMapContainsKey(reg_types, a1) ==> { ct1 = reg_types[a1] } _ ==> {} }
+                                                      route {
+                                                            ct1 == "int" or ct1 == "bool" ==> {
+                                                                  ir = ir + "  %gf_cp_" + gf_count + " = inttoptr i64 " + a1 + " to i8*" + nl
+                                                                  col_p = "%gf_cp_" + gf_count
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as string: kptr = a2
+                                                      route {
+                                                            stdMapContainsKey(str_map, a2) ==> {
+                                                                  mut as string: slbl = str_map[a2]
+                                                                  mut as int64: slen = str_lens[a2]
+                                                                  ir = ir + "  %gf_fld_" + gf_count + " = getelementptr inbounds [" + slen + " x i8], [" + slen + " x i8]* " + slbl + ", i32 0, i32 0" + nl
+                                                                  kptr = "%gf_fld_" + gf_count
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  %" + cr + "_raw = call i64 @flux_map_get(i8* " + col_p + ", i8* " + kptr + ")" + nl
+                                                      route {
+                                                            a2 == "success" or a2 == "ok" ==> {
+                                                                  ir = ir + "  " + res + " = icmp ne i64 %" + cr + "_raw, 0" + nl
+                                                                  reg_types[res] = "bool"
+                                                            }
+                                                            a2 == "root_id" or a2 == "count" or a2 == "line" or a2 == "col" or a2 == "val" ==> {
+                                                                  ir = ir + "  " + res + " = add i64 0, %" + cr + "_raw" + nl
+                                                                  reg_types[res] = "int"
+                                                            }
+                                                            a2 == "x" or a2 == "y" ==> {
+                                                                  ir = ir + "  " + res + " = bitcast i64 %" + cr + "_raw to double" + nl
+                                                                  reg_types[res] = "float"
+                                                            }
+                                                            a2 == "sta" or a2 == "msg" or a2 == "error" or a2 == "message" or a2 == "target" or a2 == "name" or a2 == "file_path" or a2 == "ir_file" ==> {
+                                                                  ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                                  reg_types[res] = "string"
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_raw to i8*" + nl
+                                                                  reg_types[res] = "map"
+                                                            }
+                                                      }
                                                 }
                                           }
                                           block_terminated = false
@@ -1314,8 +1331,70 @@ agent (CompilerLib) impl LlvmBackendContract {
                                                       ir = ir + "  " + res + " = trunc i64 %" + cr + "_i64 to i1" + nl
                                                       reg_types[res] = "bool"
                                                 }
+                                                a1 == "stdIoDirExists" ==> {
+                                                      ir = ir + "  %" + cr + "_i64 = call i64 @flux_std_io_dir_exists(i8* " + call_arg1 + ")" + nl
+                                                      ir = ir + "  " + res + " = trunc i64 %" + cr + "_i64 to i1" + nl
+                                                      reg_types[res] = "bool"
+                                                }
+                                                a1 == "stdIoListDir" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_io_list_dir(i8* " + call_arg1 + ", i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)" + nl
+                                                      reg_types[res] = "list"
+                                                }
+                                                a1 == "stdIoPathJoin" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_io_path_join(i8* " + call_arg1 + ", i8* " + call_arg2 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "stdIoPathBaseName" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_io_path_base_name(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "stdIoPathDirName" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_io_path_dir_name(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "stdIoDeleteFile" ==> {
+                                                      ir = ir + "  " + res + " = call i64 @flux_std_io_delete_file(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "int"
+                                                }
+                                                a1 == "stdListPushBack" ==> {
+                                                      lp_count = lp_count + 1
+                                                      mut as string: pb_rt = "int"
+                                                      route { stdMapContainsKey(reg_types, call_arg2) ==> { pb_rt = reg_types[call_arg2] } _ ==> {} }
+                                                      mut as string: pb_val = call_arg2
+                                                      route {
+                                                            pb_rt == "string" or pb_rt == "map" or pb_rt == "list" or pb_rt == "struct" ==> {
+                                                                  ir = ir + "  %pb_p_" + lp_count + " = ptrtoint i8* " + call_arg2 + " to i64" + nl
+                                                                  pb_val = "%pb_p_" + lp_count
+                                                            }
+                                                            pb_rt == "float" ==> {
+                                                                  ir = ir + "  %pb_d_" + lp_count + " = bitcast double " + call_arg2 + " to i64" + nl
+                                                                  pb_val = "%pb_d_" + lp_count
+                                                            }
+                                                            pb_rt == "bool" ==> {
+                                                                  ir = ir + "  %pb_b_" + lp_count + " = zext i1 " + call_arg2 + " to i64" + nl
+                                                                  pb_val = "%pb_b_" + lp_count
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  call void @flux_list_push_val(i8* " + call_arg1 + ", i64 " + pb_val + ")" + nl
+                                                      ir = ir + "  " + res + " = bitcast i8* " + call_arg1 + " to i8*" + nl
+                                                      reg_types[res] = "list"
+                                                }
+                                                a1 == "stdOsExecOutput" ==> {
+                                                      ir = ir + "  " + res + " = call i8* @flux_std_os_exec_output(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
                                                 a1 == "stdIoReadFile" ==> {
                                                       ir = ir + "  " + res + " = call i8* @flux_std_io_read_file(i8* " + call_arg1 + ")" + nl
+                                                      reg_types[res] = "string"
+                                                }
+                                                a1 == "input" or a1 == "stdIoReadLine" ==> {
+                                                      mut as string: in_prompt = "getelementptr inbounds ([1 x i8], [1 x i8]* @.str_empty, i32 0, i32 0)"
+                                                      route {
+                                                            call_arg1 != "" ==> { in_prompt = call_arg1 }
+                                                            _ ==> {}
+                                                      }
+                                                      ir = ir + "  " + res + " = call i8* @flux_runtime_input_string(i8* " + in_prompt + ", i8* null)" + nl
                                                       reg_types[res] = "string"
                                                 }
                                                 a1 == "stdIoWriteFile" ==> {
@@ -1350,32 +1429,117 @@ agent (CompilerLib) impl LlvmBackendContract {
                                                       ir = ir + "  " + res + " = call i8* @flux_std_runtime_get_args(i8* (i64, i64)* @flux_list_build, i8* (i8*, i64, i64, i8*)* @flux_list_push)" + nl
                                                       reg_types[res] = "list"
                                                 }
-                                                a1 == "calc" ==> {
-                                                      ir = ir + "  " + res + " = call i8* @flux_map_build(i64 4)" + nl
-                                                      mut as string: slbl_nice = str_map["nice"]
-                                                      mut as int64: slen_nice = str_lens["nice"]
-                                                      ir = ir + "  %fld_nice_" + cr + " = getelementptr inbounds [" + slen_nice + " x i8], [" + slen_nice + " x i8]* " + slbl_nice + ", i32 0, i32 0" + nl
-                                                      ir = ir + "  %nice_i64_" + cr + " = ptrtoint i8* %fld_nice_" + cr + " to i64" + nl
-                                                      mut as string: slbl_sta = str_map["sta"]
-                                                      mut as int64: slen_sta = str_lens["sta"]
-                                                      ir = ir + "  %fld_sta_" + cr + " = getelementptr inbounds [" + slen_sta + " x i8], [" + slen_sta + " x i8]* " + slbl_sta + ", i32 0, i32 0" + nl
-                                                      ir = ir + "  call i8* @flux_map_set(i8* " + res + ", i8* %fld_sta_" + cr + ", i64 4, i64 %nice_i64_" + cr + ")" + nl
-
-                                                      mut as string: slbl_val = str_map["val"]
-                                                      mut as int64: slen_val = str_lens["val"]
-                                                      ir = ir + "  %fld_val_" + cr + " = getelementptr inbounds [" + slen_val + " x i8], [" + slen_val + " x i8]* " + slbl_val + ", i32 0, i32 0" + nl
-                                                      ir = ir + "  call i8* @flux_map_set(i8* " + res + ", i8* %fld_val_" + cr + ", i64 2, i64 " + call_arg1 + ")" + nl
-
-                                                      mut as string: slbl_msg = str_map["msg"]
-                                                      mut as int64: slen_msg = str_lens["msg"]
-                                                      ir = ir + "  %fld_msg_" + cr + " = getelementptr inbounds [" + slen_msg + " x i8], [" + slen_msg + " x i8]* " + slbl_msg + ", i32 0, i32 0" + nl
-                                                      mut as string: slbl_ok = str_map["ok"]
-                                                      mut as int64: slen_ok = str_lens["ok"]
-                                                      ir = ir + "  %fld_ok_" + cr + " = getelementptr inbounds [" + slen_ok + " x i8], [" + slen_ok + " x i8]* " + slbl_ok + ", i32 0, i32 0" + nl
-                                                      ir = ir + "  %ok_i64_" + cr + " = ptrtoint i8* %fld_ok_" + cr + " to i64" + nl
-                                                      ir = ir + "  call i8* @flux_map_set(i8* " + res + ", i8* %fld_msg_" + cr + ", i64 4, i64 %ok_i64_" + cr + ")" + nl
-
-                                                      reg_types[res] = "map"
+                                                stdMapContainsKey(fn_table, a1) ==> {
+                                                      mut as map: cand_fn = fn_table[a1]
+                                                      mut as string: cand_ag = "" + cand_fn["agent"]
+                                                      mut as bool: cand_std = false
+                                                      route {
+                                                            stdMapContainsKey(cand_fn, "is_stdlib") and cand_fn["is_stdlib"] == true ==> { cand_std = true }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            (not cand_std) and cand_ag != "CompilerLib" ==> {
+                                                                  mut as string: uf_sym = llvmMangleSymbol(cand_ag, "" + cand_fn["name"])
+                                                                  mut as list of data: callee_ps = cand_fn["params"]
+                                                                  mut as int64: n_cps = stdCollectionLength(callee_ps)
+                                                                  mut as string: arg_sig = ""
+                                                                  mut as int64: cpi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              cpi > n_cps ==> { break }
+                                                                              _ ==> {
+                                                                                    mut as string: raw_ca = ""
+                                                                                    route { cpi <= ncargs ==> { raw_ca = "" + cargs[cpi] } _ ==> {} }
+                                                                                    infinite {
+                                                                                          route {
+                                                                                                stdCollectionLength(raw_ca) > 0 and raw_ca[1] == " " ==> {
+                                                                                                      raw_ca = raw_ca[2..stdCollectionLength(raw_ca)]
+                                                                                                }
+                                                                                                _ ==> { break }
+                                                                                          }
+                                                                                    }
+                                                                                    mut as string: ca_i64 = "0"
+                                                                                    route {
+                                                                                          raw_ca != "" ==> {
+                                                                                                mut as string: ca_ty = "int"
+                                                                                                route { stdMapContainsKey(reg_types, raw_ca) ==> { ca_ty = reg_types[raw_ca] } _ ==> {} }
+                                                                                                route {
+                                                                                                      ca_ty == "string" or ca_ty == "list" or ca_ty == "map" or ca_ty == "struct" ==> {
+                                                                                                            cv_count = cv_count + 1
+                                                                                                            ir = ir + "  %uf_ca_" + cv_count + " = ptrtoint i8* " + raw_ca + " to i64" + nl
+                                                                                                            ca_i64 = "%uf_ca_" + cv_count
+                                                                                                      }
+                                                                                                      ca_ty == "float" ==> {
+                                                                                                            cv_count = cv_count + 1
+                                                                                                            ir = ir + "  %uf_ca_" + cv_count + " = bitcast double " + raw_ca + " to i64" + nl
+                                                                                                            ca_i64 = "%uf_ca_" + cv_count
+                                                                                                      }
+                                                                                                      ca_ty == "bool" ==> {
+                                                                                                            cv_count = cv_count + 1
+                                                                                                            ir = ir + "  %uf_ca_" + cv_count + " = zext i1 " + raw_ca + " to i64" + nl
+                                                                                                            ca_i64 = "%uf_ca_" + cv_count
+                                                                                                      }
+                                                                                                      _ ==> {
+                                                                                                            ca_i64 = raw_ca
+                                                                                                      }
+                                                                                                }
+                                                                                          }
+                                                                                          _ ==> {}
+                                                                                    }
+                                                                                    route {
+                                                                                          arg_sig == "" ==> { arg_sig = "i64 " + ca_i64 }
+                                                                                          _ ==> { arg_sig = arg_sig + ", i64 " + ca_i64 }
+                                                                                    }
+                                                                                    cpi = cpi + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  ir = ir + "  %" + cr + "_ufr = call %flux.result @" + uf_sym + "(" + arg_sig + ")" + nl
+                                                                  ir = ir + "  %" + cr + "_usta = extractvalue %flux.result %" + cr + "_ufr, 0" + nl
+                                                                  ir = ir + "  %" + cr + "_uvi = extractvalue %flux.result %" + cr + "_ufr, 1" + nl
+                                                                  ir = ir + "  %" + cr + "_uvf = extractvalue %flux.result %" + cr + "_ufr, 2" + nl
+                                                                  ir = ir + "  %" + cr + "_umsg = extractvalue %flux.result %" + cr + "_ufr, 3" + nl
+                                                                  mut as string: crt = "int"
+                                                                  route {
+                                                                        stdMapContainsKey(cand_fn, "ret_type") ==> {
+                                                                              mut as string: drt = "" + cand_fn["ret_type"]
+                                                                              mut as int64: drt_len = stdCollectionLength(drt)
+                                                                              route {
+                                                                                    drt_len >= 4 and drt[1..4] == "list" ==> { crt = "list" }
+                                                                                    drt == "float64" or drt == "float32" or drt == "float" ==> { crt = "float" }
+                                                                                    drt == "int64" or drt == "int32" or drt == "int" ==> { crt = "int" }
+                                                                                    drt != "" and drt != "data" ==> { crt = drt }
+                                                                                    _ ==> {}
+                                                                              }
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  route {
+                                                                        crt == "string" or crt == "list" or crt == "map" or crt == "struct" ==> {
+                                                                              ir = ir + "  " + res + " = inttoptr i64 %" + cr + "_uvi to i8*" + nl
+                                                                              reg_types[res] = crt
+                                                                        }
+                                                                        crt == "float" ==> {
+                                                                              ir = ir + "  " + res + " = fadd double 0.0, %" + cr + "_uvf" + nl
+                                                                              reg_types[res] = "float"
+                                                                        }
+                                                                        crt == "bool" ==> {
+                                                                              ir = ir + "  " + res + " = trunc i64 %" + cr + "_uvi to i1" + nl
+                                                                              reg_types[res] = "bool"
+                                                                        }
+                                                                        _ ==> {
+                                                                              ir = ir + "  " + res + " = add i64 0, %" + cr + "_uvi" + nl
+                                                                              reg_types[res] = "int"
+                                                                        }
+                                                                  }
+                                                                  reg_sta_regs[res] = "%" + cr + "_usta"
+                                                                  reg_msg_regs[res] = "%" + cr + "_umsg"
+                                                            }
+                                                            _ ==> {
+                                                                  ir = ir + "  " + res + " = add i64 0, 0" + nl
+                                                                  reg_types[res] = "int"
+                                                            }
+                                                      }
                                                 }
                                                 _ ==> {
                                                       ir = ir + "  " + res + " = add i64 0, 0" + nl
@@ -1383,6 +1547,76 @@ agent (CompilerLib) impl LlvmBackendContract {
                                                 }
                                           }
                                           block_terminated = false
+                                    }
+                                    opcode == "EMIT" ==> {
+                                          em_count = em_count + 1
+                                          route {
+                                                not block_terminated ==> {
+                                                      route {
+                                                            is_main ==> {
+                                                                  ir = ir + "  ret i32 0" + nl
+                                                            }
+                                                            _ ==> {
+                                                                  mut as string: esta_key = a2
+                                                                  route { esta_key == "" or not stdMapContainsKey(str_map, esta_key) ==> { esta_key = "nice" } _ ==> {} }
+                                                                  mut as string: sl_es = str_map[esta_key]
+                                                                  mut as int64: ln_es = str_lens[esta_key]
+                                                                  ir = ir + "  %em_sta_" + em_count + " = getelementptr inbounds [" + ln_es + " x i8], [" + ln_es + " x i8]* " + sl_es + ", i32 0, i32 0" + nl
+
+                                                                  mut as string: emsg_ptr = ""
+                                                                  mut as int64: r_ml = stdCollectionLength(res)
+                                                                  route {
+                                                                        r_ml > 0 and res[1] == "%" and stdMapContainsKey(reg_types, res) and reg_types[res] == "string" ==> {
+                                                                              emsg_ptr = res
+                                                                        }
+                                                                        stdMapContainsKey(str_map, res) ==> {
+                                                                              mut as string: sl_em = str_map[res]
+                                                                              mut as int64: ln_em = str_lens[res]
+                                                                              ir = ir + "  %em_msg_" + em_count + " = getelementptr inbounds [" + ln_em + " x i8], [" + ln_em + " x i8]* " + sl_em + ", i32 0, i32 0" + nl
+                                                                              emsg_ptr = "%em_msg_" + em_count
+                                                                        }
+                                                                        _ ==> {
+                                                                              mut as string: sl_eo = str_map["ok"]
+                                                                              mut as int64: ln_eo = str_lens["ok"]
+                                                                              ir = ir + "  %em_msg_" + em_count + " = getelementptr inbounds [" + ln_eo + " x i8], [" + ln_eo + " x i8]* " + sl_eo + ", i32 0, i32 0" + nl
+                                                                              emsg_ptr = "%em_msg_" + em_count
+                                                                        }
+                                                                  }
+
+                                                                  mut as string: ev_ty = "int"
+                                                                  route { stdMapContainsKey(reg_types, a1) ==> { ev_ty = reg_types[a1] } _ ==> {} }
+                                                                  mut as string: ev_i64 = "0"
+                                                                  mut as string: ev_f64 = "0.0"
+                                                                  route {
+                                                                        ev_ty == "string" or ev_ty == "list" or ev_ty == "map" or ev_ty == "struct" ==> {
+                                                                              ir = ir + "  %em_vi_" + em_count + " = ptrtoint i8* " + a1 + " to i64" + nl
+                                                                              ev_i64 = "%em_vi_" + em_count
+                                                                        }
+                                                                        ev_ty == "float" ==> {
+                                                                              ir = ir + "  %em_vi_" + em_count + " = bitcast double " + a1 + " to i64" + nl
+                                                                              ev_i64 = "%em_vi_" + em_count
+                                                                              ev_f64 = a1
+                                                                        }
+                                                                        ev_ty == "bool" ==> {
+                                                                              ir = ir + "  %em_vi_" + em_count + " = zext i1 " + a1 + " to i64" + nl
+                                                                              ev_i64 = "%em_vi_" + em_count
+                                                                        }
+                                                                        _ ==> {
+                                                                              ev_i64 = a1
+                                                                        }
+                                                                  }
+
+                                                                  ir = ir + "  %em_r0_" + em_count + " = insertvalue %flux.result undef, i8* %em_sta_" + em_count + ", 0" + nl
+                                                                  ir = ir + "  %em_r1_" + em_count + " = insertvalue %flux.result %em_r0_" + em_count + ", i64 " + ev_i64 + ", 1" + nl
+                                                                  ir = ir + "  %em_r2_" + em_count + " = insertvalue %flux.result %em_r1_" + em_count + ", double " + ev_f64 + ", 2" + nl
+                                                                  ir = ir + "  %em_r3_" + em_count + " = insertvalue %flux.result %em_r2_" + em_count + ", i8* " + emsg_ptr + ", 3" + nl
+                                                                  ir = ir + "  ret %flux.result %em_r3_" + em_count + nl
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          block_terminated = true
                                     }
                                     opcode == "NOP" ==> {
                                           block_terminated = false
@@ -1396,11 +1630,382 @@ agent (CompilerLib) impl LlvmBackendContract {
 
             route {
                   not block_terminated ==> {
-                        ir = ir + "  ret i32 0" + nl
+                        route {
+                              is_main ==> {
+                                    ir = ir + "  ret i32 0" + nl
+                              }
+                              _ ==> {
+                                    mut as string: sl_dn = str_map["nice"]
+                                    mut as int64: ln_dn = str_lens["nice"]
+                                    mut as string: sl_do = str_map["ok"]
+                                    mut as int64: ln_do = str_lens["ok"]
+                                    ir = ir + "  %def_sta = getelementptr inbounds [" + ln_dn + " x i8], [" + ln_dn + " x i8]* " + sl_dn + ", i32 0, i32 0" + nl
+                                    ir = ir + "  %def_msg = getelementptr inbounds [" + ln_do + " x i8], [" + ln_do + " x i8]* " + sl_do + ", i32 0, i32 0" + nl
+                                    ir = ir + "  %def_r0 = insertvalue %flux.result undef, i8* %def_sta, 0" + nl
+                                    ir = ir + "  %def_r1 = insertvalue %flux.result %def_r0, i64 0, 1" + nl
+                                    ir = ir + "  %def_r2 = insertvalue %flux.result %def_r1, double 0.0, 2" + nl
+                                    ir = ir + "  %def_r3 = insertvalue %flux.result %def_r2, i8* %def_msg, 3" + nl
+                                    ir = ir + "  ret %flux.result %def_r3" + nl
+                              }
+                        }
                   }
                   _ ==> {}
             }
             ir = ir + "}" + nl
+
+            emit(nice, ir, "ok")
+      }
+
+      op llvmGenerateIr (as map: fmir_module) as string ==> {
+            mut as string: nl = "\n"
+            mut as string: mod_name = "" + fmir_module["name"]
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+
+            mut as map: fn_table = map{}
+            mut as list of data: fn_keys = []
+            route {
+                  stdMapContainsKey(fmir_module, "functions") ==> { fn_table = fmir_module["functions"] }
+                  _ ==> {}
+            }
+            route {
+                  stdMapContainsKey(fmir_module, "fn_keys") ==> { fn_keys = fmir_module["fn_keys"] }
+                  _ ==> {}
+            }
+
+            mut as list of data: uf_syms = []
+            mut as map: uf_seen = map{}
+            mut as map: uf_by_sym = map{}
+            mut as int64: n_fks = stdCollectionLength(fn_keys)
+            mut as int64: fki = 1
+            infinite {
+                  route {
+                        fki > n_fks ==> { break }
+                        _ ==> {
+                              mut as string: fk = "" + fn_keys[fki]
+                              mut as map: fdesc = fn_table[fk]
+                              mut as string: f_ag = "" + fdesc["agent"]
+                              mut as bool: f_std = false
+                              route {
+                                    stdMapContainsKey(fdesc, "is_stdlib") and fdesc["is_stdlib"] == true ==> { f_std = true }
+                                    _ ==> {}
+                              }
+                              route {
+                                    (not f_std) and f_ag != "CompilerLib" ==> {
+                                          mut as string: usym = llvmMangleSymbol(f_ag, "" + fdesc["name"])
+                                          route {
+                                                not stdMapContainsKey(uf_seen, usym) ==> {
+                                                      uf_seen[usym] = true
+                                                      uf_syms = stdListPushBack(uf_syms, usym)
+                                                      uf_by_sym[usym] = fdesc
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              fki = fki + 1
+                        }
+                  }
+            }
+
+            mut as int64: n_ufs = stdCollectionLength(uf_syms)
+            mut as bool: has_uf = (n_ufs > 0)
+
+            #L 1. Primeira Passagem: Coleta de strings literais
+            mut as map: str_map = map{}
+            mut as map: str_lens = map{}
+            mut as map: str_escaped = map{}
+            mut as list of data: str_list = []
+            mut as int64: str_count = 0
+            mut as list of data: common_strs = ["sta", "val", "msg", "nice", "ok"]
+            route {
+                  has_uf ==> { common_strs = stdListPushBack(common_strs, "fail") }
+                  _ ==> {}
+            }
+            mut as int64: n_cs = stdCollectionLength(common_strs)
+            mut as int64: csi = 1
+            infinite {
+                  route {
+                        csi > n_cs ==> { break }
+                        _ ==> {
+                              mut as string: cs_val = "" + common_strs[csi]
+                              route {
+                                    not stdMapContainsKey(str_map, cs_val) ==> {
+                                          mut as string: lbl = "@.str." + str_count
+                                          str_map[cs_val] = lbl
+                                          str_lens[cs_val] = llvmStringByteLength(cs_val)
+                                          str_escaped[cs_val] = llvmEscapeString(cs_val) + "\\00"
+                                          str_list = stdListPushBack(str_list, cs_val)
+                                          str_count = str_count + 1
+                                    }
+                                    _ ==> {}
+                              }
+                              csi = csi + 1
+                        }
+                  }
+            }
+
+            mut as int64: ufi_s = 1
+            infinite {
+                  route {
+                        ufi_s > n_ufs ==> { break }
+                        _ ==> {
+                              mut as string: usym_s = "" + uf_syms[ufi_s]
+                              mut as map: fd_s = uf_by_sym[usym_s]
+                              mut as list of data: u_ins = fd_s["instructions"]
+                              mut as int64: n_uins = stdCollectionLength(u_ins)
+                              mut as int64: uii = 1
+                              infinite {
+                                    route {
+                                          uii > n_uins ==> { break }
+                                          _ ==> {
+                                                mut as map: uinst = u_ins[uii]
+                                                mut as string: uop = "" + uinst["op"]
+                                                mut as string: ua1 = "" + uinst["arg1"]
+                                                mut as string: ua2 = "" + uinst["arg2"]
+                                                mut as string: ures = "" + uinst["res"]
+                                                route {
+                                                      uop == "CONST_STR" ==> {
+                                                            route {
+                                                                  not stdMapContainsKey(str_map, ua1) ==> {
+                                                                        mut as string: lbl = "@.str." + str_count
+                                                                        str_map[ua1] = lbl
+                                                                        str_lens[ua1] = llvmStringByteLength(ua1)
+                                                                        str_escaped[ua1] = llvmEscapeString(ua1) + "\\00"
+                                                                        str_list = stdListPushBack(str_list, ua1)
+                                                                        str_count = str_count + 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                      }
+                                                      uop == "STRUCT_SET_FIELD" or uop == "GET_FIELD" or uop == "SET_FIELD" or uop == "MAP_SET" or uop == "SET_INDEX" or uop == "GET_INDEX" ==> {
+                                                            mut as int64: ua2_l = stdCollectionLength(ua2)
+                                                            route {
+                                                                  ua2_l > 0 and ua2[1] != "%" and not stdMapContainsKey(str_map, ua2) ==> {
+                                                                        mut as string: lbl = "@.str." + str_count
+                                                                        str_map[ua2] = lbl
+                                                                        str_lens[ua2] = llvmStringByteLength(ua2)
+                                                                        str_escaped[ua2] = llvmEscapeString(ua2) + "\\00"
+                                                                        str_list = stdListPushBack(str_list, ua2)
+                                                                        str_count = str_count + 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                      }
+                                                      uop == "EMIT" ==> {
+                                                            route {
+                                                                  ua2 != "" and not stdMapContainsKey(str_map, ua2) ==> {
+                                                                        mut as string: lbl = "@.str." + str_count
+                                                                        str_map[ua2] = lbl
+                                                                        str_lens[ua2] = llvmStringByteLength(ua2)
+                                                                        str_escaped[ua2] = llvmEscapeString(ua2) + "\\00"
+                                                                        str_list = stdListPushBack(str_list, ua2)
+                                                                        str_count = str_count + 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            mut as int64: ur_l = stdCollectionLength(ures)
+                                                            route {
+                                                                  ur_l > 0 and ures[1] != "%" and not stdMapContainsKey(str_map, ures) ==> {
+                                                                        mut as string: lbl = "@.str." + str_count
+                                                                        str_map[ures] = lbl
+                                                                        str_lens[ures] = llvmStringByteLength(ures)
+                                                                        str_escaped[ures] = llvmEscapeString(ures) + "\\00"
+                                                                        str_list = stdListPushBack(str_list, ures)
+                                                                        str_count = str_count + 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                      }
+                                                      _ ==> {}
+                                                }
+                                                uii = uii + 1
+                                          }
+                                    }
+                              }
+                              ufi_s = ufi_s + 1
+                        }
+                  }
+            }
+
+            mut as int64: pi = 1
+            infinite {
+                  route {
+                        pi > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[pi]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+
+                              route {
+                                    opcode == "CONST_STR" ==> {
+                                          route {
+                                                not stdMapContainsKey(str_map, a1) ==> {
+                                                      mut as string: lbl = "@.str." + str_count
+                                                      str_map[a1] = lbl
+                                                      str_lens[a1] = llvmStringByteLength(a1)
+                                                      str_escaped[a1] = llvmEscapeString(a1) + "\\00"
+                                                      str_list = stdListPushBack(str_list, a1)
+                                                      str_count = str_count + 1
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "STRUCT_SET_FIELD" or opcode == "GET_FIELD" or opcode == "SET_FIELD" or opcode == "MAP_SET" or opcode == "SET_INDEX" or opcode == "GET_INDEX" ==> {
+                                          mut as int64: a2_l = stdCollectionLength(a2)
+                                          route {
+                                                a2_l > 0 and a2[1] != "%" and not stdMapContainsKey(str_map, a2) ==> {
+                                                      mut as string: lbl = "@.str." + str_count
+                                                      str_map[a2] = lbl
+                                                      str_lens[a2] = llvmStringByteLength(a2)
+                                                      str_escaped[a2] = llvmEscapeString(a2) + "\\00"
+                                                      str_list = stdListPushBack(str_list, a2)
+                                                      str_count = str_count + 1
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              pi = pi + 1
+                        }
+                  }
+            }
+
+            #L 2. Emissao de Cabecalho do Modulo e Declaracoes Externas
+            mut as string: ir = "; ModuleID = '" + mod_name + "'" + nl
+            ir = ir + "target triple = \"x86_64-pc-windows-msvc\"" + nl + nl
+
+            ir = ir + "%flux.result = type { i8*, i64, double, i8* }" + nl + nl
+            ir = ir + "declare %flux.result @f_diagnosticExplain(i8*)" + nl
+            ir = ir + "declare %flux.result @f_diagnosticGetHeader(i8*, i8*)" + nl
+            ir = ir + "declare %flux.result @f_diagnosticGetHint(i8*)" + nl
+            ir = ir + "declare %flux.result @f_parseFile(i8*)" + nl
+            ir = ir + "declare %flux.result @f_parseDumpAst(i8*)" + nl
+            ir = ir + "declare %flux.result @f_semanticAnalyze(i8*, i64)" + nl
+            ir = ir + "declare %flux.result @f_fmirBuildFromAst(i8*, i64)" + nl
+            ir = ir + "declare %flux.result @f_fmirDumpText(i8*)" + nl
+            ir = ir + "declare %flux.result @f_backendCompile(i8*, i8*, i8*)" + nl + nl
+
+            ir = ir + "declare void @flux_runtime_init_args(i32, i8**)" + nl
+            ir = ir + "declare i32 @printf(i8*, ...)" + nl
+            ir = ir + "declare i32 @fflush(i8*)" + nl
+            ir = ir + "declare void @exit(i32)" + nl
+            ir = ir + "declare i8* @malloc(i64)" + nl
+            ir = ir + "declare void @free(i8*)" + nl
+            ir = ir + "declare i64 @strlen(i8*)" + nl
+            ir = ir + "declare i32 @strcmp(i8*, i8*)" + nl
+            ir = ir + "declare i32 @snprintf(i8*, i64, i8*, ...)" + nl
+            ir = ir + "declare double @pow(double, double)" + nl
+            ir = ir + "declare double @llvm.sqrt.f64(double)" + nl
+            ir = ir + "declare i8* @flux_str_concat(i8*, i8*)" + nl
+            ir = ir + "declare i32 @flux_str_compare(i8*, i8*)" + nl
+            ir = ir + "declare i8* @flux_str_slice(i8*, i64, i64)" + nl
+            ir = ir + "declare i64 @flux_str_len(i8*)" + nl
+            ir = ir + "declare i8* @flux_list_create(i64)" + nl
+            ir = ir + "declare void @flux_list_push_val(i8*, i64)" + nl
+            ir = ir + "declare i64 @flux_list_get_val(i8*, i64)" + nl
+            ir = ir + "declare i64 @flux_list_get(i8*, i64)" + nl
+            ir = ir + "declare void @flux_list_set(i8*, i64, i64)" + nl
+            ir = ir + "declare i64 @flux_list_len(i8*)" + nl
+            ir = ir + "declare i8* @flux_map_build(i64)" + nl
+            ir = ir + "declare void @flux_list_print(i8*)" + nl
+            ir = ir + "declare void @flux_map_print(i8*)" + nl
+            ir = ir + "declare i8* @flux_map_set(i8*, i8*, i64, i64)" + nl
+            ir = ir + "declare i64 @flux_map_get(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_map_get_tag(i8*, i8*)" + nl
+            ir = ir + "declare i1 @flux_map_contains_key(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_map_len(i8*)" + nl
+            ir = ir + "declare i8* @flux_std_io_read_file(i8*)" + nl
+            ir = ir + "declare i8* @flux_runtime_input_string(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_write_file(i8*, i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_file_exists(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_dir_exists(i8*)" + nl
+            ir = ir + "declare i8* @flux_std_io_list_dir(i8*, i8* (i64, i64)*, i8* (i8*, i64, i64, i8*)*)" + nl
+            ir = ir + "declare i8* @flux_std_io_path_join(i8*, i8*)" + nl
+            ir = ir + "declare i8* @flux_std_io_path_base_name(i8*)" + nl
+            ir = ir + "declare i8* @flux_std_io_path_dir_name(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_io_delete_file(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_os_exec(i8*)" + nl
+            ir = ir + "declare i8* @flux_std_os_exec_output(i8*)" + nl
+            ir = ir + "declare i64 @flux_std_os_exit(i64)" + nl
+            ir = ir + "declare i8* @flux_list_build(i64, i64)" + nl
+            ir = ir + "declare i8* @flux_list_push(i8*, i64, i64, i8*)" + nl
+            ir = ir + "declare i8* @flux_std_runtime_get_args(i8* (i64, i64)*, i8* (i8*, i64, i64, i8*)*)" + nl
+            ir = ir + "declare i64 @flux_std_datetime_now()" + nl
+            ir = ir + "declare i64 @flux_std_datetime_monotonic_now()" + nl
+            ir = ir + "declare i64 @flux_std_datetime_monotonic_elapsed(i64)" + nl + nl
+
+            #L Format strings globais
+            ir = ir + "@.fmt_int = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\", align 1" + nl
+            ir = ir + "@.fmt_int_val = private unnamed_addr constant [4 x i8] c\"%ld\\00\", align 1" + nl
+            ir = ir + "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\", align 1" + nl
+            ir = ir + "@.fmt_str_val = private unnamed_addr constant [3 x i8] c\"%s\\00\", align 1" + nl
+            ir = ir + "@.fmt_float = private unnamed_addr constant [7 x i8] c\"%.17g\\0A\\00\", align 1" + nl
+            ir = ir + "@.fmt_float_val = private unnamed_addr constant [6 x i8] c\"%.17g\\00\", align 1" + nl
+            ir = ir + "@.str_true = private unnamed_addr constant [5 x i8] c\"true\\00\", align 1" + nl
+            ir = ir + "@.str_false = private unnamed_addr constant [6 x i8] c\"false\\00\", align 1" + nl
+            ir = ir + "@.str_empty = private unnamed_addr constant [1 x i8] c\"\\00\", align 1" + nl + nl
+
+            #L Tabela de strings constantes
+            mut as int64: n_strs = stdCollectionLength(str_list)
+            mut as int64: si = 1
+            infinite {
+                  route {
+                        si > n_strs ==> { break }
+                        _ ==> {
+                              mut as string: s_raw = "" + str_list[si]
+                              mut as string: s_lbl = str_map[s_raw]
+                              mut as int64: s_len = str_lens[s_raw]
+                              mut as string: s_esc = str_escaped[s_raw]
+                              ir = ir + s_lbl + " = private unnamed_addr constant [" + s_len + " x i8] c\"" + s_esc + "\", align 1" + nl
+                              si = si + 1
+                        }
+                  }
+            }
+            ir = ir + nl
+
+            #L 2.5. Funcoes e Operacoes Definidas pelo Usuario
+            mut as int64: ufi = 1
+            infinite {
+                  route {
+                        ufi > n_ufs ==> { break }
+                        _ ==> {
+                              mut as string: usym = "" + uf_syms[ufi]
+                              mut as map: fdesc = uf_by_sym[usym]
+                              mut as list of data: ups = fdesc["params"]
+                              mut as list of data: upts = []
+                              route { stdMapContainsKey(fdesc, "param_types") ==> { upts = fdesc["param_types"] } _ ==> {} }
+                              mut as string: urt = "int"
+                              route { stdMapContainsKey(fdesc, "ret_type") ==> { urt = "" + fdesc["ret_type"] } _ ==> {} }
+                              mut as list of data: uins = fdesc["instructions"]
+                              mut as int64: nups = stdCollectionLength(ups)
+                              mut as string: psig = ""
+                              mut as int64: upk = 1
+                              infinite {
+                                    route {
+                                          upk > nups ==> { break }
+                                          _ ==> {
+                                                route {
+                                                      psig == "" ==> { psig = "i64 %in_" + upk }
+                                                      _ ==> { psig = psig + ", i64 %in_" + upk }
+                                                }
+                                                upk = upk + 1
+                                          }
+                                    }
+                              }
+                              ir = ir + "define %flux.result @" + usym + "(" + psig + ") {" + nl
+                              ir = ir + llvmEmitInstrs(uins, false, ups, upts, urt, str_map, str_lens, fn_table, true) + nl
+                              ufi = ufi + 1
+                        }
+                  }
+            }
+
+            #L 3. Funcao Principal @main
+            ir = ir + "define i32 @main(i32 %argc, i8** %argv) {" + nl
+            ir = ir + llvmEmitInstrs(instrs, true, [], [], "int", str_map, str_lens, fn_table, has_uf)
 
             emit(nice, ir, "ok")
       }

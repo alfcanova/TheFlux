@@ -1,0 +1,218 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "TheFlux",
+  "scopeName": "source.flux",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords_architecture" },
+    { "include": "#keywords_flow" },
+    { "include": "#keywords_mutability" },
+    { "include": "#types" },
+    { "include": "#keywords_modifiers" },
+    { "include": "#builtins" },
+    { "include": "#constants" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.documentation.flux",
+          "begin": "#D",
+          "end": "D#",
+          "patterns": [{ "include": "$self" }]
+        },
+        {
+          "name": "comment.block.flux",
+          "begin": "#B",
+          "end": "B#",
+          "patterns": [{ "include": "$self" }]
+        },
+        {
+          "name": "comment.line.flux",
+          "match": "#L.*$"
+        },
+        {
+          "name": "comment.line.legacy.flux",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.flux",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.flux",
+              "match": "\\\\([\\\\\"ntr0]|u\\{[0-9a-fA-F]+\\})"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.flux",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.flux",
+              "match": "\\\\([\\\\'ntr0]|u\\{[0-9a-fA-F]+\\})"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.flux",
+          "match": "\\b0x[0-9a-fA-F]+\\b"
+        },
+        {
+          "name": "constant.numeric.bin.flux",
+          "match": "\\b0b[01]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.flux",
+          "match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.decimal.flux",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "keywords_architecture": {
+      "patterns": [
+        {
+          "name": "storage.type.contract.flux",
+          "match": "\\b(contract)\\b"
+        },
+        {
+          "name": "storage.type.agent.flux",
+          "match": "\\b(agent)\\b"
+        },
+        {
+          "name": "storage.modifier.impl.flux",
+          "match": "\\b(impl)\\b"
+        },
+        {
+          "name": "keyword.other.op.flux",
+          "match": "\\b(op)\\b"
+        },
+        {
+          "name": "keyword.control.program.flux",
+          "match": "\\b(program)\\b"
+        },
+        {
+          "name": "keyword.other.function.flux",
+          "match": "\\b(function)\\b"
+        },
+        {
+          "name": "storage.type.struct.flux",
+          "match": "\\b(struct|enum|use)\\b"
+        }
+      ]
+    },
+    "keywords_flow": {
+      "patterns": [
+        {
+          "name": "keyword.control.flow.route.flux",
+          "match": "\\b(route|match)\\b"
+        },
+        {
+          "name": "keyword.control.flow.loop.flux",
+          "match": "\\b(infinite|break|continue)\\b"
+        },
+        {
+          "name": "keyword.control.flow.signal.flux",
+          "match": "\\b(emit|nice|fail|return)\\b"
+        }
+      ]
+    },
+    "keywords_mutability": {
+      "patterns": [
+        {
+          "name": "storage.modifier.mut.flux",
+          "match": "\\b(mut)\\b"
+        },
+        {
+          "name": "storage.modifier.imut.flux",
+          "match": "\\b(imut)\\b"
+        },
+        {
+          "name": "keyword.operator.ownership.flux",
+          "match": "\\b(borrow|borrow_mut|move|copy|keep|as|of|in)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.primitive.flux",
+          "match": "\\b(int64|int32|int16|int8|uint64|uint32|uint16|uint8|float64|float32|string|bool|char|datetime|complex128|tensor|list|map|set|data|void)\\b"
+        }
+      ]
+    },
+    "keywords_modifiers": {
+      "patterns": [
+        {
+          "name": "storage.modifier.other.flux",
+          "match": "\\b(and|or|not|unsafe|comptime|async|await|spawn|spy)\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.flux",
+          "match": "\\b(print|input|println)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.flux",
+          "match": "\\b(true|false|null|nil)\\b"
+        },
+        {
+          "name": "constant.language.wildcard.flux",
+          "match": "\\b(_)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.flow.arrow.flux",
+          "match": "==>"
+        },
+        {
+          "name": "keyword.operator.division.special.flux",
+          "match": "(/i|/r|/f|%)"
+        },
+        {
+          "name": "keyword.operator.scope.flux",
+          "match": "::"
+        },
+        {
+          "name": "keyword.operator.arithmetic.flux",
+          "match": "(\\+|-|\\*|/)"
+        },
+        {
+          "name": "keyword.operator.comparison.flux",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.assignment.flux",
+          "match": "="
+        }
+      ]
+    }
+  }
+}

@@ -5,9 +5,269 @@
 
 contract (ParseDeclsContract) {
       op parseDeclaration (as map: stream, as map: arena) as map
+      op parseOpDecl (as map: stream, as map: arena) as map
 }
 
 agent (CompilerLib) impl ParseDeclsContract {
+      op parseOpDecl (as map: stream, as map: arena) as map ==> {
+            mut as map: ts = stream
+            mut as map: ar = arena
+
+            #L 1. Consome palavra-chave 'op'
+            ts = tokenStreamAdvance(ts)
+
+            #L 2. Nome da operacao (com ou sem parenteses)
+            mut as string: op_name = ""
+            mut as map: m_op_par = tokenStreamMatch(ts, "OP", "(")
+            route {
+                  m_op_par["matched"] ==> {
+                        ts = m_op_par["stream"]
+                        mut as map: name_tok = tokenStreamPeek(ts)
+                        op_name = "" + name_tok["val"]
+                        ts = tokenStreamAdvance(ts)
+                        mut as map: m_op_cl = tokenStreamMatch(ts, "OP", ")")
+                        route {
+                              m_op_cl["matched"] ==> { ts = m_op_cl["stream"] }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {
+                        mut as map: name_tok = tokenStreamPeek(ts)
+                        op_name = "" + name_tok["val"]
+                        ts = tokenStreamAdvance(ts)
+                  }
+            }
+
+            #L 3. Parametros formais (opcionais): (as <tipo>: <nome>, ...)
+            mut as string: params_csv = ""
+            mut as string: ptypes_csv = ""
+            mut as string: last_op_pt = "data"
+            mut as map: m_pop = tokenStreamMatch(ts, "OP", "(")
+            route {
+                  m_pop["matched"] ==> {
+                        ts = m_pop["stream"]
+                        infinite {
+                              mut as map: ptok = tokenStreamPeek(ts)
+                              mut as string: pval = "" + ptok["val"]
+                              route {
+                                    pval == ")" or tokenIsEof(ptok) ==> {
+                                          ts = tokenStreamAdvance(ts)
+                                          break
+                                    }
+                                    pval == "," or pval == "mut" or pval == "fix" or pval == "const" or pval == "\\n" or ptok["type"] == "NEWLINE" ==> {
+                                          ts = tokenStreamAdvance(ts)
+                                    }
+                                    pval == "as" ==> {
+                                          ts = tokenStreamAdvance(ts)
+                                          mut as string: p_type = ""
+                                          infinite {
+                                                mut as map: tp_tok = tokenStreamPeek(ts)
+                                                mut as string: tp_val = "" + tp_tok["val"]
+                                                route {
+                                                      tp_val == ":" or tp_val == ")" or tokenIsEof(tp_tok) ==> {
+                                                            route { tp_val == ":" ==> { ts = tokenStreamAdvance(ts) } _ ==> {} }
+                                                            break
+                                                      }
+                                                      _ ==> {
+                                                            route {
+                                                                  p_type == "" ==> { p_type = tp_val }
+                                                                  _ ==> { p_type = p_type + " " + tp_val }
+                                                            }
+                                                            ts = tokenStreamAdvance(ts)
+                                                      }
+                                                }
+                                          }
+                                          mut as map: pn_tok = tokenStreamPeek(ts)
+                                          mut as string: pn_val = "" + pn_tok["val"]
+                                          ts = tokenStreamAdvance(ts)
+                                          mut as string: norm_pt = "data"
+                                          mut as int64: ptl = stdCollectionLength(p_type)
+                                          route {
+                                                p_type == "string" or p_type == "char" ==> { norm_pt = "string" }
+                                                p_type == "int" or p_type == "int64" or p_type == "int32" or p_type == "int16" or p_type == "int8" or p_type == "uint64" or p_type == "uint32" or p_type == "uint16" or p_type == "uint8" ==> { norm_pt = "int" }
+                                                p_type == "float" or p_type == "float64" or p_type == "float32" or p_type == "float16" or p_type == "bf16_e8m7" or p_type == "tf32_e8m10" or p_type == "fp8_e4m3" or p_type == "fp8_e5m2" ==> { norm_pt = "float" }
+                                                p_type == "bool" ==> { norm_pt = "bool" }
+                                                p_type == "map" or (ptl >= 6 and p_type[1..6] == "map of") ==> { norm_pt = "map" }
+                                                p_type == "set" or (ptl >= 6 and p_type[1..6] == "set of") ==> { norm_pt = "set" }
+                                                p_type == "list" or (ptl >= 7 and p_type[1..7] == "list of") ==> { norm_pt = "list" }
+                                                p_type == "complex" or p_type == "complex64" or p_type == "complex32" or p_type == "complex128" ==> { norm_pt = "complex" }
+                                                _ ==> {}
+                                          }
+                                          last_op_pt = norm_pt
+                                          route {
+                                                params_csv == "" ==> {
+                                                      params_csv = pn_val
+                                                      ptypes_csv = norm_pt
+                                                }
+                                                _ ==> {
+                                                      params_csv = params_csv + "," + pn_val
+                                                      ptypes_csv = ptypes_csv + "," + norm_pt
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          mut as map: tok1 = tokenStreamPeek(ts)
+                                          mut as string: val1 = "" + tok1["val"]
+                                          ts = tokenStreamAdvance(ts)
+                                          mut as map: m_col = tokenStreamMatch(ts, "OP", ":")
+                                          mut as string: p_assigned = val1
+                                          route {
+                                                m_col["matched"] ==> {
+                                                      ts = m_col["stream"]
+                                                      mut as map: tok2 = tokenStreamPeek(ts)
+                                                      mut as string: val2 = "" + tok2["val"]
+                                                      ts = tokenStreamAdvance(ts)
+                                                      p_assigned = val2
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                params_csv == "" ==> {
+                                                      params_csv = p_assigned
+                                                      ptypes_csv = last_op_pt
+                                                }
+                                                _ ==> {
+                                                      params_csv = params_csv + "," + p_assigned
+                                                      ptypes_csv = ptypes_csv + "," + last_op_pt
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            #L 4. Tipo de retorno opcional: as <tipo>
+            mut as map: m_as = tokenStreamMatch(ts, "KEYWORD", "as")
+            mut as string: ret_type = ""
+            route {
+                  m_as["matched"] ==> {
+                        ts = m_as["stream"]
+                        infinite {
+                              mut as map: rt_tok = tokenStreamPeek(ts)
+                              mut as string: rt_val = "" + rt_tok["val"]
+                              route {
+                                    rt_val == "==>" or rt_val == "{" or rt_val == "}" or rt_val == "op" or rt_val == "\\n" or rt_tok["type"] == "NEWLINE" or tokenIsEof(rt_tok) ==> {
+                                          break
+                                    }
+                                    _ ==> {
+                                          route {
+                                                ret_type == "" ==> { ret_type = rt_val }
+                                                _ ==> { ret_type = ret_type + " " + rt_val }
+                                          }
+                                          ts = tokenStreamAdvance(ts)
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            #L Skip optional newlines before ==>
+            infinite {
+                  mut as map: nxt = tokenStreamPeek(ts)
+                  route {
+                        nxt["val"] == "\\n" or nxt["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                        _ ==> { break }
+                  }
+            }
+
+            #L 5. Verifica se ha delimitador de corpo '==>'
+            mut as map: m_arr = tokenStreamMatch(ts, "OP", "==>")
+            mut as int64: res_nid = 0
+            route {
+                  m_arr["matched"] ==> {
+                        ts = m_arr["stream"]
+                        infinite {
+                              mut as map: nxt2 = tokenStreamPeek(ts)
+                              route {
+                                    nxt2["val"] == "\\n" or nxt2["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                    _ ==> { break }
+                              }
+                        }
+                        mut as map: m_ob = tokenStreamMatch(ts, "OP", "{")
+                        mut as list of data: op_body = []
+                        route {
+                              m_ob["matched"] ==> {
+                                    ts = m_ob["stream"]
+                                    infinite {
+                                          mut as map: b_tok = tokenStreamPeek(ts)
+                                          mut as string: b_val = "" + b_tok["val"]
+                                          route {
+                                                b_val == "}" or tokenIsEof(b_tok) ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                      break
+                                                }
+                                                b_val == "\\n" or b_tok["type"] == "NEWLINE" ==> {
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                                _ ==> {
+                                                      mut as map: stmt_res = parseStatement(ts, ar)
+                                                      ts = stmt_res["stream"]
+                                                      ar = stmt_res["arena"]
+                                                      mut as list of data: nids = stmt_res["node_ids"]
+                                                      mut as int64: nn = stdCollectionLength(nids)
+                                                      route {
+                                                            nn > 0 ==> {
+                                                                  mut as int64: ni = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              ni > nn ==> { break }
+                                                                              _ ==> {
+                                                                                    op_body = stdListPushBack(op_body, nids[ni])
+                                                                                    ni = ni + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  op_body = stdListPushBack(op_body, stmt_res["node_id"])
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+                        mut as string: norm_rt = "data"
+                        mut as int64: rtl = stdCollectionLength(ret_type)
+                        route {
+                              ret_type == "string" or ret_type == "char" ==> { norm_rt = "string" }
+                              ret_type == "int" or ret_type == "int64" or ret_type == "int32" or ret_type == "int16" or ret_type == "int8" or ret_type == "uint64" or ret_type == "uint32" or ret_type == "uint16" or ret_type == "uint8" ==> { norm_rt = "int" }
+                              ret_type == "float" or ret_type == "float64" or ret_type == "float32" or ret_type == "float16" or ret_type == "bf16_e8m7" or ret_type == "tf32_e8m10" or ret_type == "fp8_e4m3" or ret_type == "fp8_e5m2" ==> { norm_rt = "float" }
+                              ret_type == "bool" ==> { norm_rt = "bool" }
+                              ret_type == "map" or (rtl >= 6 and ret_type[1..6] == "map of") ==> { norm_rt = "map" }
+                              ret_type == "set" or (rtl >= 6 and ret_type[1..6] == "set of") ==> { norm_rt = "set" }
+                              ret_type == "list" or (rtl >= 7 and ret_type[1..7] == "list of") ==> { norm_rt = "list" }
+                              ret_type == "complex" or ret_type == "complex64" or ret_type == "complex32" or ret_type == "complex128" ==> { norm_rt = "complex" }
+                              _ ==> {}
+                        }
+                        ar = astArenaAllocNode(ar, "PARAM_TYPES", ptypes_csv, 0, 0, [])
+                        mut as int64: pt_nid = ar["last_id"]
+                        ar = astArenaAllocNode(ar, "RET_TYPE", norm_rt, 0, 0, [])
+                        mut as int64: rt_nid = ar["last_id"]
+                        ar = astArenaAllocNode(ar, "PARAMS", params_csv, pt_nid, rt_nid, [])
+                        mut as int64: p_nid = ar["last_id"]
+                        ar = astArenaAllocNode(ar, "DECL_OP", op_name, p_nid, 0, op_body)
+                        res_nid = ar["last_id"]
+                  }
+                  _ ==> {
+                        ar = astArenaAllocNode(ar, "PARAMS", params_csv, 0, 0, [])
+                        mut as int64: p_nid = ar["last_id"]
+                        ar = astArenaAllocNode(ar, "DECL_OP_SIG", op_name, p_nid, 0, [])
+                        res_nid = ar["last_id"]
+                  }
+            }
+
+            mut as map: result = map{}
+            result["stream"] = ts
+            result["arena"] = ar
+            result["node_id"] = res_nid
+            emit(nice, result, "ok")
+      }
+
       op parseDeclaration (as map: stream, as map: arena) as map ==> {
             mut as map: cur = tokenStreamPeek(stream)
             mut as string: cval = "" + cur["val"]
@@ -27,30 +287,89 @@ agent (CompilerLib) impl ParseDeclsContract {
             route {
                   cval == "use" ==> {
                         ts = tokenStreamAdvance(ts)
-                        mut as map: target_tok = tokenStreamPeek(ts)
-                        mut as string: target_name = "" + target_tok["val"]
-                        ts = tokenStreamAdvance(ts)
-                        mut as map: nxt_tok = tokenStreamPeek(ts)
-                        mut as string: nxt_val = "" + nxt_tok["val"]
-                        route {
-                              nxt_val == "." ==> {
-                                    ts = tokenStreamAdvance(ts)
-                                    mut as map: ext_tok = tokenStreamPeek(ts)
-                                    target_name = target_name + "." + ext_tok["val"]
-                                    ts = tokenStreamAdvance(ts)
+                        mut as string: target_name = ""
+                        mut as int64: use_meta_nid = 0
+                        infinite {
+                              mut as map: ptok = tokenStreamPeek(ts)
+                              mut as string: pval = "" + ptok["val"]
+                              route {
+                                    pval == "\\n" or ptok["type"] == "NEWLINE" or tokenIsEof(ptok) ==> {
+                                          break
+                                    }
+                                    pval == "as" ==> {
+                                          ts = tokenStreamAdvance(ts)
+                                          mut as map: al_tok = tokenStreamPeek(ts)
+                                          mut as string: alias_str = "" + al_tok["val"]
+                                          ts = tokenStreamAdvance(ts)
+                                          ar = astArenaAllocNode(ar, "USE_ALIAS", alias_str, 0, 0, [])
+                                          use_meta_nid = ar["last_id"]
+                                          break
+                                    }
+                                    pval == "{" ==> {
+                                          ts = tokenStreamAdvance(ts)
+                                          infinite {
+                                                mut as int64: tnl = stdCollectionLength(target_name)
+                                                route {
+                                                      tnl > 0 and target_name[tnl] == ":" ==> {
+                                                            route {
+                                                                  tnl > 1 ==> { target_name = target_name[1..(tnl - 1)] }
+                                                                  _ ==> { target_name = "" }
+                                                            }
+                                                      }
+                                                      _ ==> { break }
+                                                }
+                                          }
+                                          mut as string: group_csv = ""
+                                          infinite {
+                                                mut as map: gtok = tokenStreamPeek(ts)
+                                                mut as string: gval = "" + gtok["val"]
+                                                route {
+                                                      gval == "}" or tokenIsEof(gtok) ==> {
+                                                            ts = tokenStreamAdvance(ts)
+                                                            break
+                                                      }
+                                                      gval == "," or gval == "\\n" or gtok["type"] == "NEWLINE" ==> {
+                                                            ts = tokenStreamAdvance(ts)
+                                                      }
+                                                      _ ==> {
+                                                            mut as string: orig_name = gval
+                                                            ts = tokenStreamAdvance(ts)
+                                                            mut as string: alias_name = orig_name
+                                                            mut as map: atok = tokenStreamPeek(ts)
+                                                            mut as string: aval = "" + atok["val"]
+                                                            route {
+                                                                  aval == "as" ==> {
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                        mut as map: an_tok = tokenStreamPeek(ts)
+                                                                        alias_name = "" + an_tok["val"]
+                                                                        ts = tokenStreamAdvance(ts)
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            mut as string: pair_entry = orig_name + ":" + alias_name
+                                                            route {
+                                                                  group_csv == "" ==> { group_csv = pair_entry }
+                                                                  _ ==> { group_csv = group_csv + "," + pair_entry }
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                          ar = astArenaAllocNode(ar, "USE_GROUP", group_csv, 0, 0, [])
+                                          use_meta_nid = ar["last_id"]
+                                          break
+                                    }
+                                    _ ==> {
+                                          target_name = target_name + pval
+                                          ts = tokenStreamAdvance(ts)
+                                    }
                               }
-                              _ ==> {}
                         }
-                        nxt_tok = tokenStreamPeek(ts)
-                        nxt_val = "" + nxt_tok["val"]
-                        route {
-                              nxt_val == "as" ==> {
-                                    ts = tokenStreamAdvance(ts)
-                                    ts = tokenStreamAdvance(ts)
-                              }
-                              _ ==> {}
-                        }
-                        ar = astArenaAllocNode(ar, "DECL_USE", target_name, 0, 0, [])
+                        ar = astArenaAllocNode(ar, "DECL_USE", target_name, use_meta_nid, 0, [])
+                  }
+                  cval == "op" ==> {
+                        mut as map: op_res = parseOpDecl(ts, ar)
+                        ts = op_res["stream"]
+                        ar = op_res["arena"]
                   }
                   cval == "program" or cval == "agent" or cval == "contract" or cval == "struct" or cval == "enum" or cval == "function" ==> {
                         mut as string: decl_kind = cval
@@ -69,9 +388,40 @@ agent (CompilerLib) impl ParseDeclsContract {
                               _ ==> {}
                         }
 
+                        #L Consome clausula opcional impl/: Contrato1, Contrato2...
+                        mut as string: impl_csv = ""
+                        mut as map: ptok_impl = tokenStreamPeek(ts)
+                        mut as string: pval_impl = "" + ptok_impl["val"]
+                        route {
+                              pval_impl == "impl" or pval_impl == ":" ==> {
+                                    ts = tokenStreamAdvance(ts)
+                                    infinite {
+                                          mut as map: ct_tok = tokenStreamPeek(ts)
+                                          mut as string: ct_val = "" + ct_tok["val"]
+                                          route {
+                                                ct_val == "{" or tokenIsEof(ct_tok) ==> { break }
+                                                ct_val == "," ==> { ts = tokenStreamAdvance(ts) }
+                                                _ ==> {
+                                                      route {
+                                                            impl_csv == "" ==> { impl_csv = ct_val }
+                                                            _ ==> { impl_csv = impl_csv + "," + ct_val }
+                                                      }
+                                                      ts = tokenStreamAdvance(ts)
+                                                }
+                                          }
+                                    }
+                              }
+                              _ ==> {}
+                        }
+
+                        mut as int64: extra_nid = 0
+
                         #L Para function, consome parametros ( ... ) e retorno opcional as ...
                         route {
                               decl_kind == "function" ==> {
+                                    mut as string: fn_params_csv = ""
+                                    mut as string: fn_ptypes_csv = ""
+                                    mut as string: last_fn_pt = "data"
                                     mut as map: m_pop = tokenStreamMatch(ts, "OP", "(")
                                     route {
                                           m_pop["matched"] ==> {
@@ -84,13 +434,91 @@ agent (CompilerLib) impl ParseDeclsContract {
                                                                   ts = tokenStreamAdvance(ts)
                                                                   break
                                                             }
-                                                            _ ==> { ts = tokenStreamAdvance(ts) }
+                                                            pval == "," or pval == "mut" or pval == "fix" or pval == "const" or pval == "\\n" or ptok["type"] == "NEWLINE" ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
+                                                            pval == "as" ==> {
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  mut as string: p_type = ""
+                                                                  infinite {
+                                                                        mut as map: tp_tok = tokenStreamPeek(ts)
+                                                                        mut as string: tp_val = "" + tp_tok["val"]
+                                                                        route {
+                                                                              tp_val == ":" or tp_val == ")" or tokenIsEof(tp_tok) ==> {
+                                                                                    route { tp_val == ":" ==> { ts = tokenStreamAdvance(ts) } _ ==> {} }
+                                                                                    break
+                                                                              }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          p_type == "" ==> { p_type = tp_val }
+                                                                                          _ ==> { p_type = p_type + " " + tp_val }
+                                                                                    }
+                                                                                    ts = tokenStreamAdvance(ts)
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  mut as map: pn_tok = tokenStreamPeek(ts)
+                                                                  mut as string: pn_val = "" + pn_tok["val"]
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  mut as string: norm_pt = "data"
+                                                                  mut as int64: ptl = stdCollectionLength(p_type)
+                                                                  route {
+                                                                        p_type == "string" or p_type == "char" ==> { norm_pt = "string" }
+                                                                        p_type == "int" or p_type == "int64" or p_type == "int32" or p_type == "int16" or p_type == "int8" or p_type == "uint64" or p_type == "uint32" or p_type == "uint16" or p_type == "uint8" ==> { norm_pt = "int" }
+                                                                        p_type == "float" or p_type == "float64" or p_type == "float32" or p_type == "float16" or p_type == "bf16_e8m7" or p_type == "tf32_e8m10" or p_type == "fp8_e4m3" or p_type == "fp8_e5m2" ==> { norm_pt = "float" }
+                                                                        p_type == "bool" ==> { norm_pt = "bool" }
+                                                                        p_type == "map" or (ptl >= 6 and p_type[1..6] == "map of") ==> { norm_pt = "map" }
+                                                                        p_type == "set" or (ptl >= 6 and p_type[1..6] == "set of") ==> { norm_pt = "set" }
+                                                                        p_type == "list" or (ptl >= 7 and p_type[1..7] == "list of") ==> { norm_pt = "list" }
+                                                                        p_type == "complex" or p_type == "complex64" or p_type == "complex32" or p_type == "complex128" ==> { norm_pt = "complex" }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  last_fn_pt = norm_pt
+                                                                  route {
+                                                                        fn_params_csv == "" ==> {
+                                                                              fn_params_csv = pn_val
+                                                                              fn_ptypes_csv = norm_pt
+                                                                        }
+                                                                        _ ==> {
+                                                                              fn_params_csv = fn_params_csv + "," + pn_val
+                                                                              fn_ptypes_csv = fn_ptypes_csv + "," + norm_pt
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  mut as map: tok1 = tokenStreamPeek(ts)
+                                                                  mut as string: val1 = "" + tok1["val"]
+                                                                  ts = tokenStreamAdvance(ts)
+                                                                  mut as map: m_col = tokenStreamMatch(ts, "OP", ":")
+                                                                  mut as string: p_assigned = val1
+                                                                  route {
+                                                                        m_col["matched"] ==> {
+                                                                              ts = m_col["stream"]
+                                                                              mut as map: tok2 = tokenStreamPeek(ts)
+                                                                              mut as string: val2 = "" + tok2["val"]
+                                                                              ts = tokenStreamAdvance(ts)
+                                                                              p_assigned = val2
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  route {
+                                                                        fn_params_csv == "" ==> {
+                                                                              fn_params_csv = p_assigned
+                                                                              fn_ptypes_csv = last_fn_pt
+                                                                        }
+                                                                        _ ==> {
+                                                                              fn_params_csv = fn_params_csv + "," + p_assigned
+                                                                              fn_ptypes_csv = fn_ptypes_csv + "," + last_fn_pt
+                                                                        }
+                                                                  }
+                                                            }
                                                       }
                                                 }
                                           }
                                           _ ==> {}
                                     }
                                     mut as map: m_fas = tokenStreamMatch(ts, "KEYWORD", "as")
+                                    mut as string: fn_ret_type = ""
                                     route {
                                           m_fas["matched"] ==> {
                                                 ts = m_fas["stream"]
@@ -98,18 +526,50 @@ agent (CompilerLib) impl ParseDeclsContract {
                                                       mut as map: ptok = tokenStreamPeek(ts)
                                                       mut as string: pv = "" + ptok["val"]
                                                       route {
-                                                            pv == "{" or tokenIsEof(ptok) ==> { break }
-                                                            _ ==> { ts = tokenStreamAdvance(ts) }
+                                                            pv == "{" or pv == "==>" or pv == "\\n" or ptok["type"] == "NEWLINE" or tokenIsEof(ptok) ==> { break }
+                                                            _ ==> {
+                                                                  route {
+                                                                        fn_ret_type == "" ==> { fn_ret_type = pv }
+                                                                        _ ==> { fn_ret_type = fn_ret_type + " " + pv }
+                                                                  }
+                                                                  ts = tokenStreamAdvance(ts)
+                                                            }
                                                       }
                                                 }
                                           }
                                           _ ==> {}
                                     }
+                                    mut as string: fn_norm_rt = "data"
+                                    mut as int64: fn_rtl = stdCollectionLength(fn_ret_type)
+                                    route {
+                                          fn_ret_type == "string" or fn_ret_type == "char" ==> { fn_norm_rt = "string" }
+                                          fn_ret_type == "int" or fn_ret_type == "int64" or fn_ret_type == "int32" or fn_ret_type == "int16" or fn_ret_type == "int8" or fn_ret_type == "uint64" or fn_ret_type == "uint32" or fn_ret_type == "uint16" or fn_ret_type == "uint8" ==> { fn_norm_rt = "int" }
+                                          fn_ret_type == "float" or fn_ret_type == "float64" or fn_ret_type == "float32" or fn_ret_type == "float16" ==> { fn_norm_rt = "float" }
+                                          fn_ret_type == "bool" ==> { fn_norm_rt = "bool" }
+                                          fn_ret_type == "map" or (fn_rtl >= 6 and fn_ret_type[1..6] == "map of") ==> { fn_norm_rt = "map" }
+                                          fn_ret_type == "set" or (fn_rtl >= 6 and fn_ret_type[1..6] == "set of") ==> { fn_norm_rt = "set" }
+                                          fn_ret_type == "list" or (fn_rtl >= 7 and fn_ret_type[1..7] == "list of") ==> { fn_norm_rt = "list" }
+                                          _ ==> {}
+                                    }
+                                    ar = astArenaAllocNode(ar, "PARAM_TYPES", fn_ptypes_csv, 0, 0, [])
+                                    mut as int64: fn_pt_nid = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "RET_TYPE", fn_norm_rt, 0, 0, [])
+                                    mut as int64: fn_rt_nid = ar["last_id"]
+                                    ar = astArenaAllocNode(ar, "PARAMS", fn_params_csv, fn_pt_nid, fn_rt_nid, [])
+                                    extra_nid = ar["last_id"]
                               }
                               _ ==> {}
                         }
 
                         #L Corpo do bloco { ... }
+                        infinite {
+                              mut as map: nxt_brace = tokenStreamPeek(ts)
+                              mut as string: nb_val = "" + nxt_brace["val"]
+                              route {
+                                    nb_val == "\\n" or nxt_brace["type"] == "NEWLINE" or nb_val == "==>" ==> { ts = tokenStreamAdvance(ts) }
+                                    _ ==> { break }
+                              }
+                        }
                         mut as map: m_brace = tokenStreamMatch(ts, "OP", "{")
                         mut as list of data: body_nodes = []
                         route {
@@ -125,6 +585,12 @@ agent (CompilerLib) impl ParseDeclsContract {
                                                 }
                                                 pval == "\\n" or peek_tok["type"] == "NEWLINE" ==> {
                                                       ts = tokenStreamAdvance(ts)
+                                                }
+                                                pval == "op" ==> {
+                                                      mut as map: op_res = parseOpDecl(ts, ar)
+                                                      ts = op_res["stream"]
+                                                      ar = op_res["arena"]
+                                                      body_nodes = stdListPushBack(body_nodes, op_res["node_id"])
                                                 }
                                                 _ ==> {
                                                       mut as map: stmt_res = parseStatement(ts, ar)
@@ -155,7 +621,26 @@ agent (CompilerLib) impl ParseDeclsContract {
                               }
                               _ ==> {}
                         }
-                        ar = astArenaAllocNode(ar, "DECL_" + decl_kind, decl_name, 0, 0, body_nodes)
+
+                        mut as string: u_kind = "PROGRAM"
+                        route {
+                              decl_kind == "agent" ==> { u_kind = "AGENT" }
+                              decl_kind == "contract" ==> { u_kind = "CONTRACT" }
+                              decl_kind == "struct" ==> { u_kind = "STRUCT" }
+                              decl_kind == "enum" ==> { u_kind = "ENUM" }
+                              decl_kind == "function" ==> { u_kind = "FUNCTION" }
+                              decl_kind == "program" ==> { u_kind = "PROGRAM" }
+                              _ ==> { u_kind = decl_kind }
+                        }
+
+                        route {
+                              impl_csv != "" ==> {
+                                    ar = astArenaAllocNode(ar, "IMPL", impl_csv, 0, 0, [])
+                                    extra_nid = ar["last_id"]
+                              }
+                              _ ==> {}
+                        }
+                        ar = astArenaAllocNode(ar, "DECL_" + u_kind, decl_name, extra_nid, 0, body_nodes)
                   }
                   _ ==> {
                         #L Fallback para statement no nivel global

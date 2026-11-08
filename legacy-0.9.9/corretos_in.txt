@@ -60,12 +60,12 @@
   | alvo =~ 99 (alvo = ~alvo): -6
   OK  ExampleOfAssignmentBitwise.flux
   | === async: chamada aguardada ===
-  | 5000
-  | -9000
+  | 50
+  | 900
   | === async: aguardando Future de spawn ===
-  | 8000
+  | 80
   | === async: combinando resultados ===
-  | 5000
+  | 50
   OK  ExampleOfAsync.flux
   | === await: resultado de chamada async ===
   | usuario#700

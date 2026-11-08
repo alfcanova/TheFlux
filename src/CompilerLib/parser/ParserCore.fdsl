@@ -12,6 +12,28 @@ contract (ParserCoreContract) {
 agent (CompilerLib) impl ParserCoreContract {
       op parseSource (as string: source_code) as map ==> {
             mut as list of data: tokens = lexerTokenize(source_code)
+            mut as int64: n_toks = stdCollectionLength(tokens)
+            mut as int64: ti = 1
+            infinite {
+                  route {
+                        ti > n_toks ==> { break }
+                        _ ==> {
+                              mut as map: tk = tokens[ti]
+                              route {
+                                    ("" + tk["type"]) == "UNKNOWN" and ("" + tk["val"]) == "/" ==> {
+                                          mut as map: lerr = map{}
+                                          lerr["success"] = false
+                                          lerr["line"] = tk["line"]
+                                          lerr["col"] = tk["col"]
+                                          lerr["error"] = "[SYN100 - UNEXPECTED_TOKEN]: Operador '/' isolado invalido na linha " + tk["line"] + ", coluna " + tk["col"] + ". Em TheFlux utilize '/i' (divisao inteira), '/f' (divisao real) ou '/r' (resto)."
+                                          emit(nice, lerr, "ok")
+                                    }
+                                    _ ==> {}
+                              }
+                              ti = ti + 1
+                        }
+                  }
+            }
             mut as map: stream = tokenStreamNew(tokens)
             mut as map: arena = astArenaNew()
             mut as list of data: decl_nodes = []
@@ -64,6 +86,16 @@ agent (CompilerLib) impl ParserCoreContract {
                   }
             }
 
+            route {
+                  stdMapContainsKey(arena, "parse_error") and ("" + arena["parse_error"]) != "" ==> {
+                        mut as map: perr = map{}
+                        perr["success"] = false
+                        perr["error"] = "" + arena["parse_error"]
+                        emit(nice, perr, "ok")
+                  }
+                  _ ==> {}
+            }
+
             arena = astArenaAllocNode(arena, "PROGRAM", "main", 0, 0, decl_nodes)
             mut as int64: root_id = arena["last_id"]
 
@@ -77,19 +109,198 @@ agent (CompilerLib) impl ParserCoreContract {
 
       op parseFile (as string: file_path) as map ==> {
             route {
-                  stdIoFileExists(file_path) ==> {
-                        mut as string: code = stdIoReadFile(file_path)
-                        mut as map: res = parseSource(code)
-                        res["file_path"] = file_path
-                        emit(nice, res, "ok")
-                  }
-                  _ ==> {
+                  not stdIoFileExists(file_path) ==> {
                         mut as map: err = map{}
                         err["success"] = false
                         err["error"] = "File not found: " + file_path
                         emit(nice, err, "ok")
                   }
+                  _ ==> {}
             }
+
+            mut as string: root_code = stdIoReadFile(file_path)
+            mut as map: p_res = parseSource(root_code)
+            route {
+                  not p_res["success"] ==> {
+                        p_res["file_path"] = file_path
+                        emit(nice, p_res, "ok")
+                  }
+                  _ ==> {}
+            }
+
+            mut as map: arena = p_res["arena"]
+            mut as int64: root_nid = p_res["root_id"]
+            mut as list of data: decl_nodes = astArenaNodeChildren(arena, root_nid)
+
+            mut as list of data: q_base = []
+            mut as list of data: q_mod = []
+            mut as map: visited_files = map{}
+            visited_files[file_path] = true
+
+            mut as int64: nd = stdCollectionLength(decl_nodes)
+            mut as int64: di = 1
+            infinite {
+                  route {
+                        di > nd ==> { break }
+                        _ ==> {
+                              mut as int64: nid = decl_nodes[di]
+                              mut as string: nkind = astArenaNodeKind(arena, nid)
+                              route {
+                                    nkind == "DECL_USE" ==> {
+                                          mut as string: use_target = astArenaNodeValue(arena, nid)
+                                          route {
+                                                use_target != "CompilerLib" ==> {
+                                                      q_base = stdListPushBack(q_base, file_path)
+                                                      q_mod = stdListPushBack(q_mod, use_target)
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              di = di + 1
+                        }
+                  }
+            }
+
+            mut as int64: qi = 1
+            infinite {
+                  mut as int64: qlen = stdCollectionLength(q_mod)
+                  route {
+                        qi > qlen ==> { break }
+                        _ ==> {
+                              mut as string: cur_base = "" + q_base[qi]
+                              mut as string: cur_mod = "" + q_mod[qi]
+
+                              mut as string: resolved = importResolveRelative(cur_base, cur_mod)
+                              route {
+                                    resolved == "" ==> {
+                                          resolved = importResolveFile(cur_base, cur_mod)
+                                    }
+                                    _ ==> {}
+                              }
+
+                              route {
+                                    resolved != "" and stdIoFileExists(resolved) and not stdMapContainsKey(visited_files, resolved) ==> {
+                                          visited_files[resolved] = true
+                                          mut as string: mod_src = stdIoReadFile(resolved)
+                                          mut as list of data: mod_tokens = lexerTokenize(mod_src)
+                                          mut as int64: n_mtoks = stdCollectionLength(mod_tokens)
+                                          mut as int64: mti = 1
+                                          infinite {
+                                                route {
+                                                      mti > n_mtoks ==> { break }
+                                                      _ ==> {
+                                                            mut as map: mtk = mod_tokens[mti]
+                                                            route {
+                                                                  ("" + mtk["type"]) == "UNKNOWN" and ("" + mtk["val"]) == "/" ==> {
+                                                                        mut as map: merr = map{}
+                                                                        merr["success"] = false
+                                                                        merr["file_path"] = resolved
+                                                                        merr["line"] = mtk["line"]
+                                                                        merr["col"] = mtk["col"]
+                                                                        merr["error"] = "[SYN100 - UNEXPECTED_TOKEN]: Operador '/' isolado invalido em '" + resolved + "', linha " + mtk["line"] + ", coluna " + mtk["col"] + ". Em TheFlux utilize '/i' (divisao inteira), '/f' (divisao real) ou '/r' (resto)."
+                                                                        emit(nice, merr, "ok")
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            mti = mti + 1
+                                                      }
+                                                }
+                                          }
+                                          mut as map: stream = tokenStreamNew(mod_tokens)
+
+                                          infinite {
+                                                route {
+                                                      tokenStreamIsEof(stream) ==> { break }
+                                                      _ ==> {}
+                                                }
+
+                                                mut as map: cur_tok = tokenStreamPeek(stream)
+                                                mut as string: ctype = "" + cur_tok["type"]
+                                                mut as string: cval = "" + cur_tok["val"]
+
+                                                route {
+                                                      ctype == "EOF" ==> { break }
+                                                      ctype == "NEWLINE" or cval == "\\n" or cval == ";" ==> {
+                                                            stream = tokenStreamAdvance(stream)
+                                                      }
+                                                      _ ==> {
+                                                            mut as map: decl_res = parseDeclaration(stream, arena)
+                                                            stream = decl_res["stream"]
+                                                            arena = decl_res["arena"]
+                                                            mut as list of data: dnids = decl_res["node_ids"]
+                                                            mut as int64: dnn = stdCollectionLength(dnids)
+                                                            route {
+                                                                  dnn > 0 ==> {
+                                                                        mut as int64: dni = 1
+                                                                        infinite {
+                                                                              route {
+                                                                                    dni > dnn ==> { break }
+                                                                                    _ ==> {
+                                                                                          mut as int64: did = dnids[dni]
+                                                                                          decl_nodes = stdListPushBack(decl_nodes, did)
+                                                                                          route {
+                                                                                                astArenaNodeKind(arena, did) == "DECL_USE" ==> {
+                                                                                                      q_base = stdListPushBack(q_base, resolved)
+                                                                                                      q_mod = stdListPushBack(q_mod, astArenaNodeValue(arena, did))
+                                                                                                }
+                                                                                                _ ==> {}
+                                                                                          }
+                                                                                          dni = dni + 1
+                                                                                    }
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  _ ==> {
+                                                                        mut as int64: did = decl_res["node_id"]
+                                                                        route {
+                                                                              did > 0 ==> {
+                                                                                    decl_nodes = stdListPushBack(decl_nodes, did)
+                                                                                    route {
+                                                                                          astArenaNodeKind(arena, did) == "DECL_USE" ==> {
+                                                                                                q_base = stdListPushBack(q_base, resolved)
+                                                                                                q_mod = stdListPushBack(q_mod, astArenaNodeValue(arena, did))
+                                                                                          }
+                                                                                          _ ==> {}
+                                                                                    }
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                  }
+                                                            }
+                                                      }
+                                                }
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+
+                              qi = qi + 1
+                        }
+                  }
+            }
+
+            route {
+                  stdMapContainsKey(arena, "parse_error") and ("" + arena["parse_error"]) != "" ==> {
+                        mut as map: perr = map{}
+                        perr["success"] = false
+                        perr["error"] = "" + arena["parse_error"]
+                        emit(nice, perr, "ok")
+                  }
+                  _ ==> {}
+            }
+
+            arena = astArenaAllocNode(arena, "PROGRAM", "main", 0, 0, decl_nodes)
+            mut as int64: final_root = arena["last_id"]
+
+            mut as map: final_res = map{}
+            final_res["arena"] = arena
+            final_res["root_id"] = final_root
+            final_res["count"] = stdCollectionLength(decl_nodes)
+            final_res["success"] = true
+            final_res["file_path"] = file_path
+            emit(nice, final_res, "ok")
       }
 
       op parseDumpAst (as map: ast_result) as string ==> {

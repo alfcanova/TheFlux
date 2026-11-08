@@ -56,7 +56,7 @@ agent (CompilerLib) impl WasmBackendContract {
                                     opcode == "BINOP_*" ==> {
                                           body_hex = body_hex + "420142017e1a" #L i64.mul, drop
                                     }
-                                    opcode == "BINOP_/" or opcode == "BINOP_/i" ==> {
+                                    opcode == "BINOP_/i" ==> {
                                           body_hex = body_hex + "420142017f1a" #L i64.div_s, drop
                                     }
                                     opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
@@ -101,7 +101,7 @@ agent (CompilerLib) impl WasmBackendContract {
 
             #L 1 local decl count (0) + body
             mut as string: func_hex = "00" + body_hex
-            mut as int64: body_bytes = stdCollectionLength(func_hex) / 2
+            mut as int64: body_bytes = stdCollectionLength(func_hex) /i 2
             mut as string: size_hex = "0a"
             route {
                   body_bytes < 16 ==> { size_hex = "0" + body_bytes }

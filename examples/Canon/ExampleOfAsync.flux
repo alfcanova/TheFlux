@@ -1,10 +1,10 @@
 async function calculaJuros (as int64: valor, as int64: taxa) as int64 {
-      mut as int64: juros = valor * taxa / 100
+      mut as int64: juros = valor * taxa /i 100
       emit(nice, juros, "ok")
 }
 
 async function aplicaDesconto (as int64: valor, as int64: pct) as int64 {
-      mut as int64: desconto = valor * pct / 100
+      mut as int64: desconto = valor * pct /i 100
       mut as int64: final = valor - desconto
       emit(nice, final, "ok")
 }

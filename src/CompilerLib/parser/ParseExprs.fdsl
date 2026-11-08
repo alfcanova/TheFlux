@@ -186,6 +186,24 @@ agent (CompilerLib) impl ParseExprsContract {
                                                             }
                                                       }
                                                       mut as list of data: sub_toks = lexerTokenize(sub_expr_str)
+                                                      mut as int64: n_st = stdCollectionLength(sub_toks)
+                                                      mut as int64: sti = 1
+                                                      infinite {
+                                                            route {
+                                                                  sti > n_st ==> { break }
+                                                                  _ ==> {
+                                                                        mut as map: stk = sub_toks[sti]
+                                                                        route {
+                                                                              ("" + stk["type"]) == "UNKNOWN" and ("" + stk["val"]) == "/" ==> {
+                                                                                    ar["parse_error"] = "[SYN100 - UNEXPECTED_TOKEN]: Operador '/' isolado invalido em interpolacao de string. Em TheFlux utilize '/i' (divisao inteira), '/f' (divisao real) ou '/r' (resto)."
+                                                                                    break
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        sti = sti + 1
+                                                                  }
+                                                            }
+                                                      }
                                                       mut as map: sub_ts = tokenStreamNew(sub_toks)
                                                       mut as map: sub_res = parseExpression(sub_ts, ar)
                                                       ar = sub_res["arena"]
@@ -425,7 +443,7 @@ agent (CompilerLib) impl ParseExprsContract {
                               }
                         }
                   }
-                  ctype == "IDENT" or cval == "borrow" or cval == "borrow_mut" or cval == "copy" or cval == "move" or cval == "input" or cval == "spy" ==> {
+                  ctype == "IDENT" or ctype == "KEYWORD" or ctype == "TYPE" or cval == "borrow" or cval == "borrow_mut" or cval == "copy" or cval == "move" or cval == "input" or cval == "spy" ==> {
                         mut as map: nxt = tokenStreamPeek(ts)
                         mut as string: nval = "" + nxt["val"]
                         route {
@@ -879,6 +897,67 @@ agent (CompilerLib) impl ParseExprsContract {
                               ar = astArenaAllocNode(ar, "ENSURE_BLOCK", "ensure", left_id, 0, ensure_stmts)
                               left_id = ar["last_id"]
                         }
+                        #L  6. Operador Short Circuit: ? { ==> emit(...) ==> emit(...) }
+                        cval == "?" ==> {
+                              ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: ptok_sc0 = tokenStreamPeek(ts)
+                                    mut as string: pv_sc0 = "" + ptok_sc0["val"]
+                                    route {
+                                          pv_sc0 == "\n" or ptok_sc0["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
+                              mut as map: m_ob_sc = tokenStreamMatch(ts, "OP", "{")
+                              route {
+                                    m_ob_sc["matched"] ==> { ts = m_ob_sc["stream"] }
+                                    _ ==> {}
+                              }
+                              mut as list of data: sc_arms = []
+                              infinite {
+                                    mut as map: ptok_sc = tokenStreamPeek(ts)
+                                    mut as string: pv_sc = "" + ptok_sc["val"]
+                                    route {
+                                          pv_sc == "}" or tokenIsEof(ptok_sc) ==> {
+                                                ts = tokenStreamAdvance(ts)
+                                                break
+                                          }
+                                          pv_sc == "\n" or ptok_sc["type"] == "NEWLINE" ==> {
+                                                ts = tokenStreamAdvance(ts)
+                                          }
+                                          pv_sc == "==>" ==> {
+                                                ts = tokenStreamAdvance(ts)
+                                                mut as map: s_sc_res = parseStatement(ts, ar)
+                                                ts = s_sc_res["stream"]
+                                                ar = s_sc_res["arena"]
+                                                mut as list of data: nids_sc = s_sc_res["node_ids"]
+                                                mut as int64: nn_sc = stdCollectionLength(nids_sc)
+                                                route {
+                                                      nn_sc > 0 ==> {
+                                                            mut as int64: ni_sc = 1
+                                                            infinite {
+                                                                  route {
+                                                                        ni_sc > nn_sc ==> { break }
+                                                                        _ ==> {
+                                                                              sc_arms = stdListPushBack(sc_arms, nids_sc[ni_sc])
+                                                                              ni_sc = ni_sc + 1
+                                                                        }
+                                                                  }
+                                                            }
+                                                      }
+                                                      _ ==> {
+                                                            sc_arms = stdListPushBack(sc_arms, s_sc_res["node_id"])
+                                                      }
+                                                }
+                                          }
+                                          _ ==> {
+                                                ts = tokenStreamAdvance(ts)
+                                          }
+                                    }
+                              }
+                              ar = astArenaAllocNode(ar, "SHORT_CIRCUIT", "?", left_id, 0, sc_arms)
+                              left_id = ar["last_id"]
+                        }
                         _ ==> { break }
                   }
             }
@@ -985,7 +1064,7 @@ agent (CompilerLib) impl ParseExprsContract {
                   mut as string: cval = "" + cur["val"]
 
                   route {
-                        (ctype == "OP") and (cval == "*" or cval == "/" or cval == "/r" or cval == "/f" or cval == "/i" or cval == "%") ==> {
+                        (ctype == "OP") and (cval == "*" or cval == "/r" or cval == "/f" or cval == "/i" or cval == "%") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
                               mut as map: right_res = parsePower(ts, ar)

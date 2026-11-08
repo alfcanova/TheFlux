@@ -56,10 +56,10 @@ program (ExampleOfSistemasRedesKarnAlgorithm) {
                         mut as int64: diff = sample_rtt - srtt
                         route { diff < 0 ==> { diff = -diff } _ ==> {} }
 
-                        #L rttvar = (3 * rttvar + diff) / 4
-                        rttvar = (3 * rttvar + diff) / 4
-                        #L srtt = (7 * srtt + sample_rtt) / 8
-                        srtt = (7 * srtt + sample_rtt) / 8
+                        #L rttvar = (3 * rttvar + diff) /i 4
+                        rttvar = (3 * rttvar + diff) /i 4
+                        #L srtt = (7 * srtt + sample_rtt) /i 8
+                        srtt = (7 * srtt + sample_rtt) /i 8
 
                         #L Recalcula RTO = srtt + 4 * rttvar
                         rto = srtt + 4 * rttvar

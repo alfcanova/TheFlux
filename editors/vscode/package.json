@@ -1,0 +1,68 @@
+{
+  "name": "theflux-language-support",
+  "displayName": "TheFlux Language Support & LSP",
+  "description": "Suporte oficial e Language Server Protocol (fluxlsp) para a linguagem TheFlux no Visual Studio Code.",
+  "version": "1.0.0",
+  "publisher": "TheFlux",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters",
+    "Snippets"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:flux"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "flux",
+        "aliases": [
+          "TheFlux",
+          "flux"
+        ],
+        "extensions": [
+          ".flux",
+          ".fdsl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "flux",
+        "scopeName": "source.flux",
+        "path": "./syntaxes/flux.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "TheFlux LSP",
+      "properties": {
+        "theflux.lsp.serverPath": {
+          "type": "string",
+          "default": "fluxlsp",
+          "description": "Caminho ou comando para o executavel nativo fluxlsp (padrao: fluxlsp no PATH ou no workspace)."
+        },
+        "theflux.lsp.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Nivel de rastreamento de comunicacao JSON-RPC entre VS Code e fluxlsp."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

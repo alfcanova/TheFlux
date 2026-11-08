@@ -171,10 +171,7 @@ program (ExamplesLv) {
                                                                                                       route {
                                                                                                             ch_r == "\r" ==> {}
                                                                                                             ch_r == "\n" ==> {
-                                                                                                                  route {
-                                                                                                                        cur_chunk != "" ==> { println("  | " + cur_chunk) }
-                                                                                                                        _ ==> {}
-                                                                                                                  }
+                                                                                                                  println("  | " + cur_chunk)
                                                                                                                   cur_chunk = ""
                                                                                                             }
                                                                                                             _ ==> {
