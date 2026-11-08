@@ -174,6 +174,46 @@ def verificar_paridade_docs_stdlib(pt_docs_dir: Path, en_docs_dir: Path) -> tupl
     return len(pt_files & en_files), divergencias
 
 
+def verificar_paridade_docs_tools(pt_docs_dir: Path, en_docs_dir: Path) -> tuple[int, list[str]]:
+    divergencias = []
+    pt_tools = pt_docs_dir / "tools"
+    en_tools = en_docs_dir / "tools"
+
+    if not pt_tools.exists() or not pt_tools.is_dir():
+        return 0, ["Diretório docs/pt_BR/tools inexistente"]
+    if not en_tools.exists() or not en_tools.is_dir():
+        return 0, ["Diretório docs/en/tools inexistente"]
+
+    pt_files = {f for f in os.listdir(pt_tools) if f.endswith(".md")}
+    en_files = {f for f in os.listdir(en_tools) if f.endswith(".md")}
+
+    apenas_pt = pt_files - en_files
+    for f in sorted(apenas_pt):
+        divergencias.append(f"Documento de Ferramenta presente apenas em PT: docs/pt_BR/tools/{f}")
+
+    apenas_en = en_files - pt_files
+    for f in sorted(apenas_en):
+        divergencias.append(f"Documento de Ferramenta presente apenas em EN: docs/en/tools/{f}")
+
+    for f in sorted(pt_files & en_files):
+        f_pt = pt_tools / f
+        f_en = en_tools / f
+        if f_pt.stat().st_size == 0:
+            divergencias.append(f"Documento de Ferramenta vazio em PT: docs/pt_BR/tools/{f}")
+        if f_en.stat().st_size == 0:
+            divergencias.append(f"Documento de Ferramenta vazio em EN: docs/en/tools/{f}")
+
+    permitidos = pt_files | {".gitkeep"}
+    for item in os.listdir(pt_tools):
+        if item not in permitidos:
+            divergencias.append(f"Arquivo inesperado em docs/pt_BR/tools: {item}")
+    for item in os.listdir(en_tools):
+        if item not in permitidos:
+            divergencias.append(f"Arquivo inesperado em docs/en/tools: {item}")
+
+    return len(pt_files & en_files), divergencias
+
+
 def verificar_arquivos_estranhos_em_pastas_de_idioma(pt_dir: Path, en_dir: Path) -> list[str]:
     divergencias = []
     permitidos_pt = (
@@ -380,18 +420,22 @@ def main() -> int:
     # 5. Verifica paridade dos documentos modulares de StdLib (docs/*/stdlib)
     total_stdlib, div_stdlib = verificar_paridade_docs_stdlib(pt_docs_dir, en_docs_dir)
 
-    # 6. Verifica paridade e sincronização da gramática EBNF (TheFlux.ebnf e Gramatica.ebnf)
+    # 6. Verifica paridade dos documentos de ferramentas canônicas (docs/*/tools)
+    total_tools, div_tools = verificar_paridade_docs_tools(pt_docs_dir, en_docs_dir)
+
+    # 7. Verifica paridade e sincronização da gramática EBNF (TheFlux.ebnf e Gramatica.ebnf)
     total_ebnf, div_ebnf = verificar_paridade_ebnf(pt_docs_dir, en_docs_dir)
 
-    # 7. Verifica paridade dos YAMLs de keywords
+    # 8. Verifica paridade dos YAMLs de keywords
     total_kw, div_kw = verificar_paridade(pt_dir, en_dir, args.verbose)
 
-    divergencias = div_raiz + div_estranhos + div_docs + div_docx + div_stdlib + div_ebnf + div_kw
+    divergencias = div_raiz + div_estranhos + div_docs + div_docx + div_stdlib + div_tools + div_ebnf + div_kw
 
     if not divergencias:
         print(f"\n✅ Paridade 100% Confirmada!")
         print(f"   - {total_docs} pares de documentos Markdown gerais (.md) em paridade total 1:1 e nomes PascalCase.")
         print(f"   - {total_stdlib} pares de documentos StdLib (.md) em paridade total 1:1.")
+        print(f"   - {total_tools} pares de documentos de Ferramentas / Tools (.md) em paridade total 1:1.")
         print(f"   - {total_docx} par de documentos White Paper (.docx) em paridade total 1:1.")
         print(f"   - {total_ebnf} pares de artefatos ISO/IEC 14977 (EBNF) sincronizados (PT e EN) e alinhados a TheFlux.md.")
         print(f"   - {total_kw} especificações de palavras-chave (.yaml) sincronizadas sem divergências.")
