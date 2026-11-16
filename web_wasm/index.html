@@ -590,7 +590,7 @@
   <section id="files">
     <div class="sidebar-header">
       <div class="sidebar-title-row">
-        <h2>t_wasm-1.0</h2>
+        <h2>t_was</h2>
         <span id="file-count" class="count">0 arquivos</span>
       </div>
       <input type="text" id="file-filter" placeholder="Filtrar exemplos (ex: input, sort)...">
@@ -1795,7 +1795,7 @@ async function runWasm(name) {
 
   const started = performance.now();
   try {
-    const res = await fetch("/t_wasm-1.0/" + encodeURIComponent(name), { cache: "no-store" });
+    const res = await fetch("/t_was/" + encodeURIComponent(name), { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const bytes = await res.arrayBuffer();
 

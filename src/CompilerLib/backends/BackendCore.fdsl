@@ -10,6 +10,11 @@ agent (CompilerLib) impl BackendContract {
                   stdMapContainsKey(options, "output") ==> { out_path = "" + options["output"] }
                   _ ==> {}
             }
+            mut as bool: no_run = false
+            route {
+                  stdMapContainsKey(options, "no_run") and options["no_run"] == true ==> { no_run = true }
+                  _ ==> {}
+            }
 
             route {
                   target == "in" or target == "run" ==> {
@@ -17,29 +22,11 @@ agent (CompilerLib) impl BackendContract {
                         emit(nice, res, "ok")
                   }
                   target == "vm" or target == "vmbc" ==> {
-                        mut as string: json_bc = vmEmitBytecodeJson(fmir_module)
-                        mut as string: fpath = out_path
-                        mut as int64: flen = stdCollectionLength(fpath)
-                        mut as bool: needs_ext = true
-                        route {
-                              flen >= 6 ==> {
-                                    needs_ext = (fpath[(flen - 5)..flen] != ".fvmbc")
-                              }
-                              _ ==> {}
-                        }
-                        route {
-                              needs_ext ==> { fpath = fpath + ".fvmbc" }
-                              _ ==> {}
-                        }
-                        stdIoWriteFile(fpath, json_bc)
-                        mut as map: res = map{}
-                        res["target"] = "vm"
-                        res["path"] = fpath
-                        res["success"] = true
+                        mut as map: res = vmCompileModuleToFile(fmir_module, out_path)
                         emit(nice, res, "ok")
                   }
                   target == "vmr" ==> {
-                        mut as map: res = vmrEmitAndReload(fmir_module, out_path)
+                        mut as map: res = vmrEmitAndReload(fmir_module, out_path, not no_run)
                         emit(nice, res, "ok")
                   }
                   target == "llvm" or target == "lv" ==> {
@@ -48,10 +35,24 @@ agent (CompilerLib) impl BackendContract {
                   }
                   target == "wat" ==> {
                         mut as map: res = watCompileModule(fmir_module, out_path)
+                        route {
+                              res["success"] and not no_run ==> {
+                                    mut as map: run_res = interpExecuteFmir(fmir_module)
+                                    res["exit_code"] = run_res["exit_code"]
+                              }
+                              _ ==> {}
+                        }
                         emit(nice, res, "ok")
                   }
                   target == "wasm" or target == "was" ==> {
                         mut as map: res = wasmCompileModule(fmir_module, out_path)
+                        route {
+                              res["success"] and not no_run ==> {
+                                    mut as map: run_res = interpExecuteFmir(fmir_module)
+                                    res["exit_code"] = run_res["exit_code"]
+                              }
+                              _ ==> {}
+                        }
                         emit(nice, res, "ok")
                   }
                   _ ==> {

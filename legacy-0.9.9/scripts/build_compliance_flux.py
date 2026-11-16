@@ -8,8 +8,8 @@ def emit_backend_exec(emit, indent, stdin_expr):
     emit('mut as string: exe_file = "t_llvm\\\\" + stem + ".exe"', indent)
     emit('mut as string: out_wat = "t_wat\\\\" + stem', indent)
     emit('mut as string: wat_file = "t_wat\\\\" + stem + ".wat"', indent)
-    emit('mut as string: out_wasm = "t_wasm\\\\" + stem', indent)
-    emit('mut as string: wasm_file = "t_wasm\\\\" + stem + ".wasm"', indent)
+    emit('mut as string: out_wasm = "t_was\\\\" + stem', indent)
+    emit('mut as string: wasm_file = "t_was\\\\" + stem + ".wasm"', indent)
     emit()
     emit('mut as string: cmd_in = "cmd /c \\"set FLUX_CI=1 && " + fluxc_bin + " --target in " + path + " < " + ' + stdin_expr + ' + " > t_in.tmp 2>nul\\""', indent)
     emit("mut as int64: rc_in = stdOsExec(cmd_in)", indent)
@@ -167,7 +167,7 @@ def make_compliance_flux() -> str:
     # Helper to emit native cleanup of temp dirs and files
     def emit_temp_cleanup(prefix="cl", indent=1):
         emit(f"#L Verificacao e limpeza nativa de arquivos nas pastas t_* (preservando .gitkeep)", indent)
-        emit(f'mut as list of data: {prefix}_dirs = ["t_fvmbc", "t_llvm", "t_wasm", "t_wat"]', indent)
+        emit(f'mut as list of data: {prefix}_dirs = ["t_fvmbc", "t_llvm", "t_was", "t_wat"]', indent)
         emit(f"mut as int64: {prefix}_di = 1", indent)
         emit(f"infinite {{", indent)
         emit(f"route {{", indent + 1)

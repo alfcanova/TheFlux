@@ -4,11 +4,12 @@
 #L ==============================================================================
 
 contract (VmrBackendContract) {
-      op vmrEmitAndReload (as map: fmir_module, as string: temp_path) as map
+      op vmrEmitAndReload (as map: fmir_module, as string: temp_path, as bool: auto_run) as map
+      op vmrExecuteFile (as string: fvmbc_path) as map
 }
 
 agent (CompilerLib) impl VmrBackendContract {
-      op vmrEmitAndReload (as map: fmir_module, as string: temp_path) as map ==> {
+      op vmrEmitAndReload (as map: fmir_module, as string: temp_path, as bool: auto_run) as map ==> {
             mut as string: json_bc = vmEmitBytecodeJson(fmir_module)
             mut as string: fpath = temp_path
             mut as int64: flen = stdCollectionLength(fpath)
@@ -31,7 +32,23 @@ agent (CompilerLib) impl VmrBackendContract {
             res["target"] = "vmr"
             res["path"] = fpath
             res["reloaded"] = reloaded != ""
-            res["success"] = true
+            res["success"] = reloaded != ""
+
+            route {
+                  auto_run and reloaded != "" ==> {
+                        mut as map: exec_res = vmExecuteBytecodeJson(reloaded)
+                        res["executed"] = exec_res["success"]
+                        res["success"] = exec_res["success"]
+                  }
+                  _ ==> {
+                        res["executed"] = false
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op vmrExecuteFile (as string: fvmbc_path) as map ==> {
+            mut as map: res = vmExecuteBytecodeFile(fvmbc_path)
             emit(nice, res, "ok")
       }
 }

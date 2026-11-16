@@ -1245,7 +1245,7 @@ class LLVMCodegen:
         w.emit("br i1 %is4, label %eb_str, label %eb_chk2")
         w.new_block("eb_str")
         w.emit("%sp = inttoptr i64 %val to i8*")
-        w.emit("%c4 = call i32 (i8*, i64, i8*, ...) @snprintf(i8* %buf, i64 4096, i8* " + fstr_fmt + ", i8* %sp)")
+        w.emit("%c4 = call i32 (i8*, i64, i8*, ...) @snprintf(i8* %buf, i64 256, i8* " + fstr_fmt + ", i8* %sp)")
         w.emit("%c4z = zext i32 %c4 to i64")
         w.emit("ret i64 %c4z")
         w.new_block("eb_chk2")
@@ -4998,9 +4998,15 @@ class LLVMCodegen:
             v = v2
         buf = self._w.new_local("elem_buf")
         self._w.emit_entry(f"{buf} = alloca i8, i64 256")
+        iss = self._w.new_local("eb_iss")
+        self._w.emit(f"{iss} = icmp eq i64 {t}, 4")
+        sp = self._w.new_local("eb_sp")
+        self._w.emit(f"{sp} = inttoptr i64 {v} to i8*")
         cnt = self._w.new_local("ecnt")
         self._w.emit(f"{cnt} = call i64 @flux_elem_to_buf(i64 {t}, i64 {v}, i8* {buf})")
-        return (buf, "i8*")
+        res_p = self._w.new_local("eb_res")
+        self._w.emit(f"{res_p} = select i1 {iss}, i8* {sp}, i8* {buf}")
+        return (res_p, "i8*")
 
     def _gen_gvod_elem(self, node: CallExpr) -> tuple[str, str]:
         mp, mt = self._emit_expr_text(node.args[0])
@@ -5026,9 +5032,15 @@ class LLVMCodegen:
         self._w.emit(f"{vsel} = select i1 {miss}, i64 {dv64}, i64 {v}")
         buf = self._w.new_local("elem_buf")
         self._w.emit_entry(f"{buf} = alloca i8, i64 256")
+        iss = self._w.new_local("eb_iss")
+        self._w.emit(f"{iss} = icmp eq i64 {tsel}, 4")
+        sp = self._w.new_local("eb_sp")
+        self._w.emit(f"{sp} = inttoptr i64 {vsel} to i8*")
         cnt = self._w.new_local("gecnt")
         self._w.emit(f"{cnt} = call i64 @flux_elem_to_buf(i64 {tsel}, i64 {vsel}, i8* {buf})")
-        return (buf, "i8*")
+        res_p = self._w.new_local("eb_res")
+        self._w.emit(f"{res_p} = select i1 {iss}, i8* {sp}, i8* {buf}")
+        return (res_p, "i8*")
 
     def _is_exotic(self, node: ASTNode) -> bool:
         return (

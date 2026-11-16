@@ -38,6 +38,15 @@ agent (CompilerLib) impl StdLibBridgeContract {
                         stdIoWriteFile(args[1], args[2])
                         res["val"] = true
                   }
+                  fname == "stdIoReadHexFile" and n >= 1 ==> {
+                        res["val"] = stdIoReadHexFile(args[1])
+                  }
+                  fname == "stdIoWriteHexFile" and n >= 2 ==> {
+                        res["val"] = stdIoWriteHexFile(args[1], args[2])
+                  }
+                  fname == "stdStringLlvmEscape" and n >= 1 ==> {
+                        res["val"] = stdStringLlvmEscape(args[1])
+                  }
                   fname == "stdIoDeleteFile" and n >= 1 ==> {
                         stdIoDeleteFile(args[1])
                         res["val"] = true

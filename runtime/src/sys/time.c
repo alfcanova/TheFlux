@@ -84,7 +84,9 @@ int64_t flux_std_datetime_monotonic_now(void) {
     LARGE_INTEGER count, freq;
     QueryPerformanceCounter(&count);
     QueryPerformanceFrequency(&freq);
-    return (int64_t)((count.QuadPart * 1000000000ULL) / freq.QuadPart);
+    uint64_t sec = (uint64_t)count.QuadPart / (uint64_t)freq.QuadPart;
+    uint64_t rem = (uint64_t)count.QuadPart % (uint64_t)freq.QuadPart;
+    return (int64_t)(sec * 1000000000ULL + (rem * 1000000000ULL) / (uint64_t)freq.QuadPart);
 #else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -152,11 +154,19 @@ int64_t flux_std_datetime_parse_iso(const char *text) {
     if (*p == '+' || *p == '-') {
         int sign = (*p == '+') ? 1 : -1;
         p++;
-        int64_t oh = strtoll(p, (char**)&p, 10);
-        int64_t om = 0;
-        if (*p == ':') {
-            p++;
-            om = strtoll(p, (char**)&p, 10);
+        int64_t oh = 0, om = 0;
+        size_t rem = strlen(p);
+        if (rem >= 4 && strchr(p, ':') == NULL) {
+            char hbuf[3] = { p[0], p[1], '\0' };
+            char mbuf[3] = { p[2], p[3], '\0' };
+            oh = strtoll(hbuf, NULL, 10);
+            om = strtoll(mbuf, NULL, 10);
+        } else {
+            oh = strtoll(p, (char**)&p, 10);
+            if (*p == ':') {
+                p++;
+                om = strtoll(p, (char**)&p, 10);
+            }
         }
         off_sec = sign * (oh * 3600 + om * 60);
     }
@@ -174,6 +184,15 @@ char *flux_std_datetime_to_iso(int64_t nanos) {
              (long long)y, (long long)mo, (long long)d,
              (long long)h, (long long)mi, (long long)s, (long long)frac);
     return buf;
+}
+
+char *flux_std_datetime_normalize(const char *s) {
+    if (!s || strlen(s) < 19) return (char *)s;
+    if (s[4] != '-' || s[7] != '-' || (s[10] != 'T' && s[10] != ' ') || s[13] != ':' || s[16] != ':') {
+        return (char *)s;
+    }
+    int64_t ns = flux_std_datetime_parse_iso(s);
+    return flux_std_datetime_to_iso(ns);
 }
 
 char *flux_std_get_current_time_ns_string(void) {

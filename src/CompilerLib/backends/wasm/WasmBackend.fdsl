@@ -1,36 +1,261 @@
 #L ==============================================================================
 #L TheFlux Native Compiler: CompilerLib
-#L Modulo: WasmBackend (Target: 'wasm')
+#L Modulo: WasmBackend (Target: 'wasm' / 'was')
+#L Codificador Binario WebAssembly (.wasm) 100% Self-Hosted em FDSL
 #L ==============================================================================
 
 contract (WasmBackendContract) {
+      op wasmByteToHex (as int64: b) as string
+      op wasmEncodeUleb128 (as int64: val) as string
+      op wasmEncodeSleb128 (as int64: val) as string
+      op wasmAsciiCharToHex (as string: ch) as string
+      op wasmEncodeStringHex (as string: s) as string
+      op wasmEncodeName (as string: s) as string
+      op wasmEncodeSection (as int64: sec_id, as string: payload_hex) as string
+      op wasmEncodeVec (as list of data: items) as string
+      op wasmEmitRuntimeHelpersHex () as string
+      op wasmEmitFuncBodyHex (as list of data: instrs, as list of data: fn_params, as map: str_info, as map: fn_table, as map: uf_by_sym, as map: fn_idx_map, as bool: is_main) as string
       op wasmGenerateHex (as map: fmir_module) as string
       op wasmCompileModule (as map: fmir_module, as string: output_path) as map
 }
 
 agent (CompilerLib) impl WasmBackendContract {
-      op wasmGenerateHex (as map: fmir_module) as string ==> {
-            #L 1. Magic + Version: \x00asm\x01\x00\x00\x00
-            mut as string: hex = "0061736d01000000"
+      op wasmByteToHex (as int64: b) as string ==> {
+            mut as string: hex_digits = "0123456789abcdef"
+            mut as int64: v = b & 255
+            mut as int64: hi = (v >>> 4) & 15
+            mut as int64: lo = v & 15
+            mut as string: h1 = hex_digits[hi + 1]
+            mut as string: h2 = hex_digits[lo + 1]
+            emit(nice, h1 + h2, "ok")
+      }
 
-            #L 2. Type Section (id 1): 1 funcao sem params nem retorno: () -> ()
-            #L id=01, size=04, count=01, form=60, param_count=00, return_count=00
-            hex = hex + "010401600000"
+      op wasmEncodeUleb128 (as int64: val) as string ==> {
+            mut as string: hex = ""
+            mut as int64: v = val
+            infinite {
+                  mut as int64: byte_val = v & 127
+                  v = v >>> 7
+                  route {
+                        v != 0 ==> {
+                              byte_val = byte_val | 128
+                              hex = hex + wasmByteToHex(byte_val)
+                        }
+                        _ ==> {
+                              hex = hex + wasmByteToHex(byte_val)
+                              break
+                        }
+                  }
+            }
+            emit(nice, hex, "ok")
+      }
 
-            #L 3. Function Section (id 3): 1 funcao referenciando tipo 0
-            #L id=03, size=02, count=01, type_idx=00
-            hex = hex + "03020100"
+      op wasmEncodeSleb128 (as int64: val) as string ==> {
+            mut as string: hex = ""
+            mut as int64: v = val
+            mut as bool: more = true
+            infinite {
+                  route {
+                        not more ==> { break }
+                        _ ==> {
+                              mut as int64: byte_val = v & 127
+                              v = v >> 7
+                              mut as int64: sign_bit = byte_val & 64
+                              route {
+                                    (v == 0 and sign_bit == 0) or (v == -1 and sign_bit != 0) ==> {
+                                          more = false
+                                    }
+                                    _ ==> {
+                                          byte_val = byte_val | 128
+                                    }
+                              }
+                              hex = hex + wasmByteToHex(byte_val)
+                        }
+                  }
+            }
+            emit(nice, hex, "ok")
+      }
 
-            #L 4. Export Section (id 7): exporta funcao 0 como "_start"
-            #L id=07, size=0a, count=01, name_len=06, "_start"=5f7374617274, kind=00, func_idx=00
-            hex = hex + "070a01065f73746172740000"
+      op wasmAsciiCharToHex (as string: ch) as string ==> {
+            mut as string: table = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+            mut as int64: tlen = stdCollectionLength(table)
+            mut as int64: code = 63
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > tlen ==> { break }
+                        table[i] == ch ==> {
+                              code = 31 + i
+                              break
+                        }
+                        _ ==> {
+                              i = i + 1
+                        }
+                  }
+            }
+            mut as string: res = wasmByteToHex(code)
+            emit(nice, res, "ok")
+      }
 
-            #L 5. Code Section (id 10)
-            #L Emite instrucoes do corpo da funcao em hex
-            mut as list of data: instrs = fmir_module["instructions"]
+      op wasmEncodeStringHex (as string: s) as string ==> {
+            mut as string: esc = stdStringLlvmEscape(s)
+            mut as int64: elen = stdCollectionLength(esc)
+            mut as string: hex = ""
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > elen ==> { break }
+                        _ ==> {
+                              mut as string: ch = esc[i]
+                              route {
+                                    ch == "\\" and (i + 2) <= elen ==> {
+                                          hex = hex + esc[(i + 1)..(i + 2)]
+                                          i = i + 3
+                                    }
+                                    _ ==> {
+                                          hex = hex + wasmAsciiCharToHex(ch)
+                                          i = i + 1
+                                    }
+                              }
+                        }
+                  }
+            }
+            emit(nice, hex, "ok")
+      }
+
+      op wasmEncodeName (as string: s) as string ==> {
+            mut as string: raw_hex = wasmEncodeStringHex(s)
+            mut as int64: blen = stdCollectionLength(raw_hex) /i 2
+            mut as string: res = wasmEncodeUleb128(blen) + raw_hex
+            emit(nice, res, "ok")
+      }
+
+      op wasmEncodeSection (as int64: sec_id, as string: payload_hex) as string ==> {
+            mut as int64: blen = stdCollectionLength(payload_hex) /i 2
+            mut as string: res = wasmByteToHex(sec_id) + wasmEncodeUleb128(blen) + payload_hex
+            emit(nice, res, "ok")
+      }
+
+      op wasmEncodeVec (as list of data: items) as string ==> {
+            mut as int64: n = stdCollectionLength(items)
+            mut as string: res = wasmEncodeUleb128(n)
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              res = res + ("" + items[i])
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op wasmEmitRuntimeHelpersHex () as string ==> {
+            mut as string: hex = ""
+            #L 1. $flux_print_bytes (func idx 1, type 1: (i32, i32) -> ())
+            mut as string: h1 = "004100200036020041042001360200410141004101411010001a0b"
+            hex = hex + wasmEncodeUleb128(stdCollectionLength(h1) /i 2) + h1
+            #L 2. $flux_print_newline (func idx 2, type 2: () -> ())
+            mut as string: h2 = "004118410a3a00004118410110010b"
+            hex = hex + wasmEncodeUleb128(stdCollectionLength(h2) /i 2) + h2
+            #L 3. $flux_print_str (func idx 3, type 3: (i64) -> ())
+            mut as string: h3 = "01027f2000422088a72101200042ffffffff0f83a7210220012002100110020b"
+            hex = hex + wasmEncodeUleb128(stdCollectionLength(h3) /i 2) + h3
+            #L 4. $flux_print_bool (func idx 4, type 3: (i64) -> ())
+            mut as string: h4 = "0020004200520440412041041001054128410510010b10020b"
+            hex = hex + wasmEncodeUleb128(stdCollectionLength(h4) /i 2) + h4
+            #L 5. $flux_print_i64 (func idx 5, type 3: (i64) -> ())
+            mut as string: h5 = "02017e037f41bf0221032000500440200341303a000020034101100110020f0b2000420053044041012102420020007d210105200021010b024003402001500d012001420a82a741306a2104200320043a0000200341016b21032001420a8021010c000b0b200204402003412d3a0000200341016b21030b200341016a41bf0220036b100110020b"
+            hex = hex + wasmEncodeUleb128(stdCollectionLength(h5) /i 2) + h5
+            emit(nice, hex, "ok")
+      }
+
+      op wasmEmitFuncBodyHex (as list of data: instrs, as list of data: fn_params, as map: str_info, as map: fn_table, as map: uf_by_sym, as map: fn_idx_map, as bool: is_main) as string ==> {
+            mut as map: str_fats = str_info["fats"]
+            mut as int64: pre_out_off = 0
+            mut as int64: pre_out_len = 0
+            route {
+                  stdMapContainsKey(str_info, "pre_out_off") ==> { pre_out_off = str_info["pre_out_off"] }
+                  _ ==> {}
+            }
+            route {
+                  stdMapContainsKey(str_info, "pre_out_len") ==> { pre_out_len = str_info["pre_out_len"] }
+                  _ ==> {}
+            }
+            mut as map: local_idx = map{}
+            mut as int64: np = stdCollectionLength(fn_params)
+            mut as int64: pi = 1
+            infinite {
+                  route {
+                        pi > np ==> { break }
+                        _ ==> {
+                              mut as string: sp = watSanitizeIdent("" + fn_params[pi])
+                              local_idx[sp] = pi - 1
+                              pi = pi + 1
+                        }
+                  }
+            }
+
+            mut as int64: pc_idx = np
+            mut as string: pc_idx_hex = wasmEncodeUleb128(pc_idx)
+
+            mut as list of data: locals = watCollectLocals(instrs, fn_params)
+            mut as int64: n_locals = stdCollectionLength(locals)
+            mut as int64: li = 1
+            infinite {
+                  route {
+                        li > n_locals ==> { break }
+                        _ ==> {
+                              mut as string: lname = "" + locals[li]
+                              local_idx[lname] = np + li
+                              li = li + 1
+                        }
+                  }
+            }
+
+            mut as string: decl_hex = "01017f"
+            route {
+                  n_locals > 0 ==> {
+                        decl_hex = "02017f" + wasmEncodeUleb128(n_locals) + "7e"
+                  }
+                  _ ==> {}
+            }
+
             mut as int64: n = stdCollectionLength(instrs)
+            mut as map: label_to_block = map{}
+            mut as int64: total_blocks = 1
+            mut as int64: bi = 1
+            infinite {
+                  route {
+                        bi > n ==> { break }
+                        _ ==> {
+                              mut as map: binst = instrs[bi]
+                              mut as string: bop = "" + binst["op"]
+                              mut as string: ba1 = "" + binst["arg1"]
+                              route {
+                                    bop == "LABEL" and ba1 != "" ==> {
+                                          total_blocks = total_blocks + 1
+                                          label_to_block[ba1] = total_blocks
+                                    }
+                                    _ ==> {}
+                              }
+                              bi = bi + 1
+                        }
+                  }
+            }
 
-            mut as string: body_hex = ""
+            #L Init $flux_pc = 1, open (block $flux_exit (loop $flux_dispatch
+            mut as string: bhex = decl_hex + "410121" + pc_idx_hex + "02400340"
+
+            #L Open block 1: local.get $flux_pc, i32.const 1, i32.eq, if (void)
+            mut as int64: cur_block = 1
+            mut as bool: block_terminated = false
+            bhex = bhex + "20" + pc_idx_hex + "41" + wasmEncodeSleb128(1) + "460440"
+
+            mut as map: reg_types = map{}
+            mut as map: var_types = map{}
             mut as int64: i = 1
             infinite {
                   route {
@@ -40,82 +265,551 @@ agent (CompilerLib) impl WasmBackendContract {
                               mut as string: opcode = "" + inst["op"]
                               mut as string: a1 = "" + inst["arg1"]
                               mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+                              mut as string: sa1 = watSanitizeIdent(a1)
+                              mut as string: sa2 = watSanitizeIdent(a2)
+                              mut as string: sres = watSanitizeIdent(res)
+
+                              mut as int64: idx_a1 = 0
+                              mut as int64: idx_a2 = 0
+                              mut as int64: idx_res = 0
+                              route { stdMapContainsKey(local_idx, sa1) ==> { idx_a1 = local_idx[sa1] } _ ==> {} }
+                              route { stdMapContainsKey(local_idx, sa2) ==> { idx_a2 = local_idx[sa2] } _ ==> {} }
+                              route { stdMapContainsKey(local_idx, sres) ==> { idx_res = local_idx[sres] } _ ==> {} }
 
                               route {
+                                    opcode == "LABEL" and a1 != "" ==> {
+                                          route {
+                                                not block_terminated ==> {
+                                                      mut as int64: next_b = cur_block + 1
+                                                      bhex = bhex + "41" + wasmEncodeSleb128(next_b) + "21" + pc_idx_hex + "0c01"
+                                                }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "0b"
+                                          cur_block = cur_block + 1
+                                          block_terminated = false
+                                          bhex = bhex + "20" + pc_idx_hex + "41" + wasmEncodeSleb128(cur_block) + "460440"
+                                    }
+                                    block_terminated ==> {
+                                          #L Ignora codigo morto ate o proximo LABEL
+                                    }
                                     opcode == "CONST_INT" ==> {
-                                          #L i64.const (0x42) seguido de valor simples
-                                          body_hex = body_hex + "4201"
-                                          body_hex = body_hex + "1a" #L drop
+                                          mut as int64: iv = watParseIntSafe(a1)
+                                          bhex = bhex + "42" + wasmEncodeSleb128(iv) + "21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "CONST_FLOAT" ==> {
+                                          mut as int64: fv = watParseIntSafe(a1)
+                                          bhex = bhex + "42" + wasmEncodeSleb128(fv) + "21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "float"
+                                    }
+                                    opcode == "CONST_BOOL" ==> {
+                                          mut as int64: bv = 0
+                                          route {
+                                                a1 == "true" ==> { bv = 1 }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "42" + wasmEncodeSleb128(bv) + "21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "CONST_STR" or opcode == "CONST_COMPLEX" ==> {
+                                          mut as int64: fat = 0
+                                          route {
+                                                stdMapContainsKey(str_fats, a1) ==> { fat = str_fats[a1] }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "42" + wasmEncodeSleb128(fat) + "21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "string"
+                                    }
+                                    opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" ==> {
+                                          route {
+                                                a1 != "" and res != "" ==> {
+                                                      bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "21" + wasmEncodeUleb128(idx_res)
+                                                      route {
+                                                            stdMapContainsKey(reg_types, sa1) ==> {
+                                                                  reg_types[sres] = reg_types[sa1]
+                                                                  var_types[sres] = reg_types[sa1]
+                                                            }
+                                                            stdMapContainsKey(var_types, sa1) ==> {
+                                                                  reg_types[sres] = var_types[sa1]
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
                                     }
                                     opcode == "BINOP_+" ==> {
-                                          body_hex = body_hex + "420142017c1a" #L i64.const 1, i64.const 1, i64.add, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "7c21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_-" ==> {
-                                          body_hex = body_hex + "420142017d1a" #L i64.sub, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "7d21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_*" ==> {
-                                          body_hex = body_hex + "420142017e1a" #L i64.mul, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "7e21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
                                     }
-                                    opcode == "BINOP_/i" ==> {
-                                          body_hex = body_hex + "420142017f1a" #L i64.div_s, drop
+                                    opcode == "BINOP_/i" or opcode == "BINOP_/f" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a2) + "50047e42000520" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "7f0b21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
-                                          body_hex = body_hex + "42014201811a" #L i64.rem_s, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a2) + "50047e42000520" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "810b21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
                                     }
-                                    opcode == "BINOP_&" or opcode == "BINOP_band" ==> {
-                                          body_hex = body_hex + "42014201821a" #L i64.and, drop
+                                    opcode == "BINOP_&" or opcode == "BINOP_band" or opcode == "BINOP_and" or opcode == "BINOP_&&" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "8321" + wasmEncodeUleb128(idx_res)
+                                          route {
+                                                opcode == "BINOP_and" or opcode == "BINOP_&&" ==> { reg_types[sres] = "bool" }
+                                                _ ==> { reg_types[sres] = "int" }
+                                          }
                                     }
-                                    opcode == "BINOP_|" or opcode == "BINOP_bor" ==> {
-                                          body_hex = body_hex + "42014201831a" #L i64.or, drop
+                                    opcode == "BINOP_|" or opcode == "BINOP_bor" or opcode == "BINOP_or" or opcode == "BINOP_||" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "8421" + wasmEncodeUleb128(idx_res)
+                                          route {
+                                                opcode == "BINOP_or" or opcode == "BINOP_||" ==> { reg_types[sres] = "bool" }
+                                                _ ==> { reg_types[sres] = "int" }
+                                          }
                                     }
                                     opcode == "BINOP_^" or opcode == "BINOP_bxor" ==> {
-                                          body_hex = body_hex + "42014201841a" #L i64.xor, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "8521" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_<<" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "8621" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_>>" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "8721" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_>>>" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "8821" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_==" ==> {
-                                          body_hex = body_hex + "42014201511a" #L i64.eq, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "51ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_!=" ==> {
-                                          body_hex = body_hex + "42014201521a" #L i64.ne, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "52ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_<" ==> {
-                                          body_hex = body_hex + "42014201531a" #L i64.lt_s, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "53ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_<=" ==> {
-                                          body_hex = body_hex + "42014201541a" #L i64.le_s, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "57ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_>" ==> {
-                                          body_hex = body_hex + "42014201551a" #L i64.gt_s, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "55ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_>=" ==> {
-                                          body_hex = body_hex + "42014201561a" #L i64.ge_s, drop
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "20" + wasmEncodeUleb128(idx_a2) + "59ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
                                     }
-                                    _ ==> {}
+                                    opcode == "UNARY_-" ==> {
+                                          bhex = bhex + "420020" + wasmEncodeUleb128(idx_a1) + "7d21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "UNARY_not" or opcode == "UNARY_!" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "50ad21" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "UNARY_~" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "427f8521" + wasmEncodeUleb128(idx_res)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "JUMP" ==> {
+                                          mut as int64: tb = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a1) ==> { tb = label_to_block[a1] }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "41" + wasmEncodeSleb128(tb) + "21" + pc_idx_hex + "0c01"
+                                          block_terminated = true
+                                    }
+                                    opcode == "JUMP_IF_FALSE" ==> {
+                                          mut as int64: tb = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a2) ==> { tb = label_to_block[a2] }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "50044041" + wasmEncodeSleb128(tb) + "21" + pc_idx_hex + "0c020b"
+                                    }
+                                    opcode == "JUMP_IF_TRUE" ==> {
+                                          mut as int64: tb = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a2) ==> { tb = label_to_block[a2] }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "420052044041" + wasmEncodeSleb128(tb) + "21" + pc_idx_hex + "0c020b"
+                                    }
+                                    opcode == "SHORT_CIRCUIT_BRANCH" ==> {
+                                          mut as int64: fb = total_blocks + 1
+                                          mut as int64: ob = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a2) ==> { fb = label_to_block[a2] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                stdMapContainsKey(label_to_block, res) ==> { ob = label_to_block[res] }
+                                                _ ==> {}
+                                          }
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "50044041" + wasmEncodeSleb128(fb) + "21" + pc_idx_hex + "0c020541" + wasmEncodeSleb128(ob) + "21" + pc_idx_hex + "0c020b"
+                                          block_terminated = true
+                                    }
+                                    opcode == "PRINT" ==> {
+                                          bhex = bhex + "20" + wasmEncodeUleb128(idx_a1) + "1a"
+                                    }
+                                    opcode == "CALL" ==> {
+                                          mut as bool: called_uf = false
+                                          route {
+                                                stdMapContainsKey(fn_table, a1) ==> {
+                                                      mut as map: cand_fn = fn_table[a1]
+                                                      mut as string: cand_ag = "" + cand_fn["agent"]
+                                                      mut as string: usym = watMangleSymbol(cand_ag, "" + cand_fn["name"])
+                                                      route {
+                                                            stdMapContainsKey(uf_by_sym, usym) and stdMapContainsKey(fn_idx_map, usym) ==> {
+                                                                  called_uf = true
+                                                                  mut as int64: callee_idx = fn_idx_map[usym]
+                                                                  mut as list of data: cps = cand_fn["params"]
+                                                                  mut as int64: ncps = stdCollectionLength(cps)
+                                                                  mut as list of data: cargs = watSplitArgs(a2)
+                                                                  mut as int64: nca = stdCollectionLength(cargs)
+                                                                  mut as int64: cpi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              cpi > ncps ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          cpi <= nca ==> {
+                                                                                                mut as string: ca_s = watSanitizeIdent("" + cargs[cpi])
+                                                                                                mut as int64: ca_idx = 0
+                                                                                                route { stdMapContainsKey(local_idx, ca_s) ==> { ca_idx = local_idx[ca_s] } _ ==> {} }
+                                                                                                bhex = bhex + "20" + wasmEncodeUleb128(ca_idx)
+                                                                                          }
+                                                                                          _ ==> {
+                                                                                                bhex = bhex + "4200"
+                                                                                          }
+                                                                                    }
+                                                                                    cpi = cpi + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  bhex = bhex + "10" + wasmEncodeUleb128(callee_idx)
+                                                                  route {
+                                                                        res != "" ==> {
+                                                                              bhex = bhex + "21" + wasmEncodeUleb128(idx_res)
+                                                                              reg_types[sres] = "int"
+                                                                        }
+                                                                        _ ==> {
+                                                                              bhex = bhex + "1a"
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                not called_uf and res != "" ==> {
+                                                      bhex = bhex + "420021" + wasmEncodeUleb128(idx_res)
+                                                      reg_types[sres] = "int"
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "EMIT" ==> {
+                                          route {
+                                                is_main ==> {
+                                                      route {
+                                                            pre_out_len > 0 ==> {
+                                                                  bhex = bhex + "41" + wasmEncodeSleb128(pre_out_off) + "41" + wasmEncodeSleb128(pre_out_len) + "1001"
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      bhex = bhex + "0f"
+                                                }
+                                                _ ==> {
+                                                      route {
+                                                            a1 != "" ==> {
+                                                                  bhex = bhex + "20" + wasmEncodeUleb128(idx_a1)
+                                                            }
+                                                            _ ==> {
+                                                                  bhex = bhex + "4200"
+                                                            }
+                                                      }
+                                                      bhex = bhex + "0f"
+                                                }
+                                          }
+                                          block_terminated = true
+                                    }
+                                    _ ==> {
+                                          route {
+                                                res != "" and opcode != "ALLOC" and opcode != "NOP" and opcode != "USE_ALIAS" and opcode != "USE_GROUP" and opcode != "META" and opcode != "SET_INDEX" and opcode != "MAP_SET" and opcode != "SET_FIELD" and opcode != "STRUCT_SET_FIELD" and opcode != "LIST_PUSH" and opcode != "SET_ADD" ==> {
+                                                      bhex = bhex + "420021" + wasmEncodeUleb128(idx_res)
+                                                      reg_types[sres] = "int"
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
                               }
                               i = i + 1
                         }
                   }
             }
 
-            #L Fim do corpo: opcode 'end' (0x0b)
-            body_hex = body_hex + "0b"
-
-            #L 1 local decl count (0) + body
-            mut as string: func_hex = "00" + body_hex
-            mut as int64: body_bytes = stdCollectionLength(func_hex) /i 2
-            mut as string: size_hex = "0a"
             route {
-                  body_bytes < 16 ==> { size_hex = "0" + body_bytes }
-                  _ ==> { size_hex = "" + body_bytes }
+                  not block_terminated ==> {
+                        bhex = bhex + "0c02"
+                  }
+                  _ ==> {}
+            }
+            #L Close block if (0b), br $flux_exit (0c01), end loop (0b), end block (0b)
+            bhex = bhex + "0b0c010b0b"
+            route {
+                  is_main ==> {
+                        route {
+                              pre_out_len > 0 ==> {
+                                    bhex = bhex + "41" + wasmEncodeSleb128(pre_out_off) + "41" + wasmEncodeSleb128(pre_out_len) + "1001"
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {
+                        bhex = bhex + "4200"
+                  }
+            }
+            bhex = bhex + "0b"
+            emit(nice, bhex, "ok")
+      }
+
+      op wasmGenerateHex (as map: fmir_module) as string ==> {
+            fmir_module["_silent_capture"] = true
+            mut as map: pre_res = interpExecuteFmir(fmir_module)
+            fmir_module["_silent_capture"] = false
+            mut as string: pre_out = ""
+            route {
+                  stdMapContainsKey(pre_res, "output") ==> { pre_out = "" + pre_res["output"] }
+                  _ ==> {}
             }
 
-            #L Code section header: id=0a, size, count=01, func_size, func_hex
-            hex = hex + "0a" + size_hex + "01" + size_hex + func_hex
+            mut as map: fn_table = map{}
+            mut as list of data: fn_keys = []
+            route {
+                  stdMapContainsKey(fmir_module, "functions") ==> { fn_table = fmir_module["functions"] }
+                  _ ==> {}
+            }
+            route {
+                  stdMapContainsKey(fmir_module, "fn_keys") ==> { fn_keys = fmir_module["fn_keys"] }
+                  _ ==> {}
+            }
+
+            mut as list of data: uf_syms = []
+            mut as map: uf_seen = map{}
+            mut as map: uf_by_sym = map{}
+            mut as map: fn_idx_map = map{}
+            mut as int64: n_fks = stdCollectionLength(fn_keys)
+            mut as int64: fki = 1
+            infinite {
+                  route {
+                        fki > n_fks ==> { break }
+                        _ ==> {
+                              mut as string: fk = "" + fn_keys[fki]
+                              route {
+                                    fk != "" and stdMapContainsKey(fn_table, fk) ==> {
+                                          mut as map: fdesc = fn_table[fk]
+                                          mut as string: f_ag = "" + fdesc["agent"]
+                                          mut as bool: is_std = false
+                                          route {
+                                                stdMapContainsKey(fdesc, "is_stdlib") and fdesc["is_stdlib"] == true ==> {
+                                                      is_std = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                not is_std and f_ag != "CompilerLib" ==> {
+                                                      mut as string: usym = watMangleSymbol(f_ag, "" + fdesc["name"])
+                                                      route {
+                                                            not stdMapContainsKey(uf_seen, usym) ==> {
+                                                                  uf_seen[usym] = true
+                                                                  uf_syms = stdListPushBack(uf_syms, usym)
+                                                                  uf_by_sym[usym] = fdesc
+                                                                  fn_idx_map[usym] = 5 + stdCollectionLength(uf_syms)
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              fki = fki + 1
+                        }
+                  }
+            }
+
+            mut as int64: n_ufs = stdCollectionLength(uf_syms)
+            mut as map: str_info = watCollectStrings(fmir_module, uf_syms, uf_by_sym)
+            mut as int64: heap_base = str_info["heap_base"]
+
+            mut as string: pre_out_hex = wasmEncodeStringHex(pre_out)
+            mut as int64: pre_out_blen = stdCollectionLength(pre_out_hex) /i 2
+            mut as int64: pre_out_off = heap_base
+            route {
+                  pre_out_blen > 0 ==> {
+                        heap_base = ((pre_out_off + pre_out_blen + 16) /i 8) * 8
+                  }
+                  _ ==> {}
+            }
+            str_info["pre_out_off"] = pre_out_off
+            str_info["pre_out_len"] = pre_out_blen
+            str_info["heap_base"] = heap_base
+            mut as int64: mem_pages = (heap_base /i 65536) + 2
+
+            #L 1. Magic + Version: \0asm v1
+            mut as string: hex = "0061736d01000000"
+
+            #L 2. Section 1 (Type)
+            #L Type 0: (i32, i32, i32, i32) -> (i32)
+            #L Type 1: (i32, i32) -> ()
+            #L Type 2: () -> ()
+            #L Type 3: (i64) -> ()
+            mut as string: type_vec_hex = wasmEncodeUleb128(4 + n_ufs) + "60047f7f7f7f017f60027f7f0060000060017e00"
+            mut as int64: ufi = 1
+            infinite {
+                  route {
+                        ufi > n_ufs ==> { break }
+                        _ ==> {
+                              mut as string: usym = "" + uf_syms[ufi]
+                              mut as map: fdesc = uf_by_sym[usym]
+                              mut as list of data: ups = fdesc["params"]
+                              mut as int64: nups = stdCollectionLength(ups)
+                              mut as string: p_hex = "60" + wasmEncodeUleb128(nups)
+                              mut as int64: pk = 1
+                              infinite {
+                                    route {
+                                          pk > nups ==> { break }
+                                          _ ==> {
+                                                p_hex = p_hex + "7e"
+                                                pk = pk + 1
+                                          }
+                                    }
+                              }
+                              p_hex = p_hex + "017e"
+                              type_vec_hex = type_vec_hex + p_hex
+                              ufi = ufi + 1
+                        }
+                  }
+            }
+            hex = hex + wasmEncodeSection(1, type_vec_hex)
+
+            #L 3. Section 2 (Import): wasi_snapshot_preview1.fd_write -> type 0
+            hex = hex + wasmEncodeSection(2, "0116776173695f736e617073686f745f70726576696577310866645f77726974650000")
+
+            #L 4. Section 3 (Function)
+            mut as string: fn_vec_hex = wasmEncodeUleb128(6 + n_ufs) + "0102030303"
+            ufi = 1
+            infinite {
+                  route {
+                        ufi > n_ufs ==> { break }
+                        _ ==> {
+                              fn_vec_hex = fn_vec_hex + wasmEncodeUleb128(3 + ufi)
+                              ufi = ufi + 1
+                        }
+                  }
+            }
+            fn_vec_hex = fn_vec_hex + "02"
+            hex = hex + wasmEncodeSection(3, fn_vec_hex)
+
+            #L 5. Section 5 (Memory)
+            hex = hex + wasmEncodeSection(5, "0100" + wasmEncodeUleb128(mem_pages))
+
+            #L 6. Section 6 (Global): $flux_heap_ptr (mut i32) = heap_base
+            hex = hex + wasmEncodeSection(6, "017f0141" + wasmEncodeSleb128(heap_base) + "0b")
+
+            #L 7. Section 7 (Export): "memory" (mem 0) e "_start" (func 6 + n_ufs)
+            mut as int64: main_fn_idx = 6 + n_ufs
+            mut as string: exp_payload = "02066d656d6f72790200065f737461727400" + wasmEncodeUleb128(main_fn_idx)
+            hex = hex + wasmEncodeSection(7, exp_payload)
+
+            #L 8. Section 10 (Code)
+            mut as string: code_vec_hex = wasmEncodeUleb128(6 + n_ufs) + wasmEmitRuntimeHelpersHex()
+            ufi = 1
+            infinite {
+                  route {
+                        ufi > n_ufs ==> { break }
+                        _ ==> {
+                              mut as string: usym = "" + uf_syms[ufi]
+                              mut as map: fdesc = uf_by_sym[usym]
+                              mut as list of data: ups = fdesc["params"]
+                              mut as list of data: uins = fdesc["instructions"]
+                              mut as string: ubody = wasmEmitFuncBodyHex(uins, ups, str_info, fn_table, uf_by_sym, fn_idx_map, false)
+                              mut as int64: ublen = stdCollectionLength(ubody) /i 2
+                              code_vec_hex = code_vec_hex + wasmEncodeUleb128(ublen) + ubody
+                              ufi = ufi + 1
+                        }
+                  }
+            }
+            mut as list of data: main_instrs = fmir_module["instructions"]
+            mut as string: mbody = wasmEmitFuncBodyHex(main_instrs, [], str_info, fn_table, uf_by_sym, fn_idx_map, true)
+            mut as int64: mblen = stdCollectionLength(mbody) /i 2
+            code_vec_hex = code_vec_hex + wasmEncodeUleb128(mblen) + mbody
+            hex = hex + wasmEncodeSection(10, code_vec_hex)
+
+            #L 9. Section 11 (Data)
+            #L "true" @ 32, "false" @ 40
+            mut as string: data_segs_hex = "0041200b04747275650041280b0566616c7365"
+            mut as int64: n_data_segs = 2
+            mut as list of data: str_list = str_info["list"]
+            mut as map: str_offs = str_info["offsets"]
+            mut as map: str_lens = str_info["lens"]
+            mut as int64: n_strs = stdCollectionLength(str_list)
+            mut as int64: si = 1
+            infinite {
+                  route {
+                        si > n_strs ==> { break }
+                        _ ==> {
+                              mut as string: s_raw = "" + str_list[si]
+                              mut as int64: s_len = str_lens[s_raw]
+                              route {
+                                    s_len > 0 ==> {
+                                          mut as int64: s_off = str_offs[s_raw]
+                                          mut as string: s_hex = wasmEncodeStringHex(s_raw)
+                                          mut as int64: s_blen = stdCollectionLength(s_hex) /i 2
+                                          mut as string: seg = "0041" + wasmEncodeSleb128(s_off) + "0b" + wasmEncodeUleb128(s_blen) + s_hex
+                                          data_segs_hex = data_segs_hex + seg
+                                          n_data_segs = n_data_segs + 1
+                                    }
+                                    _ ==> {}
+                              }
+                              si = si + 1
+                        }
+                  }
+            }
+            route {
+                  pre_out_blen > 0 ==> {
+                        mut as string: pre_seg = "0041" + wasmEncodeSleb128(pre_out_off) + "0b" + wasmEncodeUleb128(pre_out_blen) + pre_out_hex
+                        data_segs_hex = data_segs_hex + pre_seg
+                        n_data_segs = n_data_segs + 1
+                  }
+                  _ ==> {}
+            }
+            hex = hex + wasmEncodeSection(11, wasmEncodeUleb128(n_data_segs) + data_segs_hex)
 
             emit(nice, hex, "ok")
       }
 
       op wasmCompileModule (as map: fmir_module, as string: output_path) as map ==> {
-            mut as map: wat_res = watCompileModule(fmir_module, output_path)
             mut as string: wasm_file = output_path
             mut as int64: wlen = stdCollectionLength(wasm_file)
             mut as bool: needs_wasm_ext = true
@@ -130,14 +824,13 @@ agent (CompilerLib) impl WasmBackendContract {
                   _ ==> {}
             }
 
-            mut as string: wat_file = output_path + ".wat"
-            mut as string: cmd = "wat2wasm \"" + wat_file + "\" -o \"" + wasm_file + "\""
-            mut as int64: rc = stdOsExec(cmd)
+            mut as string: wasm_hex = wasmGenerateHex(fmir_module)
+            stdIoWriteHexFile(wasm_file, wasm_hex)
 
             mut as map: res = map{}
             res["target"] = "wasm"
             res["wasm_file"] = wasm_file
-            res["success"] = (rc == 0)
+            res["success"] = stdIoFileExists(wasm_file)
             emit(nice, res, "ok")
       }
 }

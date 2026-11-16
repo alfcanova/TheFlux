@@ -203,7 +203,7 @@ agent (CompilerLib) impl FmirBuilderContract {
                                     mut as map: o_res = fmirLowerExpr(arena, obj_id, mod, tc)
                                     mod = o_res["module"]
                                     tc = o_res["temp_counter"]
-                                    mut as string: start_reg = "1"
+                                    mut as string: start_reg = ""
                                     route {
                                           start_id > 0 ==> {
                                                 mut as map: s_res = fmirLowerExpr(arena, start_id, mod, tc)
@@ -213,7 +213,7 @@ agent (CompilerLib) impl FmirBuilderContract {
                                           }
                                           _ ==> {}
                                     }
-                                    mut as string: end_reg = "1"
+                                    mut as string: end_reg = ""
                                     route {
                                           end_id > 0 ==> {
                                                 mut as map: en_res = fmirLowerExpr(arena, end_id, mod, tc)
@@ -626,7 +626,15 @@ agent (CompilerLib) impl FmirBuilderContract {
                               }
                               _ ==> {}
                         }
-                        mod = fmirAddInstruction(mod, "ALLOC", var_name, "", var_name)
+                        mut as int64: type_id = astArenaNodeLeft(arena, node_id)
+                        mut as string: var_type_str = ""
+                        route {
+                              type_id > 0 ==> {
+                                    var_type_str = astArenaNodeValue(arena, type_id)
+                              }
+                              _ ==> {}
+                        }
+                        mod = fmirAddInstruction(mod, "ALLOC", var_name, var_type_str, var_name)
 
                         mut as int64: init_id = 0
                         mut as list of data: children = astArenaNodeChildren(arena, node_id)
@@ -1209,8 +1217,12 @@ agent (CompilerLib) impl FmirBuilderContract {
                                     mut as string: len_reg = "%t" + tc
                                     mod = fmirAddInstruction(mod, "COLL_LEN", coll_var, "", len_reg)
                                     tc = tc + 1
-                                    mut as string: idx_reg = "%t" + tc
-                                    mod = fmirAddInstruction(mod, "CONST_INT", "1", "", idx_reg)
+                                    mut as string: idx_var = "__iter_idx_" + tc
+                                    mod = fmirAddInstruction(mod, "ALLOC", idx_var, "int64", idx_var)
+                                    tc = tc + 1
+                                    mut as string: init_idx = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "CONST_INT", "1", "", init_idx)
+                                    mod = fmirAddInstruction(mod, "STORE", init_idx, "", idx_var)
                                     tc = tc + 1
                                     mut as string: step_reg = "%t" + tc
                                     mod = fmirAddInstruction(mod, "CONST_INT", "1", "", step_reg)
@@ -1220,6 +1232,10 @@ agent (CompilerLib) impl FmirBuilderContract {
                                     mut as string: l_step = "loop_step_" + tc
                                     mut as string: l_end = "loop_end_" + tc
                                     mod = fmirAddInstruction(mod, "LABEL", l_start, "", "")
+
+                                    tc = tc + 1
+                                    mut as string: idx_reg = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "LOAD", idx_var, "", idx_reg)
 
                                     tc = tc + 1
                                     mut as string: cond_reg = "%t" + tc
@@ -1262,9 +1278,12 @@ agent (CompilerLib) impl FmirBuilderContract {
 
                                     mod = fmirAddInstruction(mod, "LABEL", l_step, "", "")
                                     tc = tc + 1
+                                    mut as string: cur_idx = "%t" + tc
+                                    mod = fmirAddInstruction(mod, "LOAD", idx_var, "", cur_idx)
+                                    tc = tc + 1
                                     mut as string: next_idx = "%t" + tc
-                                    mod = fmirAddInstruction(mod, "BINOP_+", idx_reg, step_reg, next_idx)
-                                    mod = fmirAddInstruction(mod, "COPY_REG", next_idx, "", idx_reg)
+                                    mod = fmirAddInstruction(mod, "BINOP_+", cur_idx, step_reg, next_idx)
+                                    mod = fmirAddInstruction(mod, "STORE", next_idx, "", idx_var)
                                     mod = fmirAddInstruction(mod, "JUMP", l_start, "", "")
                                     mod = fmirAddInstruction(mod, "LABEL", l_end, "", "")
                               }
@@ -1702,22 +1721,35 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                       }
 
                                                       tc = tc + 1
-                                                      mut as string: idx1_r = "%t" + tc
-                                                      mod = fmirAddInstruction(mod, "CONST_INT", "1", "", idx1_r)
-                                                      tc = tc + 1
-                                                      mut as string: f_val_r = "%t" + tc
-                                                      mod = fmirAddInstruction(mod, "GET_INDEX", target_reg, idx1_r, f_val_r)
-                                                      mod = fmirAddInstruction(mod, "ALLOC", f_var, "", f_var)
-                                                      mod = fmirAddInstruction(mod, "STORE", f_val_r, "", f_var)
+                                                      mut as string: is_list_r = "%t" + tc
+                                                      mod = fmirAddInstruction(mod, "IS_LIST", target_reg, "", is_list_r)
+                                                      mod = fmirAddInstruction(mod, "JUMP_IF_FALSE", is_list_r, next_arm, "")
 
-                                                      tc = tc + 1
-                                                      mut as string: idx2_r = "%t" + tc
-                                                      mod = fmirAddInstruction(mod, "CONST_INT", "2", "", idx2_r)
-                                                      tc = tc + 1
-                                                      mut as string: r_val_r = "%t" + tc
-                                                      mod = fmirAddInstruction(mod, "GET_SLICE", target_reg, idx2_r + ":", r_val_r)
-                                                      mod = fmirAddInstruction(mod, "ALLOC", r_var, "", r_var)
-                                                      mod = fmirAddInstruction(mod, "STORE", r_val_r, "", r_var)
+                                                      route {
+                                                            f_var == ".." or f_var == "" ==> {
+                                                                  mod = fmirAddInstruction(mod, "ALLOC", r_var, "", r_var)
+                                                                  mod = fmirAddInstruction(mod, "STORE", target_reg, "", r_var)
+                                                            }
+                                                            _ ==> {
+                                                                  tc = tc + 1
+                                                                  mut as string: idx1_r = "%t" + tc
+                                                                  mod = fmirAddInstruction(mod, "CONST_INT", "1", "", idx1_r)
+                                                                  tc = tc + 1
+                                                                  mut as string: f_val_r = "%t" + tc
+                                                                  mod = fmirAddInstruction(mod, "GET_INDEX", target_reg, idx1_r, f_val_r)
+                                                                  mod = fmirAddInstruction(mod, "ALLOC", f_var, "", f_var)
+                                                                  mod = fmirAddInstruction(mod, "STORE", f_val_r, "", f_var)
+
+                                                                  tc = tc + 1
+                                                                  mut as string: idx2_r = "%t" + tc
+                                                                  mod = fmirAddInstruction(mod, "CONST_INT", "2", "", idx2_r)
+                                                                  tc = tc + 1
+                                                                  mut as string: r_val_r = "%t" + tc
+                                                                  mod = fmirAddInstruction(mod, "GET_SLICE", target_reg, idx2_r + ":", r_val_r)
+                                                                  mod = fmirAddInstruction(mod, "ALLOC", r_var, "", r_var)
+                                                                  mod = fmirAddInstruction(mod, "STORE", r_val_r, "", r_var)
+                                                            }
+                                                      }
 
                                                       mut as int64: si = 1
                                                       mut as int64: nsi = stdCollectionLength(arm_stmts)

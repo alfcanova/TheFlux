@@ -5,11 +5,35 @@
 
 contract (VmCompilerContract) {
       op vmCompileModuleToJson (as map: fmir_mod) as string
+      op vmCompileModuleToFile (as map: fmir_mod, as string: out_path) as map
 }
 
 agent (CompilerLib) impl VmCompilerContract {
       op vmCompileModuleToJson (as map: fmir_mod) as string ==> {
             mut as string: bc_json = vmEmitBytecodeJson(fmir_mod)
             emit(nice, bc_json, "ok")
+      }
+
+      op vmCompileModuleToFile (as map: fmir_mod, as string: out_path) as map ==> {
+            mut as string: bc_json = vmEmitBytecodeJson(fmir_mod)
+            mut as string: fpath = out_path
+            mut as int64: flen = stdCollectionLength(fpath)
+            mut as bool: needs_ext = true
+            route {
+                  flen >= 6 ==> {
+                        needs_ext = (fpath[(flen - 5)..flen] != ".fvmbc")
+                  }
+                  _ ==> {}
+            }
+            route {
+                  needs_ext ==> { fpath = fpath + ".fvmbc" }
+                  _ ==> {}
+            }
+            stdIoWriteFile(fpath, bc_json)
+            mut as map: res = map{}
+            res["target"] = "vm"
+            res["path"] = fpath
+            res["success"] = true
+            emit(nice, res, "ok")
       }
 }

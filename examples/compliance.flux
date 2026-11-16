@@ -138,7 +138,7 @@ program (ComplianceMaster) {
 
       #L 5. Limpeza inicial de arquivos/pastas t_* e preparacao de ambiente
       #L Verificacao e limpeza nativa de arquivos nas pastas t_* (preservando .gitkeep)
-      mut as list of data: cl_init_dirs = ["t_fvmbc", "t_llvm", "t_wasm", "t_wat"]
+      mut as list of data: cl_init_dirs = ["t_fvmbc", "t_llvm", "t_was", "t_wat"]
       mut as int64: cl_init_di = 1
       infinite {
             route {
@@ -696,8 +696,8 @@ program (ComplianceMaster) {
                                     mut as string: exe_file = "t_llvm\\" + stem + ".exe"
                                     mut as string: out_wat = "t_wat\\" + stem
                                     mut as string: wat_file = "t_wat\\" + stem + ".wat"
-                                    mut as string: out_wasm = "t_wasm\\" + stem
-                                    mut as string: wasm_file = "t_wasm\\" + stem + ".wasm"
+                                    mut as string: out_wasm = "t_was\\" + stem
+                                    mut as string: wasm_file = "t_was\\" + stem + ".wasm"
 
                                     mut as string: cmd_in = "cmd /c \"set FLUX_CI=1 && " + fluxc_bin + " --target in " + path + " < " + stdin_file + " > t_in.tmp 2>nul\""
                                     mut as int64: rc_in = stdOsExec(cmd_in)
@@ -1532,8 +1532,8 @@ program (ComplianceMaster) {
                                     mut as string: exe_file = "t_llvm\\" + stem + ".exe"
                                     mut as string: out_wat = "t_wat\\" + stem
                                     mut as string: wat_file = "t_wat\\" + stem + ".wat"
-                                    mut as string: out_wasm = "t_wasm\\" + stem
-                                    mut as string: wasm_file = "t_wasm\\" + stem + ".wasm"
+                                    mut as string: out_wasm = "t_was\\" + stem
+                                    mut as string: wasm_file = "t_was\\" + stem + ".wasm"
 
                                     mut as string: cmd_in = "cmd /c \"set FLUX_CI=1 && " + fluxc_bin + " --target in " + path + " < " + "t_stdin.tmp" + " > t_in.tmp 2>nul\""
                                     mut as int64: rc_in = stdOsExec(cmd_in)
@@ -2297,8 +2297,8 @@ program (ComplianceMaster) {
                                     mut as string: exe_file = "t_llvm\\" + stem + ".exe"
                                     mut as string: out_wat = "t_wat\\" + stem
                                     mut as string: wat_file = "t_wat\\" + stem + ".wat"
-                                    mut as string: out_wasm = "t_wasm\\" + stem
-                                    mut as string: wasm_file = "t_wasm\\" + stem + ".wasm"
+                                    mut as string: out_wasm = "t_was\\" + stem
+                                    mut as string: wasm_file = "t_was\\" + stem + ".wasm"
 
                                     mut as string: cmd_in = "cmd /c \"set FLUX_CI=1 && " + fluxc_bin + " --target in " + path + " < " + "t_stdin.tmp" + " > t_in.tmp 2>nul\""
                                     mut as int64: rc_in = stdOsExec(cmd_in)
@@ -2595,7 +2595,7 @@ program (ComplianceMaster) {
 
       #L 7. Limpeza final de arquivos e pastas temporarias t_*
       #L Verificacao e limpeza nativa de arquivos nas pastas t_* (preservando .gitkeep)
-      mut as list of data: cl_fin_dirs = ["t_fvmbc", "t_llvm", "t_wasm", "t_wat"]
+      mut as list of data: cl_fin_dirs = ["t_fvmbc", "t_llvm", "t_was", "t_wat"]
       mut as int64: cl_fin_di = 1
       infinite {
             route {

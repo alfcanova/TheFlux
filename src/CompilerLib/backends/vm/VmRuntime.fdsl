@@ -1,17 +1,1224 @@
 #L ==============================================================================
 #L TheFlux Native Compiler: VmRuntime.fdsl
-#L Executor Modular de Bytecode FVM (.fvmbc)
+#L Executor e Desserializador Modular de Bytecode FVM (.fvmbc) 100% Self-Hosted
 #L ==============================================================================
 
 contract (VmRuntimeContract) {
+      op vmSkipWs (as string: s, as int64: pos, as int64: slen) as int64
+      op vmParseJsonString (as string: s, as int64: pos, as int64: slen) as map
+      op vmParseStringArray (as string: s, as int64: pos, as int64: slen) as map
+      op vmParseInstrTuples (as string: s, as int64: pos, as int64: slen) as map
+      op vmParseFunctionObj (as string: s, as int64: pos, as int64: slen) as map
+      op vmParseFunctionsArray (as string: s, as int64: pos, as int64: slen) as map
+      op vmParseStackOpsArray (as string: s, as int64: pos, as int64: slen) as map
+      op vmDeserializeBytecodeJson (as string: bc_json) as map
+      op vmExecuteStackOps (as list of data: ops) as map
+      op vmExecuteBytecodeJson (as string: bc_json) as map
+      op vmExecuteBytecodeFile (as string: fvmbc_path) as map
       op vmExecuteModule (as map: fmir_mod) as map
 }
 
 agent (CompilerLib) impl VmRuntimeContract {
+      op vmSkipWs (as string: s, as int64: pos, as int64: slen) as int64 ==> {
+            mut as int64: p = pos
+            infinite {
+                  route {
+                        p > slen ==> { break }
+                        _ ==> {
+                              mut as string: ch = s[p]
+                              route {
+                                    ch == " " or ch == "\n" or ch == "\r" or ch == "\t" ==> {
+                                          p = p + 1
+                                    }
+                                    _ ==> { break }
+                              }
+                        }
+                  }
+            }
+            emit(nice, p, "ok")
+      }
+
+      op vmParseJsonString (as string: s, as int64: pos, as int64: slen) as map ==> {
+            mut as int64: p = vmSkipWs(s, pos, slen)
+            mut as string: out = ""
+            route {
+                  p <= slen and s[p] == "\"" ==> {
+                        p = p + 1
+                        mut as int64: chunk_start = p
+                        infinite {
+                              route {
+                                    p > slen ==> {
+                                          route {
+                                                p > chunk_start ==> {
+                                                      out = out + s[chunk_start..(p - 1)]
+                                                }
+                                                _ ==> {}
+                                          }
+                                          break
+                                    }
+                                    _ ==> {
+                                          mut as string: ch = s[p]
+                                          route {
+                                                ch == "\"" ==> {
+                                                      route {
+                                                            p > chunk_start ==> {
+                                                                  out = out + s[chunk_start..(p - 1)]
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      p = p + 1
+                                                      break
+                                                }
+                                                ch == "\\" ==> {
+                                                      route {
+                                                            p > chunk_start ==> {
+                                                                  out = out + s[chunk_start..(p - 1)]
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      p = p + 1
+                                                      route {
+                                                            p <= slen ==> {
+                                                                  mut as string: esc = s[p]
+                                                                  route {
+                                                                        esc == "n" ==> { out = out + "\n" }
+                                                                        esc == "r" ==> { out = out + "\r" }
+                                                                        esc == "t" ==> { out = out + "\t" }
+                                                                        esc == "\"" ==> { out = out + "\"" }
+                                                                        esc == "\\" ==> { out = out + "\\" }
+                                                                        _ ==> { out = out + esc }
+                                                                  }
+                                                                  p = p + 1
+                                                                  chunk_start = p
+                                                            }
+                                                            _ ==> {
+                                                                  chunk_start = p
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {
+                                                      p = p + 1
+                                                }
+                                          }
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as map: res = map{}
+            res["val"] = out
+            res["next"] = p
+            emit(nice, res, "ok")
+      }
+
+      op vmParseStringArray (as string: s, as int64: pos, as int64: slen) as map ==> {
+            mut as int64: p = vmSkipWs(s, pos, slen)
+            mut as list of data: lst = []
+            route {
+                  p <= slen and s[p] == "[" ==> {
+                        p = p + 1
+                        infinite {
+                              p = vmSkipWs(s, p, slen)
+                              route {
+                                    p > slen ==> { break }
+                                    s[p] == "]" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    s[p] == "," ==> {
+                                          p = p + 1
+                                    }
+                                    s[p] == "\"" ==> {
+                                          mut as map: sr = vmParseJsonString(s, p, slen)
+                                          lst = stdListPushBack(lst, "" + sr["val"])
+                                          p = sr["next"] as int64
+                                    }
+                                    _ ==> {
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as map: res = map{}
+            res["list"] = lst
+            res["next"] = p
+            emit(nice, res, "ok")
+      }
+
+      op vmParseInstrTuples (as string: s, as int64: pos, as int64: slen) as map ==> {
+            mut as int64: p = vmSkipWs(s, pos, slen)
+            mut as list of data: instrs = []
+            route {
+                  p <= slen and s[p] == "[" ==> {
+                        p = p + 1
+                        infinite {
+                              p = vmSkipWs(s, p, slen)
+                              route {
+                                    p > slen ==> { break }
+                                    s[p] == "]" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    s[p] == "," ==> {
+                                          p = p + 1
+                                    }
+                                    s[p] == "[" ==> {
+                                          mut as map: tr = vmParseStringArray(s, p, slen)
+                                          mut as list of data: tup = tr["list"]
+                                          p = tr["next"] as int64
+                                          mut as int64: tlen = stdCollectionLength(tup)
+                                          mut as string: op_s = ""
+                                          mut as string: a1_s = ""
+                                          mut as string: a2_s = ""
+                                          mut as string: res_s = ""
+                                          route { tlen >= 1 ==> { op_s = "" + tup[1] } _ ==> {} }
+                                          route { tlen >= 2 ==> { a1_s = "" + tup[2] } _ ==> {} }
+                                          route { tlen >= 3 ==> { a2_s = "" + tup[3] } _ ==> {} }
+                                          route { tlen >= 4 ==> { res_s = "" + tup[4] } _ ==> {} }
+                                          mut as map: inst = map{}
+                                          inst["op"] = op_s
+                                          inst["arg1"] = a1_s
+                                          inst["arg2"] = a2_s
+                                          inst["res"] = res_s
+                                          instrs = stdListPushBack(instrs, inst)
+                                    }
+                                    _ ==> {
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as map: res = map{}
+            res["instructions"] = instrs
+            res["next"] = p
+            emit(nice, res, "ok")
+      }
+
+      op vmParseFunctionObj (as string: s, as int64: pos, as int64: slen) as map ==> {
+            mut as int64: p = vmSkipWs(s, pos, slen)
+            mut as string: f_key = ""
+            mut as string: f_name = ""
+            mut as string: f_agent = ""
+            mut as string: f_ret_type = "data"
+            mut as bool: f_is_std = false
+            mut as list of data: f_params = []
+            mut as list of data: f_ptypes = []
+            mut as list of data: f_instrs = []
+
+            route {
+                  p <= slen and s[p] == "{" ==> {
+                        p = p + 1
+                        infinite {
+                              p = vmSkipWs(s, p, slen)
+                              route {
+                                    p > slen ==> { break }
+                                    s[p] == "}" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    s[p] == "," ==> {
+                                          p = p + 1
+                                    }
+                                    s[p] == "\"" ==> {
+                                          mut as map: kr = vmParseJsonString(s, p, slen)
+                                          mut as string: kname = "" + kr["val"]
+                                          p = vmSkipWs(s, kr["next"] as int64, slen)
+                                          route {
+                                                p <= slen and s[p] == ":" ==> { p = p + 1 }
+                                                _ ==> {}
+                                          }
+                                          p = vmSkipWs(s, p, slen)
+                                          route {
+                                                kname == "key" ==> {
+                                                      mut as map: vr = vmParseJsonString(s, p, slen)
+                                                      f_key = "" + vr["val"]
+                                                      p = vr["next"] as int64
+                                                }
+                                                kname == "name" ==> {
+                                                      mut as map: vr = vmParseJsonString(s, p, slen)
+                                                      f_name = "" + vr["val"]
+                                                      p = vr["next"] as int64
+                                                }
+                                                kname == "agent" ==> {
+                                                      mut as map: vr = vmParseJsonString(s, p, slen)
+                                                      f_agent = "" + vr["val"]
+                                                      p = vr["next"] as int64
+                                                }
+                                                kname == "ret_type" ==> {
+                                                      mut as map: vr = vmParseJsonString(s, p, slen)
+                                                      f_ret_type = "" + vr["val"]
+                                                      p = vr["next"] as int64
+                                                }
+                                                kname == "is_stdlib" ==> {
+                                                      route {
+                                                            p + 3 <= slen and s[p..(p + 3)] == "true" ==> {
+                                                                  f_is_std = true
+                                                                  p = p + 4
+                                                            }
+                                                            p + 4 <= slen and s[p..(p + 4)] == "false" ==> {
+                                                                  f_is_std = false
+                                                                  p = p + 5
+                                                            }
+                                                            p <= slen and s[p] == "\"" ==> {
+                                                                  mut as map: vr = vmParseJsonString(s, p, slen)
+                                                                  f_is_std = (("" + vr["val"]) == "true")
+                                                                  p = vr["next"] as int64
+                                                            }
+                                                            _ ==> { p = p + 1 }
+                                                      }
+                                                }
+                                                kname == "params" ==> {
+                                                      mut as map: pr = vmParseStringArray(s, p, slen)
+                                                      f_params = pr["list"]
+                                                      p = pr["next"] as int64
+                                                }
+                                                kname == "param_types" ==> {
+                                                      mut as map: ptr = vmParseStringArray(s, p, slen)
+                                                      f_ptypes = ptr["list"]
+                                                      p = ptr["next"] as int64
+                                                }
+                                                kname == "instructions" ==> {
+                                                      mut as map: ir = vmParseInstrTuples(s, p, slen)
+                                                      f_instrs = ir["instructions"]
+                                                      p = ir["next"] as int64
+                                                }
+                                                _ ==> {
+                                                      p = p + 1
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+
+            mut as map: fdesc = map{}
+            fdesc["name"] = f_name
+            fdesc["agent"] = f_agent
+            fdesc["ret_type"] = f_ret_type
+            fdesc["is_stdlib"] = f_is_std
+            fdesc["params"] = f_params
+            fdesc["param_types"] = f_ptypes
+            fdesc["instructions"] = f_instrs
+
+            mut as map: res = map{}
+            res["key"] = f_key
+            res["fdesc"] = fdesc
+            res["next"] = p
+            emit(nice, res, "ok")
+      }
+
+      op vmParseFunctionsArray (as string: s, as int64: pos, as int64: slen) as map ==> {
+            mut as int64: p = vmSkipWs(s, pos, slen)
+            mut as map: fn_table = map{}
+            mut as list of data: fn_keys = []
+            route {
+                  p <= slen and s[p] == "[" ==> {
+                        p = p + 1
+                        infinite {
+                              p = vmSkipWs(s, p, slen)
+                              route {
+                                    p > slen ==> { break }
+                                    s[p] == "]" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    s[p] == "," ==> {
+                                          p = p + 1
+                                    }
+                                    s[p] == "{" ==> {
+                                          mut as map: fobj = vmParseFunctionObj(s, p, slen)
+                                          mut as string: fk = "" + fobj["key"]
+                                          mut as map: fd = fobj["fdesc"]
+                                          p = fobj["next"] as int64
+                                          route {
+                                                fk != "" ==> {
+                                                      fn_table[fk] = fd
+                                                      fn_keys = stdListPushBack(fn_keys, fk)
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as string: bname = "" + fd["name"]
+                                          route {
+                                                bname != "" and not stdMapContainsKey(fn_table, bname) ==> {
+                                                      fn_table[bname] = fd
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as map: res = map{}
+            res["functions"] = fn_table
+            res["fn_keys"] = fn_keys
+            res["next"] = p
+            emit(nice, res, "ok")
+      }
+
+      op vmParseStackOpsArray (as string: s, as int64: pos, as int64: slen) as map ==> {
+            mut as int64: p = vmSkipWs(s, pos, slen)
+            mut as list of data: ops_list = []
+            route {
+                  p <= slen and s[p] == "[" ==> {
+                        p = p + 1
+                        infinite {
+                              p = vmSkipWs(s, p, slen)
+                              route {
+                                    p > slen ==> { break }
+                                    s[p] == "]" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    s[p] == "," ==> {
+                                          p = p + 1
+                                    }
+                                    s[p] == "[" ==> {
+                                          p = p + 1
+                                          mut as list of data: tup = []
+                                          infinite {
+                                                p = vmSkipWs(s, p, slen)
+                                                route {
+                                                      p > slen ==> { break }
+                                                      s[p] == "]" ==> {
+                                                            p = p + 1
+                                                            break
+                                                      }
+                                                      s[p] == "," ==> {
+                                                            p = p + 1
+                                                      }
+                                                      s[p] == "\"" ==> {
+                                                            mut as map: sr = vmParseJsonString(s, p, slen)
+                                                            tup = stdListPushBack(tup, "" + sr["val"])
+                                                            p = sr["next"] as int64
+                                                      }
+                                                      s[p] == "[" ==> {
+                                                            mut as int64: depth = 1
+                                                            p = p + 1
+                                                            mut as string: nested_csv = ""
+                                                            mut as bool: is_tensor_lit = false
+                                                            infinite {
+                                                                  route {
+                                                                        p > slen or depth == 0 ==> { break }
+                                                                        s[p] == "\"" ==> {
+                                                                              mut as map: nsr = vmParseJsonString(s, p, slen)
+                                                                              mut as string: nval = "" + nsr["val"]
+                                                                              p = nsr["next"] as int64
+                                                                              route {
+                                                                                    nval == "#tensor" ==> { is_tensor_lit = true }
+                                                                                    depth == 1 ==> {
+                                                                                          route {
+                                                                                                nested_csv == "" ==> { nested_csv = nval }
+                                                                                                _ ==> { nested_csv = nested_csv + "," + nval }
+                                                                                          }
+                                                                                    }
+                                                                                    _ ==> {}
+                                                                              }
+                                                                        }
+                                                                        s[p] == "[" ==> {
+                                                                              depth = depth + 1
+                                                                              p = p + 1
+                                                                        }
+                                                                        s[p] == "]" ==> {
+                                                                              depth = depth - 1
+                                                                              p = p + 1
+                                                                        }
+                                                                        _ ==> {
+                                                                              p = p + 1
+                                                                        }
+                                                                  }
+                                                            }
+                                                            route {
+                                                                  is_tensor_lit ==> { tup = stdListPushBack(tup, "#tensor") }
+                                                                  _ ==> { tup = stdListPushBack(tup, nested_csv) }
+                                                            }
+                                                      }
+                                                      _ ==> {
+                                                            mut as int64: tstart = p
+                                                            infinite {
+                                                                  route {
+                                                                        p > slen ==> { break }
+                                                                        s[p] == "," or s[p] == "]" or s[p] == " " or s[p] == "\n" or s[p] == "\r" or s[p] == "\t" ==> {
+                                                                              break
+                                                                        }
+                                                                        _ ==> { p = p + 1 }
+                                                                  }
+                                                            }
+                                                            mut as string: lit_val = ""
+                                                            route {
+                                                                  p > tstart ==> { lit_val = s[tstart..(p - 1)] }
+                                                                  _ ==> {}
+                                                            }
+                                                            tup = stdListPushBack(tup, lit_val)
+                                                      }
+                                                }
+                                          }
+                                          ops_list = stdListPushBack(ops_list, tup)
+                                    }
+                                    _ ==> {
+                                          p = p + 1
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as map: res = map{}
+            res["ops"] = ops_list
+            res["next"] = p
+            emit(nice, res, "ok")
+      }
+
+      op vmDeserializeBytecodeJson (as string: bc_json) as map ==> {
+            mut as int64: slen = stdCollectionLength(bc_json)
+            mut as int64: p = vmSkipWs(bc_json, 1, slen)
+            mut as map: res = map{}
+            res["success"] = false
+            res["format"] = "none"
+
+            route {
+                  p <= slen and bc_json[p] == "[" ==> {
+                        mut as map: sr = vmParseStackOpsArray(bc_json, p, slen)
+                        res["format"] = "stack_ops"
+                        res["ops"] = sr["ops"]
+                        res["success"] = true
+                        emit(nice, res, "ok")
+                  }
+                  p <= slen and bc_json[p] == "{" ==> {
+                        p = p + 1
+                        mut as string: top_name = ""
+                        mut as bool: has_fmir = false
+                        mut as map: fmir_mod = map{}
+                        mut as list of data: fallback_ops = []
+
+                        infinite {
+                              p = vmSkipWs(bc_json, p, slen)
+                              route {
+                                    p > slen ==> { break }
+                                    bc_json[p] == "}" ==> {
+                                          p = p + 1
+                                          break
+                                    }
+                                    bc_json[p] == "," ==> {
+                                          p = p + 1
+                                    }
+                                    bc_json[p] == "\"" ==> {
+                                          mut as map: kr = vmParseJsonString(bc_json, p, slen)
+                                          mut as string: kname = "" + kr["val"]
+                                          p = vmSkipWs(bc_json, kr["next"] as int64, slen)
+                                          route {
+                                                p <= slen and bc_json[p] == ":" ==> { p = p + 1 }
+                                                _ ==> {}
+                                          }
+                                          p = vmSkipWs(bc_json, p, slen)
+                                          route {
+                                                kname == "version" ==> {
+                                                      mut as map: vr = vmParseJsonString(bc_json, p, slen)
+                                                      p = vr["next"] as int64
+                                                }
+                                                kname == "name" ==> {
+                                                      mut as map: vr = vmParseJsonString(bc_json, p, slen)
+                                                      top_name = "" + vr["val"]
+                                                      p = vr["next"] as int64
+                                                }
+                                                kname == "fmir" ==> {
+                                                      route {
+                                                            p <= slen and bc_json[p] == "{" ==> {
+                                                                  p = p + 1
+                                                                  mut as string: m_name = top_name
+                                                                  mut as list of data: m_imports = []
+                                                                  mut as list of data: m_instrs = []
+                                                                  mut as map: m_funcs = map{}
+                                                                  mut as list of data: m_fn_keys = []
+                                                                  infinite {
+                                                                        p = vmSkipWs(bc_json, p, slen)
+                                                                        route {
+                                                                              p > slen ==> { break }
+                                                                              bc_json[p] == "}" ==> {
+                                                                                    p = p + 1
+                                                                                    break
+                                                                              }
+                                                                              bc_json[p] == "," ==> {
+                                                                                    p = p + 1
+                                                                              }
+                                                                              bc_json[p] == "\"" ==> {
+                                                                                    mut as map: fkr = vmParseJsonString(bc_json, p, slen)
+                                                                                    mut as string: fkname = "" + fkr["val"]
+                                                                                    p = vmSkipWs(bc_json, fkr["next"] as int64, slen)
+                                                                                    route {
+                                                                                          p <= slen and bc_json[p] == ":" ==> { p = p + 1 }
+                                                                                          _ ==> {}
+                                                                                    }
+                                                                                    p = vmSkipWs(bc_json, p, slen)
+                                                                                    route {
+                                                                                          fkname == "name" ==> {
+                                                                                                mut as map: nvr = vmParseJsonString(bc_json, p, slen)
+                                                                                                m_name = "" + nvr["val"]
+                                                                                                p = nvr["next"] as int64
+                                                                                          }
+                                                                                          fkname == "imports" ==> {
+                                                                                                mut as map: imr = vmParseStringArray(bc_json, p, slen)
+                                                                                                m_imports = imr["list"]
+                                                                                                p = imr["next"] as int64
+                                                                                          }
+                                                                                          fkname == "instructions" ==> {
+                                                                                                mut as map: inr = vmParseInstrTuples(bc_json, p, slen)
+                                                                                                m_instrs = inr["instructions"]
+                                                                                                p = inr["next"] as int64
+                                                                                          }
+                                                                                          fkname == "functions" ==> {
+                                                                                                mut as map: fnr = vmParseFunctionsArray(bc_json, p, slen)
+                                                                                                m_funcs = fnr["functions"]
+                                                                                                m_fn_keys = fnr["fn_keys"]
+                                                                                                p = fnr["next"] as int64
+                                                                                          }
+                                                                                          _ ==> { p = p + 1 }
+                                                                                    }
+                                                                              }
+                                                                              _ ==> { p = p + 1 }
+                                                                        }
+                                                                  }
+                                                                  fmir_mod["name"] = m_name
+                                                                  fmir_mod["imports"] = m_imports
+                                                                  fmir_mod["instructions"] = m_instrs
+                                                                  fmir_mod["functions"] = m_funcs
+                                                                  fmir_mod["fn_keys"] = m_fn_keys
+                                                                  has_fmir = true
+                                                                  break
+                                                            }
+                                                            _ ==> { p = p + 1 }
+                                                      }
+                                                }
+                                                kname == "ops" ==> {
+                                                      mut as map: osr = vmParseStackOpsArray(bc_json, p, slen)
+                                                      fallback_ops = osr["ops"]
+                                                      p = osr["next"] as int64
+                                                }
+                                                _ ==> {
+                                                      p = p + 1
+                                                }
+                                          }
+                                    }
+                                    _ ==> {
+                                          p = p + 1
+                                    }
+                              }
+                        }
+
+                        route {
+                              has_fmir ==> {
+                                    res["format"] = "fmir"
+                                    res["module"] = fmir_mod
+                                    res["success"] = true
+                              }
+                              _ ==> {
+                                    res["format"] = "stack_ops"
+                                    res["ops"] = fallback_ops
+                                    res["success"] = true
+                              }
+                        }
+                        emit(nice, res, "ok")
+                  }
+                  _ ==> {
+                        emit(nice, res, "ok")
+                  }
+            }
+      }
+
+      op vmExecuteStackOps (as list of data: ops) as map ==> {
+            mut as int64: num_ops = stdCollectionLength(ops)
+            mut as map: stack_type = map{}
+            mut as map: stack_str = map{}
+            mut as map: stack_map = map{}
+            mut as map: stack_list = map{}
+            mut as map: stack_var = map{}
+            mut as int64: sp = 0
+
+            mut as map: env_type = map{}
+            mut as map: env_str = map{}
+            mut as map: env_map = map{}
+            mut as map: env_list = map{}
+
+            mut as map: call_ret = map{}
+            mut as int64: csp = 0
+            mut as string: stdout_acc = ""
+
+            mut as int64: ip = 1
+            infinite {
+                  route {
+                        ip < 1 or ip > num_ops ==> { break }
+                        _ ==> {
+                              mut as list of data: cur_op = ops[ip]
+                              mut as int64: arity = stdCollectionLength(cur_op)
+                              mut as string: op_name = ""
+                              mut as string: arg1 = ""
+                              mut as string: arg2 = ""
+                              route { arity >= 1 ==> { op_name = "" + cur_op[1] } _ ==> {} }
+                              route { arity >= 2 ==> { arg1 = "" + cur_op[2] } _ ==> {} }
+                              route { arity >= 3 ==> { arg2 = "" + cur_op[3] } _ ==> {} }
+
+                              mut as bool: jumped = false
+
+                              route {
+                                    op_name == "SCOPE_ENTER" or op_name == "SCOPE_EXIT" or op_name == "NOP" ==> {}
+                                    op_name == "HALT" ==> { break }
+                                    op_name == "PUSH" or op_name == "PUSH_INT" or op_name == "PUSH_FLOAT" or op_name == "PUSH_BOOL" ==> {
+                                          sp = sp + 1
+                                          mut as string: sk = "s_" + sp
+                                          stack_var[sk] = ""
+                                          route {
+                                                arg1 == "#tensor" ==> {
+                                                      stack_type[sk] = "map"
+                                                      stack_map[sk] = map{}
+                                                }
+                                                _ ==> {
+                                                      stack_type[sk] = "scalar"
+                                                      stack_str[sk] = arg1
+                                                }
+                                          }
+                                    }
+                                    op_name == "POP" ==> {
+                                          route { sp > 0 ==> { sp = sp - 1 } _ ==> {} }
+                                    }
+                                    op_name == "DUP" ==> {
+                                          route {
+                                                sp > 0 ==> {
+                                                      mut as string: src_k = "s_" + sp
+                                                      sp = sp + 1
+                                                      mut as string: dst_k = "s_" + sp
+                                                      mut as string: st = "" + stack_type[src_k]
+                                                      stack_type[dst_k] = st
+                                                      stack_var[dst_k] = "" + stack_var[src_k]
+                                                      route {
+                                                            st == "map" ==> { stack_map[dst_k] = stack_map[src_k] }
+                                                            st == "list" ==> { stack_list[dst_k] = stack_list[src_k] }
+                                                            _ ==> { stack_str[dst_k] = "" + stack_str[src_k] }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "DECLARE" or op_name == "STORE" ==> {
+                                          route {
+                                                sp > 0 ==> {
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as string: st = "" + stack_type[sk]
+                                                      env_type[arg1] = st
+                                                      route {
+                                                            st == "map" ==> { env_map[arg1] = stack_map[sk] }
+                                                            st == "list" ==> { env_list[arg1] = stack_list[sk] }
+                                                            _ ==> { env_str[arg1] = "" + stack_str[sk] }
+                                                      }
+                                                      sp = sp - 1
+                                                }
+                                                _ ==> {
+                                                      env_type[arg1] = "scalar"
+                                                      env_str[arg1] = "0"
+                                                }
+                                          }
+                                    }
+                                    op_name == "LOAD" ==> {
+                                          sp = sp + 1
+                                          mut as string: sk = "s_" + sp
+                                          mut as string: vt = "scalar"
+                                          route {
+                                                stdMapContainsKey(env_type, arg1) ==> { vt = "" + env_type[arg1] }
+                                                _ ==> {}
+                                          }
+                                          stack_type[sk] = vt
+                                          stack_var[sk] = arg1
+                                          route {
+                                                vt == "map" ==> { stack_map[sk] = env_map[arg1] }
+                                                vt == "list" ==> { stack_list[sk] = env_list[arg1] }
+                                                stdMapContainsKey(env_str, arg1) ==> { stack_str[sk] = "" + env_str[arg1] }
+                                                _ ==> { stack_str[sk] = "0" }
+                                          }
+                                    }
+                                    op_name == "MAKE_STRUCT" ==> {
+                                          mut as list of data: fnames = []
+                                          mut as int64: a2_len = stdCollectionLength(arg2)
+                                          route {
+                                                a2_len > 0 and arg2 != "0" ==> {
+                                                      mut as int64: fstart = 1
+                                                      mut as int64: fi = 1
+                                                      infinite {
+                                                            route {
+                                                                  fi > a2_len ==> {
+                                                                        route {
+                                                                              fi > fstart ==> {
+                                                                                    fnames = stdListPushBack(fnames, arg2[fstart..(fi - 1)])
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        break
+                                                                  }
+                                                                  arg2[fi] == "," ==> {
+                                                                        route {
+                                                                              fi > fstart ==> {
+                                                                                    fnames = stdListPushBack(fnames, arg2[fstart..(fi - 1)])
+                                                                              }
+                                                                              _ ==> {}
+                                                                        }
+                                                                        fstart = fi + 1
+                                                                        fi = fi + 1
+                                                                  }
+                                                                  _ ==> { fi = fi + 1 }
+                                                            }
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as map: st_obj = map{}
+                                          mut as int64: nf = stdCollectionLength(fnames)
+                                          mut as int64: f_idx = nf
+                                          infinite {
+                                                route {
+                                                      f_idx < 1 ==> { break }
+                                                      _ ==> {
+                                                            mut as string: fnm = "" + fnames[f_idx]
+                                                            mut as string: fval = ""
+                                                            route {
+                                                                  sp > 0 ==> {
+                                                                        fval = "" + stack_str["s_" + sp]
+                                                                        sp = sp - 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            st_obj[fnm] = fval
+                                                            f_idx = f_idx - 1
+                                                      }
+                                                }
+                                          }
+                                          sp = sp + 1
+                                          mut as string: sk = "s_" + sp
+                                          stack_type[sk] = "map"
+                                          stack_map[sk] = st_obj
+                                          stack_var[sk] = ""
+                                    }
+                                    op_name == "FIELD_ACCESS" ==> {
+                                          route {
+                                                sp > 0 ==> {
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as map: obj = stack_map[sk]
+                                                      mut as string: fval = ""
+                                                      route {
+                                                            stdMapContainsKey(obj, arg1) ==> { fval = "" + obj[arg1] }
+                                                            _ ==> {}
+                                                      }
+                                                      stack_type[sk] = "scalar"
+                                                      stack_str[sk] = fval
+                                                      stack_var[sk] = ""
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "FIELD_SET" ==> {
+                                          route {
+                                                sp >= 2 ==> {
+                                                      mut as string: fval = "" + stack_str["s_" + sp]
+                                                      sp = sp - 1
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as map: obj = stack_map[sk]
+                                                      mut as string: vname = "" + stack_var[sk]
+                                                      obj[arg1] = fval
+                                                      stack_map[sk] = obj
+                                                      route {
+                                                            vname != "" ==> { env_map[vname] = obj }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "ENUM_NEW" ==> {
+                                          sp = sp + 1
+                                          mut as string: sk = "s_" + sp
+                                          stack_type[sk] = "scalar"
+                                          stack_str[sk] = arg1 + "::" + arg2
+                                          stack_var[sk] = ""
+                                    }
+                                    op_name == "MAKE_LIST" ==> {
+                                          mut as int64: cnt = interpParseInt(arg1)
+                                          mut as map: tmp_items = map{}
+                                          mut as int64: ti = cnt
+                                          infinite {
+                                                route {
+                                                      ti < 1 ==> { break }
+                                                      _ ==> {
+                                                            mut as string: iv = ""
+                                                            route {
+                                                                  sp > 0 ==> {
+                                                                        iv = "" + stack_str["s_" + sp]
+                                                                        sp = sp - 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            tmp_items["i_" + ti] = iv
+                                                            ti = ti - 1
+                                                      }
+                                                }
+                                          }
+                                          mut as list of data: new_lst = []
+                                          mut as int64: li = 1
+                                          infinite {
+                                                route {
+                                                      li > cnt ==> { break }
+                                                      _ ==> {
+                                                            new_lst = stdListPushBack(new_lst, "" + tmp_items["i_" + li])
+                                                            li = li + 1
+                                                      }
+                                                }
+                                          }
+                                          sp = sp + 1
+                                          mut as string: sk = "s_" + sp
+                                          stack_type[sk] = "list"
+                                          stack_list[sk] = new_lst
+                                          stack_var[sk] = ""
+                                    }
+                                    op_name == "INDEX" ==> {
+                                          route {
+                                                sp >= 2 ==> {
+                                                      mut as int64: idx_i = interpParseInt("" + stack_str["s_" + sp])
+                                                      sp = sp - 1
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as list of data: lst = stack_list[sk]
+                                                      mut as string: elem_s = "" + lst[idx_i]
+                                                      stack_type[sk] = "scalar"
+                                                      stack_str[sk] = elem_s
+                                                      stack_var[sk] = ""
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "SLICE" ==> {
+                                          route {
+                                                sp >= 3 ==> {
+                                                      mut as int64: end_i = interpParseInt("" + stack_str["s_" + sp])
+                                                      sp = sp - 1
+                                                      mut as int64: start_i = interpParseInt("" + stack_str["s_" + sp])
+                                                      sp = sp - 1
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as list of data: lst = stack_list[sk]
+                                                      mut as list of data: sub_lst = []
+                                                      mut as int64: si = start_i
+                                                      infinite {
+                                                            route {
+                                                                  si > end_i ==> { break }
+                                                                  _ ==> {
+                                                                        sub_lst = stdListPushBack(sub_lst, "" + lst[si])
+                                                                        si = si + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      stack_type[sk] = "list"
+                                                      stack_list[sk] = sub_lst
+                                                      stack_var[sk] = ""
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "TSET" ==> {
+                                          mut as int64: ndim = interpParseInt(arg1)
+                                          mut as string: tval = "" + stack_str["s_" + sp]
+                                          sp = sp - 1
+                                          mut as string: tkey = ""
+                                          mut as int64: di = 1
+                                          infinite {
+                                                route {
+                                                      di > ndim ==> { break }
+                                                      _ ==> {
+                                                            mut as string: idx_s = "" + stack_str["s_" + sp]
+                                                            sp = sp - 1
+                                                            route {
+                                                                  tkey == "" ==> { tkey = idx_s }
+                                                                  _ ==> { tkey = idx_s + "," + tkey }
+                                                            }
+                                                            di = di + 1
+                                                      }
+                                                }
+                                          }
+                                          mut as string: sk = "s_" + sp
+                                          mut as map: tobj = stack_map[sk]
+                                          mut as string: tvname = "" + stack_var[sk]
+                                          tobj[tkey] = tval
+                                          route {
+                                                tvname != "" ==> { env_map[tvname] = tobj }
+                                                _ ==> {}
+                                          }
+                                          stack_type[sk] = "scalar"
+                                          stack_str[sk] = tval
+                                    }
+                                    op_name == "TGET" ==> {
+                                          mut as int64: ndim = interpParseInt(arg1)
+                                          mut as string: tkey = ""
+                                          mut as int64: di = 1
+                                          infinite {
+                                                route {
+                                                      di > ndim ==> { break }
+                                                      _ ==> {
+                                                            mut as string: idx_s = "" + stack_str["s_" + sp]
+                                                            sp = sp - 1
+                                                            route {
+                                                                  tkey == "" ==> { tkey = idx_s }
+                                                                  _ ==> { tkey = idx_s + "," + tkey }
+                                                            }
+                                                            di = di + 1
+                                                      }
+                                                }
+                                          }
+                                          mut as string: sk = "s_" + sp
+                                          mut as map: tobj = stack_map[sk]
+                                          mut as string: tval = "0.0"
+                                          route {
+                                                stdMapContainsKey(tobj, tkey) ==> { tval = "" + tobj[tkey] }
+                                                _ ==> {}
+                                          }
+                                          stack_type[sk] = "scalar"
+                                          stack_str[sk] = tval
+                                          stack_var[sk] = ""
+                                    }
+                                    op_name == "ADD" or op_name == "SUB" or op_name == "MUL" or op_name == "DIV" or op_name == "REM" ==> {
+                                          route {
+                                                sp >= 2 ==> {
+                                                      mut as string: rhs_s = "" + stack_str["s_" + sp]
+                                                      sp = sp - 1
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as string: lhs_s = "" + stack_str[sk]
+                                                      mut as bool: is_flt = interpStrContains(lhs_s, ".") or interpStrContains(rhs_s, ".")
+                                                      route {
+                                                            is_flt ==> {
+                                                                  mut as float64: lf = interpParseFloat(lhs_s)
+                                                                  mut as float64: rf = interpParseFloat(rhs_s)
+                                                                  mut as float64: rf_res = 0.0
+                                                                  route {
+                                                                        op_name == "ADD" ==> { rf_res = lf + rf }
+                                                                        op_name == "SUB" ==> { rf_res = lf - rf }
+                                                                        op_name == "MUL" ==> { rf_res = lf * rf }
+                                                                        op_name == "DIV" ==> { rf_res = lf /f rf }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  stack_str[sk] = "" + rf_res
+                                                            }
+                                                            _ ==> {
+                                                                  mut as int64: li = interpParseInt(lhs_s)
+                                                                  mut as int64: ri = interpParseInt(rhs_s)
+                                                                  mut as int64: ri_res = 0
+                                                                  route {
+                                                                        op_name == "ADD" ==> { ri_res = li + ri }
+                                                                        op_name == "SUB" ==> { ri_res = li - ri }
+                                                                        op_name == "MUL" ==> { ri_res = li * ri }
+                                                                        op_name == "DIV" ==> { ri_res = li /i ri }
+                                                                        op_name == "REM" ==> { ri_res = li /r ri }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  stack_str[sk] = "" + ri_res
+                                                            }
+                                                      }
+                                                      stack_type[sk] = "scalar"
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "EQ" or op_name == "NE" or op_name == "LT" or op_name == "LE" or op_name == "GT" or op_name == "GE" ==> {
+                                          route {
+                                                sp >= 2 ==> {
+                                                      mut as string: rhs_s = "" + stack_str["s_" + sp]
+                                                      sp = sp - 1
+                                                      mut as string: sk = "s_" + sp
+                                                      mut as string: lhs_s = "" + stack_str[sk]
+                                                      mut as float64: lf = interpParseFloat(lhs_s)
+                                                      mut as float64: rf = interpParseFloat(rhs_s)
+                                                      mut as bool: b_res = false
+                                                      route {
+                                                            op_name == "EQ" ==> { b_res = (lhs_s == rhs_s) or (lf == rf) }
+                                                            op_name == "NE" ==> { b_res = (lhs_s != rhs_s) and (lf != rf) }
+                                                            op_name == "LT" ==> { b_res = lf < rf }
+                                                            op_name == "LE" ==> { b_res = lf <= rf }
+                                                            op_name == "GT" ==> { b_res = lf > rf }
+                                                            op_name == "GE" ==> { b_res = lf >= rf }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            b_res ==> { stack_str[sk] = "true" }
+                                                            _ ==> { stack_str[sk] = "false" }
+                                                      }
+                                                      stack_type[sk] = "scalar"
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "JMP" ==> {
+                                          ip = interpParseInt(arg1) + 1
+                                          jumped = true
+                                    }
+                                    op_name == "JZ" ==> {
+                                          route {
+                                                sp > 0 ==> {
+                                                      mut as string: cond_s = "" + stack_str["s_" + sp]
+                                                      sp = sp - 1
+                                                      route {
+                                                            cond_s == "false" or cond_s == "0" or cond_s == "" ==> {
+                                                                  ip = interpParseInt(arg1) + 1
+                                                                  jumped = true
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "JNZ" ==> {
+                                          route {
+                                                sp > 0 ==> {
+                                                      mut as string: cond_s = "" + stack_str["s_" + sp]
+                                                      sp = sp - 1
+                                                      route {
+                                                            cond_s != "false" and cond_s != "0" and cond_s != "" ==> {
+                                                                  ip = interpParseInt(arg1) + 1
+                                                                  jumped = true
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "CALL" ==> {
+                                          mut as int64: a1_l = stdCollectionLength(arg1)
+                                          route {
+                                                a1_l > 0 and arg1[1] >= "0" and arg1[1] <= "9" ==> {
+                                                      csp = csp + 1
+                                                      call_ret["c_" + csp] = ip + 1
+                                                      ip = interpParseInt(arg1) + 1
+                                                      jumped = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    op_name == "RET" ==> {
+                                          route {
+                                                csp > 0 ==> {
+                                                      ip = call_ret["c_" + csp] as int64
+                                                      csp = csp - 1
+                                                      jumped = true
+                                                }
+                                                _ ==> { break }
+                                          }
+                                    }
+                                    op_name == "PRINTLN" or op_name == "PRINT" ==> {
+                                          mut as int64: n_pr = 1
+                                          route {
+                                                arg1 != "" ==> { n_pr = interpParseInt(arg1) }
+                                                _ ==> {}
+                                          }
+                                          mut as map: pr_parts = map{}
+                                          mut as int64: pi = n_pr
+                                          infinite {
+                                                route {
+                                                      pi < 1 ==> { break }
+                                                      _ ==> {
+                                                            mut as string: pv = ""
+                                                            route {
+                                                                  sp > 0 ==> {
+                                                                        pv = "" + stack_str["s_" + sp]
+                                                                        sp = sp - 1
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            pr_parts["p_" + pi] = pv
+                                                            pi = pi - 1
+                                                      }
+                                                }
+                                          }
+                                          mut as string: out_line = ""
+                                          mut as int64: pj = 1
+                                          infinite {
+                                                route {
+                                                      pj > n_pr ==> { break }
+                                                      _ ==> {
+                                                            out_line = out_line + pr_parts["p_" + pj]
+                                                            pj = pj + 1
+                                                      }
+                                                }
+                                          }
+                                          print(out_line)
+                                          stdout_acc = stdout_acc + out_line + "\n"
+                                    }
+                                    _ ==> {}
+                              }
+
+                              route {
+                                    jumped ==> {}
+                                    _ ==> { ip = ip + 1 }
+                              }
+                        }
+                  }
+            }
+
+            mut as map: res = map{}
+            res["target"] = "vmr"
+            res["success"] = true
+            res["output"] = stdout_acc
+            emit(nice, res, "ok")
+      }
+
+      op vmExecuteBytecodeJson (as string: bc_json) as map ==> {
+            mut as map: deser = vmDeserializeBytecodeJson(bc_json)
+            route {
+                  not deser["success"] ==> {
+                        mut as map: err_res = map{}
+                        err_res["target"] = "vmr"
+                        err_res["success"] = false
+                        emit(nice, err_res, "fail")
+                  }
+                  deser["format"] == "fmir" ==> {
+                        mut as map: fmir_mod = deser["module"]
+                        mut as map: exec_res = interpExecuteFmir(fmir_mod)
+                        exec_res["target"] = "vmr"
+                        emit(nice, exec_res, "ok")
+                  }
+                  _ ==> {
+                        mut as list of data: ops = deser["ops"]
+                        mut as map: stack_res = vmExecuteStackOps(ops)
+                        emit(nice, stack_res, "ok")
+                  }
+            }
+      }
+
+      op vmExecuteBytecodeFile (as string: fvmbc_path) as map ==> {
+            route {
+                  not stdIoFileExists(fvmbc_path) ==> {
+                        print("Erro: Nao foi possivel abrir o arquivo: " + fvmbc_path)
+                        mut as map: err_res = map{}
+                        err_res["target"] = "vmr"
+                        err_res["success"] = false
+                        emit(nice, err_res, "fail")
+                  }
+                  _ ==> {
+                        mut as string: bc_json = stdIoReadFile(fvmbc_path)
+                        mut as map: exec_res = vmExecuteBytecodeJson(bc_json)
+                        emit(nice, exec_res, "ok")
+                  }
+            }
+      }
+
       op vmExecuteModule (as map: fmir_mod) as map ==> {
-            mut as map: bc_res = vmCompileFmir(fmir_mod)
-            mut as map: exec_res = interpExecuteFmir(fmir_mod)
-            bc_res["executed"] = exec_res["success"]
-            emit(nice, bc_res, "ok")
+            mut as string: bc_json = vmEmitBytecodeJson(fmir_mod)
+            mut as map: exec_res = vmExecuteBytecodeJson(bc_json)
+            emit(nice, exec_res, "ok")
       }
 }

@@ -26,7 +26,7 @@ program (ExamplesWas) {
             _ ==> { canon_dir = "examples\\Canon" }
       }
 
-      stdOsExec("cmd /c if not exist t_wasm mkdir t_wasm")
+      stdOsExec("cmd /c if not exist t_was mkdir t_was")
 
       stdIoWriteFile("t_stdin_interactive.tmp", "Ana\n30\n9.99\ntrue\nA\n2+3i\n2026-08-28T12:00:00Z\n")
       stdIoWriteFile("t_stdin_contract.tmp", "andre\nluiz\n")
@@ -72,8 +72,8 @@ program (ExamplesWas) {
                                                       _ ==> {}
                                                 }
 
-                                                mut as string: out_stem = "t_wasm\\" + stem
-                                                mut as string: wasm_file = "t_wasm\\" + stem + ".wasm"
+                                                mut as string: out_stem = "t_was\\" + stem
+                                                mut as string: wasm_file = "t_was\\" + stem + ".wasm"
 
                                                 mut as string: cmd_was_c = "cmd /c \"set FLUX_CI=1 && " + fluxc_bin + " --target wasm " + filepath + " -o " + out_stem + " --no-run < " + stdin_file + " > t_was_c.tmp 2>&1\""
                                                 mut as int64: rc = stdOsExec(cmd_was_c)

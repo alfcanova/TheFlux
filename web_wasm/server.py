@@ -1,7 +1,7 @@
 """Local HTTP server for the web_wasm runner page.
 
-Serves the project root (so /web_wasm/index.html and /t_wasm-1.0/*.wasm work)
-and exposes GET /api/files with the listing of t_wasm-1.0/ as JSON.
+Serves the project root (so /web_wasm/index.html and /t_was/*.wasm work)
+and exposes GET /api/files with the listing of t_was/ as JSON.
 
 Usage:
     python web_wasm/server.py [--port 8000]
@@ -14,7 +14,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-WASM_DIR = ROOT / "t_wasm-1.0"
+WASM_DIR = ROOT / "t_was"
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -35,7 +35,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             files = sorted(
-                p.name for p in WASM_DIR.iterdir() if p.is_file()
+                p.name for p in WASM_DIR.iterdir() if p.is_file() and p.name.endswith(".wasm")
             )
             self.wfile.write(json.dumps(files).encode("utf-8"))
             return

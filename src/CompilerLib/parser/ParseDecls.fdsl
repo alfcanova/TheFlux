@@ -84,12 +84,12 @@ agent (CompilerLib) impl ParseDeclsContract {
                                           mut as int64: ptl = stdCollectionLength(p_type)
                                           route {
                                                 p_type == "string" or p_type == "char" ==> { norm_pt = "string" }
-                                                p_type == "int" or p_type == "int64" or p_type == "int32" or p_type == "int16" or p_type == "int8" or p_type == "uint64" or p_type == "uint32" or p_type == "uint16" or p_type == "uint8" ==> { norm_pt = "int" }
+                                                p_type == "int" or p_type == "int64" or p_type == "int32" or p_type == "int16" or p_type == "int8" or p_type == "uint64" or p_type == "uint32" or p_type == "uint16" or p_type == "uint8" or p_type == "datetime" or p_type == "DateTime" or p_type == "date" or p_type == "Date" or p_type == "time" or p_type == "Time" or p_type == "timestamp" or p_type == "Timestamp" ==> { norm_pt = "int" }
                                                 p_type == "float" or p_type == "float64" or p_type == "float32" or p_type == "float16" or p_type == "bf16_e8m7" or p_type == "tf32_e8m10" or p_type == "fp8_e4m3" or p_type == "fp8_e5m2" ==> { norm_pt = "float" }
                                                 p_type == "bool" ==> { norm_pt = "bool" }
                                                 p_type == "map" or (ptl >= 6 and p_type[1..6] == "map of") ==> { norm_pt = "map" }
-                                                p_type == "set" or (ptl >= 6 and p_type[1..6] == "set of") ==> { norm_pt = "set" }
-                                                p_type == "list" or (ptl >= 7 and p_type[1..7] == "list of") ==> { norm_pt = "list" }
+                                                p_type == "set" or (ptl >= 6 and p_type[1..6] == "set of") ==> { norm_pt = p_type }
+                                                p_type == "list" or (ptl >= 7 and p_type[1..7] == "list of") ==> { norm_pt = p_type }
                                                 p_type == "complex" or p_type == "complex64" or p_type == "complex32" or p_type == "complex128" ==> { norm_pt = "complex" }
                                                 _ ==> {}
                                           }
@@ -235,7 +235,7 @@ agent (CompilerLib) impl ParseDeclsContract {
                         mut as int64: rtl = stdCollectionLength(ret_type)
                         route {
                               ret_type == "string" or ret_type == "char" ==> { norm_rt = "string" }
-                              ret_type == "int" or ret_type == "int64" or ret_type == "int32" or ret_type == "int16" or ret_type == "int8" or ret_type == "uint64" or ret_type == "uint32" or ret_type == "uint16" or ret_type == "uint8" ==> { norm_rt = "int" }
+                              ret_type == "int" or ret_type == "int64" or ret_type == "int32" or ret_type == "int16" or ret_type == "int8" or ret_type == "uint64" or ret_type == "uint32" or ret_type == "uint16" or ret_type == "uint8" or ret_type == "datetime" or ret_type == "DateTime" or ret_type == "date" or ret_type == "Date" or ret_type == "time" or ret_type == "Time" or ret_type == "timestamp" or ret_type == "Timestamp" ==> { norm_rt = "int" }
                               ret_type == "float" or ret_type == "float64" or ret_type == "float32" or ret_type == "float16" or ret_type == "bf16_e8m7" or ret_type == "tf32_e8m10" or ret_type == "fp8_e4m3" or ret_type == "fp8_e5m2" ==> { norm_rt = "float" }
                               ret_type == "bool" ==> { norm_rt = "bool" }
                               ret_type == "map" or (rtl >= 6 and ret_type[1..6] == "map of") ==> { norm_rt = "map" }

@@ -46,6 +46,7 @@ int flux_service_uninstall(void);
 int flux_service_start(void);
 int flux_service_stop(void);
 int flux_service_run(FluxBytecodeExecutorFn executor);
+int flux_service_is_active(void);
 
 /* Daemon Mode (Background Named Pipe Server sem privilégios de admin) */
 int flux_daemon_run(FluxBytecodeExecutorFn executor);

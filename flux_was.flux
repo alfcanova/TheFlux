@@ -43,6 +43,7 @@ program (FluxWas) {
                                     route {
                                           a == "--no-run" ==> {
                                                 no_run = true
+                                                extra_args = extra_args + " \"--no-run\""
                                           }
                                           a == "-o" or a == "--output" ==> {
                                                 has_output_flag = true
@@ -111,7 +112,7 @@ program (FluxWas) {
             _ ==> {}
       }
 
-      #L 5. Determinacao do nome base para saida em t_wasm
+      #L 5. Determinacao do nome base para saida em t_was
       mut as string: stem = ""
       route {
             first_file != "" ==> {
@@ -156,57 +157,13 @@ program (FluxWas) {
       mut as string: cmd = fluxc_bin + " --target wasm"
       route {
             not has_output_flag and stem != "" ==> {
-                  cmd = cmd + " -o \"t_wasm\\" + stem + "\""
+                  cmd = cmd + " -o \"t_was\\" + stem + "\""
             }
             _ ==> {}
       }
       cmd = cmd + extra_args
 
-      #L 7. Execucao da compilacao para WASM
+      #L 7. Execucao da compilacao para WASM (e execucao self-hosted se sem --no-run)
       mut as int64: rc = stdOsExec(cmd)
-      route {
-            rc != 0 ==> {
-                  stdOsExit(rc)
-            }
-            _ ==> {}
-      }
-
-      #L 8. Execucao via Wasmer Runner
-      mut as string: wasm_target = ""
-      route {
-            not has_output_flag and stem != "" ==> {
-                  wasm_target = "t_wasm\\" + stem + ".wasm"
-            }
-            _ ==> {}
-      }
-      route {
-            custom_output != "" ==> {
-                  mut as int64: colen = stdCollectionLength(custom_output)
-                  route {
-                        colen > 5 and custom_output[(colen - 4)..colen] == ".wasm" ==> {
-                              wasm_target = custom_output
-                        }
-                        _ ==> {
-                              wasm_target = custom_output + ".wasm"
-                        }
-                  }
-            }
-            _ ==> {}
-      }
-
-      route {
-            (not no_run) and wasm_target != "" ==> {
-                  route {
-                        stdIoFileExists(wasm_target) ==> {
-                              mut as string: wasmer_cmd = "wasmer \"" + wasm_target + "\""
-                              mut as int64: run_rc = stdOsExec(wasmer_cmd)
-                              stdOsExit(run_rc)
-                        }
-                        _ ==> {}
-                  }
-            }
-            _ ==> {}
-      }
-
       stdOsExit(rc)
 }

@@ -158,6 +158,36 @@ int flux_service_stop(void) {
     return ret;
 }
 
+int flux_service_is_active(void) {
+    /* 1. Checa se o Named Pipe theflux_fvm esta disponivel (Daemon ou Servico ativo) */
+    if (WaitNamedPipeW(FLUX_PIPE_NAME, 50)) {
+        return 1;
+    }
+
+    /* 2. Checa status do servico Windows TheFluxFvmService no SCM */
+    SC_HANDLE scm = OpenSCManagerW(NULL, NULL, SC_MANAGER_CONNECT);
+    if (scm) {
+        SC_HANDLE service = OpenServiceW(scm, FLUX_SERVICE_NAME, SERVICE_QUERY_STATUS);
+        if (service) {
+            SERVICE_STATUS_PROCESS ssp;
+            DWORD bytesNeeded = 0;
+            if (QueryServiceStatusEx(service, SC_STATUS_PROCESS_INFO, (LPBYTE)&ssp, sizeof(ssp), &bytesNeeded)) {
+                CloseServiceHandle(service);
+                CloseServiceHandle(scm);
+                if (ssp.dwCurrentState == SERVICE_RUNNING) {
+                    return 1;
+                }
+            } else {
+                CloseServiceHandle(service);
+                CloseServiceHandle(scm);
+            }
+        } else {
+            CloseServiceHandle(scm);
+        }
+    }
+    return 0;
+}
+
 /* ==============================================================================
  * Windows Service Entry Point & Control Dispatcher
  * ============================================================================== */

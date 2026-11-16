@@ -35,7 +35,7 @@ FLUX_DIR = RAIZ / "flux" if (RAIZ / "flux").exists() else RAIZ.parent / "flux"
 T_FVMBC = RAIZ / "t_fvmbc"
 T_LLVM = RAIZ / "t_llvm"
 T_WAT = RAIZ / "t_wat"
-T_WASM = RAIZ / "t_wasm"
+T_WASM = RAIZ / "t_was"
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",
@@ -125,7 +125,7 @@ ENV = dict(os.environ, PYTHONPATH=str(SRC), PYTHONUTF8="1", PYTHONIOENCODING="ut
 T_DIRS = [
     RAIZ / "t_fvmbc",
     RAIZ / "t_llvm",
-    RAIZ / "t_wasm",
+    RAIZ / "t_was",
     RAIZ / "t_wat",
     RAIZ / "intermediates" / "llvm",
 ]

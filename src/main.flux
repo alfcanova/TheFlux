@@ -107,6 +107,37 @@ program (Main) {
                         }
                   }
 
+                  #L Sanitizacao de output_path para evitar extensoes duplicadas (.exe.exe, .ll.ll, etc.)
+                  mut as bool: stripping_ext = true
+                  infinite {
+                        route {
+                              not stripping_ext ==> { break }
+                              _ ==> {
+                                    mut as int64: oplen = stdCollectionLength(output_path)
+                                    route {
+                                          oplen > 4 and (output_path[(oplen - 3)..oplen] == ".exe" or output_path[(oplen - 3)..oplen] == ".EXE") ==> {
+                                                output_path = output_path[1..(oplen - 4)]
+                                          }
+                                          oplen > 3 and (output_path[(oplen - 2)..oplen] == ".ll" or output_path[(oplen - 2)..oplen] == ".LL") ==> {
+                                                output_path = output_path[1..(oplen - 3)]
+                                          }
+                                          oplen > 6 and (output_path[(oplen - 5)..oplen] == ".fvmbc" or output_path[(oplen - 5)..oplen] == ".FVMBC") ==> {
+                                                output_path = output_path[1..(oplen - 6)]
+                                          }
+                                          oplen > 4 and (output_path[(oplen - 3)..oplen] == ".wat" or output_path[(oplen - 3)..oplen] == ".WAT") ==> {
+                                                output_path = output_path[1..(oplen - 4)]
+                                          }
+                                          oplen > 5 and (output_path[(oplen - 4)..oplen] == ".wasm" or output_path[(oplen - 4)..oplen] == ".WASM") ==> {
+                                                output_path = output_path[1..(oplen - 5)]
+                                          }
+                                          _ ==> {
+                                                stripping_ext = false
+                                          }
+                                    }
+                              }
+                        }
+                  }
+
                   route {
                         flag_version ==> {
                               print("1.0.0")
@@ -328,12 +359,14 @@ program (Main) {
                                     _ ==> {}
                               }
 
-                              #L Execucao direta nativa de arquivos .fvmbc
+                              #L Execucao direta self-hosted de arquivos .fvmbc
                               route {
                                     target == "vmr" and in_len >= 6 and input_file[(in_len - 5)..in_len] == ".fvmbc" ==> {
-                                          mut as string: vm_cmd = ".\\bin\\fluxvm.exe \"" + input_file + "\"" + arg_suffix
-                                          mut as int64: vm_rc = stdOsExec(vm_cmd)
-                                          stdOsExit(vm_rc)
+                                          mut as map: vmr_res = CompilerLib::vmrExecuteFile(input_file)
+                                          route {
+                                                not vmr_res["success"] ==> { stdOsExit(1) }
+                                                _ ==> { stdOsExit(0) }
+                                          }
                                     }
                                     _ ==> {}
                               }
@@ -386,10 +419,17 @@ program (Main) {
                                                             }
                                                             _ ==> {}
                                                       }
+                                                      route {
+                                                            flag_emit_wat and target != "wat" ==> {
+                                                                  mut as map: wat_res = CompilerLib::watCompileModule(fmir_mod, output_path)
+                                                            }
+                                                            _ ==> {}
+                                                      }
 
                                                       #L 4. Compilacao / Execucao no Backend Solicitado
                                                       mut as map: options = map{}
                                                       options["output"] = output_path
+                                                      options["no_run"] = flag_no_run
 
                                                       mut as map: comp_res = CompilerLib::backendCompile(fmir_mod, target, options)
                                                       route {
@@ -409,33 +449,6 @@ program (Main) {
                                                                         cl_rc != 0 ==> { stdOsExit(cl_rc) }
                                                                         not flag_no_run ==> {
                                                                               mut as int64: r_rc = stdOsExec("\"" + output_path + ".exe\"" + arg_suffix)
-                                                                              stdOsExit(r_rc)
-                                                                        }
-                                                                        _ ==> {}
-                                                                  }
-                                                            }
-                                                            target == "vmr" ==> {
-                                                                  route {
-                                                                        not flag_no_run ==> {
-                                                                              mut as int64: r_rc = stdOsExec(".\\bin\\fluxvm.exe \"" + output_path + ".fvmbc\"" + arg_suffix)
-                                                                              stdOsExit(r_rc)
-                                                                        }
-                                                                        _ ==> {}
-                                                                  }
-                                                            }
-                                                            target == "wat" ==> {
-                                                                  route {
-                                                                        not flag_no_run ==> {
-                                                                              mut as int64: r_rc = stdOsExec("wasmer run \"" + output_path + ".wat\"" + arg_suffix)
-                                                                              stdOsExit(r_rc)
-                                                                        }
-                                                                        _ ==> {}
-                                                                  }
-                                                            }
-                                                            target == "wasm" or target == "was" ==> {
-                                                                  route {
-                                                                        not flag_no_run ==> {
-                                                                              mut as int64: r_rc = stdOsExec("wasmer run \"" + output_path + ".wasm\"" + arg_suffix)
                                                                               stdOsExit(r_rc)
                                                                         }
                                                                         _ ==> {}

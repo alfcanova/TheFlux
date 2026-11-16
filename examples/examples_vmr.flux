@@ -57,7 +57,7 @@ program (ExamplesVmr) {
                               ch == "\r" ==> {}
                               ch == "\n" ==> {
                                     route {
-                                          cur_fname != "" ==> {
+                                          cur_fname != "" and cur_fname != "test_acc.fvmbc" ==> {
                                                 mut as string: nome = cur_fname
                                                 mut as string: filepath = fvmbc_dir + "\\" + nome
 

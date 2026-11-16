@@ -4,12 +4,23 @@
  * ============================================================================== */
 
 #include "flux/string.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 char *flux_str_concat(const char *a, const char *b) {
+    char buf_a[32];
+    char buf_b[32];
     if (!a) a = "";
+    else if ((uintptr_t)a < 0x10000) {
+        snprintf(buf_a, sizeof(buf_a), "%lld", (long long)(uintptr_t)a);
+        a = buf_a;
+    }
     if (!b) b = "";
+    else if ((uintptr_t)b < 0x10000) {
+        snprintf(buf_b, sizeof(buf_b), "%lld", (long long)(uintptr_t)b);
+        b = buf_b;
+    }
     size_t la = strlen(a);
     size_t lb = strlen(b);
     char *res = (char *)malloc(la + lb + 1);
@@ -116,7 +127,9 @@ int64_t flux_str_char_len(const char *s) {
 
 char *flux_str_slice(const char *p, int64_t s, int64_t e) {
     if (!p) return strdup("");
-    if (s < 1) return strdup("");
+    if (s < 1) s = 1;
+    int64_t total_cp = flux_str_char_len(p);
+    if (e <= 0 || e > total_cp) e = total_cp;
     if (s > e) return strdup("");
 
     /* Fast direct scan for short offsets without cache overhead */

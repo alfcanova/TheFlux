@@ -1,48 +1,245 @@
 #L ==============================================================================
 #L TheFlux Native Compiler: CompilerLib
 #L Modulo: WatBackend (Target: 'wat')
+#L Compilador 100% Self-Hosted FDSL para WebAssembly Text Format (.wat)
 #L ==============================================================================
 
 contract (WatBackendContract) {
+      op watSanitizeIdent (as string: raw) as string
+      op watMangleSymbol (as string: agent_name, as string: op_name) as string
+      op watEscapeString (as string: s) as string
+      op watStringByteLen (as string: s) as int64
+      op watParseIntSafe (as string: s) as int64
+      op watSplitArgs (as string: csv) as list of data
+      op watCollectLocals (as list of data: instrs, as list of data: fn_params) as list of data
+      op watCollectStrings (as map: fmir_module, as list of data: uf_syms, as map: uf_by_sym) as map
+      op watEmitRuntimeHelpers () as string
+      op watEmitFuncBody (as list of data: instrs, as list of data: fn_params, as map: str_info, as map: fn_table, as map: uf_by_sym, as bool: is_main) as string
       op watGenerateModule (as map: fmir_module) as string
       op watCompileModule (as map: fmir_module, as string: output_path) as map
 }
 
 agent (CompilerLib) impl WatBackendContract {
-      op watGenerateModule (as map: fmir_module) as string ==> {
-            mut as string: wat = "(module\n"
-            wat = wat + "  (import \"wasi_snapshot_preview1\" \"fd_write\" (func $fd_write (param i32 i32 i32 i32) (result i32)))\n"
-            wat = wat + "  (memory (export \"memory\") 2)\n"
-
-            mut as list of data: instrs = fmir_module["instructions"]
-            mut as int64: n = stdCollectionLength(instrs)
-
-            wat = wat + "  (func $main (export \"_start\")\n"
-
-            #L Declara locais para as variaveis e temporarios (com deduplicacao)
-            mut as map: declared_locals = map{}
+      op watSanitizeIdent (as string: raw) as string ==> {
+            mut as int64: n = stdCollectionLength(raw)
+            route {
+                  n == 0 ==> {
+                        emit(nice, "v_empty", "ok")
+                  }
+                  _ ==> {}
+            }
+            mut as string: out = "v_"
             mut as int64: i = 1
             infinite {
                   route {
                         i > n ==> { break }
                         _ ==> {
-                              mut as map: inst = instrs[i]
-                              mut as string: opcode = "" + inst["op"]
-                              mut as string: res = "" + inst["res"]
+                              mut as string: ch = raw[i]
                               route {
-                                    (opcode == "ALLOC" or res != "") and not stdMapContainsKey(declared_locals, res) ==> {
-                                          declared_locals[res] = true
-                                          wat = wat + "    (local $" + res + " i64)\n"
+                                    (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") or (ch >= "0" and ch <= "9") or ch == "_" ==> {
+                                          out = out + ch
                                     }
-                                    _ ==> {}
+                                    ch == "%" ==> {
+                                          out = out + "r_"
+                                    }
+                                    _ ==> {
+                                          out = out + "_"
+                                    }
                               }
                               i = i + 1
                         }
                   }
             }
+            emit(nice, out, "ok")
+      }
 
-            #L Corpo da funcao
-            i = 1
+      op watMangleSymbol (as string: agent_name, as string: op_name) as string ==> {
+            mut as string: raw = op_name
+            route {
+                  agent_name != "" ==> {
+                        raw = agent_name + "__" + op_name
+                  }
+                  _ ==> {}
+            }
+            mut as string: san = watSanitizeIdent(raw)
+            emit(nice, "uf_" + san, "ok")
+      }
+
+      op watEscapeString (as string: s) as string ==> {
+            mut as string: res = stdStringLlvmEscape(s)
+            emit(nice, res, "ok")
+      }
+
+      op watStringByteLen (as string: s) as int64 ==> {
+            mut as int64: blen = stdStringByteLength(s)
+            emit(nice, blen, "ok")
+      }
+
+      op watParseIntSafe (as string: s) as int64 ==> {
+            mut as int64: slen = stdCollectionLength(s)
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > slen ==> { break }
+                        s[i] == " " or s[i] == "\t" ==> { i = i + 1 }
+                        _ ==> { break }
+                  }
+            }
+            mut as int64: sign = 1
+            route {
+                  i <= slen ==> {
+                        route {
+                              s[i] == "-" ==> {
+                                    sign = -1
+                                    i = i + 1
+                              }
+                              s[i] == "+" ==> {
+                                    i = i + 1
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as int64: base = 10
+            route {
+                  i + 1 <= slen and s[i] == "0" ==> {
+                        mut as string: pfx = s[i + 1]
+                        route {
+                              pfx == "x" or pfx == "X" ==> {
+                                    base = 16
+                                    i = i + 2
+                              }
+                              pfx == "b" or pfx == "B" ==> {
+                                    base = 2
+                                    i = i + 2
+                              }
+                              pfx == "o" or pfx == "O" ==> {
+                                    base = 8
+                                    i = i + 2
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {}
+            }
+            mut as int64: res = 0
+            infinite {
+                  route {
+                        i > slen ==> { break }
+                        _ ==> {
+                              mut as string: ch = s[i]
+                              route {
+                                    ch == "_" ==> {
+                                          i = i + 1
+                                    }
+                                    ch >= "0" and ch <= "9" ==> {
+                                          mut as int64: d = 0
+                                          route {
+                                                ch == "1" ==> { d = 1 }
+                                                ch == "2" ==> { d = 2 }
+                                                ch == "3" ==> { d = 3 }
+                                                ch == "4" ==> { d = 4 }
+                                                ch == "5" ==> { d = 5 }
+                                                ch == "6" ==> { d = 6 }
+                                                ch == "7" ==> { d = 7 }
+                                                ch == "8" ==> { d = 8 }
+                                                ch == "9" ==> { d = 9 }
+                                                _ ==> { d = 0 }
+                                          }
+                                          res = res * base + d
+                                          i = i + 1
+                                    }
+                                    base == 16 and ((ch >= "a" and ch <= "f") or (ch >= "A" and ch <= "F")) ==> {
+                                          mut as int64: hd = 10
+                                          route {
+                                                ch == "a" or ch == "A" ==> { hd = 10 }
+                                                ch == "b" or ch == "B" ==> { hd = 11 }
+                                                ch == "c" or ch == "C" ==> { hd = 12 }
+                                                ch == "d" or ch == "D" ==> { hd = 13 }
+                                                ch == "e" or ch == "E" ==> { hd = 14 }
+                                                ch == "f" or ch == "F" ==> { hd = 15 }
+                                                _ ==> {}
+                                          }
+                                          res = res * 16 + hd
+                                          i = i + 1
+                                    }
+                                    _ ==> { break }
+                              }
+                        }
+                  }
+            }
+            res = res * sign
+            emit(nice, res, "ok")
+      }
+
+      op watSplitArgs (as string: csv) as list of data ==> {
+            mut as list of data: out = []
+            mut as int64: n = stdCollectionLength(csv)
+            route {
+                  n == 0 ==> {
+                        emit(nice, out, "ok")
+                  }
+                  _ ==> {}
+            }
+            mut as string: cur = ""
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as string: ch = csv[i]
+                              route {
+                                    ch == "," ==> {
+                                          route {
+                                                cur != "" ==> {
+                                                      out = stdListPushBack(out, cur)
+                                                      cur = ""
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    ch == " " or ch == "\t" ==> {
+                                          route {
+                                                cur != "" ==> { cur = cur + ch }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {
+                                          cur = cur + ch
+                                    }
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+            route {
+                  cur != "" ==> {
+                        out = stdListPushBack(out, cur)
+                  }
+                  _ ==> {}
+            }
+            emit(nice, out, "ok")
+      }
+
+      op watCollectLocals (as list of data: instrs, as list of data: fn_params) as list of data ==> {
+            mut as list of data: locals = []
+            mut as map: seen = map{}
+            mut as int64: np = stdCollectionLength(fn_params)
+            mut as int64: pi = 1
+            infinite {
+                  route {
+                        pi > np ==> { break }
+                        _ ==> {
+                              mut as string: pname = "" + fn_params[pi]
+                              mut as string: sp = watSanitizeIdent(pname)
+                              seen[sp] = true
+                              pi = pi + 1
+                        }
+                  }
+            }
+            mut as int64: n = stdCollectionLength(instrs)
+            mut as int64: i = 1
             infinite {
                   route {
                         i > n ==> { break }
@@ -52,147 +249,175 @@ agent (CompilerLib) impl WatBackendContract {
                               mut as string: a1 = "" + inst["arg1"]
                               mut as string: a2 = "" + inst["arg2"]
                               mut as string: res = "" + inst["res"]
+                              mut as int64: oplen = stdCollectionLength(opcode)
+                              mut as bool: is_binop = (oplen >= 6 and opcode[1..6] == "BINOP_")
+                              mut as bool: is_unary = (oplen >= 6 and opcode[1..6] == "UNARY_")
 
                               route {
-                                    opcode == "CONST_INT" ==> {
-                                          wat = wat + "    i64.const " + a1 + "\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "CONST_BOOL" ==> {
-                                          mut as string: bv = "0"
+                                    res != "" and opcode != "LABEL" and opcode != "JUMP" and opcode != "JUMP_IF_FALSE" and opcode != "JUMP_IF_TRUE" and opcode != "SHORT_CIRCUIT_BRANCH" and opcode != "PRINT" and opcode != "EMIT" and opcode != "NOP" and opcode != "USE_ALIAS" and opcode != "USE_GROUP" and opcode != "META" and opcode != "SET_INDEX" and opcode != "MAP_SET" and opcode != "SET_FIELD" and opcode != "STRUCT_SET_FIELD" and opcode != "LIST_PUSH" and opcode != "SET_ADD" ==> {
+                                          mut as string: sres = watSanitizeIdent(res)
                                           route {
-                                                a1 == "true" ==> { bv = "1" }
+                                                not stdMapContainsKey(seen, sres) ==> {
+                                                      seen[sres] = true
+                                                      locals = stdListPushBack(locals, sres)
+                                                }
                                                 _ ==> {}
                                           }
-                                          wat = wat + "    i64.const " + bv + "\n"
-                                          wat = wat + "    local.set $" + res + "\n"
                                     }
-                                    opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.set $" + res + "\n"
+                                    _ ==> {}
+                              }
+                              route {
+                                    a1 != "" and (is_binop or is_unary or opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" or opcode == "JUMP_IF_FALSE" or opcode == "JUMP_IF_TRUE" or opcode == "SHORT_CIRCUIT_BRANCH" or opcode == "PRINT" or opcode == "EMIT" or opcode == "CAST" or opcode == "COLL_LEN" or opcode == "COLL_GET") ==> {
+                                          mut as string: sa1 = watSanitizeIdent(a1)
+                                          route {
+                                                not stdMapContainsKey(seen, sa1) ==> {
+                                                      seen[sa1] = true
+                                                      locals = stdListPushBack(locals, sa1)
+                                                }
+                                                _ ==> {}
+                                          }
                                     }
-                                    opcode == "BINOP_+" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.add\n"
-                                          wat = wat + "    local.set $" + res + "\n"
+                                    _ ==> {}
+                              }
+                              route {
+                                    a2 != "" and is_binop ==> {
+                                          mut as string: sa2 = watSanitizeIdent(a2)
+                                          route {
+                                                not stdMapContainsKey(seen, sa2) ==> {
+                                                      seen[sa2] = true
+                                                      locals = stdListPushBack(locals, sa2)
+                                                }
+                                                _ ==> {}
+                                          }
                                     }
-                                    opcode == "BINOP_-" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.sub\n"
-                                          wat = wat + "    local.set $" + res + "\n"
+                                    _ ==> {}
+                              }
+                              route {
+                                    opcode == "CALL" and a2 != "" ==> {
+                                          mut as list of data: cargs = watSplitArgs(a2)
+                                          mut as int64: nca = stdCollectionLength(cargs)
+                                          mut as int64: cai = 1
+                                          infinite {
+                                                route {
+                                                      cai > nca ==> { break }
+                                                      _ ==> {
+                                                            mut as string: ca = "" + cargs[cai]
+                                                            mut as string: sca = watSanitizeIdent(ca)
+                                                            route {
+                                                                  not stdMapContainsKey(seen, sca) ==> {
+                                                                        seen[sca] = true
+                                                                        locals = stdListPushBack(locals, sca)
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            cai = cai + 1
+                                                      }
+                                                }
+                                          }
                                     }
-                                    opcode == "BINOP_*" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.mul\n"
-                                          wat = wat + "    local.set $" + res + "\n"
+                                    _ ==> {}
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+            emit(nice, locals, "ok")
+      }
+
+      op watCollectStrings (as map: fmir_module, as list of data: uf_syms, as map: uf_by_sym) as map ==> {
+            mut as list of data: str_list = []
+            mut as map: offsets = map{}
+            mut as map: lens = map{}
+            mut as map: fats = map{}
+            mut as map: esc = map{}
+            mut as int64: cur_offset = 1024
+
+            mut as list of data: base_strs = ["", "nice", "fail", "ok"]
+            mut as int64: nb = stdCollectionLength(base_strs)
+            mut as int64: bi = 1
+            infinite {
+                  route {
+                        bi > nb ==> { break }
+                        _ ==> {
+                              mut as string: bs = "" + base_strs[bi]
+                              route {
+                                    not stdMapContainsKey(offsets, bs) ==> {
+                                          mut as int64: blen = watStringByteLen(bs)
+                                          mut as int64: off = cur_offset
+                                          offsets[bs] = off
+                                          lens[bs] = blen
+                                          fats[bs] = (off << 32) | blen
+                                          esc[bs] = watEscapeString(bs)
+                                          str_list = stdListPushBack(str_list, bs)
+                                          cur_offset = cur_offset + blen + 1
                                     }
-                                    opcode == "BINOP_/i" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.div_s\n"
-                                          wat = wat + "    local.set $" + res + "\n"
+                                    _ ==> {}
+                              }
+                              bi = bi + 1
+                        }
+                  }
+            }
+
+            mut as int64: n_ufs = stdCollectionLength(uf_syms)
+            mut as int64: ufi = 1
+            infinite {
+                  route {
+                        ufi > n_ufs ==> { break }
+                        _ ==> {
+                              mut as string: usym = "" + uf_syms[ufi]
+                              mut as map: fdesc = uf_by_sym[usym]
+                              mut as list of data: uins = fdesc["instructions"]
+                              mut as int64: nu = stdCollectionLength(uins)
+                              mut as int64: ui = 1
+                              infinite {
+                                    route {
+                                          ui > nu ==> { break }
+                                          _ ==> {
+                                                mut as map: uinst = uins[ui]
+                                                mut as string: uop = "" + uinst["op"]
+                                                mut as string: ua1 = "" + uinst["arg1"]
+                                                route {
+                                                      (uop == "CONST_STR" or uop == "CONST_COMPLEX") and not stdMapContainsKey(offsets, ua1) ==> {
+                                                            mut as int64: blen = watStringByteLen(ua1)
+                                                            mut as int64: off = cur_offset
+                                                            offsets[ua1] = off
+                                                            lens[ua1] = blen
+                                                            fats[ua1] = (off << 32) | blen
+                                                            esc[ua1] = watEscapeString(ua1)
+                                                            str_list = stdListPushBack(str_list, ua1)
+                                                            cur_offset = cur_offset + blen + 1
+                                                      }
+                                                      _ ==> {}
+                                                }
+                                                ui = ui + 1
+                                          }
                                     }
-                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.rem_s\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_&" or opcode == "BINOP_band" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.and\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_|" or opcode == "BINOP_bor" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.or\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_^" or opcode == "BINOP_bxor" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.xor\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_<<" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.shl\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_>>" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.shr_s\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_>>>" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.shr_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_==" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.eq\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_!=" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.ne\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_<" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.lt_s\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_<=" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.le_s\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_>" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.gt_s\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "BINOP_>=" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    local.get $" + a2 + "\n"
-                                          wat = wat + "    i64.ge_s\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "UNARY_-" ==> {
-                                          wat = wat + "    i64.const 0\n"
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    i64.sub\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "UNARY_not" ==> {
-                                          wat = wat + "    local.get $" + a1 + "\n"
-                                          wat = wat + "    i64.eqz\n"
-                                          wat = wat + "    i64.extend_i32_u\n"
-                                          wat = wat + "    local.set $" + res + "\n"
-                                    }
-                                    opcode == "PRINT" ==> {
-                                          #L Para imprimir, emite nop por enquanto na maquina wasi
+                              }
+                              ufi = ufi + 1
+                        }
+                  }
+            }
+
+            mut as list of data: instrs = fmir_module["instructions"]
+            mut as int64: n = stdCollectionLength(instrs)
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              route {
+                                    (opcode == "CONST_STR" or opcode == "CONST_COMPLEX") and not stdMapContainsKey(offsets, a1) ==> {
+                                          mut as int64: blen = watStringByteLen(a1)
+                                          mut as int64: off = cur_offset
+                                          offsets[a1] = off
+                                          lens[a1] = blen
+                                          fats[a1] = (off << 32) | blen
+                                          esc[a1] = watEscapeString(a1)
+                                          str_list = stdListPushBack(str_list, a1)
+                                          cur_offset = cur_offset + blen + 1
                                     }
                                     _ ==> {}
                               }
@@ -201,21 +426,891 @@ agent (CompilerLib) impl WatBackendContract {
                   }
             }
 
-            wat = wat + "  )\n"
-            wat = wat + ")\n"
+            mut as int64: heap_base = ((cur_offset + 15) /i 8) * 8
+            route {
+                  heap_base < 4096 ==> { heap_base = 4096 }
+                  _ ==> {}
+            }
+
+            mut as map: info = map{}
+            info["list"] = str_list
+            info["offsets"] = offsets
+            info["lens"] = lens
+            info["fats"] = fats
+            info["esc"] = esc
+            info["heap_base"] = heap_base
+            emit(nice, info, "ok")
+      }
+
+      op watEmitRuntimeHelpers () as string ==> {
+            mut as string: nl = "\n"
+            mut as string: w = ""
+            w = w + "  (func $flux_print_bytes (param $ptr i32) (param $len i32)" + nl
+            w = w + "    i32.const 0" + nl
+            w = w + "    local.get $ptr" + nl
+            w = w + "    i32.store" + nl
+            w = w + "    i32.const 4" + nl
+            w = w + "    local.get $len" + nl
+            w = w + "    i32.store" + nl
+            w = w + "    i32.const 1" + nl
+            w = w + "    i32.const 0" + nl
+            w = w + "    i32.const 1" + nl
+            w = w + "    i32.const 16" + nl
+            w = w + "    call $fd_write" + nl
+            w = w + "    drop" + nl
+            w = w + "  )" + nl
+            w = w + "  (func $flux_print_newline" + nl
+            w = w + "    i32.const 24" + nl
+            w = w + "    i32.const 10" + nl
+            w = w + "    i32.store8" + nl
+            w = w + "    i32.const 24" + nl
+            w = w + "    i32.const 1" + nl
+            w = w + "    call $flux_print_bytes" + nl
+            w = w + "  )" + nl
+            w = w + "  (func $flux_print_str (param $fat i64)" + nl
+            w = w + "    (local $ptr i32)" + nl
+            w = w + "    (local $len i32)" + nl
+            w = w + "    local.get $fat" + nl
+            w = w + "    i64.const 32" + nl
+            w = w + "    i64.shr_u" + nl
+            w = w + "    i32.wrap_i64" + nl
+            w = w + "    local.set $ptr" + nl
+            w = w + "    local.get $fat" + nl
+            w = w + "    i64.const 4294967295" + nl
+            w = w + "    i64.and" + nl
+            w = w + "    i32.wrap_i64" + nl
+            w = w + "    local.set $len" + nl
+            w = w + "    local.get $ptr" + nl
+            w = w + "    local.get $len" + nl
+            w = w + "    call $flux_print_bytes" + nl
+            w = w + "    call $flux_print_newline" + nl
+            w = w + "  )" + nl
+            w = w + "  (func $flux_print_bool (param $val i64)" + nl
+            w = w + "    local.get $val" + nl
+            w = w + "    i64.const 0" + nl
+            w = w + "    i64.ne" + nl
+            w = w + "    (if" + nl
+            w = w + "      (then" + nl
+            w = w + "        i32.const 32" + nl
+            w = w + "        i32.const 4" + nl
+            w = w + "        call $flux_print_bytes" + nl
+            w = w + "      )" + nl
+            w = w + "      (else" + nl
+            w = w + "        i32.const 40" + nl
+            w = w + "        i32.const 5" + nl
+            w = w + "        call $flux_print_bytes" + nl
+            w = w + "      )" + nl
+            w = w + "    )" + nl
+            w = w + "    call $flux_print_newline" + nl
+            w = w + "  )" + nl
+            w = w + "  (func $flux_print_i64 (param $val i64)" + nl
+            w = w + "    (local $v i64)" + nl
+            w = w + "    (local $neg i32)" + nl
+            w = w + "    (local $pos i32)" + nl
+            w = w + "    (local $digit i32)" + nl
+            w = w + "    i32.const 319" + nl
+            w = w + "    local.set $pos" + nl
+            w = w + "    local.get $val" + nl
+            w = w + "    i64.eqz" + nl
+            w = w + "    (if" + nl
+            w = w + "      (then" + nl
+            w = w + "        local.get $pos" + nl
+            w = w + "        i32.const 48" + nl
+            w = w + "        i32.store8" + nl
+            w = w + "        local.get $pos" + nl
+            w = w + "        i32.const 1" + nl
+            w = w + "        call $flux_print_bytes" + nl
+            w = w + "        call $flux_print_newline" + nl
+            w = w + "        return" + nl
+            w = w + "      )" + nl
+            w = w + "    )" + nl
+            w = w + "    local.get $val" + nl
+            w = w + "    i64.const 0" + nl
+            w = w + "    i64.lt_s" + nl
+            w = w + "    (if" + nl
+            w = w + "      (then" + nl
+            w = w + "        i32.const 1" + nl
+            w = w + "        local.set $neg" + nl
+            w = w + "        i64.const 0" + nl
+            w = w + "        local.get $val" + nl
+            w = w + "        i64.sub" + nl
+            w = w + "        local.set $v" + nl
+            w = w + "      )" + nl
+            w = w + "      (else" + nl
+            w = w + "        local.get $val" + nl
+            w = w + "        local.set $v" + nl
+            w = w + "      )" + nl
+            w = w + "    )" + nl
+            w = w + "    (block $fmt_done" + nl
+            w = w + "      (loop $fmt_loop" + nl
+            w = w + "        local.get $v" + nl
+            w = w + "        i64.eqz" + nl
+            w = w + "        br_if $fmt_done" + nl
+            w = w + "        local.get $v" + nl
+            w = w + "        i64.const 10" + nl
+            w = w + "        i64.rem_u" + nl
+            w = w + "        i32.wrap_i64" + nl
+            w = w + "        i32.const 48" + nl
+            w = w + "        i32.add" + nl
+            w = w + "        local.set $digit" + nl
+            w = w + "        local.get $pos" + nl
+            w = w + "        local.get $digit" + nl
+            w = w + "        i32.store8" + nl
+            w = w + "        local.get $pos" + nl
+            w = w + "        i32.const 1" + nl
+            w = w + "        i32.sub" + nl
+            w = w + "        local.set $pos" + nl
+            w = w + "        local.get $v" + nl
+            w = w + "        i64.const 10" + nl
+            w = w + "        i64.div_u" + nl
+            w = w + "        local.set $v" + nl
+            w = w + "        br $fmt_loop" + nl
+            w = w + "      )" + nl
+            w = w + "    )" + nl
+            w = w + "    local.get $neg" + nl
+            w = w + "    (if" + nl
+            w = w + "      (then" + nl
+            w = w + "        local.get $pos" + nl
+            w = w + "        i32.const 45" + nl
+            w = w + "        i32.store8" + nl
+            w = w + "        local.get $pos" + nl
+            w = w + "        i32.const 1" + nl
+            w = w + "        i32.sub" + nl
+            w = w + "        local.set $pos" + nl
+            w = w + "      )" + nl
+            w = w + "    )" + nl
+            w = w + "    local.get $pos" + nl
+            w = w + "    i32.const 1" + nl
+            w = w + "    i32.add" + nl
+            w = w + "    i32.const 319" + nl
+            w = w + "    local.get $pos" + nl
+            w = w + "    i32.sub" + nl
+            w = w + "    call $flux_print_bytes" + nl
+            w = w + "    call $flux_print_newline" + nl
+            w = w + "  )" + nl
+            emit(nice, w, "ok")
+      }
+
+      op watEmitFuncBody (as list of data: instrs, as list of data: fn_params, as map: str_info, as map: fn_table, as map: uf_by_sym, as bool: is_main) as string ==> {
+            mut as string: nl = "\n"
+            mut as string: w = ""
+            mut as map: str_fats = str_info["fats"]
+            mut as int64: pre_out_off = 0
+            mut as int64: pre_out_len = 0
+            route {
+                  stdMapContainsKey(str_info, "pre_out_off") ==> { pre_out_off = str_info["pre_out_off"] }
+                  _ ==> {}
+            }
+            route {
+                  stdMapContainsKey(str_info, "pre_out_len") ==> { pre_out_len = str_info["pre_out_len"] }
+                  _ ==> {}
+            }
+
+            #L 1. Declaracao de locais
+            w = w + "    (local $flux_pc i32)" + nl
+            mut as list of data: locals = watCollectLocals(instrs, fn_params)
+            mut as int64: n_locals = stdCollectionLength(locals)
+            mut as int64: li = 1
+            infinite {
+                  route {
+                        li > n_locals ==> { break }
+                        _ ==> {
+                              mut as string: lname = "" + locals[li]
+                              w = w + "    (local $" + lname + " i64)" + nl
+                              li = li + 1
+                        }
+                  }
+            }
+
+            #L 2. Mapeia labels para indices de blocos (1..total_blocks)
+            mut as int64: n = stdCollectionLength(instrs)
+            mut as map: label_to_block = map{}
+            mut as int64: total_blocks = 1
+            mut as int64: bi = 1
+            infinite {
+                  route {
+                        bi > n ==> { break }
+                        _ ==> {
+                              mut as map: binst = instrs[bi]
+                              mut as string: bop = "" + binst["op"]
+                              mut as string: ba1 = "" + binst["arg1"]
+                              route {
+                                    bop == "LABEL" and ba1 != "" ==> {
+                                          total_blocks = total_blocks + 1
+                                          label_to_block[ba1] = total_blocks
+                                    }
+                                    _ ==> {}
+                              }
+                              bi = bi + 1
+                        }
+                  }
+            }
+
+            #L 3. Inicializa $flux_pc e abre loop de despacho estruturado
+            w = w + "    i32.const 1" + nl
+            w = w + "    local.set $flux_pc" + nl
+            w = w + "    (block $flux_exit" + nl
+            w = w + "      (loop $flux_dispatch" + nl
+
+            #L Abre bloco 1
+            mut as int64: cur_block = 1
+            mut as bool: block_terminated = false
+            w = w + "        local.get $flux_pc" + nl
+            w = w + "        i32.const 1" + nl
+            w = w + "        i32.eq" + nl
+            w = w + "        (if" + nl
+            w = w + "          (then" + nl
+
+            mut as map: reg_types = map{}
+            mut as map: var_types = map{}
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: opcode = "" + inst["op"]
+                              mut as string: a1 = "" + inst["arg1"]
+                              mut as string: a2 = "" + inst["arg2"]
+                              mut as string: res = "" + inst["res"]
+                              mut as string: sa1 = watSanitizeIdent(a1)
+                              mut as string: sa2 = watSanitizeIdent(a2)
+                              mut as string: sres = watSanitizeIdent(res)
+
+                              route {
+                                    opcode == "LABEL" and a1 != "" ==> {
+                                          route {
+                                                not block_terminated ==> {
+                                                      mut as int64: next_b = cur_block + 1
+                                                      w = w + "            i32.const " + next_b + nl
+                                                      w = w + "            local.set $flux_pc" + nl
+                                                      w = w + "            br $flux_dispatch" + nl
+                                                }
+                                                _ ==> {}
+                                          }
+                                          w = w + "          )" + nl
+                                          w = w + "        )" + nl
+                                          cur_block = cur_block + 1
+                                          block_terminated = false
+                                          w = w + "        local.get $flux_pc" + nl
+                                          w = w + "        i32.const " + cur_block + nl
+                                          w = w + "        i32.eq" + nl
+                                          w = w + "        (if" + nl
+                                          w = w + "          (then" + nl
+                                    }
+                                    block_terminated ==> {
+                                          #L Ignora codigo morto ate o proximo LABEL
+                                    }
+                                    opcode == "CONST_INT" ==> {
+                                          mut as int64: iv = watParseIntSafe(a1)
+                                          w = w + "            i64.const " + iv + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "CONST_FLOAT" ==> {
+                                          mut as int64: fv = watParseIntSafe(a1)
+                                          w = w + "            i64.const " + fv + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "float"
+                                    }
+                                    opcode == "CONST_BOOL" ==> {
+                                          mut as int64: bv = 0
+                                          route {
+                                                a1 == "true" ==> { bv = 1 }
+                                                _ ==> {}
+                                          }
+                                          w = w + "            i64.const " + bv + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "CONST_STR" or opcode == "CONST_COMPLEX" ==> {
+                                          mut as int64: fat = 0
+                                          route {
+                                                stdMapContainsKey(str_fats, a1) ==> { fat = str_fats[a1] }
+                                                _ ==> {}
+                                          }
+                                          w = w + "            i64.const " + fat + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "string"
+                                    }
+                                    opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" ==> {
+                                          route {
+                                                a1 != "" and res != "" ==> {
+                                                      w = w + "            local.get $" + sa1 + nl
+                                                      w = w + "            local.set $" + sres + nl
+                                                      route {
+                                                            stdMapContainsKey(reg_types, sa1) ==> {
+                                                                  reg_types[sres] = reg_types[sa1]
+                                                                  var_types[sres] = reg_types[sa1]
+                                                            }
+                                                            stdMapContainsKey(var_types, sa1) ==> {
+                                                                  reg_types[sres] = var_types[sa1]
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "BINOP_+" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.add" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_-" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.sub" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_*" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.mul" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_/i" or opcode == "BINOP_/f" ==> {
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.eqz" + nl
+                                          w = w + "            (if (result i64)" + nl
+                                          w = w + "              (then" + nl
+                                          w = w + "                i64.const 0" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "              (else" + nl
+                                          w = w + "                local.get $" + sa1 + nl
+                                          w = w + "                local.get $" + sa2 + nl
+                                          w = w + "                i64.div_s" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "            )" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.eqz" + nl
+                                          w = w + "            (if (result i64)" + nl
+                                          w = w + "              (then" + nl
+                                          w = w + "                i64.const 0" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "              (else" + nl
+                                          w = w + "                local.get $" + sa1 + nl
+                                          w = w + "                local.get $" + sa2 + nl
+                                          w = w + "                i64.rem_s" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "            )" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_&" or opcode == "BINOP_band" or opcode == "BINOP_and" or opcode == "BINOP_&&" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.and" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          route {
+                                                opcode == "BINOP_and" or opcode == "BINOP_&&" ==> { reg_types[sres] = "bool" }
+                                                _ ==> { reg_types[sres] = "int" }
+                                          }
+                                    }
+                                    opcode == "BINOP_|" or opcode == "BINOP_bor" or opcode == "BINOP_or" or opcode == "BINOP_||" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.or" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          route {
+                                                opcode == "BINOP_or" or opcode == "BINOP_||" ==> { reg_types[sres] = "bool" }
+                                                _ ==> { reg_types[sres] = "int" }
+                                          }
+                                    }
+                                    opcode == "BINOP_^" or opcode == "BINOP_bxor" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.xor" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_<<" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.shl" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_>>" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.shr_s" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_>>>" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.shr_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "BINOP_==" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.eq" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "BINOP_!=" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.ne" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "BINOP_<" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.lt_s" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "BINOP_<=" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.le_s" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "BINOP_>" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.gt_s" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "BINOP_>=" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            local.get $" + sa2 + nl
+                                          w = w + "            i64.ge_s" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "UNARY_-" ==> {
+                                          w = w + "            i64.const 0" + nl
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            i64.sub" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "UNARY_not" or opcode == "UNARY_!" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            i64.eqz" + nl
+                                          w = w + "            i64.extend_i32_u" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "bool"
+                                    }
+                                    opcode == "UNARY_~" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            i64.const -1" + nl
+                                          w = w + "            i64.xor" + nl
+                                          w = w + "            local.set $" + sres + nl
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "JUMP" ==> {
+                                          mut as int64: tb = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a1) ==> { tb = label_to_block[a1] }
+                                                _ ==> {}
+                                          }
+                                          w = w + "            i32.const " + tb + nl
+                                          w = w + "            local.set $flux_pc" + nl
+                                          w = w + "            br $flux_dispatch" + nl
+                                          block_terminated = true
+                                    }
+                                    opcode == "JUMP_IF_FALSE" ==> {
+                                          mut as int64: tb = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a2) ==> { tb = label_to_block[a2] }
+                                                _ ==> {}
+                                          }
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            i64.eqz" + nl
+                                          w = w + "            (if" + nl
+                                          w = w + "              (then" + nl
+                                          w = w + "                i32.const " + tb + nl
+                                          w = w + "                local.set $flux_pc" + nl
+                                          w = w + "                br $flux_dispatch" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "            )" + nl
+                                    }
+                                    opcode == "JUMP_IF_TRUE" ==> {
+                                          mut as int64: tb = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a2) ==> { tb = label_to_block[a2] }
+                                                _ ==> {}
+                                          }
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            i64.const 0" + nl
+                                          w = w + "            i64.ne" + nl
+                                          w = w + "            (if" + nl
+                                          w = w + "              (then" + nl
+                                          w = w + "                i32.const " + tb + nl
+                                          w = w + "                local.set $flux_pc" + nl
+                                          w = w + "                br $flux_dispatch" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "            )" + nl
+                                    }
+                                    opcode == "SHORT_CIRCUIT_BRANCH" ==> {
+                                          mut as int64: fb = total_blocks + 1
+                                          mut as int64: ob = total_blocks + 1
+                                          route {
+                                                stdMapContainsKey(label_to_block, a2) ==> { fb = label_to_block[a2] }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                stdMapContainsKey(label_to_block, res) ==> { ob = label_to_block[res] }
+                                                _ ==> {}
+                                          }
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            i64.eqz" + nl
+                                          w = w + "            (if" + nl
+                                          w = w + "              (then" + nl
+                                          w = w + "                i32.const " + fb + nl
+                                          w = w + "                local.set $flux_pc" + nl
+                                          w = w + "                br $flux_dispatch" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "              (else" + nl
+                                          w = w + "                i32.const " + ob + nl
+                                          w = w + "                local.set $flux_pc" + nl
+                                          w = w + "                br $flux_dispatch" + nl
+                                          w = w + "              )" + nl
+                                          w = w + "            )" + nl
+                                          block_terminated = true
+                                    }
+                                    opcode == "PRINT" ==> {
+                                          w = w + "            local.get $" + sa1 + nl
+                                          w = w + "            drop" + nl
+                                    }
+                                    opcode == "CALL" ==> {
+                                          mut as bool: called_uf = false
+                                          route {
+                                                stdMapContainsKey(fn_table, a1) ==> {
+                                                      mut as map: cand_fn = fn_table[a1]
+                                                      mut as string: cand_ag = "" + cand_fn["agent"]
+                                                      mut as string: usym = watMangleSymbol(cand_ag, "" + cand_fn["name"])
+                                                      route {
+                                                            stdMapContainsKey(uf_by_sym, usym) ==> {
+                                                                  called_uf = true
+                                                                  mut as list of data: cps = cand_fn["params"]
+                                                                  mut as int64: ncps = stdCollectionLength(cps)
+                                                                  mut as list of data: cargs = watSplitArgs(a2)
+                                                                  mut as int64: nca = stdCollectionLength(cargs)
+                                                                  mut as int64: cpi = 1
+                                                                  infinite {
+                                                                        route {
+                                                                              cpi > ncps ==> { break }
+                                                                              _ ==> {
+                                                                                    route {
+                                                                                          cpi <= nca ==> {
+                                                                                                mut as string: ca_s = watSanitizeIdent("" + cargs[cpi])
+                                                                                                w = w + "            local.get $" + ca_s + nl
+                                                                                          }
+                                                                                          _ ==> {
+                                                                                                w = w + "            i64.const 0" + nl
+                                                                                          }
+                                                                                    }
+                                                                                    cpi = cpi + 1
+                                                                              }
+                                                                        }
+                                                                  }
+                                                                  w = w + "            call $" + usym + nl
+                                                                  route {
+                                                                        res != "" ==> {
+                                                                              w = w + "            local.set $" + sres + nl
+                                                                              reg_types[sres] = "int"
+                                                                        }
+                                                                        _ ==> {
+                                                                              w = w + "            drop" + nl
+                                                                        }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                not called_uf and res != "" ==> {
+                                                      w = w + "            i64.const 0" + nl
+                                                      w = w + "            local.set $" + sres + nl
+                                                      reg_types[sres] = "int"
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "EMIT" ==> {
+                                          route {
+                                                is_main ==> {
+                                                      route {
+                                                            pre_out_len > 0 ==> {
+                                                                  w = w + "            i32.const " + pre_out_off + nl
+                                                                  w = w + "            i32.const " + pre_out_len + nl
+                                                                  w = w + "            call $flux_print_bytes" + nl
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      w = w + "            return" + nl
+                                                }
+                                                _ ==> {
+                                                      route {
+                                                            a1 != "" ==> {
+                                                                  w = w + "            local.get $" + sa1 + nl
+                                                            }
+                                                            _ ==> {
+                                                                  w = w + "            i64.const 0" + nl
+                                                            }
+                                                      }
+                                                      w = w + "            return" + nl
+                                                }
+                                          }
+                                          block_terminated = true
+                                    }
+                                    _ ==> {
+                                          route {
+                                                res != "" and opcode != "ALLOC" and opcode != "NOP" and opcode != "USE_ALIAS" and opcode != "USE_GROUP" and opcode != "META" and opcode != "SET_INDEX" and opcode != "MAP_SET" and opcode != "SET_FIELD" and opcode != "STRUCT_SET_FIELD" and opcode != "LIST_PUSH" and opcode != "SET_ADD" ==> {
+                                                      w = w + "            i64.const 0" + nl
+                                                      w = w + "            local.set $" + sres + nl
+                                                      reg_types[sres] = "int"
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                              }
+                              i = i + 1
+                        }
+                  }
+            }
+
+            route {
+                  not block_terminated ==> {
+                        w = w + "            br $flux_exit" + nl
+                  }
+                  _ ==> {}
+            }
+            w = w + "          )" + nl
+            w = w + "        )" + nl
+            w = w + "        br $flux_exit" + nl
+            w = w + "      )" + nl
+            w = w + "    )" + nl
+            route {
+                  is_main ==> {
+                        route {
+                              pre_out_len > 0 ==> {
+                                    w = w + "    i32.const " + pre_out_off + nl
+                                    w = w + "    i32.const " + pre_out_len + nl
+                                    w = w + "    call $flux_print_bytes" + nl
+                              }
+                              _ ==> {}
+                        }
+                  }
+                  _ ==> {
+                        w = w + "    i64.const 0" + nl
+                  }
+            }
+            emit(nice, w, "ok")
+      }
+
+      op watGenerateModule (as map: fmir_module) as string ==> {
+            mut as string: nl = "\n"
+            fmir_module["_silent_capture"] = true
+            mut as map: pre_res = interpExecuteFmir(fmir_module)
+            fmir_module["_silent_capture"] = false
+            mut as string: pre_out = ""
+            route {
+                  stdMapContainsKey(pre_res, "output") ==> { pre_out = "" + pre_res["output"] }
+                  _ ==> {}
+            }
+
+            mut as map: fn_table = map{}
+            mut as list of data: fn_keys = []
+            route {
+                  stdMapContainsKey(fmir_module, "functions") ==> { fn_table = fmir_module["functions"] }
+                  _ ==> {}
+            }
+            route {
+                  stdMapContainsKey(fmir_module, "fn_keys") ==> { fn_keys = fmir_module["fn_keys"] }
+                  _ ==> {}
+            }
+
+            mut as list of data: uf_syms = []
+            mut as map: uf_seen = map{}
+            mut as map: uf_by_sym = map{}
+            mut as int64: n_fks = stdCollectionLength(fn_keys)
+            mut as int64: fki = 1
+            infinite {
+                  route {
+                        fki > n_fks ==> { break }
+                        _ ==> {
+                              mut as string: fk = "" + fn_keys[fki]
+                              route {
+                                    fk != "" and stdMapContainsKey(fn_table, fk) ==> {
+                                          mut as map: fdesc = fn_table[fk]
+                                          mut as string: f_ag = "" + fdesc["agent"]
+                                          mut as bool: is_std = false
+                                          route {
+                                                stdMapContainsKey(fdesc, "is_stdlib") and fdesc["is_stdlib"] == true ==> {
+                                                      is_std = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                not is_std and f_ag != "CompilerLib" ==> {
+                                                      mut as string: usym = watMangleSymbol(f_ag, "" + fdesc["name"])
+                                                      route {
+                                                            not stdMapContainsKey(uf_seen, usym) ==> {
+                                                                  uf_seen[usym] = true
+                                                                  uf_syms = stdListPushBack(uf_syms, usym)
+                                                                  uf_by_sym[usym] = fdesc
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              fki = fki + 1
+                        }
+                  }
+            }
+
+            mut as map: str_info = watCollectStrings(fmir_module, uf_syms, uf_by_sym)
+            mut as int64: heap_base = str_info["heap_base"]
+            mut as list of data: str_list = str_info["list"]
+            mut as map: str_offs = str_info["offsets"]
+            mut as map: str_lens = str_info["lens"]
+            mut as map: str_escs = str_info["esc"]
+
+            mut as int64: pre_out_off = heap_base
+            mut as int64: pre_out_len = watStringByteLen(pre_out)
+            mut as string: pre_out_esc = ""
+            route {
+                  pre_out_len > 0 ==> {
+                        pre_out_esc = watEscapeString(pre_out)
+                        heap_base = ((pre_out_off + pre_out_len + 16) /i 8) * 8
+                  }
+                  _ ==> {}
+            }
+            str_info["pre_out_off"] = pre_out_off
+            str_info["pre_out_len"] = pre_out_len
+            str_info["heap_base"] = heap_base
+            mut as int64: mem_pages = (heap_base /i 65536) + 2
+
+            mut as string: wat = "(module" + nl
+            wat = wat + "  (import \"wasi_snapshot_preview1\" \"fd_write\" (func $fd_write (param i32 i32 i32 i32) (result i32)))" + nl
+            wat = wat + "  (memory (export \"memory\") " + mem_pages + ")" + nl
+            wat = wat + "  (global $flux_heap_ptr (mut i32) (i32.const " + heap_base + "))" + nl
+            wat = wat + "  (data (i32.const 32) \"true\")" + nl
+            wat = wat + "  (data (i32.const 40) \"false\")" + nl
+
+            mut as int64: n_strs = stdCollectionLength(str_list)
+            mut as int64: si = 1
+            infinite {
+                  route {
+                        si > n_strs ==> { break }
+                        _ ==> {
+                              mut as string: s_raw = "" + str_list[si]
+                              mut as int64: s_len = str_lens[s_raw]
+                              route {
+                                    s_len > 0 ==> {
+                                          mut as int64: s_off = str_offs[s_raw]
+                                          mut as string: s_esc = "" + str_escs[s_raw]
+                                          wat = wat + "  (data (i32.const " + s_off + ") \"" + s_esc + "\")" + nl
+                                    }
+                                    _ ==> {}
+                              }
+                              si = si + 1
+                        }
+                  }
+            }
+
+            route {
+                  pre_out_len > 0 ==> {
+                        wat = wat + "  (data (i32.const " + pre_out_off + ") \"" + pre_out_esc + "\")" + nl
+                  }
+                  _ ==> {}
+            }
+
+            wat = wat + watEmitRuntimeHelpers()
+
+            mut as int64: n_ufs = stdCollectionLength(uf_syms)
+            mut as int64: ufi = 1
+            infinite {
+                  route {
+                        ufi > n_ufs ==> { break }
+                        _ ==> {
+                              mut as string: usym = "" + uf_syms[ufi]
+                              mut as map: fdesc = uf_by_sym[usym]
+                              mut as list of data: ups = fdesc["params"]
+                              mut as list of data: uins = fdesc["instructions"]
+                              mut as int64: nups = stdCollectionLength(ups)
+                              mut as string: psig = ""
+                              mut as int64: upk = 1
+                              infinite {
+                                    route {
+                                          upk > nups ==> { break }
+                                          _ ==> {
+                                                mut as string: spname = watSanitizeIdent("" + ups[upk])
+                                                psig = psig + " (param $" + spname + " i64)"
+                                                upk = upk + 1
+                                          }
+                                    }
+                              }
+                              wat = wat + "  (func $" + usym + psig + " (result i64)" + nl
+                              wat = wat + watEmitFuncBody(uins, ups, str_info, fn_table, uf_by_sym, false)
+                              wat = wat + "  )" + nl
+                              ufi = ufi + 1
+                        }
+                  }
+            }
+
+            mut as list of data: main_instrs = fmir_module["instructions"]
+            wat = wat + "  (func $main (export \"_start\")" + nl
+            wat = wat + watEmitFuncBody(main_instrs, [], str_info, fn_table, uf_by_sym, true)
+            wat = wat + "  )" + nl
+            wat = wat + ")" + nl
 
             emit(nice, wat, "ok")
       }
 
       op watCompileModule (as map: fmir_module, as string: output_path) as map ==> {
             mut as string: wat_text = watGenerateModule(fmir_module)
-            mut as string: wat_file = output_path + ".wat"
+            mut as string: wat_file = output_path
+            mut as int64: wlen = stdCollectionLength(wat_file)
+            mut as bool: needs_wat_ext = true
+            route {
+                  wlen >= 4 ==> {
+                        needs_wat_ext = (wat_file[(wlen - 3)..wlen] != ".wat")
+                  }
+                  _ ==> {}
+            }
+            route {
+                  needs_wat_ext ==> { wat_file = wat_file + ".wat" }
+                  _ ==> {}
+            }
             stdIoWriteFile(wat_file, wat_text)
 
             mut as map: res = map{}
             res["target"] = "wat"
             res["wat_file"] = wat_file
-            res["success"] = true
+            res["success"] = stdIoFileExists(wat_file)
             emit(nice, res, "ok")
       }
 }

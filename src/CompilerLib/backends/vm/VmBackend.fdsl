@@ -5,8 +5,11 @@
 
 contract (VmBackendContract) {
       op vmCompileFmir (as map: fmir_module) as map
-      op vmEmitBytecodeJson (as map: fmir_module) as string
       op vmEscapeJson (as string: s) as string
+      op vmSerializeStringList (as list of data: items) as string
+      op vmSerializeInstrList (as list of data: instrs) as string
+      op vmCollectReachableFunctions (as map: fmir_module) as list of data
+      op vmEmitBytecodeJson (as map: fmir_module) as string
 }
 
 agent (CompilerLib) impl VmBackendContract {
@@ -95,6 +98,18 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["REM"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
+                                    opcode == "BINOP_^e" or opcode == "BINOP_**" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["POW"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "BINOP_^r" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["ROOT"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
                                     opcode == "BINOP_==" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
@@ -172,6 +187,11 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["NEG"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
+                                    opcode == "UNARY_~" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["BNOT"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
                                     opcode == "UNARY_not" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["NOT"])
@@ -219,15 +239,33 @@ agent (CompilerLib) impl VmBackendContract {
                                           bc_ops = stdListPushBack(bc_ops, ["MAKE_LIST", "0"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
+                                    opcode == "LIST_PUSH" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", res])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LIST_PUSH"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
                                     opcode == "MAP_INIT" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["MAKE_MAP", "0"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "MAP_SET" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", res])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
+                                          bc_ops = stdListPushBack(bc_ops, ["MAP_SET"])
                                     }
                                     opcode == "SET_INIT" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["MAKE_SET", "0"])
                                           bc_ops = stdListPushBack(bc_ops, ["STORE", res])
                                     }
-                                    opcode == "GET_INDEX" ==> {
+                                    opcode == "SET_ADD" ==> {
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", res])
+                                          bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
+                                          bc_ops = stdListPushBack(bc_ops, ["SET_ADD"])
+                                          bc_ops = stdListPushBack(bc_ops, ["STORE", res])
+                                    }
+                                    opcode == "GET_INDEX" or opcode == "COLL_GET" ==> {
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a1])
                                           bc_ops = stdListPushBack(bc_ops, ["LOAD", a2])
                                           bc_ops = stdListPushBack(bc_ops, ["INDEX"])
@@ -324,12 +362,353 @@ agent (CompilerLib) impl VmBackendContract {
             emit(nice, result, "ok")
       }
 
+      op vmEscapeJson (as string: s) as string ==> {
+            mut as int64: slen = stdCollectionLength(s)
+            mut as string: res = ""
+            mut as int64: chunk_start = 1
+            mut as int64: idx = 1
+            infinite {
+                  route {
+                        idx > slen ==> {
+                              route {
+                                    idx > chunk_start ==> {
+                                          res = res + s[chunk_start..(idx - 1)]
+                                    }
+                                    _ ==> {}
+                              }
+                              break
+                        }
+                        _ ==> {
+                              mut as string: ch = s[idx]
+                              route {
+                                    ch == "\"" or ch == "\\" or ch == "\n" or ch == "\r" or ch == "\t" ==> {
+                                          route {
+                                                idx > chunk_start ==> {
+                                                      res = res + s[chunk_start..(idx - 1)]
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                ch == "\"" ==> { res = res + "\\" + "\"" }
+                                                ch == "\\" ==> { res = res + "\\" + "\\" }
+                                                ch == "\n" ==> { res = res + "\\" + "n" }
+                                                ch == "\r" ==> { res = res + "\\" + "r" }
+                                                ch == "\t" ==> { res = res + "\\" + "t" }
+                                                _ ==> { res = res + ch }
+                                          }
+                                          chunk_start = idx + 1
+                                    }
+                                    _ ==> {}
+                              }
+                              idx = idx + 1
+                        }
+                  }
+            }
+            emit(nice, res, "ok")
+      }
+
+      op vmSerializeStringList (as list of data: items) as string ==> {
+            mut as int64: n = stdCollectionLength(items)
+            mut as string: out = "["
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as string: item_s = vmEscapeJson("" + items[i])
+                              mut as string: sep = ""
+                              route {
+                                    i < n ==> { sep = "," }
+                                    _ ==> {}
+                              }
+                              out = out + "\"" + item_s + "\"" + sep
+                              i = i + 1
+                        }
+                  }
+            }
+            out = out + "]"
+            emit(nice, out, "ok")
+      }
+
+      op vmSerializeInstrList (as list of data: instrs) as string ==> {
+            mut as int64: n = stdCollectionLength(instrs)
+            mut as string: out = "["
+            mut as int64: i = 1
+            infinite {
+                  route {
+                        i > n ==> { break }
+                        _ ==> {
+                              mut as map: inst = instrs[i]
+                              mut as string: op_s = vmEscapeJson("" + inst["op"])
+                              mut as string: a1_s = vmEscapeJson("" + inst["arg1"])
+                              mut as string: a2_s = vmEscapeJson("" + inst["arg2"])
+                              mut as string: res_s = vmEscapeJson("" + inst["res"])
+                              mut as string: sep = ""
+                              route {
+                                    i < n ==> { sep = "," }
+                                    _ ==> {}
+                              }
+                              out = out + "[\"" + op_s + "\",\"" + a1_s + "\",\"" + a2_s + "\",\"" + res_s + "\"]" + sep
+                              i = i + 1
+                        }
+                  }
+            }
+            out = out + "]"
+            emit(nice, out, "ok")
+      }
+
+      op vmCollectReachableFunctions (as map: fmir_module) as list of data ==> {
+            mut as list of data: selected = []
+            mut as map: seen = map{}
+            route {
+                  not stdMapContainsKey(fmir_module, "functions") ==> {
+                        emit(nice, selected, "ok")
+                  }
+                  _ ==> {}
+            }
+            mut as map: fn_table = fmir_module["functions"]
+            mut as list of data: fn_keys = []
+            route {
+                  stdMapContainsKey(fmir_module, "fn_keys") ==> {
+                        fn_keys = fmir_module["fn_keys"]
+                  }
+                  _ ==> {}
+            }
+
+            mut as int64: n_fk = stdCollectionLength(fn_keys)
+            mut as int64: fki = 1
+            infinite {
+                  route {
+                        fki > n_fk ==> { break }
+                        _ ==> {
+                              mut as string: fk = "" + fn_keys[fki]
+                              route {
+                                    fk != "" and stdMapContainsKey(fn_table, fk) ==> {
+                                          mut as map: fdesc = fn_table[fk]
+                                          mut as bool: is_std = false
+                                          route {
+                                                stdMapContainsKey(fdesc, "is_stdlib") and fdesc["is_stdlib"] == true ==> {
+                                                      is_std = true
+                                                }
+                                                _ ==> {}
+                                          }
+                                          route {
+                                                not is_std ==> {
+                                                      route {
+                                                            not stdMapContainsKey(seen, fk) ==> {
+                                                                  seen[fk] = true
+                                                                  selected = stdListPushBack(selected, fk)
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as string: bname = "" + fdesc["name"]
+                                                      route {
+                                                            bname != "" and stdMapContainsKey(fn_table, bname) and not stdMapContainsKey(seen, bname) ==> {
+                                                                  seen[bname] = true
+                                                                  selected = stdListPushBack(selected, bname)
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              fki = fki + 1
+                        }
+                  }
+            }
+
+            mut as list of data: main_instrs = fmir_module["instructions"]
+            mut as int64: n_main = stdCollectionLength(main_instrs)
+            mut as int64: mi = 1
+            infinite {
+                  route {
+                        mi > n_main ==> { break }
+                        _ ==> {
+                              mut as map: minst = main_instrs[mi]
+                              mut as string: ma1 = "" + minst["arg1"]
+                              route {
+                                    ma1 != "" and stdMapContainsKey(fn_table, ma1) and not stdMapContainsKey(seen, ma1) ==> {
+                                          seen[ma1] = true
+                                          selected = stdListPushBack(selected, ma1)
+                                    }
+                                    _ ==> {}
+                              }
+                              mut as int64: ma1_len = stdCollectionLength(ma1)
+                              mut as int64: cpos = 0
+                              mut as int64: ci = 1
+                              infinite {
+                                    route {
+                                          ci >= ma1_len ==> { break }
+                                          ma1[ci] == ":" and ma1[ci + 1] == ":" ==> {
+                                                cpos = ci
+                                                break
+                                          }
+                                          _ ==> { ci = ci + 1 }
+                                    }
+                              }
+                              route {
+                                    cpos > 0 and (cpos + 2) <= ma1_len ==> {
+                                          mut as string: bare = ma1[(cpos + 2)..ma1_len]
+                                          route {
+                                                bare != "" and stdMapContainsKey(fn_table, bare) and not stdMapContainsKey(seen, bare) ==> {
+                                                      seen[bare] = true
+                                                      selected = stdListPushBack(selected, bare)
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    _ ==> {}
+                              }
+                              mi = mi + 1
+                        }
+                  }
+            }
+
+            mut as int64: wi = 1
+            infinite {
+                  route {
+                        wi > stdCollectionLength(selected) ==> { break }
+                        _ ==> {
+                              mut as string: cur_k = "" + selected[wi]
+                              mut as map: cur_fn = fn_table[cur_k]
+                              mut as string: cur_bname = "" + cur_fn["name"]
+                              route {
+                                    cur_bname != "" and stdMapContainsKey(fn_table, cur_bname) and not stdMapContainsKey(seen, cur_bname) ==> {
+                                          seen[cur_bname] = true
+                                          selected = stdListPushBack(selected, cur_bname)
+                                    }
+                                    _ ==> {}
+                              }
+                              mut as list of data: finstrs = cur_fn["instructions"]
+                              mut as int64: n_fi = stdCollectionLength(finstrs)
+                              mut as int64: fii = 1
+                              infinite {
+                                    route {
+                                          fii > n_fi ==> { break }
+                                          _ ==> {
+                                                mut as map: finst = finstrs[fii]
+                                                mut as string: fa1 = "" + finst["arg1"]
+                                                route {
+                                                      fa1 != "" and stdMapContainsKey(fn_table, fa1) and not stdMapContainsKey(seen, fa1) ==> {
+                                                            seen[fa1] = true
+                                                            selected = stdListPushBack(selected, fa1)
+                                                      }
+                                                      _ ==> {}
+                                                }
+                                                mut as int64: fa1_len = stdCollectionLength(fa1)
+                                                mut as int64: fcpos = 0
+                                                mut as int64: fci = 1
+                                                infinite {
+                                                      route {
+                                                            fci >= fa1_len ==> { break }
+                                                            fa1[fci] == ":" and fa1[fci + 1] == ":" ==> {
+                                                                  fcpos = fci
+                                                                  break
+                                                            }
+                                                            _ ==> { fci = fci + 1 }
+                                                      }
+                                                }
+                                                route {
+                                                      fcpos > 0 and (fcpos + 2) <= fa1_len ==> {
+                                                            mut as string: fbare = fa1[(fcpos + 2)..fa1_len]
+                                                            route {
+                                                                  fbare != "" and stdMapContainsKey(fn_table, fbare) and not stdMapContainsKey(seen, fbare) ==> {
+                                                                        seen[fbare] = true
+                                                                        selected = stdListPushBack(selected, fbare)
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                      }
+                                                      _ ==> {}
+                                                }
+                                                fii = fii + 1
+                                          }
+                                    }
+                              }
+                              wi = wi + 1
+                        }
+                  }
+            }
+
+            emit(nice, selected, "ok")
+      }
+
       op vmEmitBytecodeJson (as map: fmir_module) as string ==> {
+            mut as string: mod_name = ""
+            route {
+                  stdMapContainsKey(fmir_module, "name") ==> {
+                        mod_name = "" + fmir_module["name"]
+                  }
+                  _ ==> {}
+            }
+            mut as list of data: imports_list = []
+            route {
+                  stdMapContainsKey(fmir_module, "imports") ==> {
+                        imports_list = fmir_module["imports"]
+                  }
+                  _ ==> {}
+            }
+
+            mut as string: esc_mod_name = vmEscapeJson(mod_name)
+            mut as string: imports_json = vmSerializeStringList(imports_list)
+            mut as string: main_instrs_json = vmSerializeInstrList(fmir_module["instructions"])
+
+            mut as list of data: sel_keys = vmCollectReachableFunctions(fmir_module)
+            mut as int64: n_sel = stdCollectionLength(sel_keys)
+            mut as string: funcs_json = "["
+            route {
+                  n_sel > 0 and stdMapContainsKey(fmir_module, "functions") ==> {
+                        mut as map: fn_table = fmir_module["functions"]
+                        mut as int64: fi = 1
+                        infinite {
+                              route {
+                                    fi > n_sel ==> { break }
+                                    _ ==> {
+                                          mut as string: fk = "" + sel_keys[fi]
+                                          mut as map: fd = fn_table[fk]
+                                          mut as string: f_key_s = vmEscapeJson(fk)
+                                          mut as string: f_name_s = vmEscapeJson("" + fd["name"])
+                                          mut as string: f_agent_s = vmEscapeJson("" + fd["agent"])
+                                          mut as string: f_ret_s = vmEscapeJson("" + fd["ret_type"])
+                                          mut as string: f_std_s = "false"
+                                          route {
+                                                stdMapContainsKey(fd, "is_stdlib") and fd["is_stdlib"] == true ==> {
+                                                      f_std_s = "true"
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as string: f_params_s = vmSerializeStringList(fd["params"])
+                                          mut as string: f_ptypes_s = "[]"
+                                          route {
+                                                stdMapContainsKey(fd, "param_types") ==> {
+                                                      f_ptypes_s = vmSerializeStringList(fd["param_types"])
+                                                }
+                                                _ ==> {}
+                                          }
+                                          mut as string: f_instrs_s = vmSerializeInstrList(fd["instructions"])
+                                          mut as string: f_sep = ""
+                                          route {
+                                                fi < n_sel ==> { f_sep = "," }
+                                                _ ==> {}
+                                          }
+                                          funcs_json = funcs_json + "{\"key\":\"" + f_key_s + "\",\"name\":\"" + f_name_s + "\",\"agent\":\"" + f_agent_s + "\",\"ret_type\":\"" + f_ret_s + "\",\"is_stdlib\":" + f_std_s + ",\"params\":" + f_params_s + ",\"param_types\":" + f_ptypes_s + ",\"instructions\":" + f_instrs_s + "}" + f_sep
+                                          fi = fi + 1
+                                    }
+                              }
+                        }
+                  }
+                  _ ==> {}
+            }
+            funcs_json = funcs_json + "]"
+
             mut as map: res = vmCompileFmir(fmir_module)
             mut as list of data: ops = res["ops"]
             mut as int64: n = stdCollectionLength(ops)
 
-            mut as string: json = "[\n"
+            mut as string: ops_json = "[\n"
             mut as int64: i = 1
             infinite {
                   route {
@@ -341,7 +720,7 @@ agent (CompilerLib) impl VmBackendContract {
                                     i < n ==> { comma = "," }
                                     _ ==> {}
                               }
-                              mut as string: entry = "  ["
+                              mut as string: entry = "    ["
                               mut as int64: k = 1
                               mut as int64: op_len = stdCollectionLength(op_tuple)
                               infinite {
@@ -374,36 +753,24 @@ agent (CompilerLib) impl VmBackendContract {
                                     }
                               }
                               entry = entry + "]" + comma + "\n"
-                              json = json + entry
+                              ops_json = ops_json + entry
                               i = i + 1
                         }
                   }
             }
-            json = json + "]\n"
-            emit(nice, json, "ok")
-      }
+            ops_json = ops_json + "  ]"
 
-      op vmEscapeJson (as string: s) as string ==> {
-            mut as int64: slen = stdCollectionLength(s)
-            mut as string: res = ""
-            mut as int64: idx = 1
-            infinite {
-                  route {
-                        idx > slen ==> { break }
-                        _ ==> {
-                              mut as string: ch = s[idx]
-                              route {
-                                    ch == "\"" ==> { res = res + "\\" + "\"" }
-                                    ch == "\\" ==> { res = res + "\\" + "\\" }
-                                    ch == "\n" ==> { res = res + "\\" + "n" }
-                                    ch == "\r" ==> { res = res + "\\" + "r" }
-                                    ch == "\t" ==> { res = res + "\\" + "t" }
-                                    _ ==> { res = res + ch }
-                              }
-                              idx = idx + 1
-                        }
-                  }
-            }
-            emit(nice, res, "ok")
+            mut as string: json = "{\n"
+            json = json + "  \"version\": \"1.0.0\",\n"
+            json = json + "  \"name\": \"" + esc_mod_name + "\",\n"
+            json = json + "  \"fmir\": {\n"
+            json = json + "    \"name\": \"" + esc_mod_name + "\",\n"
+            json = json + "    \"imports\": " + imports_json + ",\n"
+            json = json + "    \"instructions\": " + main_instrs_json + ",\n"
+            json = json + "    \"functions\": " + funcs_json + "\n"
+            json = json + "  },\n"
+            json = json + "  \"ops\": " + ops_json + "\n"
+            json = json + "}\n"
+            emit(nice, json, "ok")
       }
 }

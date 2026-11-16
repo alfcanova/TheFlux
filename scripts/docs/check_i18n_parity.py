@@ -214,19 +214,59 @@ def verificar_paridade_docs_tools(pt_docs_dir: Path, en_docs_dir: Path) -> tuple
     return len(pt_files & en_files), divergencias
 
 
+def verificar_paridade_docs_fvm(pt_docs_dir: Path, en_docs_dir: Path) -> tuple[int, list[str]]:
+    divergencias = []
+    pt_fvm = pt_docs_dir / "fvm"
+    en_fvm = en_docs_dir / "fvm"
+
+    if not pt_fvm.exists() or not pt_fvm.is_dir():
+        return 0, ["Diretório docs/pt_BR/fvm inexistente"]
+    if not en_fvm.exists() or not en_fvm.is_dir():
+        return 0, ["Diretório docs/en/fvm inexistente"]
+
+    pt_files = {f for f in os.listdir(pt_fvm) if f.endswith(".md")}
+    en_files = {f for f in os.listdir(en_fvm) if f.endswith(".md")}
+
+    apenas_pt = pt_files - en_files
+    for f in sorted(apenas_pt):
+        divergencias.append(f"Documento da FVM presente apenas em PT: docs/pt_BR/fvm/{f}")
+
+    apenas_en = en_files - pt_files
+    for f in sorted(apenas_en):
+        divergencias.append(f"Documento da FVM presente apenas em EN: docs/en/fvm/{f}")
+
+    for f in sorted(pt_files & en_files):
+        f_pt = pt_fvm / f
+        f_en = en_fvm / f
+        if f_pt.stat().st_size == 0:
+            divergencias.append(f"Documento da FVM vazio em PT: docs/pt_BR/fvm/{f}")
+        if f_en.stat().st_size == 0:
+            divergencias.append(f"Documento da FVM vazio em EN: docs/en/fvm/{f}")
+
+    permitidos = pt_files | {".gitkeep"}
+    for item in os.listdir(pt_fvm):
+        if item not in permitidos:
+            divergencias.append(f"Arquivo inesperado em docs/pt_BR/fvm: {item}")
+    for item in os.listdir(en_fvm):
+        if item not in permitidos:
+            divergencias.append(f"Arquivo inesperado em docs/en/fvm: {item}")
+
+    return len(pt_files & en_files), divergencias
+
+
 def verificar_arquivos_estranhos_em_pastas_de_idioma(pt_dir: Path, en_dir: Path) -> list[str]:
     divergencias = []
     permitidos_pt = (
         set(DOCS_MAP_PT_TO_EN.keys())
         | set(DOCS_EBNF_MAP_PT_TO_EN.keys())
         | set(DOCS_DOCX_MAP_PT_TO_EN.keys())
-        | {"keywords", "stdlib", "stdlibs", "tools"}
+        | {"keywords", "stdlib", "stdlibs", "tools", "fvm"}
     )
     permitidos_en = (
         set(DOCS_MAP_EN_TO_PT.keys())
         | set(DOCS_EBNF_MAP_PT_TO_EN.values())
         | set(DOCS_DOCX_MAP_PT_TO_EN.values())
-        | {"keywords", "stdlib", "stdlibs", "tools"}
+        | {"keywords", "stdlib", "stdlibs", "tools", "fvm"}
     )
 
     for item in os.listdir(pt_dir):
@@ -423,19 +463,23 @@ def main() -> int:
     # 6. Verifica paridade dos documentos de ferramentas canônicas (docs/*/tools)
     total_tools, div_tools = verificar_paridade_docs_tools(pt_docs_dir, en_docs_dir)
 
-    # 7. Verifica paridade e sincronização da gramática EBNF (TheFlux.ebnf e Gramatica.ebnf)
+    # 7. Verifica paridade dos documentos da FVM / Fast Virtual Machine (docs/*/fvm)
+    total_fvm, div_fvm = verificar_paridade_docs_fvm(pt_docs_dir, en_docs_dir)
+
+    # 8. Verifica paridade e sincronização da gramática EBNF (TheFlux.ebnf e Gramatica.ebnf)
     total_ebnf, div_ebnf = verificar_paridade_ebnf(pt_docs_dir, en_docs_dir)
 
-    # 8. Verifica paridade dos YAMLs de keywords
+    # 9. Verifica paridade dos YAMLs de keywords
     total_kw, div_kw = verificar_paridade(pt_dir, en_dir, args.verbose)
 
-    divergencias = div_raiz + div_estranhos + div_docs + div_docx + div_stdlib + div_tools + div_ebnf + div_kw
+    divergencias = div_raiz + div_estranhos + div_docs + div_docx + div_stdlib + div_tools + div_fvm + div_ebnf + div_kw
 
     if not divergencias:
         print(f"\n✅ Paridade 100% Confirmada!")
         print(f"   - {total_docs} pares de documentos Markdown gerais (.md) em paridade total 1:1 e nomes PascalCase.")
         print(f"   - {total_stdlib} pares de documentos StdLib (.md) em paridade total 1:1.")
         print(f"   - {total_tools} pares de documentos de Ferramentas / Tools (.md) em paridade total 1:1.")
+        print(f"   - {total_fvm} pares de documentos da FVM / Fast Virtual Machine (.md) em paridade total 1:1.")
         print(f"   - {total_docx} par de documentos White Paper (.docx) em paridade total 1:1.")
         print(f"   - {total_ebnf} pares de artefatos ISO/IEC 14977 (EBNF) sincronizados (PT e EN) e alinhados a TheFlux.md.")
         print(f"   - {total_kw} especificações de palavras-chave (.yaml) sincronizadas sem divergências.")

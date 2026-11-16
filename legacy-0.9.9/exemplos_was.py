@@ -14,7 +14,7 @@ if str(SRC) not in sys.path:
 
 RAIZ = Path(__file__).resolve().parent
 FLUX_DIR = RAIZ / "examples" / "Canon" if (RAIZ / "examples" / "Canon").exists() else RAIZ.parent / "examples" / "Canon"
-T_WASM = RAIZ / "t_wasm-1.0"
+T_WASM = RAIZ / "t_was"
 
 STDIN_MAP: dict[str, str] = {
     "input.flux": "dado\n",

@@ -43,6 +43,7 @@ program (FluxWat) {
                                     route {
                                           a == "--no-run" ==> {
                                                 no_run = true
+                                                extra_args = extra_args + " \"--no-run\""
                                           }
                                           a == "-o" or a == "--output" ==> {
                                                 has_output_flag = true
@@ -162,51 +163,7 @@ program (FluxWat) {
       }
       cmd = cmd + extra_args
 
-      #L 7. Execucao da compilacao para WAT
+      #L 7. Execucao da compilacao para WAT (e execucao self-hosted se sem --no-run)
       mut as int64: rc = stdOsExec(cmd)
-      route {
-            rc != 0 ==> {
-                  stdOsExit(rc)
-            }
-            _ ==> {}
-      }
-
-      #L 8. Execucao via Wasmer Runner
-      mut as string: wat_target = ""
-      route {
-            not has_output_flag and stem != "" ==> {
-                  wat_target = "t_wat\\" + stem + ".wat"
-            }
-            _ ==> {}
-      }
-      route {
-            custom_output != "" ==> {
-                  mut as int64: colen = stdCollectionLength(custom_output)
-                  route {
-                        colen > 4 and custom_output[(colen - 3)..colen] == ".wat" ==> {
-                              wat_target = custom_output
-                        }
-                        _ ==> {
-                              wat_target = custom_output + ".wat"
-                        }
-                  }
-            }
-            _ ==> {}
-      }
-
-      route {
-            (not no_run) and wat_target != "" ==> {
-                  route {
-                        stdIoFileExists(wat_target) ==> {
-                              mut as string: wasmer_cmd = "wasmer \"" + wat_target + "\""
-                              mut as int64: run_rc = stdOsExec(wasmer_cmd)
-                              stdOsExit(run_rc)
-                        }
-                        _ ==> {}
-                  }
-            }
-            _ ==> {}
-      }
-
       stdOsExit(rc)
 }

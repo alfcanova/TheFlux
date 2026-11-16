@@ -5,13 +5,44 @@
 #L ==============================================================================
 
 use RuntimeStdLib
+use IoStdLib
+use FvmContract.fdsl
 
 agent (FvmClient) impl FvmContract {
       op fvmInjectBytecode (as string: bytecode_json, as string: stdin_text) as map ==> {
-            #L Prepara chamada ao binario fluxvm com flag --inject
-            mut as string: cmd = "bin\\fluxvm.exe --inject -"
+            mut as string: vm_bin = "bin\\fluxvm.exe"
+            route {
+                  stdIoFileExists(".\\bin\\fluxvm.exe") ==> { vm_bin = ".\\bin\\fluxvm.exe" }
+                  stdIoFileExists("bin\\fluxvm.exe")   ==> { vm_bin = "bin\\fluxvm.exe" }
+                  _                                    ==> { vm_bin = "fluxvm.exe" }
+            }
+
+            #L Grava o bytecode em arquivo temporario seguro em temp/
+            mut as int64: now_ts = stdDatetimeNow()
+            mut as string: tmp_path = "temp\\fvm_inject_" + now_ts + ".fvmbc"
+            route {
+                  not stdIoDirExists("temp") ==> {
+                        stdIoCreateDir("temp")
+                  }
+                  _ ==> {}
+            }
+            stdIoWriteFile(tmp_path, bytecode_json)
+
+            mut as string: cmd = vm_bin + " --inject \"" + tmp_path + "\""
+            route {
+                  stdin_text != "" ==> {
+                        cmd = cmd + " --stdin \"" + stdin_text + "\""
+                  }
+                  _ ==> {}
+            }
             mut as string: out = stdOsExecOutput(cmd)
-            
+            route {
+                  stdIoFileExists(tmp_path) ==> {
+                        stdIoDeleteFile(tmp_path)
+                  }
+                  _ ==> {}
+            }
+
             mut as map: res = map{}
             res["success"] = true
             res["stdout"] = out
@@ -19,7 +50,19 @@ agent (FvmClient) impl FvmContract {
       }
 
       op fvmExecuteFile (as string: fvmbc_path, as string: stdin_text) as map ==> {
-            mut as string: cmd = "bin\\fluxvm.exe " + fvmbc_path
+            mut as string: vm_bin = "bin\\fluxvm.exe"
+            route {
+                  stdIoFileExists(".\\bin\\fluxvm.exe") ==> { vm_bin = ".\\bin\\fluxvm.exe" }
+                  stdIoFileExists("bin\\fluxvm.exe")   ==> { vm_bin = "bin\\fluxvm.exe" }
+                  _                                    ==> { vm_bin = "fluxvm.exe" }
+            }
+            mut as string: cmd = vm_bin + " \"" + fvmbc_path + "\""
+            route {
+                  stdin_text != "" ==> {
+                        cmd = cmd + " --stdin \"" + stdin_text + "\""
+                  }
+                  _ ==> {}
+            }
             mut as string: out = stdOsExecOutput(cmd)
 
             mut as map: res = map{}
@@ -29,10 +72,21 @@ agent (FvmClient) impl FvmContract {
       }
 
       op fvmIsServiceActive () as bool ==> {
-            mut as int64: ping = stdNetTcpPing("127.0.0.1", 9099, 100)
+            mut as string: vm_bin = "bin\\fluxvm.exe"
             route {
-                  ping == 1 ==> { emit(nice, true, "active") }
-                  _ ==> { emit(nice, false, "inactive") }
+                  stdIoFileExists(".\\bin\\fluxvm.exe") ==> { vm_bin = ".\\bin\\fluxvm.exe" }
+                  stdIoFileExists("bin\\fluxvm.exe")   ==> { vm_bin = "bin\\fluxvm.exe" }
+                  _                                    ==> { vm_bin = "fluxvm.exe" }
+            }
+            mut as string: out = stdOsExecOutput(vm_bin + " --status")
+            mut as int64: olen = stdCollectionLength(out)
+            route {
+                  olen >= 6 and out[1..6] == "active" ==> {
+                        emit(nice, true, "active")
+                  }
+                  _ ==> {
+                        emit(nice, false, "inactive")
+                  }
             }
       }
 }

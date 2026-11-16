@@ -65,8 +65,6 @@ program (ExamplesLv) {
                                                 mut as int64: nlen = stdCollectionLength(nome)
                                                 mut as string: stem = nome[1..(nlen - 5)]
 
-                                                println("--- " + nome + " ---")
-
                                                 mut as string: stdin_file = "t_stdin_empty.tmp"
                                                 route {
                                                       nome == "input.flux" ==> { stdin_file = "t_stdin_dado.tmp" }
@@ -135,23 +133,19 @@ program (ExamplesLv) {
                                                 route {
                                                       rc_c != 0 ==> {
                                                             erros = erros + 1
-                                                            println("FALHA  " + nome + " (LLVM IR): " + c_last_line)
+                                                            println("FALHA  " + nome + ": " + c_last_line)
                                                       }
                                                       not stdIoFileExists(ll_file) ==> {
                                                             erros = erros + 1
                                                             println("FALHA  " + nome + " (.ll nao gerado)")
                                                       }
                                                       _ ==> {
-                                                            println("  [ir]   " + stem + ".ll")
-
                                                             route {
                                                                   not stdIoFileExists(exe_file) ==> {
                                                                         erros = erros + 1
                                                                         println("FALHA  " + nome + " (clang nao encontrado ou executavel nao gerado)")
                                                                   }
                                                                   _ ==> {
-                                                                        println("  [exe]  " + stem + ".exe")
-
                                                                         mut as string: cmd_run = "cmd /c \"set FLUX_CI=1 && " + exe_file + " < " + stdin_file + " > t_lv.tmp 2>&1\""
                                                                         mut as int64: rc_run = stdOsExec(cmd_run)
 
@@ -186,7 +180,7 @@ program (ExamplesLv) {
                                                                                           cur_chunk != "" ==> { println("  | " + cur_chunk) }
                                                                                           _ ==> {}
                                                                                     }
-                                                                                    println("  OK    " + nome)
+                                                                                    println("  OK  " + nome)
                                                                               }
                                                                               _ ==> {
                                                                                     erros = erros + 1

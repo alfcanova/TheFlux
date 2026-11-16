@@ -21,6 +21,7 @@ static void print_usage(void) {
     printf("Opcoes de Execucao:\n");
     printf("  <arquivo.fvmbc>             Executa arquivo de bytecode localmente\n");
     printf("  --inject <arquivo.fvmbc>    Injeta bytecode no Servico Windows via Named Pipe\n");
+    printf("  --status, --ping            Verifica se o servico/daemon FVM esta ativo\n");
     printf("  --bench                     Mede e exibe tempo de execucao e operacoes\n");
     printf("  --stdin <texto>             Injeta texto de entrada via argumento\n");
     printf("  --version, -v               Exibe versao da FVM\n");
@@ -30,11 +31,31 @@ static void print_usage(void) {
     printf("  --service uninstall         Remove o servico do Windows SCM\n");
     printf("  --service start             Inicia o servico Windows\n");
     printf("  --service stop              Para o servico Windows\n");
+    printf("  --service status            Consulta status do servico Windows no SCM\n");
     printf("  --service run               Executado internamente pelo Windows SCM\n");
     printf("  --daemon                    Inicia servidor residente em console (sem admin)\n");
 }
 
 static char *read_entire_file(const char *path) {
+    if (!path || !*path) return NULL;
+    if (strcmp(path, "-") == 0) {
+        size_t cap = 65536;
+        size_t len = 0;
+        char *buf = (char *)malloc(cap);
+        if (!buf) return NULL;
+        size_t n;
+        while ((n = fread(buf + len, 1, cap - len - 1, stdin)) > 0) {
+            len += n;
+            if (len + 1024 >= cap) {
+                cap *= 2;
+                char *new_buf = (char *)realloc(buf, cap);
+                if (!new_buf) { free(buf); return NULL; }
+                buf = new_buf;
+            }
+        }
+        buf[len] = '\0';
+        return buf;
+    }
     FILE *f = fopen(path, "rb");
     if (!f) return NULL;
     fseek(f, 0, SEEK_END);
@@ -71,11 +92,15 @@ int main(int argc, char **argv) {
         } else if (strcmp(arg, "--version") == 0 || strcmp(arg, "-v") == 0) {
             printf("%s\n", FLUXVM_VERSION);
             return 0;
+        } else if (strcmp(arg, "--status") == 0 || strcmp(arg, "--ping") == 0) {
+            int active = flux_service_is_active();
+            printf("%s\n", active ? "active" : "inactive");
+            return active ? 0 : 1;
         } else if (strcmp(arg, "--bench") == 0) {
             flag_bench = true;
         } else if (strcmp(arg, "--inject") == 0) {
             flag_inject = true;
-            if (i + 1 < argc && argv[i + 1][0] != '-') {
+            if (i + 1 < argc && (argv[i + 1][0] != '-' || strcmp(argv[i + 1], "-") == 0)) {
                 input_file = argv[++i];
             }
         } else if (strcmp(arg, "--stdin") == 0) {
@@ -105,6 +130,10 @@ int main(int argc, char **argv) {
             return flux_service_start();
         } else if (strcmp(service_action, "stop") == 0) {
             return flux_service_stop();
+        } else if (strcmp(service_action, "status") == 0) {
+            int active = flux_service_is_active();
+            printf("%s\n", active ? "active" : "inactive");
+            return active ? 0 : 1;
         } else if (strcmp(service_action, "run") == 0) {
             return flux_service_run(fvm_execute_json_buffer);
         } else {

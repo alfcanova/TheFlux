@@ -168,14 +168,32 @@ if errorlevel 1 goto boot3_fail
 del /q /f build\intermediates\boot3_selftest.flux build\intermediates\boot3_out.txt 2>nul
 echo [OK] Portao Boot-3 Aprovado: Recursao universal e Short Circuit verificados em Stage 2!
 
-:: 6. Compilacao do FluxVM Nativo
-echo [+] Compilando bin/fluxvm.exe via Clang...
-clang -O3 -Wno-deprecated-declarations -Iruntime -Iruntime/fvm runtime/fvm/fvm_arena.c runtime/fvm/fvm_parser.c runtime/fvm/fvm_core.c runtime/fvm/fvm_main.c runtime/flux_service.c -ladvapi32 -o bin\fluxvm.exe
+:: 6. Compilacao do FluxVM Self-Hosted (src\Fvm\fluxvm.flux)
+echo [+] Compilando bin/fluxvm.exe Self-Hosted via bin/fluxc.exe...
+del /q /f bin\fluxvm.exe bin\fluxvm.ll 2>nul
+bin\fluxc.exe --no-run --target llvm -o bin\fluxvm src\Fvm\fluxvm.flux
 if errorlevel 1 (
     echo [ERRO] Falha ao compilar bin/fluxvm.exe.
     exit /b 1
 )
-echo [OK] bin/fluxvm.exe operacional.
+del /q /f bin\fluxvm.ll 2>nul
+echo [OK] bin/fluxvm.exe Self-Hosted operacional.
+
+:: 7. Compilacao de Ferramentas Nativas (src\tools\*)
+echo [+] [Boot-4] Compilando Ferramentas Nativas (scripts\build_tools.bat)...
+call scripts\build_tools.bat
+if errorlevel 1 (
+    echo [ERRO] Falha ao compilar ferramentas nativas.
+    exit /b 1
+)
+
+:: 8. Compilacao de Drivers e Suites (scripts\build_drivers.bat)
+echo [+] [Boot-5] Compilando Drivers e Suites (scripts\build_drivers.bat)...
+call scripts\build_drivers.bat
+if errorlevel 1 (
+    echo [ERRO] Falha ao compilar drivers e suites.
+    exit /b 1
+)
 
 echo ==============================================================================
 echo [TheFlux] BOOTSTRAPPING CONCLUIDO COM EXITO 100%% NATIVO (MARCO M5)!

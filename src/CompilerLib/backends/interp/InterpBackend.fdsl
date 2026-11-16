@@ -528,6 +528,13 @@ agent (CompilerLib) impl InterpBackendContract {
             mut as map: global_env_outcomes = map{}
             mut as string: stdout_acc = ""
             mut as string: pending_prefix = ""
+            mut as bool: silent_mode = false
+            route {
+                  stdMapContainsKey(fmir_module, "_silent_capture") and fmir_module["_silent_capture"] == true ==> {
+                        silent_mode = true
+                  }
+                  _ ==> {}
+            }
             mut as int64: spy_counter = 0
             mut as list of map: call_stack = []
             mut as string: cur_fn_ret_type = "data"
@@ -6276,7 +6283,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   }
                                                             }
                                                       }
-                                                      print(s_tele)
+                                                      route {
+                                                            not silent_mode ==> { print(s_tele) }
+                                                            _ ==> {}
+                                                      }
                                                       stdout_acc = stdout_acc + s_tele + "\n"
                                                       regs[res] = v1_call
                                                       route {
@@ -7565,13 +7575,19 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       reg_types[res] = "float"
                                                 }
                                                 a1 == "AgentOfPrint::printNome" or a1 == "pn" ==> {
-                                                      print("Andre Luiz Fassone Canova")
+                                                      route {
+                                                            not silent_mode ==> { print("Andre Luiz Fassone Canova") }
+                                                            _ ==> {}
+                                                      }
                                                       stdout_acc = stdout_acc + "Andre Luiz Fassone Canova\n"
                                                       regs[res] = 0
                                                       reg_types[res] = "int"
                                                 }
                                                 a1 == "AgentOfPrint::printIdade" or a1 == "idade" or a1 == "minhaIdade" ==> {
-                                                      print("Sua idade e 53 anos")
+                                                      route {
+                                                            not silent_mode ==> { print("Sua idade e 53 anos") }
+                                                            _ ==> {}
+                                                      }
                                                       stdout_acc = stdout_acc + "Sua idade e 53 anos\n"
                                                       regs[res] = 0
                                                       reg_types[res] = "int"
@@ -9605,7 +9621,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 _ ==> {}
                                           }
                                           pval = interpCleanStructRepr(pval)
-                                          print(pval)
+                                          route {
+                                                not silent_mode ==> { print(pval) }
+                                                _ ==> {}
+                                          }
                                           stdout_acc = stdout_acc + pval + "\n"
                                     }
                                     opcode == "EMIT" ==> {
