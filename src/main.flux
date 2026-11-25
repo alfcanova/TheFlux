@@ -1,7 +1,7 @@
 #L ==============================================================================
 #L TheFlux Native Compiler: Entrypoint
 #L Arquivo: src/main.flux
-#L Versao: 1.0.0
+#L Versao: 1.0.5
 #L ==============================================================================
 
 use RuntimeStdLib
@@ -13,7 +13,7 @@ program (Main) {
 
       route {
             n_args < 1 ==> {
-                  print("TheFlux Compiler v1.0.0")
+                  print("TheFlux Compiler v1.0.5")
                   print("Usage: fluxc [options] <input.flux>")
                   print("Options:")
                   print("  --version, -v               Display compiler version")
@@ -140,7 +140,7 @@ program (Main) {
 
                   route {
                         flag_version ==> {
-                              print("1.0.0")
+                              print("1.0.5")
                         }
                         explain_code != "" ==> {
                               mut as string: explanation = CompilerLib::diagnosticExplain(explain_code)
@@ -443,7 +443,7 @@ program (Main) {
                                                       #L Pos-processamento de execucao nativa por alvo
                                                       route {
                                                             target == "llvm" or target == "lv" ==> {
-                                                                  mut as string: clang_cmd = "clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32"
+                                                                  mut as string: clang_cmd = "clang -O2 -Wno-deprecated-declarations -Wno-override-module -o \"" + output_path + ".exe\" \"" + output_path + ".ll\" -Llib -lfluxrt -ladvapi32 -lws2_32 -lkernel32"
                                                                   mut as int64: cl_rc = stdOsExec(clang_cmd)
                                                                   route {
                                                                         cl_rc != 0 ==> { stdOsExit(cl_rc) }

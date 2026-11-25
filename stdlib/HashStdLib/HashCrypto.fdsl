@@ -35,7 +35,87 @@ agent (HashStdLib) impl HashCryptoContract {
             mut as int64: mask32 = 4294967296
 
             infinite (c in text) {
-                  mut as int64: code = _ord(c)
+                  mut as int64: code = 0
+                  route {
+                        c >= "a" and c <= "z" ==> {
+                              route {
+                                    c == "a" ==> { code = 97 }
+                                    c == "b" ==> { code = 98 }
+                                    c == "c" ==> { code = 99 }
+                                    c == "d" ==> { code = 100 }
+                                    c == "e" ==> { code = 101 }
+                                    c == "f" ==> { code = 102 }
+                                    c == "g" ==> { code = 103 }
+                                    c == "h" ==> { code = 104 }
+                                    c == "i" ==> { code = 105 }
+                                    c == "j" ==> { code = 106 }
+                                    c == "k" ==> { code = 107 }
+                                    c == "l" ==> { code = 108 }
+                                    c == "m" ==> { code = 109 }
+                                    c == "n" ==> { code = 110 }
+                                    c == "o" ==> { code = 111 }
+                                    c == "p" ==> { code = 112 }
+                                    c == "q" ==> { code = 113 }
+                                    c == "r" ==> { code = 114 }
+                                    c == "s" ==> { code = 115 }
+                                    c == "t" ==> { code = 116 }
+                                    c == "u" ==> { code = 117 }
+                                    c == "v" ==> { code = 118 }
+                                    c == "w" ==> { code = 119 }
+                                    c == "x" ==> { code = 120 }
+                                    c == "y" ==> { code = 121 }
+                                    c == "z" ==> { code = 122 }
+                              }
+                        }
+                        c >= "0" and c <= "9" ==> {
+                              route {
+                                    c == "0" ==> { code = 48 }
+                                    c == "1" ==> { code = 49 }
+                                    c == "2" ==> { code = 50 }
+                                    c == "3" ==> { code = 51 }
+                                    c == "4" ==> { code = 52 }
+                                    c == "5" ==> { code = 53 }
+                                    c == "6" ==> { code = 54 }
+                                    c == "7" ==> { code = 55 }
+                                    c == "8" ==> { code = 56 }
+                                    c == "9" ==> { code = 57 }
+                              }
+                        }
+                        c >= "A" and c <= "Z" ==> {
+                              route {
+                                    c == "A" ==> { code = 65 }
+                                    c == "B" ==> { code = 66 }
+                                    c == "C" ==> { code = 67 }
+                                    c == "D" ==> { code = 68 }
+                                    c == "E" ==> { code = 69 }
+                                    c == "F" ==> { code = 70 }
+                                    c == "G" ==> { code = 71 }
+                                    c == "H" ==> { code = 72 }
+                                    c == "I" ==> { code = 73 }
+                                    c == "J" ==> { code = 74 }
+                                    c == "K" ==> { code = 75 }
+                                    c == "L" ==> { code = 76 }
+                                    c == "M" ==> { code = 77 }
+                                    c == "N" ==> { code = 78 }
+                                    c == "O" ==> { code = 79 }
+                                    c == "P" ==> { code = 80 }
+                                    c == "Q" ==> { code = 81 }
+                                    c == "R" ==> { code = 82 }
+                                    c == "S" ==> { code = 83 }
+                                    c == "T" ==> { code = 84 }
+                                    c == "U" ==> { code = 85 }
+                                    c == "V" ==> { code = 86 }
+                                    c == "W" ==> { code = 87 }
+                                    c == "X" ==> { code = 88 }
+                                    c == "Y" ==> { code = 89 }
+                                    c == "Z" ==> { code = 90 }
+                              }
+                        }
+                        c == ":" ==> { code = 58 }
+                        c == "_" ==> { code = 95 }
+                        c == " " ==> { code = 32 }
+                        _ ==> { code = _ord(c) }
+                  }
                   h1 = ((h1 ^ code) * 16777619) /r mask32
                   h2 = (h2 + h1 + code) /r mask32
                   h3 = ((h3 ^ h2) * 2654435761) /r mask32

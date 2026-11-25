@@ -103,14 +103,35 @@ static const struct {
     {NULL, OP_HALT}
 };
 
+static uint32_t fvm_opcode_hash(const char *s) {
+    uint32_t h = 2166136261u;
+    while (*s) {
+        h ^= (uint8_t)*s++;
+        h *= 16777619u;
+    }
+    return h;
+}
+
 FvmOpcode fvm_opcode_from_str(const char *name) {
     if (!name) return OP_HALT;
-    for (int i = 0; OPCODE_MAP[i].name != NULL; i++) {
-        if (strcmp(OPCODE_MAP[i].name, name) == 0) {
-            return OPCODE_MAP[i].op;
+    static int init = 0;
+    static int16_t buckets[256];
+    if (!init) {
+        for (int b = 0; b < 256; b++) buckets[b] = -1;
+        for (int i = 0; OPCODE_MAP[i].name != NULL; i++) {
+            uint32_t pos = fvm_opcode_hash(OPCODE_MAP[i].name) & 255u;
+            while (buckets[pos] != -1) pos = (pos + 1u) & 255u;
+            buckets[pos] = (int16_t)i;
         }
+        init = 1;
     }
-    return OP_HALT;
+    uint32_t pos = fvm_opcode_hash(name) & 255u;
+    for (;;) {
+        int16_t idx = buckets[pos];
+        if (idx < 0) return OP_HALT;
+        if (strcmp(OPCODE_MAP[idx].name, name) == 0) return OPCODE_MAP[idx].op;
+        pos = (pos + 1u) & 255u;
+    }
 }
 
 const char *fvm_opcode_name(FvmOpcode op) {

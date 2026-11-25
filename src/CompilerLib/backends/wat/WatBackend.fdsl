@@ -5,6 +5,7 @@
 #L ==============================================================================
 
 contract (WatBackendContract) {
+      op watJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string
       op watSanitizeIdent (as string: raw) as string
       op watMangleSymbol (as string: agent_name, as string: op_name) as string
       op watEscapeString (as string: s) as string
@@ -20,6 +21,17 @@ contract (WatBackendContract) {
 }
 
 agent (CompilerLib) impl WatBackendContract {
+      op watJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string ==> {
+            route {
+                  lo > hi ==> { emit(nice, "", "ok") }
+                  lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        emit(nice, watJoinRange(parts, lo, mid) + watJoinRange(parts, mid + 1, hi), "ok")
+                  }
+            }
+      }
+
       op watSanitizeIdent (as string: raw) as string ==> {
             mut as int64: n = stdCollectionLength(raw)
             route {
@@ -254,7 +266,7 @@ agent (CompilerLib) impl WatBackendContract {
                               mut as bool: is_unary = (oplen >= 6 and opcode[1..6] == "UNARY_")
 
                               route {
-                                    res != "" and opcode != "LABEL" and opcode != "JUMP" and opcode != "JUMP_IF_FALSE" and opcode != "JUMP_IF_TRUE" and opcode != "SHORT_CIRCUIT_BRANCH" and opcode != "PRINT" and opcode != "EMIT" and opcode != "NOP" and opcode != "USE_ALIAS" and opcode != "USE_GROUP" and opcode != "META" and opcode != "SET_INDEX" and opcode != "MAP_SET" and opcode != "SET_FIELD" and opcode != "STRUCT_SET_FIELD" and opcode != "LIST_PUSH" and opcode != "SET_ADD" ==> {
+                                    res != "" and opcode != "LABEL" and opcode != "JUMP" and opcode != "JUMP_IF_FALSE" and opcode != "JUMP_IF_TRUE" and opcode != "SHORT_CIRCUIT_BRANCH" and opcode != "PRINT" and opcode != "EMIT" and opcode != "NOP" and opcode != "USE_ALIAS" and opcode != "USE_GROUP" and opcode != "META" and opcode != "MAP_SET" and opcode != "SET_FIELD" and opcode != "STRUCT_SET_FIELD" and opcode != "LIST_PUSH" and opcode != "SET_ADD" ==> {
                                           mut as string: sres = watSanitizeIdent(res)
                                           route {
                                                 not stdMapContainsKey(seen, sres) ==> {
@@ -267,7 +279,7 @@ agent (CompilerLib) impl WatBackendContract {
                                     _ ==> {}
                               }
                               route {
-                                    a1 != "" and (is_binop or is_unary or opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" or opcode == "JUMP_IF_FALSE" or opcode == "JUMP_IF_TRUE" or opcode == "SHORT_CIRCUIT_BRANCH" or opcode == "PRINT" or opcode == "EMIT" or opcode == "CAST" or opcode == "COLL_LEN" or opcode == "COLL_GET") ==> {
+                                    a1 != "" and (is_binop or is_unary or opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" or opcode == "JUMP_IF_FALSE" or opcode == "JUMP_IF_TRUE" or opcode == "SHORT_CIRCUIT_BRANCH" or opcode == "PRINT" or opcode == "EMIT" or opcode == "CAST" or opcode == "COLL_LEN" or opcode == "COLL_GET" or opcode == "LIST_PUSH" or opcode == "SET_ADD" or opcode == "GET_INDEX" or opcode == "SET_INDEX") ==> {
                                           mut as string: sa1 = watSanitizeIdent(a1)
                                           route {
                                                 not stdMapContainsKey(seen, sa1) ==> {
@@ -280,7 +292,7 @@ agent (CompilerLib) impl WatBackendContract {
                                     _ ==> {}
                               }
                               route {
-                                    a2 != "" and is_binop ==> {
+                                    a2 != "" and (is_binop or opcode == "LIST_PUSH" or opcode == "SET_ADD" or opcode == "COLL_GET") ==> {
                                           mut as string: sa2 = watSanitizeIdent(a2)
                                           route {
                                                 not stdMapContainsKey(seen, sa2) ==> {
@@ -293,7 +305,7 @@ agent (CompilerLib) impl WatBackendContract {
                                     _ ==> {}
                               }
                               route {
-                                    opcode == "CALL" and a2 != "" ==> {
+                                    (opcode == "CALL" or opcode == "GET_INDEX" or opcode == "SET_INDEX") and a2 != "" ==> {
                                           mut as list of data: cargs = watSplitArgs(a2)
                                           mut as int64: nca = stdCollectionLength(cargs)
                                           mut as int64: cai = 1
@@ -444,156 +456,549 @@ agent (CompilerLib) impl WatBackendContract {
 
       op watEmitRuntimeHelpers () as string ==> {
             mut as string: nl = "\n"
-            mut as string: w = ""
-            w = w + "  (func $flux_print_bytes (param $ptr i32) (param $len i32)" + nl
-            w = w + "    i32.const 0" + nl
-            w = w + "    local.get $ptr" + nl
-            w = w + "    i32.store" + nl
-            w = w + "    i32.const 4" + nl
-            w = w + "    local.get $len" + nl
-            w = w + "    i32.store" + nl
-            w = w + "    i32.const 1" + nl
-            w = w + "    i32.const 0" + nl
-            w = w + "    i32.const 1" + nl
-            w = w + "    i32.const 16" + nl
-            w = w + "    call $fd_write" + nl
-            w = w + "    drop" + nl
-            w = w + "  )" + nl
-            w = w + "  (func $flux_print_newline" + nl
-            w = w + "    i32.const 24" + nl
-            w = w + "    i32.const 10" + nl
-            w = w + "    i32.store8" + nl
-            w = w + "    i32.const 24" + nl
-            w = w + "    i32.const 1" + nl
-            w = w + "    call $flux_print_bytes" + nl
-            w = w + "  )" + nl
-            w = w + "  (func $flux_print_str (param $fat i64)" + nl
-            w = w + "    (local $ptr i32)" + nl
-            w = w + "    (local $len i32)" + nl
-            w = w + "    local.get $fat" + nl
-            w = w + "    i64.const 32" + nl
-            w = w + "    i64.shr_u" + nl
-            w = w + "    i32.wrap_i64" + nl
-            w = w + "    local.set $ptr" + nl
-            w = w + "    local.get $fat" + nl
-            w = w + "    i64.const 4294967295" + nl
-            w = w + "    i64.and" + nl
-            w = w + "    i32.wrap_i64" + nl
-            w = w + "    local.set $len" + nl
-            w = w + "    local.get $ptr" + nl
-            w = w + "    local.get $len" + nl
-            w = w + "    call $flux_print_bytes" + nl
-            w = w + "    call $flux_print_newline" + nl
-            w = w + "  )" + nl
-            w = w + "  (func $flux_print_bool (param $val i64)" + nl
-            w = w + "    local.get $val" + nl
-            w = w + "    i64.const 0" + nl
-            w = w + "    i64.ne" + nl
-            w = w + "    (if" + nl
-            w = w + "      (then" + nl
-            w = w + "        i32.const 32" + nl
-            w = w + "        i32.const 4" + nl
-            w = w + "        call $flux_print_bytes" + nl
-            w = w + "      )" + nl
-            w = w + "      (else" + nl
-            w = w + "        i32.const 40" + nl
-            w = w + "        i32.const 5" + nl
-            w = w + "        call $flux_print_bytes" + nl
-            w = w + "      )" + nl
-            w = w + "    )" + nl
-            w = w + "    call $flux_print_newline" + nl
-            w = w + "  )" + nl
-            w = w + "  (func $flux_print_i64 (param $val i64)" + nl
-            w = w + "    (local $v i64)" + nl
-            w = w + "    (local $neg i32)" + nl
-            w = w + "    (local $pos i32)" + nl
-            w = w + "    (local $digit i32)" + nl
-            w = w + "    i32.const 319" + nl
-            w = w + "    local.set $pos" + nl
-            w = w + "    local.get $val" + nl
-            w = w + "    i64.eqz" + nl
-            w = w + "    (if" + nl
-            w = w + "      (then" + nl
-            w = w + "        local.get $pos" + nl
-            w = w + "        i32.const 48" + nl
-            w = w + "        i32.store8" + nl
-            w = w + "        local.get $pos" + nl
-            w = w + "        i32.const 1" + nl
-            w = w + "        call $flux_print_bytes" + nl
-            w = w + "        call $flux_print_newline" + nl
-            w = w + "        return" + nl
-            w = w + "      )" + nl
-            w = w + "    )" + nl
-            w = w + "    local.get $val" + nl
-            w = w + "    i64.const 0" + nl
-            w = w + "    i64.lt_s" + nl
-            w = w + "    (if" + nl
-            w = w + "      (then" + nl
-            w = w + "        i32.const 1" + nl
-            w = w + "        local.set $neg" + nl
-            w = w + "        i64.const 0" + nl
-            w = w + "        local.get $val" + nl
-            w = w + "        i64.sub" + nl
-            w = w + "        local.set $v" + nl
-            w = w + "      )" + nl
-            w = w + "      (else" + nl
-            w = w + "        local.get $val" + nl
-            w = w + "        local.set $v" + nl
-            w = w + "      )" + nl
-            w = w + "    )" + nl
-            w = w + "    (block $fmt_done" + nl
-            w = w + "      (loop $fmt_loop" + nl
-            w = w + "        local.get $v" + nl
-            w = w + "        i64.eqz" + nl
-            w = w + "        br_if $fmt_done" + nl
-            w = w + "        local.get $v" + nl
-            w = w + "        i64.const 10" + nl
-            w = w + "        i64.rem_u" + nl
-            w = w + "        i32.wrap_i64" + nl
-            w = w + "        i32.const 48" + nl
-            w = w + "        i32.add" + nl
-            w = w + "        local.set $digit" + nl
-            w = w + "        local.get $pos" + nl
-            w = w + "        local.get $digit" + nl
-            w = w + "        i32.store8" + nl
-            w = w + "        local.get $pos" + nl
-            w = w + "        i32.const 1" + nl
-            w = w + "        i32.sub" + nl
-            w = w + "        local.set $pos" + nl
-            w = w + "        local.get $v" + nl
-            w = w + "        i64.const 10" + nl
-            w = w + "        i64.div_u" + nl
-            w = w + "        local.set $v" + nl
-            w = w + "        br $fmt_loop" + nl
-            w = w + "      )" + nl
-            w = w + "    )" + nl
-            w = w + "    local.get $neg" + nl
-            w = w + "    (if" + nl
-            w = w + "      (then" + nl
-            w = w + "        local.get $pos" + nl
-            w = w + "        i32.const 45" + nl
-            w = w + "        i32.store8" + nl
-            w = w + "        local.get $pos" + nl
-            w = w + "        i32.const 1" + nl
-            w = w + "        i32.sub" + nl
-            w = w + "        local.set $pos" + nl
-            w = w + "      )" + nl
-            w = w + "    )" + nl
-            w = w + "    local.get $pos" + nl
-            w = w + "    i32.const 1" + nl
-            w = w + "    i32.add" + nl
-            w = w + "    i32.const 319" + nl
-            w = w + "    local.get $pos" + nl
-            w = w + "    i32.sub" + nl
-            w = w + "    call $flux_print_bytes" + nl
-            w = w + "    call $flux_print_newline" + nl
-            w = w + "  )" + nl
-            emit(nice, w, "ok")
+            mut as list of data: w_parts = []
+            w_parts = stdListPushBack(w_parts, "  (func $flux_print_bytes (param $ptr i32) (param $len i32)" + nl +
+                  "    i32.const 0" + nl +
+                  "    local.get $ptr" + nl +
+                  "    i32.store" + nl +
+                  "    i32.const 4" + nl +
+                  "    local.get $len" + nl +
+                  "    i32.store" + nl +
+                  "    i32.const 1" + nl +
+                  "    i32.const 0" + nl +
+                  "    i32.const 1" + nl +
+                  "    i32.const 16" + nl +
+                  "    call $fd_write" + nl +
+                  "    drop" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_print_newline" + nl +
+                  "    i32.const 24" + nl +
+                  "    i32.const 10" + nl +
+                  "    i32.store8" + nl +
+                  "    i32.const 24" + nl +
+                  "    i32.const 1" + nl +
+                  "    call $flux_print_bytes" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_print_str (param $fat i64)" + nl +
+                  "    (local $ptr i32)" + nl +
+                  "    (local $len i32)" + nl +
+                  "    local.get $fat" + nl +
+                  "    i64.const 32" + nl +
+                  "    i64.shr_u" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $ptr" + nl +
+                  "    local.get $fat" + nl +
+                  "    i64.const 4294967295" + nl +
+                  "    i64.and" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $len" + nl +
+                  "    local.get $ptr" + nl +
+                  "    local.get $len" + nl +
+                  "    call $flux_print_bytes" + nl +
+                  "    call $flux_print_newline" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_print_bool (param $val i64)" + nl +
+                  "    local.get $val" + nl +
+                  "    i64.const 0" + nl +
+                  "    i64.ne" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        i32.const 32" + nl +
+                  "        i32.const 4" + nl +
+                  "        call $flux_print_bytes" + nl +
+                  "      )" + nl +
+                  "      (else" + nl +
+                  "        i32.const 40" + nl +
+                  "        i32.const 5" + nl +
+                  "        call $flux_print_bytes" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    call $flux_print_newline" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_print_i64 (param $val i64)" + nl +
+                  "    (local $v i64)" + nl +
+                  "    (local $neg i32)" + nl +
+                  "    (local $pos i32)" + nl +
+                  "    (local $digit i32)" + nl +
+                  "    i32.const 319" + nl +
+                  "    local.set $pos" + nl +
+                  "    local.get $val" + nl +
+                  "    i64.eqz" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        local.get $pos" + nl +
+                  "        i32.const 48" + nl +
+                  "        i32.store8" + nl +
+                  "        local.get $pos" + nl +
+                  "        i32.const 1" + nl +
+                  "        call $flux_print_bytes" + nl +
+                  "        call $flux_print_newline" + nl +
+                  "        return" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $val" + nl +
+                  "    i64.const 0" + nl +
+                  "    i64.lt_s" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        i32.const 1" + nl +
+                  "        local.set $neg" + nl +
+                  "        i64.const 0" + nl +
+                  "        local.get $val" + nl +
+                  "        i64.sub" + nl +
+                  "        local.set $v" + nl +
+                  "      )" + nl +
+                  "      (else" + nl +
+                  "        local.get $val" + nl +
+                  "        local.set $v" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    (block $fmt_done" + nl +
+                  "      (loop $fmt_loop" + nl +
+                  "        local.get $v" + nl +
+                  "        i64.eqz" + nl +
+                  "        br_if $fmt_done" + nl +
+                  "        local.get $v" + nl +
+                  "        i64.const 10" + nl +
+                  "        i64.rem_u" + nl +
+                  "        i32.wrap_i64" + nl +
+                  "        i32.const 48" + nl +
+                  "        i32.add" + nl +
+                  "        local.set $digit" + nl +
+                  "        local.get $pos" + nl +
+                  "        local.get $digit" + nl +
+                  "        i32.store8" + nl +
+                  "        local.get $pos" + nl +
+                  "        i32.const 1" + nl +
+                  "        i32.sub" + nl +
+                  "        local.set $pos" + nl +
+                  "        local.get $v" + nl +
+                  "        i64.const 10" + nl +
+                  "        i64.div_u" + nl +
+                  "        local.set $v" + nl +
+                  "        br $fmt_loop" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $neg" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        local.get $pos" + nl +
+                  "        i32.const 45" + nl +
+                  "        i32.store8" + nl +
+                  "        local.get $pos" + nl +
+                  "        i32.const 1" + nl +
+                  "        i32.sub" + nl +
+                  "        local.set $pos" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $pos" + nl +
+                  "    i32.const 1" + nl +
+                  "    i32.add" + nl +
+                  "    i32.const 319" + nl +
+                  "    local.get $pos" + nl +
+                  "    i32.sub" + nl +
+                  "    call $flux_print_bytes" + nl +
+                  "    call $flux_print_newline" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_alloc (param $size i32) (result i32)" + nl +
+                  "    (local $ptr i32)" + nl +
+                  "    (local $end i32)" + nl +
+                  "    (local $cur_bytes i32)" + nl +
+                  "    local.get $size" + nl +
+                  "    i32.const 0" + nl +
+                  "    i32.le_s" + nl +
+                  "    (if (then i32.const 8 local.set $size))" + nl +
+                  "    local.get $size" + nl +
+                  "    i32.const 7" + nl +
+                  "    i32.add" + nl +
+                  "    i32.const -8" + nl +
+                  "    i32.and" + nl +
+                  "    local.set $size" + nl +
+                  "    global.get $flux_heap_ptr" + nl +
+                  "    local.set $ptr" + nl +
+                  "    local.get $ptr" + nl +
+                  "    local.get $size" + nl +
+                  "    i32.add" + nl +
+                  "    local.set $end" + nl +
+                  "    memory.size" + nl +
+                  "    i32.const 16" + nl +
+                  "    i32.shl" + nl +
+                  "    local.set $cur_bytes" + nl +
+                  "    local.get $end" + nl +
+                  "    local.get $cur_bytes" + nl +
+                  "    i32.gt_u" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        local.get $end" + nl +
+                  "        local.get $cur_bytes" + nl +
+                  "        i32.sub" + nl +
+                  "        i32.const 65535" + nl +
+                  "        i32.add" + nl +
+                  "        i32.const 16" + nl +
+                  "        i32.shr_u" + nl +
+                  "        memory.grow" + nl +
+                  "        drop" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $end" + nl +
+                  "    global.set $flux_heap_ptr" + nl +
+                  "    local.get $ptr" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_list_new (result i64)" + nl +
+                  "    (local $hdr i32)" + nl +
+                  "    (local $data i32)" + nl +
+                  "    i32.const 16" + nl +
+                  "    call $flux_alloc" + nl +
+                  "    local.set $hdr" + nl +
+                  "    i32.const 64" + nl +
+                  "    call $flux_alloc" + nl +
+                  "    local.set $data" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.const 0" + nl +
+                  "    i32.store offset=0" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.const 8" + nl +
+                  "    i32.store offset=4" + nl +
+                  "    local.get $hdr" + nl +
+                  "    local.get $data" + nl +
+                  "    i32.store offset=8" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.const 1179407188" + nl +
+                  "    i32.store offset=12" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_list_push (param $h i64) (param $val i64)" + nl +
+                  "    (local $hdr i32)" + nl +
+                  "    (local $len i32)" + nl +
+                  "    (local $cap i32)" + nl +
+                  "    (local $data i32)" + nl +
+                  "    (local $new_data i32)" + nl +
+                  "    (local $i i32)" + nl +
+                  "    local.get $h" + nl +
+                  "    i64.const 0" + nl +
+                  "    i64.le_s" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $h" + nl +
+                  "    global.get $flux_heap_ptr" + nl +
+                  "    i32.const 16" + nl +
+                  "    i32.sub" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "    i64.gt_u" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $h" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $hdr" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=12" + nl +
+                  "    i32.const 1179407188" + nl +
+                  "    i32.ne" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=0" + nl +
+                  "    local.set $len" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=4" + nl +
+                  "    local.set $cap" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=8" + nl +
+                  "    local.set $data" + nl +
+                  "    local.get $len" + nl +
+                  "    local.get $cap" + nl +
+                  "    i32.ge_s" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.const 2" + nl +
+                  "        i32.mul" + nl +
+                  "        local.set $cap" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.const 8" + nl +
+                  "        i32.lt_s" + nl +
+                  "        (if (then i32.const 8 local.set $cap))" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.const 3" + nl +
+                  "        i32.shl" + nl +
+                  "        call $flux_alloc" + nl +
+                  "        local.set $new_data" + nl +
+                  "        i32.const 0" + nl +
+                  "        local.set $i" + nl +
+                  "        (block $cp_done" + nl +
+                  "          (loop $cp_loop" + nl +
+                  "            local.get $i" + nl +
+                  "            local.get $len" + nl +
+                  "            i32.ge_s" + nl +
+                  "            br_if $cp_done" + nl +
+                  "            local.get $new_data" + nl +
+                  "            local.get $i" + nl +
+                  "            i32.const 3" + nl +
+                  "            i32.shl" + nl +
+                  "            i32.add" + nl +
+                  "            local.get $data" + nl +
+                  "            local.get $i" + nl +
+                  "            i32.const 3" + nl +
+                  "            i32.shl" + nl +
+                  "            i32.add" + nl +
+                  "            i64.load" + nl +
+                  "            i64.store" + nl +
+                  "            local.get $i" + nl +
+                  "            i32.const 1" + nl +
+                  "            i32.add" + nl +
+                  "            local.set $i" + nl +
+                  "            br $cp_loop" + nl +
+                  "          )" + nl +
+                  "        )" + nl +
+                  "        local.get $hdr" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.store offset=4" + nl +
+                  "        local.get $hdr" + nl +
+                  "        local.get $new_data" + nl +
+                  "        i32.store offset=8" + nl +
+                  "        local.get $new_data" + nl +
+                  "        local.set $data" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $data" + nl +
+                  "    local.get $len" + nl +
+                  "    i32.const 3" + nl +
+                  "    i32.shl" + nl +
+                  "    i32.add" + nl +
+                  "    local.get $val" + nl +
+                  "    i64.store" + nl +
+                  "    local.get $hdr" + nl +
+                  "    local.get $len" + nl +
+                  "    i32.const 1" + nl +
+                  "    i32.add" + nl +
+                  "    i32.store offset=0" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_list_get (param $h i64) (param $idx i64) (result i64)" + nl +
+                  "    (local $hdr i32)" + nl +
+                  "    (local $len i32)" + nl +
+                  "    local.get $h" + nl +
+                  "    i64.const 0" + nl +
+                  "    i64.le_s" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $h" + nl +
+                  "    global.get $flux_heap_ptr" + nl +
+                  "    i32.const 16" + nl +
+                  "    i32.sub" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "    i64.gt_u" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $h" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $hdr" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=12" + nl +
+                  "    i32.const 1179407188" + nl +
+                  "    i32.ne" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=0" + nl +
+                  "    local.set $len" + nl +
+                  "    local.get $idx" + nl +
+                  "    i64.const 1" + nl +
+                  "    i64.lt_s" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $idx" + nl +
+                  "    local.get $len" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "    i64.gt_s" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=8" + nl +
+                  "    local.get $idx" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    i32.const 1" + nl +
+                  "    i32.sub" + nl +
+                  "    i32.const 3" + nl +
+                  "    i32.shl" + nl +
+                  "    i32.add" + nl +
+                  "    i64.load" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_list_set (param $h i64) (param $idx i64) (param $val i64)" + nl +
+                  "    (local $hdr i32)" + nl +
+                  "    (local $len i32)" + nl +
+                  "    (local $cap i32)" + nl +
+                  "    (local $data i32)" + nl +
+                  "    (local $new_data i32)" + nl +
+                  "    (local $i i32)" + nl +
+                  "    (local $idx32 i32)" + nl +
+                  "    local.get $h" + nl +
+                  "    i64.const 0" + nl +
+                  "    i64.le_s" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $h" + nl +
+                  "    global.get $flux_heap_ptr" + nl +
+                  "    i32.const 16" + nl +
+                  "    i32.sub" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "    i64.gt_u" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $h" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $hdr" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=12" + nl +
+                  "    i32.const 1179407188" + nl +
+                  "    i32.ne" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $idx" + nl +
+                  "    i64.const 1" + nl +
+                  "    i64.lt_s" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $idx" + nl +
+                  "    i64.const 1048576" + nl +
+                  "    i64.gt_s" + nl +
+                  "    (if (then return))" + nl +
+                  "    local.get $idx" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $idx32" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=0" + nl +
+                  "    local.set $len" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=4" + nl +
+                  "    local.set $cap" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=8" + nl +
+                  "    local.set $data" + nl +
+                  "    local.get $idx32" + nl +
+                  "    local.get $cap" + nl +
+                  "    i32.gt_s" + nl +
+                  "    (if" + nl +
+                  "      (then" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.const 2" + nl +
+                  "        i32.mul" + nl +
+                  "        local.set $cap" + nl +
+                  "        local.get $cap" + nl +
+                  "        local.get $idx32" + nl +
+                  "        i32.lt_s" + nl +
+                  "        (if (then local.get $idx32 local.set $cap))" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.const 3" + nl +
+                  "        i32.shl" + nl +
+                  "        call $flux_alloc" + nl +
+                  "        local.set $new_data" + nl +
+                  "        i32.const 0" + nl +
+                  "        local.set $i" + nl +
+                  "        (block $scp_done" + nl +
+                  "          (loop $scp_loop" + nl +
+                  "            local.get $i" + nl +
+                  "            local.get $len" + nl +
+                  "            i32.ge_s" + nl +
+                  "            br_if $scp_done" + nl +
+                  "            local.get $new_data" + nl +
+                  "            local.get $i" + nl +
+                  "            i32.const 3" + nl +
+                  "            i32.shl" + nl +
+                  "            i32.add" + nl +
+                  "            local.get $data" + nl +
+                  "            local.get $i" + nl +
+                  "            i32.const 3" + nl +
+                  "            i32.shl" + nl +
+                  "            i32.add" + nl +
+                  "            i64.load" + nl +
+                  "            i64.store" + nl +
+                  "            local.get $i" + nl +
+                  "            i32.const 1" + nl +
+                  "            i32.add" + nl +
+                  "            local.set $i" + nl +
+                  "            br $scp_loop" + nl +
+                  "          )" + nl +
+                  "        )" + nl +
+                  "        local.get $hdr" + nl +
+                  "        local.get $cap" + nl +
+                  "        i32.store offset=4" + nl +
+                  "        local.get $hdr" + nl +
+                  "        local.get $new_data" + nl +
+                  "        i32.store offset=8" + nl +
+                  "        local.get $new_data" + nl +
+                  "        local.set $data" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $data" + nl +
+                  "    local.get $idx32" + nl +
+                  "    i32.const 1" + nl +
+                  "    i32.sub" + nl +
+                  "    i32.const 3" + nl +
+                  "    i32.shl" + nl +
+                  "    i32.add" + nl +
+                  "    local.get $val" + nl +
+                  "    i64.store" + nl +
+                  "    local.get $idx32" + nl +
+                  "    local.get $len" + nl +
+                  "    i32.gt_s" + nl +
+                  "    (if (then local.get $hdr local.get $idx32 i32.store offset=0))" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_list_len (param $h i64) (result i64)" + nl +
+                  "    (local $hdr i32)" + nl +
+                  "    local.get $h" + nl +
+                  "    i64.const 0" + nl +
+                  "    i64.le_s" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $h" + nl +
+                  "    global.get $flux_heap_ptr" + nl +
+                  "    i32.const 16" + nl +
+                  "    i32.sub" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "    i64.gt_u" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $h" + nl +
+                  "    i32.wrap_i64" + nl +
+                  "    local.set $hdr" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=12" + nl +
+                  "    i32.const 1179407188" + nl +
+                  "    i32.ne" + nl +
+                  "    (if (then i64.const 0 return))" + nl +
+                  "    local.get $hdr" + nl +
+                  "    i32.load offset=0" + nl +
+                  "    i64.extend_i32_u" + nl +
+                  "  )" + nl)
+            w_parts = stdListPushBack(w_parts, "  (func $flux_list_take (param $h i64) (param $cnt i64) (result i64)" + nl +
+                  "    (local $res i64)" + nl +
+                  "    (local $n i64)" + nl +
+                  "    (local $lim i64)" + nl +
+                  "    (local $i i64)" + nl +
+                  "    call $flux_list_new" + nl +
+                  "    local.set $res" + nl +
+                  "    local.get $h" + nl +
+                  "    call $flux_list_len" + nl +
+                  "    local.set $n" + nl +
+                  "    local.get $cnt" + nl +
+                  "    local.get $n" + nl +
+                  "    i64.lt_s" + nl +
+                  "    (if (then local.get $cnt local.set $lim) (else local.get $n local.set $lim))" + nl +
+                  "    i64.const 1" + nl +
+                  "    local.set $i" + nl +
+                  "    (block $tk_done" + nl +
+                  "      (loop $tk_loop" + nl +
+                  "        local.get $i" + nl +
+                  "        local.get $lim" + nl +
+                  "        i64.gt_s" + nl +
+                  "        br_if $tk_done" + nl +
+                  "        local.get $res" + nl +
+                  "        local.get $h" + nl +
+                  "        local.get $i" + nl +
+                  "        call $flux_list_get" + nl +
+                  "        call $flux_list_push" + nl +
+                  "        local.get $i" + nl +
+                  "        i64.const 1" + nl +
+                  "        i64.add" + nl +
+                  "        local.set $i" + nl +
+                  "        br $tk_loop" + nl +
+                  "      )" + nl +
+                  "    )" + nl +
+                  "    local.get $res" + nl +
+                  "  )" + nl)
+            emit(nice, watJoinRange(w_parts, 1, stdCollectionLength(w_parts)), "ok")
       }
 
       op watEmitFuncBody (as list of data: instrs, as list of data: fn_params, as map: str_info, as map: fn_table, as map: uf_by_sym, as bool: is_main) as string ==> {
             mut as string: nl = "\n"
-            mut as string: w = ""
+            mut as list of data: w_parts = []
             mut as map: str_fats = str_info["fats"]
             mut as int64: pre_out_off = 0
             mut as int64: pre_out_len = 0
@@ -607,7 +1012,7 @@ agent (CompilerLib) impl WatBackendContract {
             }
 
             #L 1. Declaracao de locais
-            w = w + "    (local $flux_pc i32)" + nl
+            w_parts = stdListPushBack(w_parts, "    (local $flux_pc i32)" + nl)
             mut as list of data: locals = watCollectLocals(instrs, fn_params)
             mut as int64: n_locals = stdCollectionLength(locals)
             mut as int64: li = 1
@@ -616,7 +1021,7 @@ agent (CompilerLib) impl WatBackendContract {
                         li > n_locals ==> { break }
                         _ ==> {
                               mut as string: lname = "" + locals[li]
-                              w = w + "    (local $" + lname + " i64)" + nl
+                              w_parts = stdListPushBack(w_parts, "    (local $" + lname + " i64)" + nl)
                               li = li + 1
                         }
                   }
@@ -647,19 +1052,19 @@ agent (CompilerLib) impl WatBackendContract {
             }
 
             #L 3. Inicializa $flux_pc e abre loop de despacho estruturado
-            w = w + "    i32.const 1" + nl
-            w = w + "    local.set $flux_pc" + nl
-            w = w + "    (block $flux_exit" + nl
-            w = w + "      (loop $flux_dispatch" + nl
+            w_parts = stdListPushBack(w_parts, "    i32.const 1" + nl +
+                  "    local.set $flux_pc" + nl +
+                  "    (block $flux_exit" + nl +
+                  "      (loop $flux_dispatch" + nl +
+                  "        local.get $flux_pc" + nl +
+                  "        i32.const 1" + nl +
+                  "        i32.eq" + nl +
+                  "        (if" + nl +
+                  "          (then" + nl)
 
             #L Abre bloco 1
             mut as int64: cur_block = 1
             mut as bool: block_terminated = false
-            w = w + "        local.get $flux_pc" + nl
-            w = w + "        i32.const 1" + nl
-            w = w + "        i32.eq" + nl
-            w = w + "        (if" + nl
-            w = w + "          (then" + nl
 
             mut as map: reg_types = map{}
             mut as map: var_types = map{}
@@ -682,35 +1087,31 @@ agent (CompilerLib) impl WatBackendContract {
                                           route {
                                                 not block_terminated ==> {
                                                       mut as int64: next_b = cur_block + 1
-                                                      w = w + "            i32.const " + next_b + nl
-                                                      w = w + "            local.set $flux_pc" + nl
-                                                      w = w + "            br $flux_dispatch" + nl
+                                                      w_parts = stdListPushBack(w_parts, "            i32.const " + next_b + nl + "            local.set $flux_pc" + nl + "            br $flux_dispatch" + nl)
                                                 }
                                                 _ ==> {}
                                           }
-                                          w = w + "          )" + nl
-                                          w = w + "        )" + nl
                                           cur_block = cur_block + 1
                                           block_terminated = false
-                                          w = w + "        local.get $flux_pc" + nl
-                                          w = w + "        i32.const " + cur_block + nl
-                                          w = w + "        i32.eq" + nl
-                                          w = w + "        (if" + nl
-                                          w = w + "          (then" + nl
+                                          w_parts = stdListPushBack(w_parts, "          )" + nl +
+                                                "        )" + nl +
+                                                "        local.get $flux_pc" + nl +
+                                                "        i32.const " + cur_block + nl +
+                                                "        i32.eq" + nl +
+                                                "        (if" + nl +
+                                                "          (then" + nl)
                                     }
                                     block_terminated ==> {
                                           #L Ignora codigo morto ate o proximo LABEL
                                     }
                                     opcode == "CONST_INT" ==> {
                                           mut as int64: iv = watParseIntSafe(a1)
-                                          w = w + "            i64.const " + iv + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            i64.const " + iv + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "CONST_FLOAT" ==> {
                                           mut as int64: fv = watParseIntSafe(a1)
-                                          w = w + "            i64.const " + fv + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            i64.const " + fv + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "float"
                                     }
                                     opcode == "CONST_BOOL" ==> {
@@ -719,8 +1120,7 @@ agent (CompilerLib) impl WatBackendContract {
                                                 a1 == "true" ==> { bv = 1 }
                                                 _ ==> {}
                                           }
-                                          w = w + "            i64.const " + bv + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            i64.const " + bv + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "CONST_STR" or opcode == "CONST_COMPLEX" ==> {
@@ -729,15 +1129,13 @@ agent (CompilerLib) impl WatBackendContract {
                                                 stdMapContainsKey(str_fats, a1) ==> { fat = str_fats[a1] }
                                                 _ ==> {}
                                           }
-                                          w = w + "            i64.const " + fat + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            i64.const " + fat + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "string"
                                     }
                                     opcode == "LOAD" or opcode == "STORE" or opcode == "COPY_REG" ==> {
                                           route {
                                                 a1 != "" and res != "" ==> {
-                                                      w = w + "            local.get $" + sa1 + nl
-                                                      w = w + "            local.set $" + sres + nl
+                                                      w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.set $" + sres + nl)
                                                       route {
                                                             stdMapContainsKey(reg_types, sa1) ==> {
                                                                   reg_types[sres] = reg_types[sa1]
@@ -753,173 +1151,113 @@ agent (CompilerLib) impl WatBackendContract {
                                           }
                                     }
                                     opcode == "BINOP_+" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.add" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.add" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_-" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.sub" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.sub" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_*" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.mul" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.mul" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_/i" or opcode == "BINOP_/f" ==> {
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.eqz" + nl
-                                          w = w + "            (if (result i64)" + nl
-                                          w = w + "              (then" + nl
-                                          w = w + "                i64.const 0" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "              (else" + nl
-                                          w = w + "                local.get $" + sa1 + nl
-                                          w = w + "                local.get $" + sa2 + nl
-                                          w = w + "                i64.div_s" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "            )" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa2 + nl +
+                                                "            i64.eqz" + nl +
+                                                "            (if (result i64)" + nl +
+                                                "              (then" + nl +
+                                                "                i64.const 0" + nl +
+                                                "              )" + nl +
+                                                "              (else" + nl +
+                                                "                local.get $" + sa1 + nl +
+                                                "                local.get $" + sa2 + nl +
+                                                "                i64.div_s" + nl +
+                                                "              )" + nl +
+                                                "            )" + nl +
+                                                "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_%" or opcode == "BINOP_/r" ==> {
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.eqz" + nl
-                                          w = w + "            (if (result i64)" + nl
-                                          w = w + "              (then" + nl
-                                          w = w + "                i64.const 0" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "              (else" + nl
-                                          w = w + "                local.get $" + sa1 + nl
-                                          w = w + "                local.get $" + sa2 + nl
-                                          w = w + "                i64.rem_s" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "            )" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa2 + nl +
+                                                "            i64.eqz" + nl +
+                                                "            (if (result i64)" + nl +
+                                                "              (then" + nl +
+                                                "                i64.const 0" + nl +
+                                                "              )" + nl +
+                                                "              (else" + nl +
+                                                "                local.get $" + sa1 + nl +
+                                                "                local.get $" + sa2 + nl +
+                                                "                i64.rem_s" + nl +
+                                                "              )" + nl +
+                                                "            )" + nl +
+                                                "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_&" or opcode == "BINOP_band" or opcode == "BINOP_and" or opcode == "BINOP_&&" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.and" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.and" + nl + "            local.set $" + sres + nl)
                                           route {
                                                 opcode == "BINOP_and" or opcode == "BINOP_&&" ==> { reg_types[sres] = "bool" }
                                                 _ ==> { reg_types[sres] = "int" }
                                           }
                                     }
                                     opcode == "BINOP_|" or opcode == "BINOP_bor" or opcode == "BINOP_or" or opcode == "BINOP_||" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.or" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.or" + nl + "            local.set $" + sres + nl)
                                           route {
                                                 opcode == "BINOP_or" or opcode == "BINOP_||" ==> { reg_types[sres] = "bool" }
                                                 _ ==> { reg_types[sres] = "int" }
                                           }
                                     }
                                     opcode == "BINOP_^" or opcode == "BINOP_bxor" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.xor" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.xor" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_<<" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.shl" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.shl" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_>>" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.shr_s" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.shr_s" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_>>>" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.shr_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.shr_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "BINOP_==" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.eq" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.eq" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_!=" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.ne" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.ne" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_<" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.lt_s" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.lt_s" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_<=" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.le_s" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.le_s" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_>" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.gt_s" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.gt_s" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "BINOP_>=" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            local.get $" + sa2 + nl
-                                          w = w + "            i64.ge_s" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            i64.ge_s" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "UNARY_-" ==> {
-                                          w = w + "            i64.const 0" + nl
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            i64.sub" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            local.get $" + sa1 + nl + "            i64.sub" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "UNARY_not" or opcode == "UNARY_!" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            i64.eqz" + nl
-                                          w = w + "            i64.extend_i32_u" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            i64.eqz" + nl + "            i64.extend_i32_u" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "bool"
                                     }
                                     opcode == "UNARY_~" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            i64.const -1" + nl
-                                          w = w + "            i64.xor" + nl
-                                          w = w + "            local.set $" + sres + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            i64.const -1" + nl + "            i64.xor" + nl + "            local.set $" + sres + nl)
                                           reg_types[sres] = "int"
                                     }
                                     opcode == "JUMP" ==> {
@@ -928,9 +1266,7 @@ agent (CompilerLib) impl WatBackendContract {
                                                 stdMapContainsKey(label_to_block, a1) ==> { tb = label_to_block[a1] }
                                                 _ ==> {}
                                           }
-                                          w = w + "            i32.const " + tb + nl
-                                          w = w + "            local.set $flux_pc" + nl
-                                          w = w + "            br $flux_dispatch" + nl
+                                          w_parts = stdListPushBack(w_parts, "            i32.const " + tb + nl + "            local.set $flux_pc" + nl + "            br $flux_dispatch" + nl)
                                           block_terminated = true
                                     }
                                     opcode == "JUMP_IF_FALSE" ==> {
@@ -939,15 +1275,15 @@ agent (CompilerLib) impl WatBackendContract {
                                                 stdMapContainsKey(label_to_block, a2) ==> { tb = label_to_block[a2] }
                                                 _ ==> {}
                                           }
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            i64.eqz" + nl
-                                          w = w + "            (if" + nl
-                                          w = w + "              (then" + nl
-                                          w = w + "                i32.const " + tb + nl
-                                          w = w + "                local.set $flux_pc" + nl
-                                          w = w + "                br $flux_dispatch" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "            )" + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl +
+                                                "            i64.eqz" + nl +
+                                                "            (if" + nl +
+                                                "              (then" + nl +
+                                                "                i32.const " + tb + nl +
+                                                "                local.set $flux_pc" + nl +
+                                                "                br $flux_dispatch" + nl +
+                                                "              )" + nl +
+                                                "            )" + nl)
                                     }
                                     opcode == "JUMP_IF_TRUE" ==> {
                                           mut as int64: tb = total_blocks + 1
@@ -955,16 +1291,16 @@ agent (CompilerLib) impl WatBackendContract {
                                                 stdMapContainsKey(label_to_block, a2) ==> { tb = label_to_block[a2] }
                                                 _ ==> {}
                                           }
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            i64.const 0" + nl
-                                          w = w + "            i64.ne" + nl
-                                          w = w + "            (if" + nl
-                                          w = w + "              (then" + nl
-                                          w = w + "                i32.const " + tb + nl
-                                          w = w + "                local.set $flux_pc" + nl
-                                          w = w + "                br $flux_dispatch" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "            )" + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl +
+                                                "            i64.const 0" + nl +
+                                                "            i64.ne" + nl +
+                                                "            (if" + nl +
+                                                "              (then" + nl +
+                                                "                i32.const " + tb + nl +
+                                                "                local.set $flux_pc" + nl +
+                                                "                br $flux_dispatch" + nl +
+                                                "              )" + nl +
+                                                "            )" + nl)
                                     }
                                     opcode == "SHORT_CIRCUIT_BRANCH" ==> {
                                           mut as int64: fb = total_blocks + 1
@@ -977,29 +1313,176 @@ agent (CompilerLib) impl WatBackendContract {
                                                 stdMapContainsKey(label_to_block, res) ==> { ob = label_to_block[res] }
                                                 _ ==> {}
                                           }
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            i64.eqz" + nl
-                                          w = w + "            (if" + nl
-                                          w = w + "              (then" + nl
-                                          w = w + "                i32.const " + fb + nl
-                                          w = w + "                local.set $flux_pc" + nl
-                                          w = w + "                br $flux_dispatch" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "              (else" + nl
-                                          w = w + "                i32.const " + ob + nl
-                                          w = w + "                local.set $flux_pc" + nl
-                                          w = w + "                br $flux_dispatch" + nl
-                                          w = w + "              )" + nl
-                                          w = w + "            )" + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl +
+                                                "            i64.eqz" + nl +
+                                                "            (if" + nl +
+                                                "              (then" + nl +
+                                                "                i32.const " + fb + nl +
+                                                "                local.set $flux_pc" + nl +
+                                                "                br $flux_dispatch" + nl +
+                                                "              )" + nl +
+                                                "              (else" + nl +
+                                                "                i32.const " + ob + nl +
+                                                "                local.set $flux_pc" + nl +
+                                                "                br $flux_dispatch" + nl +
+                                                "              )" + nl +
+                                                "            )" + nl)
                                           block_terminated = true
                                     }
                                     opcode == "PRINT" ==> {
-                                          w = w + "            local.get $" + sa1 + nl
-                                          w = w + "            drop" + nl
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            drop" + nl)
+                                    }
+                                    opcode == "LIST_INIT" or opcode == "SET_INIT" ==> {
+                                          w_parts = stdListPushBack(w_parts, "            call $flux_list_new" + nl + "            local.set $" + sres + nl)
+                                          reg_types[sres] = "list"
+                                    }
+                                    opcode == "LIST_PUSH" or opcode == "SET_ADD" ==> {
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            call $flux_list_push" + nl)
+                                    }
+                                    opcode == "COLL_LEN" ==> {
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            call $flux_list_len" + nl + "            local.set $" + sres + nl)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "COLL_GET" ==> {
+                                          w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.get $" + sa2 + nl + "            call $flux_list_get" + nl + "            local.set $" + sres + nl)
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "GET_INDEX" ==> {
+                                          mut as list of data: gi_args = watSplitArgs(a2)
+                                          mut as int64: n_gia = stdCollectionLength(gi_args)
+                                          route {
+                                                n_gia >= 1 ==> {
+                                                      w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl)
+                                                      mut as int64: gii = 1
+                                                      infinite {
+                                                            route {
+                                                                  gii > n_gia ==> { break }
+                                                                  _ ==> {
+                                                                        mut as string: gi_s = watSanitizeIdent("" + gi_args[gii])
+                                                                        w_parts = stdListPushBack(w_parts, "            local.get $" + gi_s + nl + "            call $flux_list_get" + nl)
+                                                                        gii = gii + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      w_parts = stdListPushBack(w_parts, "            local.set $" + sres + nl)
+                                                }
+                                                _ ==> {
+                                                      w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            local.set $" + sres + nl)
+                                                }
+                                          }
+                                          reg_types[sres] = "int"
+                                    }
+                                    opcode == "SET_INDEX" ==> {
+                                          mut as list of data: si_args = watSplitArgs(a2)
+                                          mut as int64: n_sia = stdCollectionLength(si_args)
+                                          route {
+                                                n_sia >= 1 ==> {
+                                                      w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl)
+                                                      mut as int64: sii = 1
+                                                      infinite {
+                                                            route {
+                                                                  sii >= n_sia ==> { break }
+                                                                  _ ==> {
+                                                                        mut as string: si_s = watSanitizeIdent("" + si_args[sii])
+                                                                        w_parts = stdListPushBack(w_parts, "            local.get $" + si_s + nl + "            call $flux_list_get" + nl)
+                                                                        sii = sii + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mut as string: si_last_s = watSanitizeIdent("" + si_args[n_sia])
+                                                      w_parts = stdListPushBack(w_parts, "            local.get $" + si_last_s + nl + "            local.get $" + sres + nl + "            call $flux_list_set" + nl)
+                                                }
+                                                _ ==> {}
+                                          }
+                                    }
+                                    opcode == "CAST" ==> {
+                                          route {
+                                                res != "" and a1 != "" ==> {
+                                                      w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            local.set $" + sres + nl)
+                                                      reg_types[sres] = "int"
+                                                }
+                                                res != "" ==> {
+                                                      w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            local.set $" + sres + nl)
+                                                      reg_types[sres] = "int"
+                                                }
+                                                _ ==> {}
+                                          }
                                     }
                                     opcode == "CALL" ==> {
                                           mut as bool: called_uf = false
                                           route {
+                                                a1 == "stdCollectionLength" or a1 == "listLength" or a1 == "ListStdLib::listLength" ==> {
+                                                      called_uf = true
+                                                      mut as list of data: cl_args = watSplitArgs(a2)
+                                                      route {
+                                                            stdCollectionLength(cl_args) >= 1 ==> {
+                                                                  mut as string: cl_s1 = watSanitizeIdent("" + cl_args[1])
+                                                                  w_parts = stdListPushBack(w_parts, "            local.get $" + cl_s1 + nl + "            call $flux_list_len" + nl)
+                                                            }
+                                                            _ ==> {
+                                                                  w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl)
+                                                            }
+                                                      }
+                                                      route {
+                                                            res != "" ==> {
+                                                                  w_parts = stdListPushBack(w_parts, "            local.set $" + sres + nl)
+                                                                  reg_types[sres] = "int"
+                                                            }
+                                                            _ ==> {
+                                                                  w_parts = stdListPushBack(w_parts, "            drop" + nl)
+                                                            }
+                                                      }
+                                                }
+                                                a1 == "stdListPushBack" or a1 == "listPushBack" or a1 == "ListStdLib::listPushBack" ==> {
+                                                      called_uf = true
+                                                      mut as list of data: pb_args = watSplitArgs(a2)
+                                                      route {
+                                                            stdCollectionLength(pb_args) >= 2 ==> {
+                                                                  mut as string: pb_s1 = watSanitizeIdent("" + pb_args[1])
+                                                                  mut as string: pb_s2 = watSanitizeIdent("" + pb_args[2])
+                                                                  w_parts = stdListPushBack(w_parts, "            local.get $" + pb_s1 + nl + "            local.get $" + pb_s2 + nl + "            call $flux_list_push" + nl)
+                                                                  route {
+                                                                        res != "" ==> {
+                                                                              w_parts = stdListPushBack(w_parts, "            local.get $" + pb_s1 + nl + "            local.set $" + sres + nl)
+                                                                              reg_types[sres] = "list"
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            _ ==> {
+                                                                  route {
+                                                                        res != "" ==> {
+                                                                              w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            local.set $" + sres + nl)
+                                                                              reg_types[sres] = "int"
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                      }
+                                                }
+                                                a1 == "listTake" or a1 == "stdListTake" or a1 == "ListStdLib::listTake" ==> {
+                                                      called_uf = true
+                                                      mut as list of data: tk_args = watSplitArgs(a2)
+                                                      route {
+                                                            stdCollectionLength(tk_args) >= 2 ==> {
+                                                                  mut as string: tk_s1 = watSanitizeIdent("" + tk_args[1])
+                                                                  mut as string: tk_s2 = watSanitizeIdent("" + tk_args[2])
+                                                                  w_parts = stdListPushBack(w_parts, "            local.get $" + tk_s1 + nl + "            local.get $" + tk_s2 + nl + "            call $flux_list_take" + nl)
+                                                            }
+                                                            _ ==> {
+                                                                  w_parts = stdListPushBack(w_parts, "            call $flux_list_new" + nl)
+                                                            }
+                                                      }
+                                                      route {
+                                                            res != "" ==> {
+                                                                  w_parts = stdListPushBack(w_parts, "            local.set $" + sres + nl)
+                                                                  reg_types[sres] = "list"
+                                                            }
+                                                            _ ==> {
+                                                                  w_parts = stdListPushBack(w_parts, "            drop" + nl)
+                                                            }
+                                                      }
+                                                }
                                                 stdMapContainsKey(fn_table, a1) ==> {
                                                       mut as map: cand_fn = fn_table[a1]
                                                       mut as string: cand_ag = "" + cand_fn["agent"]
@@ -1019,24 +1502,24 @@ agent (CompilerLib) impl WatBackendContract {
                                                                                     route {
                                                                                           cpi <= nca ==> {
                                                                                                 mut as string: ca_s = watSanitizeIdent("" + cargs[cpi])
-                                                                                                w = w + "            local.get $" + ca_s + nl
+                                                                                                w_parts = stdListPushBack(w_parts, "            local.get $" + ca_s + nl)
                                                                                           }
                                                                                           _ ==> {
-                                                                                                w = w + "            i64.const 0" + nl
+                                                                                                w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl)
                                                                                           }
                                                                                     }
                                                                                     cpi = cpi + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  w = w + "            call $" + usym + nl
+                                                                  w_parts = stdListPushBack(w_parts, "            call $" + usym + nl)
                                                                   route {
                                                                         res != "" ==> {
-                                                                              w = w + "            local.set $" + sres + nl
+                                                                              w_parts = stdListPushBack(w_parts, "            local.set $" + sres + nl)
                                                                               reg_types[sres] = "int"
                                                                         }
                                                                         _ ==> {
-                                                                              w = w + "            drop" + nl
+                                                                              w_parts = stdListPushBack(w_parts, "            drop" + nl)
                                                                         }
                                                                   }
                                                             }
@@ -1047,8 +1530,7 @@ agent (CompilerLib) impl WatBackendContract {
                                           }
                                           route {
                                                 not called_uf and res != "" ==> {
-                                                      w = w + "            i64.const 0" + nl
-                                                      w = w + "            local.set $" + sres + nl
+                                                      w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            local.set $" + sres + nl)
                                                       reg_types[sres] = "int"
                                                 }
                                                 _ ==> {}
@@ -1059,24 +1541,21 @@ agent (CompilerLib) impl WatBackendContract {
                                                 is_main ==> {
                                                       route {
                                                             pre_out_len > 0 ==> {
-                                                                  w = w + "            i32.const " + pre_out_off + nl
-                                                                  w = w + "            i32.const " + pre_out_len + nl
-                                                                  w = w + "            call $flux_print_bytes" + nl
+                                                                  w_parts = stdListPushBack(w_parts, "            i32.const " + pre_out_off + nl + "            i32.const " + pre_out_len + nl + "            call $flux_print_bytes" + nl)
                                                             }
                                                             _ ==> {}
                                                       }
-                                                      w = w + "            return" + nl
+                                                      w_parts = stdListPushBack(w_parts, "            return" + nl)
                                                 }
                                                 _ ==> {
                                                       route {
                                                             a1 != "" ==> {
-                                                                  w = w + "            local.get $" + sa1 + nl
+                                                                  w_parts = stdListPushBack(w_parts, "            local.get $" + sa1 + nl + "            return" + nl)
                                                             }
                                                             _ ==> {
-                                                                  w = w + "            i64.const 0" + nl
+                                                                  w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            return" + nl)
                                                             }
                                                       }
-                                                      w = w + "            return" + nl
                                                 }
                                           }
                                           block_terminated = true
@@ -1084,8 +1563,7 @@ agent (CompilerLib) impl WatBackendContract {
                                     _ ==> {
                                           route {
                                                 res != "" and opcode != "ALLOC" and opcode != "NOP" and opcode != "USE_ALIAS" and opcode != "USE_GROUP" and opcode != "META" and opcode != "SET_INDEX" and opcode != "MAP_SET" and opcode != "SET_FIELD" and opcode != "STRUCT_SET_FIELD" and opcode != "LIST_PUSH" and opcode != "SET_ADD" ==> {
-                                                      w = w + "            i64.const 0" + nl
-                                                      w = w + "            local.set $" + sres + nl
+                                                      w_parts = stdListPushBack(w_parts, "            i64.const 0" + nl + "            local.set $" + sres + nl)
                                                       reg_types[sres] = "int"
                                                 }
                                                 _ ==> {}
@@ -1099,42 +1577,47 @@ agent (CompilerLib) impl WatBackendContract {
 
             route {
                   not block_terminated ==> {
-                        w = w + "            br $flux_exit" + nl
+                        w_parts = stdListPushBack(w_parts, "            br $flux_exit" + nl)
                   }
                   _ ==> {}
             }
-            w = w + "          )" + nl
-            w = w + "        )" + nl
-            w = w + "        br $flux_exit" + nl
-            w = w + "      )" + nl
-            w = w + "    )" + nl
+            w_parts = stdListPushBack(w_parts, "          )" + nl +
+                  "        )" + nl +
+                  "        br $flux_exit" + nl +
+                  "      )" + nl +
+                  "    )" + nl)
             route {
                   is_main ==> {
                         route {
                               pre_out_len > 0 ==> {
-                                    w = w + "    i32.const " + pre_out_off + nl
-                                    w = w + "    i32.const " + pre_out_len + nl
-                                    w = w + "    call $flux_print_bytes" + nl
+                                    w_parts = stdListPushBack(w_parts, "    i32.const " + pre_out_off + nl + "    i32.const " + pre_out_len + nl + "    call $flux_print_bytes" + nl)
                               }
                               _ ==> {}
                         }
                   }
                   _ ==> {
-                        w = w + "    i64.const 0" + nl
+                        w_parts = stdListPushBack(w_parts, "    i64.const 0" + nl)
                   }
             }
-            emit(nice, w, "ok")
+            emit(nice, watJoinRange(w_parts, 1, stdCollectionLength(w_parts)), "ok")
       }
 
       op watGenerateModule (as map: fmir_module) as string ==> {
             mut as string: nl = "\n"
-            fmir_module["_silent_capture"] = true
-            mut as map: pre_res = interpExecuteFmir(fmir_module)
-            fmir_module["_silent_capture"] = false
             mut as string: pre_out = ""
             route {
-                  stdMapContainsKey(pre_res, "output") ==> { pre_out = "" + pre_res["output"] }
-                  _ ==> {}
+                  stdMapContainsKey(fmir_module, "_cached_pre_out") ==> {
+                        pre_out = "" + fmir_module["_cached_pre_out"]
+                  }
+                  _ ==> {
+                        fmir_module["_silent_capture"] = true
+                        mut as map: pre_res = interpExecuteFmir(fmir_module)
+                        fmir_module["_silent_capture"] = false
+                        route {
+                              stdMapContainsKey(pre_res, "output") ==> { pre_out = "" + pre_res["output"] }
+                              _ ==> {}
+                        }
+                  }
             }
 
             mut as map: fn_table = map{}
@@ -1148,6 +1631,7 @@ agent (CompilerLib) impl WatBackendContract {
                   _ ==> {}
             }
 
+            mut as map: reachable_syms = llvmCollectReachableFunctions(fmir_module)
             mut as list of data: uf_syms = []
             mut as map: uf_seen = map{}
             mut as map: uf_by_sym = map{}
@@ -1171,9 +1655,10 @@ agent (CompilerLib) impl WatBackendContract {
                                           }
                                           route {
                                                 not is_std and f_ag != "CompilerLib" ==> {
+                                                      mut as string: rkey = llvmMangleSymbol(f_ag, "" + fdesc["name"])
                                                       mut as string: usym = watMangleSymbol(f_ag, "" + fdesc["name"])
                                                       route {
-                                                            not stdMapContainsKey(uf_seen, usym) ==> {
+                                                            stdMapContainsKey(reachable_syms, rkey) and not stdMapContainsKey(uf_seen, usym) ==> {
                                                                   uf_seen[usym] = true
                                                                   uf_syms = stdListPushBack(uf_syms, usym)
                                                                   uf_by_sym[usym] = fdesc
@@ -1213,12 +1698,13 @@ agent (CompilerLib) impl WatBackendContract {
             str_info["heap_base"] = heap_base
             mut as int64: mem_pages = (heap_base /i 65536) + 2
 
-            mut as string: wat = "(module" + nl
-            wat = wat + "  (import \"wasi_snapshot_preview1\" \"fd_write\" (func $fd_write (param i32 i32 i32 i32) (result i32)))" + nl
-            wat = wat + "  (memory (export \"memory\") " + mem_pages + ")" + nl
-            wat = wat + "  (global $flux_heap_ptr (mut i32) (i32.const " + heap_base + "))" + nl
-            wat = wat + "  (data (i32.const 32) \"true\")" + nl
-            wat = wat + "  (data (i32.const 40) \"false\")" + nl
+            mut as list of data: wat_parts = []
+            wat_parts = stdListPushBack(wat_parts, "(module" + nl +
+                  "  (import \"wasi_snapshot_preview1\" \"fd_write\" (func $fd_write (param i32 i32 i32 i32) (result i32)))" + nl +
+                  "  (memory (export \"memory\") " + mem_pages + ")" + nl +
+                  "  (global $flux_heap_ptr (mut i32) (i32.const " + heap_base + "))" + nl +
+                  "  (data (i32.const 32) \"true\")" + nl +
+                  "  (data (i32.const 40) \"false\")" + nl)
 
             mut as int64: n_strs = stdCollectionLength(str_list)
             mut as int64: si = 1
@@ -1232,7 +1718,7 @@ agent (CompilerLib) impl WatBackendContract {
                                     s_len > 0 ==> {
                                           mut as int64: s_off = str_offs[s_raw]
                                           mut as string: s_esc = "" + str_escs[s_raw]
-                                          wat = wat + "  (data (i32.const " + s_off + ") \"" + s_esc + "\")" + nl
+                                          wat_parts = stdListPushBack(wat_parts, "  (data (i32.const " + s_off + ") \"" + s_esc + "\")" + nl)
                                     }
                                     _ ==> {}
                               }
@@ -1243,12 +1729,12 @@ agent (CompilerLib) impl WatBackendContract {
 
             route {
                   pre_out_len > 0 ==> {
-                        wat = wat + "  (data (i32.const " + pre_out_off + ") \"" + pre_out_esc + "\")" + nl
+                        wat_parts = stdListPushBack(wat_parts, "  (data (i32.const " + pre_out_off + ") \"" + pre_out_esc + "\")" + nl)
                   }
                   _ ==> {}
             }
 
-            wat = wat + watEmitRuntimeHelpers()
+            wat_parts = stdListPushBack(wat_parts, watEmitRuntimeHelpers())
 
             mut as int64: n_ufs = stdCollectionLength(uf_syms)
             mut as int64: ufi = 1
@@ -1261,33 +1747,33 @@ agent (CompilerLib) impl WatBackendContract {
                               mut as list of data: ups = fdesc["params"]
                               mut as list of data: uins = fdesc["instructions"]
                               mut as int64: nups = stdCollectionLength(ups)
-                              mut as string: psig = ""
+                              mut as list of data: psig_parts = []
                               mut as int64: upk = 1
                               infinite {
                                     route {
                                           upk > nups ==> { break }
                                           _ ==> {
                                                 mut as string: spname = watSanitizeIdent("" + ups[upk])
-                                                psig = psig + " (param $" + spname + " i64)"
+                                                psig_parts = stdListPushBack(psig_parts, " (param $" + spname + " i64)")
                                                 upk = upk + 1
                                           }
                                     }
                               }
-                              wat = wat + "  (func $" + usym + psig + " (result i64)" + nl
-                              wat = wat + watEmitFuncBody(uins, ups, str_info, fn_table, uf_by_sym, false)
-                              wat = wat + "  )" + nl
+                              mut as string: psig = watJoinRange(psig_parts, 1, stdCollectionLength(psig_parts))
+                              wat_parts = stdListPushBack(wat_parts, "  (func $" + usym + psig + " (result i64)" + nl)
+                              wat_parts = stdListPushBack(wat_parts, watEmitFuncBody(uins, ups, str_info, fn_table, uf_by_sym, false))
+                              wat_parts = stdListPushBack(wat_parts, "  )" + nl)
                               ufi = ufi + 1
                         }
                   }
             }
 
             mut as list of data: main_instrs = fmir_module["instructions"]
-            wat = wat + "  (func $main (export \"_start\")" + nl
-            wat = wat + watEmitFuncBody(main_instrs, [], str_info, fn_table, uf_by_sym, true)
-            wat = wat + "  )" + nl
-            wat = wat + ")" + nl
+            wat_parts = stdListPushBack(wat_parts, "  (func $main (export \"_start\")" + nl)
+            wat_parts = stdListPushBack(wat_parts, watEmitFuncBody(main_instrs, [], str_info, fn_table, uf_by_sym, true))
+            wat_parts = stdListPushBack(wat_parts, "  )" + nl + ")" + nl)
 
-            emit(nice, wat, "ok")
+            emit(nice, watJoinRange(wat_parts, 1, stdCollectionLength(wat_parts)), "ok")
       }
 
       op watCompileModule (as map: fmir_module, as string: output_path) as map ==> {

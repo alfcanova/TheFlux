@@ -96,7 +96,7 @@ static inline void flux_simd_insert_int(flux_simd_list_t *lst, int64_t idx, int6
     if (!lst || idx < 0 || idx >= lst->len) return;
     flux_simd_row_t *rows = (flux_simd_row_t *)(uintptr_t)lst->data_ptr;
     if (!rows) return;
-    rows[idx].tag = 0;
+    rows[idx].tag = 2;
     rows[idx].val = v;
     rows[idx].sval = 0;
 }
@@ -222,19 +222,19 @@ void *flux_std_simd_matrix_mul_2d(void *lhs, void *rhs, int64_t is_f32) {
         }
     }
 
-    flux_simd_list_t *out_shape = (flux_simd_list_t *)flux_list_build(2, 0);
+    flux_simd_list_t *out_shape = (flux_simd_list_t *)flux_list_build(2, 2);
     flux_simd_insert_int(out_shape, 0, rows_l);
     flux_simd_insert_int(out_shape, 1, cols_r);
 
-    flux_simd_list_t *out_strides = (flux_simd_list_t *)flux_list_build(2, 0);
+    flux_simd_list_t *out_strides = (flux_simd_list_t *)flux_list_build(2, 2);
     flux_simd_insert_int(out_strides, 0, cols_r);
     flux_simd_insert_int(out_strides, 1, 1);
 
     void *out_map = flux_map_build(0);
-    flux_map_set(out_map, "ndim", 0, 2);
+    flux_map_set(out_map, "ndim", 2, 2);
     flux_map_set(out_map, "shape", 5, (int64_t)(uintptr_t)out_shape);
     flux_map_set(out_map, "strides", 5, (int64_t)(uintptr_t)out_strides);
-    flux_map_set(out_map, "offset", 0, 1);
+    flux_map_set(out_map, "offset", 2, 1);
     flux_map_set(out_map, "data", 5, (int64_t)(uintptr_t)out_data);
 
     return out_map;

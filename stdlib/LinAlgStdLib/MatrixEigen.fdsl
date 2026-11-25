@@ -88,12 +88,13 @@ agent (LinAlgStdLib) impl MatrixEigenContract {
                   A_k = tensorMatMul2D(R, Q)
                   V = tensorMatMul2D(V, Q)
 
+                  mut as list of data: a_data = A_k["data"] as list of data
                   mut as float64: off_diag_sum = 0.0
                   mut as int64: r = 2
                   infinite (r <= n) {
                         mut as int64: c = 1
                         infinite (c < r) {
-                              mut as float64: val = tensorGetAt(A_k, [r, c])
+                              mut as float64: val = a_data[1 + (r - 1) * n + (c - 1)] as float64
                               route { val < 0.0 ==> { val = 0.0 - val } }
                               off_diag_sum = off_diag_sum + val
                               c = c + 1
@@ -110,23 +111,25 @@ agent (LinAlgStdLib) impl MatrixEigenContract {
             }
 
             mut as list of data: lambdas = matrixExtractDiagonal(A_k)
+            mut as list of data: v_data = V["data"] as list of data
 
             mut as int64: col = 1
             infinite (col <= n) {
                   mut as list of data: col_vec = []
                   mut as int64: row = 1
                   infinite (row <= n) {
-                        col_vec[row] = tensorGetAt(V, [row, col])
+                        col_vec[row] = v_data[1 + (row - 1) * n + (col - 1)] as float64
                         row = row + 1
                   }
                   col_vec = vectorNormalize(col_vec)
                   row = 1
                   infinite (row <= n) {
-                        V = tensorSetAt(V, [row, col], col_vec[row] as float64)
+                        v_data[1 + (row - 1) * n + (col - 1)] = col_vec[row] as float64
                         row = row + 1
                   }
                   col = col + 1
             }
+            V["data"] = v_data
 
             emit(nice, [lambdas, V], "ok")
       }
@@ -238,12 +241,13 @@ agent (LinAlgStdLib) impl MatrixEigenContract {
                   A_k = tensorMatMul2D(R, Q)
                   V = tensorMatMul2D(V, Q)
 
+                  mut as list of data: a_data = A_k["data"] as list of data
                   mut as float64: off_diag_sum = 0.0
                   mut as int64: r = 2
                   infinite (r <= n) {
                         mut as int64: c = 1
                         infinite (c < r) {
-                              mut as float64: val = tensorGetAt(A_k, [r, c])
+                              mut as float64: val = a_data[1 + (r - 1) * n + (c - 1)] as float64
                               route { val < 0.0 ==> { val = 0.0 - val } }
                               off_diag_sum = off_diag_sum + val
                               c = c + 1
@@ -260,23 +264,25 @@ agent (LinAlgStdLib) impl MatrixEigenContract {
             }
 
             mut as list of data: lambdas = matrixExtractDiagonal(A_k)
+            mut as list of data: v_data = V["data"] as list of data
 
             mut as int64: col = 1
             infinite (col <= n) {
                   mut as list of data: col_vec = []
                   mut as int64: row = 1
                   infinite (row <= n) {
-                        col_vec[row] = tensorGetAt(V, [row, col])
+                        col_vec[row] = v_data[1 + (row - 1) * n + (col - 1)] as float64
                         row = row + 1
                   }
                   col_vec = vectorNormalize(col_vec)
                   row = 1
                   infinite (row <= n) {
-                        V = tensorSetAt(V, [row, col], col_vec[row] as float64)
+                        v_data[1 + (row - 1) * n + (col - 1)] = col_vec[row] as float64
                         row = row + 1
                   }
                   col = col + 1
             }
+            V["data"] = v_data
 
             emit(nice, [lambdas, V], "ok")
       }

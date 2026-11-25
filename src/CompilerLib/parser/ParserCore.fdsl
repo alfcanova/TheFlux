@@ -148,13 +148,8 @@ agent (CompilerLib) impl ParserCoreContract {
                               route {
                                     nkind == "DECL_USE" ==> {
                                           mut as string: use_target = astArenaNodeValue(arena, nid)
-                                          route {
-                                                use_target != "CompilerLib" ==> {
-                                                      q_base = stdListPushBack(q_base, file_path)
-                                                      q_mod = stdListPushBack(q_mod, use_target)
-                                                }
-                                                _ ==> {}
-                                          }
+                                          q_base = stdListPushBack(q_base, file_path)
+                                          q_mod = stdListPushBack(q_mod, use_target)
                                     }
                                     _ ==> {}
                               }

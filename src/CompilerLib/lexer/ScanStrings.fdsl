@@ -4,88 +4,102 @@
 #L ==============================================================================
 
 contract (ScanStringsContract) {
+      op scanJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string
       op scanStringLiteral (as string: src, as int64: pos, as int64: len) as map
       op scanCharLiteral (as string: src, as int64: pos, as int64: len) as map
 }
 
 agent (CompilerLib) impl ScanStringsContract {
+      op scanJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string ==> {
+            route {
+                  lo > hi ==> { emit(nice, "", "ok") }
+                  lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        emit(nice, scanJoinRange(parts, lo, mid) + scanJoinRange(parts, mid + 1, hi), "ok")
+                  }
+            }
+      }
+
       op scanStringLiteral (as string: src, as int64: pos, as int64: len) as map ==> {
             mut as int64: p = pos + 1
-            mut as string: content = ""
+            mut as list of data: parts = []
+            mut as int64: chunk_start = p
             mut as bool: has_interp = false
             mut as int64: brace_depth = 0
 
             infinite {
                   route {
-                        p > len ==> { break }
+                        p > len ==> {
+                              route {
+                                    len >= chunk_start ==> {
+                                          parts = stdListPushBack(parts, src[chunk_start..len])
+                                    }
+                                    _ ==> {}
+                              }
+                              break
+                        }
                         _ ==> {
                               mut as string: c = src[p]
                               route {
                                     c == "\"" and brace_depth == 0 ==> {
+                                          route {
+                                                p > chunk_start ==> {
+                                                      parts = stdListPushBack(parts, src[chunk_start..(p - 1)])
+                                                }
+                                                _ ==> {}
+                                          }
                                           p = p + 1
                                           break
                                     }
                                     c == "\"" and brace_depth > 0 ==> {
-                                          content = content + "\""
                                           p = p + 1
                                           infinite {
                                                 route {
                                                       p > len ==> { break }
-                                                      src[p] == "\\" and p < len ==> {
-                                                            content = content + "\\" + src[p + 1]
-                                                            p = p + 2
-                                                      }
+                                                      src[p] == "\\" and p < len ==> { p = p + 2 }
                                                       src[p] == "\"" ==> {
-                                                            content = content + "\""
                                                             p = p + 1
                                                             break
                                                       }
-                                                      _ ==> {
-                                                            content = content + src[p]
-                                                            p = p + 1
-                                                      }
+                                                      _ ==> { p = p + 1 }
                                                 }
                                           }
                                     }
                                     c == "'" and brace_depth > 0 ==> {
-                                          content = content + "'"
                                           p = p + 1
                                           infinite {
                                                 route {
                                                       p > len ==> { break }
-                                                      src[p] == "\\" and p < len ==> {
-                                                            content = content + "\\" + src[p + 1]
-                                                            p = p + 2
-                                                      }
+                                                      src[p] == "\\" and p < len ==> { p = p + 2 }
                                                       src[p] == "'" ==> {
-                                                            content = content + "'"
                                                             p = p + 1
                                                             break
                                                       }
-                                                      _ ==> {
-                                                            content = content + src[p]
-                                                            p = p + 1
-                                                      }
+                                                      _ ==> { p = p + 1 }
                                                 }
                                           }
                                     }
                                     c == "#" and p < len and src[p + 1] == "{" ==> {
                                           has_interp = true
                                           brace_depth = brace_depth + 1
-                                          content = content + "#" + "{"
                                           p = p + 2
                                     }
                                     c == "{" and brace_depth > 0 ==> {
                                           brace_depth = brace_depth + 1
-                                          content = content + c
                                           p = p + 1
                                     }
                                     c == "}" and brace_depth > 0 ==> {
                                           brace_depth = brace_depth - 1
-                                          content = content + c
                                           p = p + 1
                                     }
                                     c == "\\" and p < len ==> {
+                                          route {
+                                                p > chunk_start ==> {
+                                                      parts = stdListPushBack(parts, src[chunk_start..(p - 1)])
+                                                }
+                                                _ ==> {}
+                                          }
                                           mut as string: nxt = src[p + 1]
                                           mut as string: next_2 = ""
                                           route {
@@ -94,27 +108,27 @@ agent (CompilerLib) impl ScanStringsContract {
                                           }
                                           route {
                                                 nxt == "n" ==> {
-                                                      content = content + "\n"
+                                                      parts = stdListPushBack(parts, "\n")
                                                       p = p + 2
                                                 }
                                                 nxt == "t" ==> {
-                                                      content = content + "\t"
+                                                      parts = stdListPushBack(parts, "\t")
                                                       p = p + 2
                                                 }
                                                 nxt == "r" ==> {
-                                                      content = content + "\r"
+                                                      parts = stdListPushBack(parts, "\r")
                                                       p = p + 2
                                                 }
                                                 nxt == "0" ==> {
-                                                      content = content + "\0"
+                                                      parts = stdListPushBack(parts, "\0")
                                                       p = p + 2
                                                 }
                                                 nxt == "\"" ==> {
-                                                      content = content + "\""
+                                                      parts = stdListPushBack(parts, "\"")
                                                       p = p + 2
                                                 }
                                                 nxt == "\\" ==> {
-                                                      content = content + "\\"
+                                                      parts = stdListPushBack(parts, "\\")
                                                       p = p + 2
                                                 }
                                                 nxt == "u" and next_2 == "{" ==> {
@@ -132,20 +146,20 @@ agent (CompilerLib) impl ScanStringsContract {
                                                       }
                                                       p = hp + 1
                                                       route {
-                                                            hex_str == "03A9" or hex_str == "3A9" ==> { content = content + "Ω" }
-                                                            hex_str == "03C0" or hex_str == "3C0" ==> { content = content + "π" }
-                                                            hex_str == "1F600" ==> { content = content + "😀" }
-                                                            _ ==> { content = content + "?" }
+                                                            hex_str == "03A9" or hex_str == "3A9" ==> { parts = stdListPushBack(parts, "Ω") }
+                                                            hex_str == "03C0" or hex_str == "3C0" ==> { parts = stdListPushBack(parts, "π") }
+                                                            hex_str == "1F600" ==> { parts = stdListPushBack(parts, "😀") }
+                                                            _ ==> { parts = stdListPushBack(parts, "?") }
                                                       }
                                                 }
                                                 _ ==> {
-                                                      content = content + "\\" + nxt
+                                                      parts = stdListPushBack(parts, "\\" + nxt)
                                                       p = p + 2
                                                 }
                                           }
+                                          chunk_start = p
                                     }
                                     _ ==> {
-                                          content = content + c
                                           p = p + 1
                                     }
                               }
@@ -155,7 +169,7 @@ agent (CompilerLib) impl ScanStringsContract {
 
             mut as map: res = map{}
             res["pos"] = p
-            res["val"] = content
+            res["val"] = scanJoinRange(parts, 1, stdCollectionLength(parts))
             route {
                   has_interp ==> { res["type"] = "INTERP_STRING" }
                   _ ==> { res["type"] = "STRING" }

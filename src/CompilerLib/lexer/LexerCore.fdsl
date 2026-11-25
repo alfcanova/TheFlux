@@ -161,7 +161,8 @@ agent (CompilerLib) impl LexerCoreContract {
       }
 
       op lexerEmitJson (as list of data: tokens) as string ==> {
-            mut as string: json = "[\n"
+            mut as list of data: parts = []
+            parts = stdListPushBack(parts, "[\n")
             mut as int64: n = stdCollectionLength(tokens)
             mut as int64: i = 1
             infinite {
@@ -173,16 +174,17 @@ agent (CompilerLib) impl LexerCoreContract {
                               mut as string: v = "" + tok["val"]
                               mut as string: l = "" + tok["line"]
                               mut as string: c = "" + tok["col"]
-                              json = json + "  {\"type\": \"" + t + "\", \"value\": \"" + v + "\", \"line\": " + l + ", \"col\": " + c + "}"
+                              mut as string: sep = "\n"
                               route {
-                                    i < n ==> { json = json + ",\n" }
-                                    _ ==> { json = json + "\n" }
+                                    i < n ==> { sep = ",\n" }
+                                    _ ==> {}
                               }
+                              parts = stdListPushBack(parts, "  {\"type\": \"" + t + "\", \"value\": \"" + v + "\", \"line\": " + l + ", \"col\": " + c + "}" + sep)
                               i = i + 1
                         }
                   }
             }
-            json = json + "]"
-            emit(nice, json, "ok")
+            parts = stdListPushBack(parts, "]")
+            emit(nice, scanJoinRange(parts, 1, stdCollectionLength(parts)), "ok")
       }
 }

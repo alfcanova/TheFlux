@@ -1,7 +1,7 @@
 #L ==============================================================================
 #L TheFlux Virtual Machine CLI Self-Hosted (fluxvm)
 #L Arquivo: src/Fvm/fluxvm.flux
-#L Versao: 1.0.0
+#L Versao: 1.0.5
 #L ==============================================================================
 
 use RuntimeStdLib
@@ -15,7 +15,7 @@ program (FluxVmMain) {
 
       route {
             n_args < 1 ==> {
-                  print("TheFlux Virtual Machine (fluxvm) v1.0.0")
+                  print("TheFlux Virtual Machine (fluxvm) v1.0.5")
                   print("Uso: fluxvm [opcoes] <arquivo.fvmbc>")
                   print("")
                   print("Opcoes de Execucao:")
@@ -85,11 +85,11 @@ program (FluxVmMain) {
 
                   route {
                         flag_version ==> {
-                              print("1.0.0")
+                              print("fluxvm version 1.0.5 (TheFlux Fast Virtual Machine)")
                               stdOsExit(0)
                         }
                         flag_help ==> {
-                              print("TheFlux Virtual Machine (fluxvm) v1.0.0")
+                              print("TheFlux Virtual Machine (fluxvm) v1.0.5")
                               print("Uso: fluxvm [opcoes] <arquivo.fvmbc>")
                               stdOsExit(0)
                         }

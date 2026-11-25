@@ -43,7 +43,7 @@ compile_tool() {
     "${FLUXC_BIN}" --no-run --emit-llvm --target llvm -o "bin/${out_name}" "${src_file}"
     if [ -f "scripts/patch_tool_ll.py" ]; then
         python3 scripts/patch_tool_ll.py "bin/${out_name}.ll" 2>/dev/null || python scripts/patch_tool_ll.py "bin/${out_name}.ll" 2>/dev/null || true
-        clang -O2 -Wno-deprecated-declarations -Wno-override-module -o "bin/${out_name}" "bin/${out_name}.ll" -Llib -lfluxcompiler -lfluxrt -lm -lpthread 2>/dev/null || true
+        clang -O2 -Wno-deprecated-declarations -Wno-override-module -o "bin/${out_name}" "bin/${out_name}.ll" -Llib -lfluxrt -lm -lpthread 2>/dev/null || true
     fi
     if [ ! -f "bin/${out_name}.exe" ] && [ ! -f "bin/${out_name}" ]; then
         echo "[ERRO] Binario bin/${out_name} nao foi gerado."

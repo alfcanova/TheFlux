@@ -51,5 +51,9 @@ char *flux_std_archive_list_files(const char *path, void *build_fn, void *push_f
     return (char *)lst;
 }
 
+void *flux_std_archive_list_files_simple(const char *path) {
+    return (void *)flux_std_archive_list_files(path, NULL, NULL);
+}
+
 
 

@@ -13,7 +13,7 @@ char *flux_std_runtime_backend(void) {
 }
 
 char *flux_std_runtime_compiler_version(void) {
-    return "1.0.0";
+    return "1.0.5";
 }
 
 int flux_core_get_argc(void);
@@ -76,4 +76,6 @@ void *flux_std_runtime_stack_trace(void *(*build)(int64_t, int64_t), void *(*pus
     l = push(l, 4, 1, "runtimeStackTrace");
     return l;
 }
+
+
 

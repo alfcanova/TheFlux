@@ -13,7 +13,7 @@
 #include "fvm_parser.h"
 #include "../flux_service.h"
 
-#define FLUXVM_VERSION "1.0.0"
+#define FLUXVM_VERSION "1.0.5"
 
 static void print_usage(void) {
     printf("TheFlux Virtual Machine (fluxvm) v%s\n", FLUXVM_VERSION);
@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
             print_usage();
             return 0;
         } else if (strcmp(arg, "--version") == 0 || strcmp(arg, "-v") == 0) {
-            printf("%s\n", FLUXVM_VERSION);
+            printf("fluxvm version %s (TheFlux Fast Virtual Machine)\n", FLUXVM_VERSION);
             return 0;
         } else if (strcmp(arg, "--status") == 0 || strcmp(arg, "--ping") == 0) {
             int active = flux_service_is_active();

@@ -30,7 +30,7 @@ agent (CompilerLib) impl ParseExprsContract {
             mut as map: ar = arena
 
             route {
-                  cval == "comptime" ==> {
+                  cval == "comptime" and ctype != "STRING" ==> {
                         mut as map: ptok = tokenStreamPeek(ts)
                         mut as string: pval = "" + ptok["val"]
                         route {
@@ -68,7 +68,7 @@ agent (CompilerLib) impl ParseExprsContract {
                               }
                         }
                   }
-                  cval == ".." ==> {
+                  cval == ".." and ctype == "OP" ==> {
                         mut as map: next_tok = tokenStreamPeek(ts)
                         mut as string: nv = "" + next_tok["val"]
                         route {
@@ -989,7 +989,7 @@ agent (CompilerLib) impl ParseExprsContract {
                         res["node_id"] = ar["last_id"]
                         emit(nice, res, "ok")
                   }
-                  cval == "await" ==> {
+                  (ctype == "KEYWORD" or ctype == "IDENT") and cval == "await" ==> {
                         mut as map: ts = tokenStreamAdvance(stream)
                         mut as map: aw_res = parseUnary(ts, arena)
                         ts = aw_res["stream"]
@@ -1001,7 +1001,7 @@ agent (CompilerLib) impl ParseExprsContract {
                         res["node_id"] = ar["last_id"]
                         emit(nice, res, "ok")
                   }
-                  cval == "spawn" ==> {
+                  (ctype == "KEYWORD" or ctype == "IDENT") and cval == "spawn" ==> {
                         mut as map: ts = tokenStreamAdvance(stream)
                         mut as map: sp_res = parseUnary(ts, arena)
                         ts = sp_res["stream"]
@@ -1034,6 +1034,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "^e" or cval == "^r") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseUnary(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1067,6 +1074,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "*" or cval == "/r" or cval == "/f" or cval == "/i" or cval == "%") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parsePower(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1100,6 +1114,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "+" or cval == "-") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseMultiplicative(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1133,6 +1154,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "<<" or cval == ">>" or cval == ">>>") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseAdditive(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1173,6 +1201,13 @@ agent (CompilerLib) impl ParseExprsContract {
                                     _ ==> {
                                           mut as string: b_op = cval
                                           ts = tokenStreamAdvance(ts)
+                                          infinite {
+                                                mut as map: nl_tok = tokenStreamPeek(ts)
+                                                route {
+                                                      "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                                      _ ==> { break }
+                                                }
+                                          }
                                           mut as map: right_res = parseShift(ts, ar)
                                           ts = right_res["stream"]
                                           ar = right_res["arena"]
@@ -1208,6 +1243,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP" or cval == "in") and (cval == "==" or cval == "!=" or cval == "<" or cval == "<=" or cval == ">" or cval == ">=" or cval == "in") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseRange(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1241,6 +1283,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "&") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseRelational(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1274,6 +1323,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "^") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseBitwiseAnd(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1307,6 +1363,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (ctype == "OP") and (cval == "|") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseBitwiseXor(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1340,6 +1403,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (cval == "and" or cval == "&&") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_and_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_and_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseBitwiseOr(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]
@@ -1373,6 +1443,13 @@ agent (CompilerLib) impl ParseExprsContract {
                         (cval == "or" or cval == "||") ==> {
                               mut as string: b_op = cval
                               ts = tokenStreamAdvance(ts)
+                              infinite {
+                                    mut as map: nl_or_tok = tokenStreamPeek(ts)
+                                    route {
+                                          "" + nl_or_tok["type"] == "NEWLINE" ==> { ts = tokenStreamAdvance(ts) }
+                                          _ ==> { break }
+                                    }
+                              }
                               mut as map: right_res = parseLogicalAnd(ts, ar)
                               ts = right_res["stream"]
                               ar = right_res["arena"]

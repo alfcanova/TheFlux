@@ -21,15 +21,14 @@ void *flux_arc_alloc(size_t size, FluxTypeTag tag, void (*destructor)(void *)) {
 void *flux_arc_retain(void *ptr) {
     if (!ptr) return NULL;
     FluxArcHeader *header = ((FluxArcHeader *)ptr) - 1;
-    header->ref_count++;
+    __atomic_add_fetch(&header->ref_count, 1, __ATOMIC_RELAXED);
     return ptr;
 }
 
 void flux_arc_release(void *ptr) {
     if (!ptr) return;
     FluxArcHeader *header = ((FluxArcHeader *)ptr) - 1;
-    header->ref_count--;
-    if (header->ref_count <= 0) {
+    if (__atomic_sub_fetch(&header->ref_count, 1, __ATOMIC_ACQ_REL) <= 0) {
         if (header->destructor) {
             header->destructor(ptr);
         }

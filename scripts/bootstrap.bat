@@ -7,6 +7,11 @@ echo ===========================================================================
 
 cd /d "%~dp0\.."
 
+:: 0. Snapshot Pre-Build para Contingencia (--prev)
+if not exist "build\lkg\prev" mkdir "build\lkg\prev"
+if exist "bin\fluxc.exe" copy /y "bin\fluxc.exe" "build\lkg\prev\fluxc.exe" >nul 2>&1
+if exist "bin\fluxvm.exe" copy /y "bin\fluxvm.exe" "build\lkg\prev\fluxvm.exe" >nul 2>&1
+
 :: 1. Verificacao de Ferramentas Nativas (Clang e LLVM-AR)
 where clang >nul 2>&1
 if errorlevel 1 (
@@ -27,27 +32,22 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: 3. Portao Boot-0.5: Empacotamento de libfluxcompiler.a
-echo [+] [Boot-0.5] Empacotando biblioteca do compilador (libfluxcompiler.a)...
+:: 3. Portao Boot-0.5: Verificacao e Preparacao do Compilador Base
 if not exist "build\intermediates" mkdir "build\intermediates"
 if not exist "bin" mkdir "bin"
 if not exist "lib" mkdir "lib"
 
-if exist "build\intermediates\stage1_compiler.ll" (
-    clang -O2 -Wno-deprecated-declarations -Wno-override-module -c build\intermediates\stage1_compiler.ll -o build\intermediates\stage1_compiler.o
-    if errorlevel 1 goto fail
+:: Se bin\fluxc.exe nao existir mas stage1.ll existir, linka bin\fluxc.exe nativamente
+if not exist "bin\fluxc.exe" (
+    if exist "build\intermediates\stage1.ll" (
+        echo [+] [Boot-0.5] Linkando bin\fluxc.exe a partir de stage1.ll...
+        clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin\fluxc.exe build\intermediates\stage1.ll -Llib -lfluxrt -ladvapi32 -lws2_32 -lkernel32
+        if errorlevel 1 goto fail
+    ) else (
+        echo [ERRO] bin\fluxc.exe ou build\intermediates\stage1.ll nao encontrados.
+        exit /b 1
+    )
 )
-
-del /q /f lib\libfluxcompiler.a lib\fluxcompiler.lib 2>nul
-llvm-ar rc lib\libfluxcompiler.a build\intermediates\stage1_compiler.o
-if errorlevel 1 goto fail
-copy /y lib\libfluxcompiler.a lib\fluxcompiler.lib >nul 2>&1
-if errorlevel 1 goto fail
-
-:: Linka bin\fluxc.exe a partir de stage1.ll e libfluxcompiler atualizado
-echo [+] [Boot-0.8] Linkando bin\fluxc.exe a partir de stage1.ll e libfluxcompiler...
-clang -O2 -Wno-deprecated-declarations -Wno-override-module -o bin\fluxc.exe build\intermediates\stage1.ll -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32
-if errorlevel 1 goto fail
 
 :: 4. Portao Boot-1: Validacao de Autonomia do Compilador Nativo (bin/fluxc.exe)
 echo [+] [Boot-1] Verificando autonomia e CLI de bin/fluxc.exe...
@@ -127,6 +127,10 @@ if errorlevel 1 (
     goto fail
 )
 
+:: Snapshot Post-Build para Last-Good (--last-good)
+if not exist "build\lkg\last-good" mkdir "build\lkg\last-good"
+copy /y "bin\fluxc.exe" "build\lkg\last-good\fluxc.exe" >nul 2>&1
+
 :: 5.5. Portao Boot-3: Auto-Teste Funcional Semantico Pos-Promocao
 echo [+] [Boot-3] Executando Auto-Teste Funcional Semantico no bin/fluxc.exe promovido...
 (
@@ -178,6 +182,7 @@ if errorlevel 1 (
 )
 del /q /f bin\fluxvm.ll 2>nul
 echo [OK] bin/fluxvm.exe Self-Hosted operacional.
+if exist "bin\fluxvm.exe" copy /y "bin\fluxvm.exe" "build\lkg\last-good\fluxvm.exe" >nul 2>&1
 
 :: 7. Compilacao de Ferramentas Nativas (src\tools\*)
 echo [+] [Boot-4] Compilando Ferramentas Nativas (scripts\build_tools.bat)...

@@ -29,9 +29,13 @@ typedef struct {
 
 FluxArena *flux_arena_create(size_t default_chunk_size);
 void *flux_arena_alloc(FluxArena *arena, size_t size);
+void *flux_arena_alloc_raw(FluxArena *arena, size_t size);
 void *flux_arena_alloc_zeroed(FluxArena *arena, size_t size);
 void flux_arena_reset(FluxArena *arena);
 void flux_arena_destroy(FluxArena *arena);
+void *flux_tls_str_alloc(size_t size);
+char *flux_tls_str_dup(const char *s);
+void *flux_tls_obj_alloc(size_t size);
 
 /* ARC (Atomic Reference Counting) header for managed dynamic objects */
 typedef struct {

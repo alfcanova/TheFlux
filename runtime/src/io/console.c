@@ -216,17 +216,13 @@ void flux_runtime_input(const char *prompt, const char *type, void *out) {
             if (strcmp(line, "true") == 0 || strcmp(line, "verdadeiro") == 0) { *(char *)out = 1; return; }
             if (strcmp(line, "false") == 0 || strcmp(line, "falso") == 0) { *(char *)out = 0; return; }
         } else if (strcmp(type, "datetime") == 0) {
+            size_t n = strlen(line);
+            while (n > 0 && (line[n - 1] == '\n' || line[n - 1] == '\r')) line[--n] = '\0';
             int y, mo, d, h, mi, s;
-            if (sscanf(line, "%d-%d-%dT%d:%d:%d", &y, &mo, &d, &h, &mi, &s) == 6) {
-                struct tm tmv;
-                memset(&tmv, 0, sizeof(tmv));
-                tmv.tm_year = y - 1900; tmv.tm_mon = mo - 1; tmv.tm_mday = d;
-                tmv.tm_hour = h; tmv.tm_min = mi; tmv.tm_sec = s;
-                time_t tt = timegm_compat(&tmv);
-                if (tt != (time_t)-1) {
-                    *(int64_t *)out = (int64_t)tt * 1000000000LL;
-                    return;
-                }
+            if (n >= 19 && sscanf(line, "%d-%d-%dT%d:%d:%d", &y, &mo, &d, &h, &mi, &s) == 6 && mo >= 1 && mo <= 12 && d >= 1 && d <= 31 && h >= 0 && h <= 23 && mi >= 0 && mi <= 59 && s >= 0 && s <= 60) {
+                extern int64_t flux_std_datetime_parse_iso(const char *text);
+                *(int64_t *)out = flux_std_datetime_parse_iso(line);
+                return;
             }
         } else {
             size_t n = strlen(line);
@@ -288,8 +284,18 @@ void flux_runtime_input_complex(const char *prompt, const char *type_name, doubl
     if (im) *im = c[1];
 }
 
+extern void *flux_complex_create(double re, double im);
+extern int64_t flux_std_datetime_parse_iso(const char *text);
+extern char *flux_std_datetime_to_iso(int64_t nanos);
+
+void *flux_runtime_input_complex_obj(const char *prompt, const char *type_name) {
+    double re = 0.0, im = 0.0;
+    flux_runtime_input_complex(prompt, type_name, &re, &im);
+    return flux_complex_create(re, im);
+}
+
 char *flux_runtime_input_datetime(const char *prompt, const char *type_name) {
     int64_t ns = 0;
     flux_runtime_input(prompt, type_name ? type_name : "datetime", &ns);
-    return flux_std_datetime_to_iso8601(ns / 1000000000LL);
+    return flux_std_datetime_to_iso(ns);
 }

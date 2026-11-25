@@ -18,12 +18,13 @@ agent (LinAlgStdLib) impl MatrixQRContract {
             mut as int64: n = sh[2] as int64
 
             mut as map: R = _mapClone(matrix)
-            R["data"] = _listClone(matrix["data"] as list of data)
+            mut as list of data: r_buf = _listClone(matrix["data"] as list of data)
 
             mut as map: Q = tensorNew([m, m])
+            mut as list of data: q_buf = Q["data"] as list of data
             mut as int64: id_i = 1
             infinite (id_i <= m) {
-                  Q = tensorSetAt(Q, [id_i, id_i], 1.0)
+                  q_buf[1 + (id_i - 1) * m + (id_i - 1)] = 1.0
                   id_i = id_i + 1
             }
 
@@ -32,13 +33,13 @@ agent (LinAlgStdLib) impl MatrixQRContract {
                   mut as float64: norm_x = 0.0
                   mut as int64: row = k
                   infinite (row <= m) {
-                        mut as float64: val = tensorGetAt(R, [row, k])
+                        mut as float64: val = r_buf[1 + (row - 1) * n + (k - 1)] as float64
                         norm_x = norm_x + (val * val)
                         row = row + 1
                   }
                   norm_x = _sqrt(norm_x)
 
-                  mut as float64: kk_val = tensorGetAt(R, [k, k])
+                  mut as float64: kk_val = r_buf[1 + (k - 1) * n + (k - 1)] as float64
                   route {
                         kk_val > 0.0 ==> {
                               norm_x = 0.0 - norm_x
@@ -55,7 +56,7 @@ agent (LinAlgStdLib) impl MatrixQRContract {
                   v[k] = kk_val - norm_x
                   row = k + 1
                   infinite (row <= m) {
-                        v[row] = tensorGetAt(R, [row, k])
+                        v[row] = r_buf[1 + (row - 1) * n + (k - 1)] as float64
                         row = row + 1
                   }
 
@@ -74,15 +75,16 @@ agent (LinAlgStdLib) impl MatrixQRContract {
                                     mut as float64: tau = 0.0
                                     row = k
                                     infinite (row <= m) {
-                                          tau = tau + (v[row] as float64) * tensorGetAt(R, [row, col])
+                                          tau = tau + (v[row] as float64) * (r_buf[1 + (row - 1) * n + (col - 1)] as float64)
                                           row = row + 1
                                     }
                                     tau = (2.0 * tau) /f v_norm_sq
 
                                     row = k
                                     infinite (row <= m) {
-                                          mut as float64: r_new = tensorGetAt(R, [row, col]) - tau * (v[row] as float64)
-                                          R = tensorSetAt(R, [row, col], r_new)
+                                          mut as int64: r_idx = 1 + (row - 1) * n + (col - 1)
+                                          mut as float64: r_new = (r_buf[r_idx] as float64) - tau * (v[row] as float64)
+                                          r_buf[r_idx] = r_new
                                           row = row + 1
                                     }
                                     col = col + 1
@@ -93,15 +95,16 @@ agent (LinAlgStdLib) impl MatrixQRContract {
                                     mut as float64: tau = 0.0
                                     row = k
                                     infinite (row <= m) {
-                                          tau = tau + (v[row] as float64) * tensorGetAt(Q, [col, row])
+                                          tau = tau + (v[row] as float64) * (q_buf[1 + (col - 1) * m + (row - 1)] as float64)
                                           row = row + 1
                                     }
                                     tau = (2.0 * tau) /f v_norm_sq
 
                                     row = k
                                     infinite (row <= m) {
-                                          mut as float64: q_new = tensorGetAt(Q, [col, row]) - tau * (v[row] as float64)
-                                          Q = tensorSetAt(Q, [col, row], q_new)
+                                          mut as int64: q_idx = 1 + (col - 1) * m + (row - 1)
+                                          mut as float64: q_new = (q_buf[q_idx] as float64) - tau * (v[row] as float64)
+                                          q_buf[q_idx] = q_new
                                           row = row + 1
                                     }
                                     col = col + 1
@@ -110,6 +113,8 @@ agent (LinAlgStdLib) impl MatrixQRContract {
                   }
                   k = k + 1
             }
+            R["data"] = r_buf
+            Q["data"] = q_buf
             emit(nice, [Q, R], "ok")
       }
 

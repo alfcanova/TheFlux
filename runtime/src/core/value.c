@@ -133,13 +133,18 @@ double flux_cast_special_float(double val, int64_t type_id) {
         return (double)out;
     }
     if (type_id == 5) {
-        /* float16 (IEEE 754 half-precision) */
+        /* float16 (IEEE 754 half-precision, round-to-nearest-even) */
         float f = (float)val;
         uint32_t x;
         memcpy(&x, &f, 4);
         uint32_t sign = (x >> 31) & 1;
-        int32_t exp = ((x >> 23) & 0xFF) - 127 + 15;
-        uint32_t mant = (x >> 13) & 0x3FF;
+        uint32_t abs_x = x & 0x7FFFFFFFu;
+        /* Round to nearest even at bit 13 */
+        uint32_t lsb = (abs_x >> 13) & 1u;
+        uint32_t round_add = 0x00000FFFu + lsb;
+        abs_x += round_add;
+        int32_t exp = (int32_t)((abs_x >> 23) & 0xFF) - 127 + 15;
+        uint32_t mant = (abs_x >> 13) & 0x3FF;
         if (exp <= 0) return 0.0;
         if (exp >= 31) { exp = 31; mant = 0; }
         uint16_t h = (uint16_t)((sign << 15) | (exp << 10) | mant);

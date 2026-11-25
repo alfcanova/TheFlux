@@ -89,6 +89,13 @@ void *flux_std_os_list_env(void *(*build)(int64_t, int64_t), void *(*push)(void*
     return list;
 }
 
+extern void *flux_list_build(int64_t count, int64_t elem_tag);
+extern void *flux_list_push(void *list, int64_t tag, int64_t ival, const char *sval);
+
+void *flux_std_os_list_env_simple(void) {
+    return flux_std_os_list_env(flux_list_build, flux_list_push);
+}
+
 char *flux_std_os_platform(void) {
 #if defined(_WIN32)
     return strdup("windows");

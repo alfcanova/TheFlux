@@ -225,10 +225,14 @@ typedef struct FvmProgram {
 
 /* Frame de Escopo Léxico */
 #define FVM_MAX_SCOPE_VARS 64
+#define FVM_SCOPE_HASH_BUCKETS 128
 typedef struct FvmScope {
     uint32_t var_count;
     char *names[FVM_MAX_SCOPE_VARS];
     FluxVal values[FVM_MAX_SCOPE_VARS];
+    uint32_t name_hashes[FVM_MAX_SCOPE_VARS];
+    int16_t hash_slots[FVM_SCOPE_HASH_BUCKETS];
+    uint8_t hash_active;
     struct FvmScope *parent;
 } FvmScope;
 

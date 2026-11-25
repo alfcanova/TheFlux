@@ -399,9 +399,9 @@ int64_t flux_std_db_is_valid_record(void *rec, void *sch) {
                 found = 1;
                 int64_t rtag = rec_entries[j].vtag;
                 if (expected_type) {
-                    if (strstr(expected_type, "int") != NULL && rtag != 1) return 0;
-                    if (strstr(expected_type, "float") != NULL && rtag != 3 && rtag != 1) return 0;
-                    if (strstr(expected_type, "bool") != NULL && rtag != 2) return 0;
+                    if (strstr(expected_type, "int") != NULL && rtag != 2) return 0;
+                    if (strstr(expected_type, "float") != NULL && rtag != 3 && rtag != 2) return 0;
+                    if (strstr(expected_type, "bool") != NULL && rtag != 1) return 0;
                     if (strstr(expected_type, "str") != NULL && rtag != 4) return 0;
                 }
                 break;

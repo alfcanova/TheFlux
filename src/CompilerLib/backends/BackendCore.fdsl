@@ -34,22 +34,40 @@ agent (CompilerLib) impl BackendContract {
                         emit(nice, res, "ok")
                   }
                   target == "wat" ==> {
+                        mut as bool: has_run = false
+                        mut as map: pre_run_res = map{}
+                        route {
+                              not no_run ==> {
+                                    pre_run_res = interpExecuteFmir(fmir_module)
+                                    fmir_module["_cached_pre_out"] = "" + pre_run_res["output"]
+                                    has_run = true
+                              }
+                              _ ==> {}
+                        }
                         mut as map: res = watCompileModule(fmir_module, out_path)
                         route {
-                              res["success"] and not no_run ==> {
-                                    mut as map: run_res = interpExecuteFmir(fmir_module)
-                                    res["exit_code"] = run_res["exit_code"]
+                              res["success"] and has_run ==> {
+                                    res["exit_code"] = pre_run_res["exit_code"]
                               }
                               _ ==> {}
                         }
                         emit(nice, res, "ok")
                   }
                   target == "wasm" or target == "was" ==> {
+                        mut as bool: has_run = false
+                        mut as map: pre_run_res = map{}
+                        route {
+                              not no_run ==> {
+                                    pre_run_res = interpExecuteFmir(fmir_module)
+                                    fmir_module["_cached_pre_out"] = "" + pre_run_res["output"]
+                                    has_run = true
+                              }
+                              _ ==> {}
+                        }
                         mut as map: res = wasmCompileModule(fmir_module, out_path)
                         route {
-                              res["success"] and not no_run ==> {
-                                    mut as map: run_res = interpExecuteFmir(fmir_module)
-                                    res["exit_code"] = run_res["exit_code"]
+                              res["success"] and has_run ==> {
+                                    res["exit_code"] = pre_run_res["exit_code"]
                               }
                               _ ==> {}
                         }

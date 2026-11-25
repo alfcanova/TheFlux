@@ -1,11 +1,11 @@
 #L ==============================================================================
-#L TheFlux Tool: fluxlinter (v1.0.0)
+#L TheFlux Tool: fluxlinter (v1.0.5)
 #L Utilitario de Analise Estatica e Linter Canônico para TheFlux
 #L Inspirado na arquitetura do Clippy do ecossistema Rust (rustc)
 #L ==============================================================================
 
 function (linterPrintHelp) () as int64 {
-      print("fluxlinter - Utilitario de Analise Estatica e Linter TheFlux (v1.0.0)")
+      print("fluxlinter - Utilitario de Analise Estatica e Linter TheFlux (v1.0.5)")
       print("Inspirado no Clippy do rustc: analise estatica profunda, AST e sugestoes")
       print("")
       print("Sintaxe:")
@@ -32,7 +32,7 @@ function (linterPrintHelp) () as int64 {
       print("  -r, --recursive           Percorre subdiretorios recursivamente")
       print("  -l, --list, --list-lints  Lista todos os lints disponiveis")
       print("  -e, --explain <lint>      Exibe documentacao completa do lint especificado")
-      print("  -v, --version             Exibe a versao (fluxlinter version 1.0.0)")
+      print("  -v, --version             Exibe a versao (fluxlinter version 1.0.5)")
       print("  -h, --help                Exibe esta mensagem de ajuda")
       print("")
       print("Categorias Disponiveis:")
@@ -52,12 +52,12 @@ function (linterPrintHelp) () as int64 {
 }
 
 function (linterPrintVersion) () as int64 {
-      print("fluxlinter version 1.0.0")
+      print("fluxlinter version 1.0.5 (TheFlux Static Analyzer & Linter)")
       emit(nice, 0, "ok")
 }
 
 function (linterPrintList) () as int64 {
-      print("Lints Registrados no fluxlinter (v1.0.0):")
+      print("Lints Registrados no fluxlinter (v1.0.5):")
       print("")
       print("Nome do Lint                               Categoria     Padrao   Descricao")
       print("-----------------------------------------  ------------  -------  ---------------------------------------")
@@ -317,6 +317,28 @@ function (linterTrimBoth) (as string: s) as string {
       }
 }
 
+#L Juncao divide-and-conquer O(N log N) para evitar concatenacao quadratica em arquivos grandes
+function (linterJoinRange) (as list of string: parts, as int64: lo, as int64: hi, as string: sep) as string {
+      route {
+            lo > hi ==> { emit(nice, "", "ok") }
+            lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+            _ ==> {
+                  mut as int64: mid = (lo + hi) /i 2
+                  mut as string: left = linterJoinRange(parts, lo, mid, sep)
+                  mut as string: right = linterJoinRange(parts, mid + 1, hi, sep)
+                  emit(nice, left + sep + right, "ok")
+            }
+      }
+}
+
+function (linterFlushDiffParts) (as list of string: dst, as list of string: parts) as list of string {
+      mut as int64: np = stdCollectionLength(parts)
+      route {
+            np == 0 ==> { emit(nice, dst, "ok") }
+            _ ==> { emit(nice, stdListPushBack(dst, linterJoinRange(parts, 1, np, "")), "ok") }
+      }
+}
+
 function (linterHasFluxExt) (as string: path) as bool {
       mut as int64: n = stdCollectionLength(path)
       route {
@@ -348,13 +370,20 @@ function (linterIsIgnoredDir) (as string: name) as bool {
 
 function (linterCharRank) (as string: ch) as int64 {
       mut as string: tbl = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-      mut as int64: tlen = stdCollectionLength(tbl)
-      mut as int64: idx = 1
+      mut as int64: lo = 1
+      mut as int64: hi = 95
       infinite {
             route {
-                  idx > tlen ==> { break }
-                  tbl[idx] == ch ==> { emit(nice, idx + 31, "ok") }
-                  _ ==> { idx = idx + 1 }
+                  lo > hi ==> { break }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        mut as string: mc = tbl[mid]
+                        route {
+                              mc == ch ==> { emit(nice, mid + 31, "ok") }
+                              ch < mc ==> { hi = mid - 1 }
+                              _ ==> { lo = mid + 1 }
+                        }
+                  }
             }
       }
       emit(nice, 255, "ok")
@@ -382,53 +411,75 @@ function (linterStringLess) (as string: a, as string: b) as bool {
       emit(nice, la < lb, "ok")
 }
 
-function (linterSortStrings) (as list of string: items) as list of string {
-      mut as int64: n = stdCollectionLength(items)
-      mut as list of string: sorted = []
-      mut as map: used = map{}
-      mut as int64: step = 1
+function (linterMergeSortedStrings) (as list of string: a, as list of string: b) as list of string {
+      mut as list of string: merged = []
+      mut as int64: na = stdCollectionLength(a)
+      mut as int64: nb = stdCollectionLength(b)
+      mut as int64: ia = 1
+      mut as int64: ib = 1
       infinite {
             route {
-                  step > n ==> { break }
+                  ia > na or ib > nb ==> { break }
                   _ ==> {
-                        mut as int64: best_idx = 0
-                        mut as string: best_val = ""
-                        mut as int64: j = 1
-                        infinite {
-                              route {
-                                    j > n ==> { break }
-                                    _ ==> {
-                                          mut as string: kstr = "" + j
-                                          route {
-                                                not stdMapContainsKey(used, kstr) ==> {
-                                                      mut as string: cand = "" + items[j]
-                                                      route {
-                                                            best_idx == 0 or linterStringLess(cand, best_val) ==> {
-                                                                  best_idx = j
-                                                                  best_val = cand
-                                                            }
-                                                            _ ==> {}
-                                                      }
-                                                }
-                                                _ ==> {}
-                                          }
-                                          j = j + 1
-                                    }
-                              }
-                        }
+                        mut as string: va = "" + a[ia]
+                        mut as string: vb = "" + b[ib]
                         route {
-                              best_idx > 0 ==> {
-                                    mut as string: bkey = "" + best_idx
-                                    used[bkey] = true
-                                    sorted = stdListPushBack(sorted, best_val)
+                              linterStringLess(vb, va) ==> {
+                                    merged = stdListPushBack(merged, vb)
+                                    ib = ib + 1
                               }
-                              _ ==> {}
+                              _ ==> {
+                                    merged = stdListPushBack(merged, va)
+                                    ia = ia + 1
+                              }
                         }
-                        step = step + 1
                   }
             }
       }
-      emit(nice, sorted, "ok")
+      infinite {
+            route {
+                  ia > na ==> { break }
+                  _ ==> {
+                        merged = stdListPushBack(merged, "" + a[ia])
+                        ia = ia + 1
+                  }
+            }
+      }
+      infinite {
+            route {
+                  ib > nb ==> { break }
+                  _ ==> {
+                        merged = stdListPushBack(merged, "" + b[ib])
+                        ib = ib + 1
+                  }
+            }
+      }
+      emit(nice, merged, "ok")
+}
+
+function (linterSortStringsRange) (as list of string: items, as int64: lo, as int64: hi) as list of string {
+      route {
+            lo > hi ==> {
+                  mut as list of string: empty = []
+                  emit(nice, empty, "ok")
+            }
+            lo == hi ==> {
+                  mut as list of string: single = []
+                  single = stdListPushBack(single, "" + items[lo])
+                  emit(nice, single, "ok")
+            }
+            _ ==> {
+                  mut as int64: mid = (lo + hi) /i 2
+                  mut as list of string: left = linterSortStringsRange(items, lo, mid)
+                  mut as list of string: right = linterSortStringsRange(items, mid + 1, hi)
+                  emit(nice, linterMergeSortedStrings(left, right), "ok")
+            }
+      }
+}
+
+function (linterSortStrings) (as list of string: items) as list of string {
+      mut as int64: n = stdCollectionLength(items)
+      emit(nice, linterSortStringsRange(items, 1, n), "ok")
 }
 
 function (linterMatchWildcard) (as string: name, as string: pat) as bool {
@@ -787,16 +838,17 @@ function (linterGenerateDiff) (as string: orig_src, as string: fmt_src, as strin
       route { na == 0 ==> { old_count = 0 } _ ==> {} }
       route { nb == 0 ==> { new_count = 0 } _ ==> {} }
 
-      mut as string: diff = "--- a/" + file_path + "\n"
-      diff = diff + "+++ b/" + file_path + "\n"
-      diff = diff + "@@ -" + ctx_start + "," + old_count + " +" + ctx_start + "," + new_count + " @@\n"
+      mut as list of string: diff_parts = []
+      diff_parts = stdListPushBack(diff_parts, "--- a/" + file_path + "\n")
+      diff_parts = stdListPushBack(diff_parts, "+++ b/" + file_path + "\n")
+      diff_parts = stdListPushBack(diff_parts, "@@ -" + ctx_start + "," + old_count + " +" + ctx_start + "," + new_count + " @@\n")
 
       mut as int64: ci = ctx_start
       infinite {
             route {
                   ci > pref ==> { break }
                   _ ==> {
-                        diff = diff + " " + a_lines[ci] + "\n"
+                        diff_parts = stdListPushBack(diff_parts, " " + a_lines[ci] + "\n")
                         ci = ci + 1
                   }
             }
@@ -804,28 +856,29 @@ function (linterGenerateDiff) (as string: orig_src, as string: fmt_src, as strin
 
       mut as int64: ai = pref + 1
       mut as int64: bi = pref + 1
-      mut as string: rem_buf = ""
-      mut as string: add_buf = ""
+      mut as list of string: rem_parts = []
+      mut as list of string: add_parts = []
       infinite {
             route {
                   ai > a_end and bi > b_end ==> { break }
                   ai <= a_end and bi <= b_end and ("" + a_lines[ai]) == ("" + b_lines[bi]) and (not ((ai == na or bi == nb) and (a_nl != b_nl))) ==> {
-                        diff = diff + rem_buf + add_buf
-                        rem_buf = ""
-                        add_buf = ""
-                        diff = diff + " " + a_lines[ai] + "\n"
+                        diff_parts = linterFlushDiffParts(diff_parts, rem_parts)
+                        diff_parts = linterFlushDiffParts(diff_parts, add_parts)
+                        rem_parts = []
+                        add_parts = []
+                        diff_parts = stdListPushBack(diff_parts, " " + a_lines[ai] + "\n")
                         ai = ai + 1
                         bi = bi + 1
                   }
                   ai <= a_end and (bi + 1 <= b_end) and ("" + a_lines[ai]) == ("" + b_lines[bi + 1]) ==> {
-                        add_buf = add_buf + "+" + b_lines[bi] + "\n"
+                        add_parts = stdListPushBack(add_parts, "+" + b_lines[bi] + "\n")
                         bi = bi + 1
                   }
                   bi <= b_end and (ai + 1 <= a_end) and ("" + a_lines[ai + 1]) == ("" + b_lines[bi]) ==> {
-                        rem_buf = rem_buf + "-" + a_lines[ai] + "\n"
+                        rem_parts = stdListPushBack(rem_parts, "-" + a_lines[ai] + "\n")
                         route {
                               ai == na and (not a_nl) ==> {
-                                    rem_buf = rem_buf + "\\ No newline at end of file\n"
+                                    rem_parts = stdListPushBack(rem_parts, "\\ No newline at end of file\n")
                               }
                               _ ==> {}
                         }
@@ -834,10 +887,10 @@ function (linterGenerateDiff) (as string: orig_src, as string: fmt_src, as strin
                   _ ==> {
                         route {
                               ai <= a_end ==> {
-                                    rem_buf = rem_buf + "-" + a_lines[ai] + "\n"
+                                    rem_parts = stdListPushBack(rem_parts, "-" + a_lines[ai] + "\n")
                                     route {
                                           ai == na and (not a_nl) ==> {
-                                                rem_buf = rem_buf + "\\ No newline at end of file\n"
+                                                rem_parts = stdListPushBack(rem_parts, "\\ No newline at end of file\n")
                                           }
                                           _ ==> {}
                                     }
@@ -847,7 +900,7 @@ function (linterGenerateDiff) (as string: orig_src, as string: fmt_src, as strin
                         }
                         route {
                               bi <= b_end ==> {
-                                    add_buf = add_buf + "+" + b_lines[bi] + "\n"
+                                    add_parts = stdListPushBack(add_parts, "+" + b_lines[bi] + "\n")
                                     bi = bi + 1
                               }
                               _ ==> {}
@@ -855,20 +908,21 @@ function (linterGenerateDiff) (as string: orig_src, as string: fmt_src, as strin
                   }
             }
       }
-      diff = diff + rem_buf + add_buf
+      diff_parts = linterFlushDiffParts(diff_parts, rem_parts)
+      diff_parts = linterFlushDiffParts(diff_parts, add_parts)
 
       mut as int64: k = 1
       infinite {
             route {
                   k > ctx_after ==> { break }
                   _ ==> {
-                        diff = diff + " " + a_lines[a_end + k] + "\n"
+                        diff_parts = stdListPushBack(diff_parts, " " + a_lines[a_end + k] + "\n")
                         k = k + 1
                   }
             }
       }
 
-      emit(nice, diff, "ok")
+      emit(nice, linterJoinRange(diff_parts, 1, stdCollectionLength(diff_parts), ""), "ok")
 }
 
 function (linterPrintWithoutExtraNewline) (as string: text) as int64 {
@@ -910,12 +964,18 @@ function (linterFindSubstr) (as string: hay, as string: ndl) as int64 {
             hlen < nlen ==> { emit(nice, 0, "ok") }
             _ ==> {}
       }
+      mut as string: first_ch = ndl[1]
+      mut as int64: max_start = hlen - nlen + 1
       mut as int64: i = 1
       infinite {
             route {
-                  i + nlen - 1 > hlen ==> { break }
-                  hay[i..(i + nlen - 1)] == ndl ==> {
-                        emit(nice, i, "ok")
+                  i > max_start ==> { break }
+                  hay[i] == first_ch ==> {
+                        route {
+                              nlen == 1 ==> { emit(nice, i, "ok") }
+                              hay[i..(i + nlen - 1)] == ndl ==> { emit(nice, i, "ok") }
+                              _ ==> { i = i + 1 }
+                        }
                   }
                   _ ==> { i = i + 1 }
             }
@@ -924,18 +984,32 @@ function (linterFindSubstr) (as string: hay, as string: ndl) as int64 {
 }
 
 function (linterRepeatChar) (as string: ch, as int64: count) as string {
-      mut as string: out = ""
-      mut as int64: i = 1
-      infinite {
-            route {
-                  i > count ==> { break }
-                  _ ==> {
-                        out = out + ch
-                        i = i + 1
+      route {
+            count <= 0 ==> { emit(nice, "", "ok") }
+            _ ==> {
+                  mut as string: out = ""
+                  mut as string: chunk = ch
+                  mut as int64: rem = count
+                  infinite {
+                        route {
+                              rem <= 0 ==> { break }
+                              _ ==> {
+                                    mut as int64: half = rem /i 2
+                                    route {
+                                          half * 2 != rem ==> { out = out + chunk }
+                                          _ ==> {}
+                                    }
+                                    rem = half
+                                    route {
+                                          rem > 0 ==> { chunk = chunk + chunk }
+                                          _ ==> {}
+                                    }
+                              }
+                        }
                   }
+                  emit(nice, out, "ok")
             }
       }
-      emit(nice, out, "ok")
 }
 
 #L Analisador Central de Lints (Early & Late Passes)
@@ -1480,25 +1554,32 @@ function (linterAnalyzeFile) (as string: file_path, as string: src, as map: conf
             }
       }
 
-      #L Reconstroi o codigo final formatado para --fix / --diff
+      #L Reconstroi o codigo final formatado somente quando ha correcoes a aplicar
       mut as string: fixed_src = ""
-      mut as int64: rli = 1
-      infinite {
-            route {
-                  rli > num_lines ==> { break }
-                  _ ==> {
-                        mut as string: k_rli = "" + rli
+      route {
+            has_fixes and num_lines > 0 ==> {
+                  mut as list of string: fixed_lines = []
+                  mut as int64: rli = 1
+                  infinite {
                         route {
-                              stdMapContainsKey(repl_map, k_rli) ==> {
-                                    fixed_src = fixed_src + ("" + repl_map[k_rli]) + "\n"
-                              }
+                              rli > num_lines ==> { break }
                               _ ==> {
-                                    fixed_src = fixed_src + ("" + raw_lines[rli]) + "\n"
+                                    mut as string: k_rli = "" + rli
+                                    route {
+                                          stdMapContainsKey(repl_map, k_rli) ==> {
+                                                fixed_lines = stdListPushBack(fixed_lines, "" + repl_map[k_rli])
+                                          }
+                                          _ ==> {
+                                                fixed_lines = stdListPushBack(fixed_lines, "" + raw_lines[rli])
+                                          }
+                                    }
+                                    rli = rli + 1
                               }
                         }
-                        rli = rli + 1
                   }
+                  fixed_src = linterJoinRange(fixed_lines, 1, num_lines, "\n") + "\n"
             }
+            _ ==> {}
       }
 
       mut as map: res = map{}
@@ -1836,7 +1917,7 @@ program (FluxLinter) {
                         }
 
                         mut as string: fixed_code = "" + a_res["fixed_src"]
-                        mut as bool: has_changes = (fixed_code != src_code)
+                        mut as bool: has_changes = (fixed_code != "" and fixed_code != src_code)
 
                         #L Modo --diff (-d)
                         route {

@@ -40,11 +40,20 @@ agent (CompilerLib) impl ParseTypesContract {
                         mut as map: m_of = tokenStreamMatch(ts, "KEYWORD", "of")
                         route {
                               m_of["matched"] ==> {
-                                    ts = m_of["stream"]
-                                    mut as map: elem_tok = tokenStreamPeek(ts)
-                                    mut as string: elem_type = "" + elem_tok["val"]
-                                    ts = tokenStreamAdvance(ts)
-                                    ar = astArenaAllocNode(ar, "TYPE_COLLECTION", type_name + " of " + elem_type, 0, 0, [])
+                                    mut as string: full_coll_type = type_name
+                                    infinite {
+                                          route {
+                                                not m_of["matched"] ==> { break }
+                                                _ ==> {}
+                                          }
+                                          ts = m_of["stream"]
+                                          mut as map: elem_tok = tokenStreamPeek(ts)
+                                          mut as string: elem_type = "" + elem_tok["val"]
+                                          ts = tokenStreamAdvance(ts)
+                                          full_coll_type = full_coll_type + " of " + elem_type
+                                          m_of = tokenStreamMatch(ts, "KEYWORD", "of")
+                                    }
+                                    ar = astArenaAllocNode(ar, "TYPE_COLLECTION", full_coll_type, 0, 0, [])
                               }
                               _ ==> {
                                     ar = astArenaAllocNode(ar, "TYPE_PRIMITIVE", type_name, 0, 0, [])

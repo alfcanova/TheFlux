@@ -283,3 +283,48 @@ char *flux_std_io_write_base64_file(const char *path, const char *b64_content) {
     free(raw);
     return strdup(b64_content);
 }
+
+extern void *flux_list_build(int64_t count, int64_t elem_tag);
+extern void *flux_list_push(void *list, int64_t tag, int64_t ival, const char *sval);
+
+void *flux_std_io_read_lines_simple(const char *path) {
+    return flux_std_io_read_lines(path, flux_list_build, flux_list_push);
+}
+
+static char *_write_or_append_lines(const char *path, void *list, int append) {
+    if (!path) return strdup("");
+    FILE *f = fopen(path, append ? "ab" : "wb");
+    if (!f) return strdup("");
+    flux_simd_list_t *lst = (flux_simd_list_t *)list;
+    int64_t n = (lst && lst->len > 0 && lst->data_ptr) ? lst->len : 0;
+    flux_simd_row_t *rows = n > 0 ? (flux_simd_row_t *)(uintptr_t)lst->data_ptr : NULL;
+    size_t total_sz = 1;
+    for (int64_t i = 0; i < n; i++) {
+        const char *s = rows ? (const char *)(uintptr_t)(rows[i].sval ? rows[i].sval : rows[i].val) : NULL;
+        if (s && (uintptr_t)s >= 0x10000) total_sz += strlen(s);
+        total_sz += 1;
+    }
+    char *out_buf = (char *)malloc(total_sz);
+    if (out_buf) out_buf[0] = '\0';
+    for (int64_t i = 0; i < n; i++) {
+        const char *s = rows ? (const char *)(uintptr_t)(rows[i].sval ? rows[i].sval : rows[i].val) : NULL;
+        if (s && (uintptr_t)s >= 0x10000) {
+            fputs(s, f);
+            if (out_buf) strcat(out_buf, s);
+        }
+        fputc('\n', f);
+        if (out_buf) strcat(out_buf, "\n");
+    }
+    fclose(f);
+    return out_buf ? out_buf : strdup("");
+}
+
+char *flux_std_io_write_lines(const char *path, void *list) {
+    return _write_or_append_lines(path, list, 0);
+}
+
+char *flux_std_io_append_lines(const char *path, void *list) {
+    return _write_or_append_lines(path, list, 1);
+}
+
+

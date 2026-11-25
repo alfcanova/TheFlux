@@ -191,13 +191,12 @@ TheFlux/
 │   ├── logo_dsl/                # DSL Logo de Navegação 2D (Lexer, Semantic, AST, Executor)
 │   └── rule_dsl/                # DSL de Regras de Negócio (Lexer, Semantic, AST, Executor)
 ├── flux/                        # 360 programas e suítes canônicas de teste (.flux)
-├── lib/                         # Bibliotecas estáticas (libfluxrt, libfluxcompiler) e dinâmicas (DBs)
+├── lib/                         # Biblioteca estática nativa (libfluxrt) e dinâmicas (DBs)
 ├── runtime/                     # Runtime C modular (include/flux/, src/)
 ├── src/                         # Compilador auto-hospedado nativo TheFlux / FDSL
 │   ├── CompilerLib/             # Lexer, Parser, AST, Semântica, FMIR e Backends (LLVM/VM/WAT/WASM)
 │   ├── Fvm/                     # Compilador e Máquina Virtual Bytecode (.fvmbc) em FDSL
 │   └── main.flux                # Ponto de entrada do compilador CLI nativo (fluxc)
-├── legacy-0.9.9/                # Protótipo original em Python (flux_proto) e ferramentas legadas v0.9.9
 ├── stdlib/                      # 37 Bibliotecas Padrão em FDSL (.fdsl)
 │   ├── db/                      # Motores de banco de dados embutidos (cabeçalhos C/C++ e binários)
 │   │   └── windows/             # Distribuições nativas Windows x64

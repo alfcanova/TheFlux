@@ -58,29 +58,82 @@ static inline FluxVal peek(FvmState *vm) {
     return fvm_val_nil();
 }
 
-static void scope_declare(FvmState *vm, const char *name, FluxVal val) {
-    if (!name || !vm->scope) return;
-    for (uint32_t i = 0; i < vm->scope->var_count; i++) {
-        if (strcmp(vm->scope->names[i], name) == 0) {
-            vm->scope->values[i] = val;
-            return;
+static uint32_t fvm_hash_cstr(const char *s) {
+    uint32_t h = 2166136261u;
+    while (*s) {
+        h ^= (uint8_t)*s++;
+        h *= 16777619u;
+    }
+    return h;
+}
+
+static void fvm_scope_build_hash(FvmScope *s) {
+    if (!s || s->hash_active) return;
+    memset(s->hash_slots, 0, sizeof(s->hash_slots));
+    uint32_t mask = FVM_SCOPE_HASH_BUCKETS - 1;
+    for (uint32_t i = 0; i < s->var_count; i++) {
+        uint32_t h = fvm_hash_cstr(s->names[i]);
+        s->name_hashes[i] = h;
+        uint32_t pos = h & mask;
+        while (s->hash_slots[pos] != 0) pos = (pos + 1) & mask;
+        s->hash_slots[pos] = (int16_t)(i + 1);
+    }
+    s->hash_active = 1;
+}
+
+static int32_t fvm_scope_find(FvmScope *s, const char *name, uint32_t h) {
+    if (s->hash_active) {
+        uint32_t mask = FVM_SCOPE_HASH_BUCKETS - 1;
+        uint32_t pos = h & mask;
+        for (;;) {
+            int16_t sv = s->hash_slots[pos];
+            if (sv == 0) return -1;
+            int32_t idx = (int32_t)(sv - 1);
+            if (s->name_hashes[idx] == h && strcmp(s->names[idx], name) == 0) return idx;
+            pos = (pos + 1) & mask;
         }
     }
-    if (vm->scope->var_count < FVM_MAX_SCOPE_VARS) {
-        vm->scope->names[vm->scope->var_count] = fvm_arena_strdup(&vm->arena, name);
-        vm->scope->values[vm->scope->var_count] = val;
-        vm->scope->var_count++;
+    for (uint32_t i = 0; i < s->var_count; i++) {
+        if (strcmp(s->names[i], name) == 0) return (int32_t)i;
+    }
+    return -1;
+}
+
+static void scope_declare(FvmState *vm, const char *name, FluxVal val) {
+    if (!name || !vm->scope) return;
+    FvmScope *s = vm->scope;
+    uint32_t h = s->hash_active ? fvm_hash_cstr(name) : 0;
+    int32_t idx = fvm_scope_find(s, name, h);
+    if (idx >= 0) {
+        s->values[idx] = val;
+        return;
+    }
+    if (s->var_count < FVM_MAX_SCOPE_VARS) {
+        uint32_t n = s->var_count;
+        s->names[n] = fvm_arena_strdup(&vm->arena, name);
+        s->values[n] = val;
+        s->var_count = n + 1;
+        if (s->hash_active) {
+            if (h == 0) h = fvm_hash_cstr(name);
+            s->name_hashes[n] = h;
+            uint32_t mask = FVM_SCOPE_HASH_BUCKETS - 1;
+            uint32_t pos = h & mask;
+            while (s->hash_slots[pos] != 0) pos = (pos + 1) & mask;
+            s->hash_slots[pos] = (int16_t)(n + 1);
+        } else if (s->var_count > 6) {
+            fvm_scope_build_hash(s);
+        }
     }
 }
 
 static void scope_store(FvmState *vm, const char *name, FluxVal val) {
     if (!name) return;
+    uint32_t h = fvm_hash_cstr(name);
     for (FvmScope *s = vm->scope; s != NULL; s = s->parent) {
-        for (uint32_t i = 0; i < s->var_count; i++) {
-            if (strcmp(s->names[i], name) == 0) {
-                s->values[i] = val;
-                return;
-            }
+        int32_t idx = fvm_scope_find(s, name, h);
+        if (idx >= 0) {
+            s->values[idx] = val;
+            return;
         }
     }
     scope_declare(vm, name, val);
@@ -88,11 +141,11 @@ static void scope_store(FvmState *vm, const char *name, FluxVal val) {
 
 static FluxVal scope_load(FvmState *vm, const char *name) {
     if (!name) return fvm_val_nil();
+    uint32_t h = fvm_hash_cstr(name);
     for (FvmScope *s = vm->scope; s != NULL; s = s->parent) {
-        for (uint32_t i = 0; i < s->var_count; i++) {
-            if (strcmp(s->names[i], name) == 0) {
-                return s->values[i];
-            }
+        int32_t idx = fvm_scope_find(s, name, h);
+        if (idx >= 0) {
+            return s->values[idx];
         }
     }
     return fvm_val_nil();

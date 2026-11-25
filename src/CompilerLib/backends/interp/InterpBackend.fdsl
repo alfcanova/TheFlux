@@ -4,6 +4,7 @@
 #L ==============================================================================
 
 contract (InterpBackendContract) {
+      op interpJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string
       op interpParseInt (as string: s) as int64
       op interpParseFloat (as string: s) as float64
       op interpGetDataTag (as data: v) as float64
@@ -22,78 +23,90 @@ contract (InterpBackendContract) {
 }
 
 agent (CompilerLib) impl InterpBackendContract {
+      op interpJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string ==> {
+            route {
+                  lo > hi ==> { emit(nice, "", "ok") }
+                  lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        emit(nice, interpJoinRange(parts, lo, mid) + interpJoinRange(parts, mid + 1, hi), "ok")
+                  }
+            }
+      }
+
+      op interpJoinSep (as list of data: parts, as int64: lo, as int64: hi, as string: sep) as string ==> {
+            route {
+                  lo > hi ==> { emit(nice, "", "ok") }
+                  lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        emit(nice, interpJoinSep(parts, lo, mid, sep) + sep + interpJoinSep(parts, mid + 1, hi, sep), "ok")
+                  }
+            }
+      }
+
       op interpGetDataTag (as data: v) as float64 ==> {
             emit(nice, v, "ok")
       }
 
       op interpInferDataType (as data: v) as string ==> {
-            mut as float64: ftag = interpGetDataTag(v)
-            mut as int64: vtag = ftag as int64
-            mut as int64: iv = v as int64
+            mut as string: tn = stdRuntimeGetTypeName(v)
             mut as string: res_t = "int"
             route {
-                  vtag == 2 ==> { res_t = "bool" }
-                  vtag == 3 ==> { res_t = "float" }
-                  vtag == 4 ==> { res_t = "string" }
-                  vtag == 5 or (vtag == 0 and iv >= 1048576 and iv < 140737488355328) ==> {
+                  tn == "string" ==> { res_t = "string" }
+                  tn == "bool" ==> { res_t = "bool" }
+                  tn == "float64" or tn == "float" ==> { res_t = "float" }
+                  tn == "list" ==> { res_t = "list" }
+                  tn == "set" ==> { res_t = "set" }
+                  tn == "map" ==> {
+                        mut as string: s = "" + v
+                        route {
+                              stdCollectionLength(s) >= 15 and s[1..15] == "{_struct_name: " ==> {
+                                    res_t = "struct"
+                              }
+                              _ ==> { res_t = "map" }
+                        }
+                  }
+                  _ ==> {
                         mut as string: s = "" + v
                         mut as int64: slen = stdCollectionLength(s)
                         route {
-                              slen >= 2 and s[1] == "[" and s[slen] == "]" ==> {
-                                    mut as int64: hdr_n = stdCollectionLength(v)
-                                    route {
-                                          hdr_n >= 0 and hdr_n < slen ==> { res_t = "list" }
-                                          _ ==> { res_t = "string" }
-                                    }
-                              }
+                              slen >= 2 and s[1] == "[" and s[slen] == "]" ==> { res_t = "list" }
                               slen >= 2 and s[1] == "{" and s[slen] == "}" ==> {
-                                    mut as int64: hdr_n = stdCollectionLength(v)
                                     route {
-                                          hdr_n >= 0 and hdr_n < slen ==> {
-                                                route {
-                                                      slen >= 15 and s[1..15] == "{_struct_name: " ==> {
-                                                            res_t = "struct"
-                                                      }
-                                                      slen == 2 ==> {
-                                                            res_t = "map"
-                                                      }
-                                                      _ ==> {
-                                                            mut as int64: d = 0
-                                                            mut as int64: si = 2
-                                                            mut as string: guessed = "set"
-                                                            infinite {
-                                                                  route {
-                                                                        si >= slen ==> { break }
-                                                                        _ ==> {
-                                                                              mut as string: sch = s[si]
-                                                                              route {
-                                                                                    sch == "[" or sch == "{" ==> { d = d + 1 }
-                                                                                    sch == "]" or sch == "}" ==> { d = d - 1 }
-                                                                                    d == 0 and sch == ":" ==> {
-                                                                                          guessed = "map"
-                                                                                          break
-                                                                                    }
-                                                                                    d == 0 and sch == "," ==> {
-                                                                                          guessed = "set"
-                                                                                          break
-                                                                                    }
-                                                                                    _ ==> {}
-                                                                              }
-                                                                              si = si + 1
-                                                                        }
-                                                                  }
-                                                            }
-                                                            res_t = guessed
-                                                      }
+                                          slen >= 15 and s[1..15] == "{_struct_name: " ==> { res_t = "struct" }
+                                          _ ==> { res_t = "map" }
+                                    }
+                              }
+                              _ ==> {
+                                    mut as bool: is_num = (slen > 0)
+                                    mut as int64: si = 1
+                                    route {
+                                          slen > 0 and s[1] == "-" ==> { si = 2 }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          si > slen ==> { is_num = false }
+                                          _ ==> {}
+                                    }
+                                    infinite {
+                                          route {
+                                                si > slen ==> { break }
+                                                s[si] < "0" or s[si] > "9" ==> {
+                                                      is_num = false
+                                                      break
                                                 }
+                                                _ ==> { si = si + 1 }
                                           }
+                                    }
+                                    route {
+                                          is_num ==> { res_t = "int" }
+                                          s == "true" or s == "false" ==> { res_t = "bool" }
                                           _ ==> { res_t = "string" }
                                     }
                               }
-                              _ ==> { res_t = "string" }
                         }
                   }
-                  _ ==> { res_t = "int" }
             }
             emit(nice, res_t, "ok")
       }
@@ -120,22 +133,39 @@ agent (CompilerLib) impl InterpBackendContract {
                   not has_marker ==> { emit(nice, s, "ok") }
                   _ ==> {}
             }
-            mut as string: out = ""
+            mut as list of data: parts = []
+            mut as int64: chunk_start = 1
             mut as int64: i = 1
             infinite {
                   route {
-                        i > slen ==> { break }
+                        i > slen ==> {
+                              route {
+                                    i > chunk_start ==> {
+                                          parts = stdListPushBack(parts, s[chunk_start..(i - 1)])
+                                    }
+                                    _ ==> {}
+                              }
+                              break
+                        }
                         (i + 14) <= slen and s[i..(i + 14)] == "{_struct_name: " ==> {
+                              route {
+                                    i > chunk_start ==> {
+                                          parts = stdListPushBack(parts, s[chunk_start..(i - 1)])
+                                    }
+                                    _ ==> {}
+                              }
                               mut as int64: p = i + 15
-                              mut as string: sname = ""
+                              mut as int64: sn_start = p
                               infinite {
                                     route {
                                           p > slen or s[p] == "," or s[p] == "}" ==> { break }
-                                          _ ==> {
-                                                sname = sname + s[p]
-                                                p = p + 1
-                                          }
+                                          _ ==> { p = p + 1 }
                                     }
+                              }
+                              mut as string: sname = ""
+                              route {
+                                    p > sn_start ==> { sname = s[sn_start..(p - 1)] }
+                                    _ ==> {}
                               }
                               infinite {
                                     route {
@@ -146,55 +176,75 @@ agent (CompilerLib) impl InterpBackendContract {
                               route { p <= slen and s[p] == "]" ==> { p = p + 1 } _ ==> {} }
                               route {
                                     p <= slen and s[p] == "}" ==> {
-                                          out = out + sname + "()"
+                                          parts = stdListPushBack(parts, sname + "()")
                                           i = p + 1
+                                          chunk_start = i
                                     }
                                     _ ==> {
                                           route {
                                                 (p + 1) <= slen and s[p..(p + 1)] == ", " ==> { p = p + 2 }
                                                 _ ==> {}
                                           }
-                                          out = out + sname + "(."
+                                          parts = stdListPushBack(parts, sname + "(.")
                                           mut as int64: d = 0
+                                          mut as int64: f_start = p
                                           infinite {
                                                 route {
-                                                      p > slen ==> { break }
+                                                      p > slen ==> {
+                                                            route {
+                                                                  p > f_start ==> {
+                                                                        parts = stdListPushBack(parts, s[f_start..(p - 1)])
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            break
+                                                      }
                                                       d == 0 and s[p] == "}" ==> {
-                                                            out = out + ")"
+                                                            route {
+                                                                  p > f_start ==> {
+                                                                        parts = stdListPushBack(parts, s[f_start..(p - 1)])
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            parts = stdListPushBack(parts, ")")
                                                             p = p + 1
                                                             break
                                                       }
                                                       s[p] == "[" or s[p] == "{" or s[p] == "(" ==> {
                                                             d = d + 1
-                                                            out = out + s[p]
                                                             p = p + 1
                                                       }
                                                       s[p] == "]" or s[p] == "}" or s[p] == ")" ==> {
                                                             d = d - 1
-                                                            out = out + s[p]
                                                             p = p + 1
                                                       }
                                                       d == 0 and (p + 1) <= slen and s[p..(p + 1)] == ", " ==> {
-                                                            out = out + ", ."
+                                                            route {
+                                                                  p > f_start ==> {
+                                                                        parts = stdListPushBack(parts, s[f_start..(p - 1)])
+                                                                  }
+                                                                  _ ==> {}
+                                                            }
+                                                            parts = stdListPushBack(parts, ", .")
                                                             p = p + 2
+                                                            f_start = p
                                                       }
                                                       _ ==> {
-                                                            out = out + s[p]
                                                             p = p + 1
                                                       }
                                                 }
                                           }
                                           i = p
+                                          chunk_start = i
                                     }
                               }
                         }
                         _ ==> {
-                              out = out + s[i]
                               i = i + 1
                         }
                   }
             }
-            emit(nice, out, "ok")
+            emit(nice, interpJoinRange(parts, 1, stdCollectionLength(parts)), "ok")
       }
 
       op interpParseInt (as string: s) as int64 ==> {
@@ -526,7 +576,7 @@ agent (CompilerLib) impl InterpBackendContract {
             mut as map: global_env = map{}
             mut as map: global_env_types = map{}
             mut as map: global_env_outcomes = map{}
-            mut as string: stdout_acc = ""
+            mut as list of data: stdout_parts = []
             mut as string: pending_prefix = ""
             mut as bool: silent_mode = false
             route {
@@ -537,6 +587,11 @@ agent (CompilerLib) impl InterpBackendContract {
             }
             mut as int64: spy_counter = 0
             mut as list of map: call_stack = []
+            mut as int64: cs_top = 0
+            mut as int64: cs_cap = 0
+            mut as map: default_nice_outcome = map{}
+            default_nice_outcome["sta"] = "nice"
+            default_nice_outcome["msg"] = "ok"
             mut as string: cur_fn_ret_type = "data"
             mut as bool: gfx_win_closed = false
             mut as map: io_files = map{}
@@ -581,22 +636,11 @@ agent (CompilerLib) impl InterpBackendContract {
             infinite {
                   route {
                         pc > total_instrs_count ==> {
-                              mut as int64: cs_len = stdCollectionLength(call_stack)
                               route {
-                                    cs_len > 0 ==> {
-                                          mut as map: top_frame = call_stack[cs_len]
-                                          mut as list of map: new_cs = []
-                                          mut as int64: csi = 1
-                                          infinite {
-                                                route {
-                                                      csi >= cs_len ==> { break }
-                                                      _ ==> {
-                                                            new_cs = stdListPushBack(new_cs, call_stack[csi])
-                                                            csi = csi + 1
-                                                      }
-                                                }
-                                          }
-                                          call_stack = new_cs
+                                    cs_top > 0 ==> {
+                                          mut as map: top_frame = call_stack[cs_top]
+                                          call_stack[cs_top] = map{}
+                                          cs_top = cs_top - 1
                                           pc = top_frame["return_pc"] as int64
                                           mut as string: ret_tgt = "" + top_frame["res_reg"]
                                           regs = top_frame["regs"]
@@ -611,10 +655,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                           total_instrs_count = top_frame["total_instrs"] as int64
                                           regs[ret_tgt] = 0
                                           reg_types[ret_tgt] = "int"
-                                          mut as map: impl_out = map{}
-                                          impl_out["sta"] = "nice"
-                                          impl_out["msg"] = "ok"
-                                          reg_outcomes[ret_tgt] = impl_out
+                                          reg_outcomes[ret_tgt] = default_nice_outcome
                                     }
                                     _ ==> { break }
                               }
@@ -788,17 +829,17 @@ agent (CompilerLib) impl InterpBackendContract {
                                     opcode == "COLL_LEN" ==> {
                                           mut as int64: clen = 0
                                           mut as string: c_ty = ""
-                                          mut as data: c_obj = 0
+                                          mut as data: c_data = 0
                                           route {
                                                 stdMapContainsKey(env, a1) ==> {
-                                                      c_obj = env[a1]
+                                                      c_data = env[a1]
                                                       route {
                                                             stdMapContainsKey(env_types, a1) ==> { c_ty = env_types[a1] }
                                                             _ ==> {}
                                                       }
                                                 }
                                                 stdMapContainsKey(regs, a1) ==> {
-                                                      c_obj = regs[a1]
+                                                      c_data = regs[a1]
                                                       route {
                                                             stdMapContainsKey(reg_types, a1) ==> { c_ty = reg_types[a1] }
                                                             _ ==> {}
@@ -808,7 +849,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                           }
                                           route {
                                                 c_ty == "data" or c_ty == "" ==> {
-                                                      mut as string: inf_cl = interpInferDataType(c_obj)
+                                                      mut as string: inf_cl = interpInferDataType(c_data)
                                                       route {
                                                             inf_cl == "list" or inf_cl == "set" or inf_cl == "map" or inf_cl == "struct" ==> { c_ty = inf_cl }
                                                             _ ==> { c_ty = "string" }
@@ -818,19 +859,19 @@ agent (CompilerLib) impl InterpBackendContract {
                                           }
                                           route {
                                                 c_ty == "string" ==> {
-                                                      mut as string: s = "" + c_obj
+                                                      mut as string: s = "" + c_data
                                                       clen = stdCollectionLength(s)
                                                 }
                                                 c_ty == "map" or c_ty == "struct" ==> {
-                                                      mut as map: m = c_obj
+                                                      mut as map: m = c_data
                                                       clen = stdCollectionLength(m)
                                                 }
                                                 c_ty == "list" or c_ty == "set" or c_ty == "list_of_list" or c_ty == "list_of_list_of_list" ==> {
-                                                      mut as list of data: l = c_obj
+                                                      mut as list of data: l = c_data
                                                       clen = stdCollectionLength(l)
                                                 }
                                                 c_ty == "range" ==> {
-                                                      mut as string: rng_str = "" + c_obj
+                                                      mut as string: rng_str = "" + c_data
                                                       mut as int64: rlen = stdCollectionLength(rng_str)
                                                       mut as int64: ddot = 0
                                                       mut as int64: ri = 1
@@ -848,11 +889,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             ddot > 0 ==> {
                                                                   mut as string: s_str = rng_str[1..(ddot - 1)]
                                                                   mut as string: e_str = rng_str[(ddot + 2)..rlen]
-                                                                  mut as int64: s_val = interpParseInt(s_str)
+                                                                  mut as int64: s_ival = interpParseInt(s_str)
                                                                   mut as int64: e_val = interpParseInt(e_str)
                                                                   route {
-                                                                        s_val <= e_val ==> { clen = e_val - s_val + 1 }
-                                                                        _ ==> { clen = s_val - e_val + 1 }
+                                                                        s_ival <= e_val ==> { clen = e_val - s_ival + 1 }
+                                                                        _ ==> { clen = s_ival - e_val + 1 }
                                                                   }
                                                             }
                                                             _ ==> {}
@@ -900,6 +941,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                           }
                                           mut as data: res_val = 0
                                           mut as string: res_type = "int"
+                                          mut as string: s_res_val = ""
                                           route {
                                                 ctype == "map" or ctype == "struct" ==> {
                                                       mut as map: cm = cobj
@@ -915,6 +957,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             }
                                                       }
                                                       res_val = found_k
+                                                      s_res_val = found_k
                                                       res_type = "string"
                                                 }
                                                 ctype == "string" ==> {
@@ -922,9 +965,9 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       mut as int64: slen = stdCollectionLength(cstr)
                                                       route {
                                                             cidx >= 1 and cidx <= slen ==> {
-                                                                  res_val = cstr[cidx]
+                                                                  s_res_val = cstr[cidx]
                                                             }
-                                                            _ ==> { res_val = "" }
+                                                            _ ==> { s_res_val = "" }
                                                       }
                                                       res_type = "string"
                                                 }
@@ -937,6 +980,12 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             _ ==> { res_val = 0 }
                                                       }
                                                       res_type = interpInferDataType(res_val)
+                                                      route {
+                                                            res_type == "string" ==> {
+                                                                  s_res_val = interpCleanStructRepr(res_val as string)
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                 }
                                                 ctype == "range" ==> {
                                                       mut as string: rng_str = "" + cobj
@@ -957,11 +1006,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             ddot > 0 ==> {
                                                                   mut as string: s_str = rng_str[1..(ddot - 1)]
                                                                   mut as string: e_str = rng_str[(ddot + 2)..rlen]
-                                                                  mut as int64: s_val = interpParseInt(s_str)
+                                                                  mut as int64: s_start = interpParseInt(s_str)
                                                                   mut as int64: e_val = interpParseInt(e_str)
                                                                   route {
-                                                                        s_val <= e_val ==> { res_val = s_val + (cidx - 1) }
-                                                                        _ ==> { res_val = s_val - (cidx - 1) }
+                                                                        s_start <= e_val ==> { res_val = s_start + (cidx - 1) }
+                                                                        _ ==> { res_val = s_start - (cidx - 1) }
                                                                   }
                                                             }
                                                             _ ==> { res_val = cidx }
@@ -975,7 +1024,12 @@ agent (CompilerLib) impl InterpBackendContract {
                                           }
                                           route {
                                                 res_type == "string" ==> {
-                                                      mut as string: s_res_val = "" + res_val
+                                                      route {
+                                                            s_res_val == "" and ctype != "string" ==> {
+                                                                  s_res_val = interpCleanStructRepr(res_val as string)
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       route {
                                                             stdCollectionLength(res) > 0 and res[1] == "%" ==> {
                                                                   regs[res] = s_res_val
@@ -1270,7 +1324,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             _ ==> {}
                                                       }
                                                       route {
-                                                            load_t == "string" ==> {
+                                                            load_t == "string" or load_t == "char" ==> {
                                                                   mut as string: s_load_val = env[a1] as string
                                                                   regs[res] = s_load_val
                                                                   reg_types[res] = "string"
@@ -1373,7 +1427,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   env[res] = om["val"]
                                                                   env_types[res] = store_t
                                                             }
-                                                            store_t == "string" ==> {
+                                                            store_t == "string" or store_t == "char" ==> {
                                                                   mut as string: s_store_val = regs[a1] as string
                                                                   env[res] = s_store_val
                                                                   env_types[res] = "string"
@@ -1413,7 +1467,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       env_types[res] = "string"
                                                 }
                                           }
-                                          mut as int64: cur_cs_depth = stdCollectionLength(call_stack)
+                                          mut as int64: cur_cs_depth = cs_top
                                           route {
                                                 cur_cs_depth == 0 ==> {
                                                       global_env[res] = env[res]
@@ -1515,13 +1569,13 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       cur_list = stdListPushBack(cur_list, m_pval)
                                                 }
                                                 _ ==> {
-                                                      mut as data: pval = 0
+                                                      mut as int64: push_ival = 0
                                                       route {
-                                                            stdMapContainsKey(regs, a2) ==> { pval = regs[a2] }
-                                                            stdMapContainsKey(env, a2) ==> { pval = env[a2] }
-                                                            _ ==> { pval = a2 }
+                                                            stdMapContainsKey(regs, a2) ==> { push_ival = regs[a2] as int64 }
+                                                            stdMapContainsKey(env, a2) ==> { push_ival = env[a2] as int64 }
+                                                            _ ==> { push_ival = interpParseInt(a2) }
                                                       }
-                                                      cur_list = stdListPushBack(cur_list, pval)
+                                                      cur_list = stdListPushBack(cur_list, push_ival)
                                                 }
                                           }
                                           regs[a1] = cur_list
@@ -1579,7 +1633,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                           reg_types[res] = "list"
                                     }
                                     opcode == "SET_INIT" ==> {
-                                          regs[res] = stdListToSet([])
+                                          regs[res] = []
                                           reg_types[res] = "set"
                                     }
                                     opcode == "SET_ADD" ==> {
@@ -1621,14 +1675,15 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                         }
                                                                   }
                                                                   _ ==> {
-                                                                        mut as data: check_val = 0
+                                                                        mut as int64: check_ival = 0
                                                                         route {
-                                                                              stdMapContainsKey(regs, a2) ==> { check_val = regs[a2] }
-                                                                              stdMapContainsKey(env, a2) ==> { check_val = env[a2] }
-                                                                              _ ==> { check_val = a2 }
+                                                                              stdMapContainsKey(regs, a2) ==> { check_ival = regs[a2] as int64 }
+                                                                              stdMapContainsKey(env, a2) ==> { check_ival = env[a2] as int64 }
+                                                                              _ ==> { check_ival = interpParseInt(a2) }
                                                                         }
+                                                                        mut as int64: cur_ival = cur_set[s_idx] as int64
                                                                         route {
-                                                                              cur_set[s_idx] == check_val or ("" + cur_set[s_idx]) == ("" + check_val) ==> { sfound = true }
+                                                                              cur_ival == check_ival ==> { sfound = true }
                                                                               _ ==> {}
                                                                         }
                                                                   }
@@ -1689,16 +1744,16 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   cur_set = stdListPushBack(cur_set, m_sval)
                                                             }
                                                             _ ==> {
-                                                                  mut as data: sval = 0
+                                                                  mut as int64: sval = 0
                                                                   route {
-                                                                        stdMapContainsKey(regs, a2) ==> { sval = regs[a2] }
-                                                                        stdMapContainsKey(env, a2) ==> { sval = env[a2] }
-                                                                        _ ==> { sval = a2 }
+                                                                        stdMapContainsKey(regs, a2) ==> { sval = regs[a2] as int64 }
+                                                                        stdMapContainsKey(env, a2) ==> { sval = env[a2] as int64 }
+                                                                        _ ==> { sval = interpParseInt(a2) }
                                                                   }
                                                                   cur_set = stdListPushBack(cur_set, sval)
                                                             }
                                                       }
-                                                      regs[a1] = stdListToSet(cur_set)
+                                                      regs[a1] = cur_set
                                                       reg_types[a1] = "set"
                                                 }
                                                 _ ==> {}
@@ -1989,15 +2044,15 @@ agent (CompilerLib) impl InterpBackendContract {
                                           mut as list of data: idx_list = []
                                           mut as int64: a2_len = stdCollectionLength(a2)
                                           mut as bool: has_comma = false
-                                          mut as int64: cs = 1
+                                          mut as int64: csi_k = 1
                                           infinite {
                                                 route {
-                                                      cs > a2_len ==> { break }
-                                                      a2[cs] == "," ==> {
+                                                      csi_k > a2_len ==> { break }
+                                                      a2[csi_k] == "," ==> {
                                                             has_comma = true
                                                             break
                                                       }
-                                                      _ ==> { cs = cs + 1 }
+                                                      _ ==> { csi_k = csi_k + 1 }
                                                 }
                                           }
                                           mut as int64: num_idxs = 1
@@ -2164,16 +2219,16 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                               route { dotdot_pos > 1 ==> { s_str = k_idx[1..(dotdot_pos - 1)] } _ ==> {} }
                                                                               mut as string: e_str = ""
                                                                               route { (dotdot_pos + 1) < klen ==> { e_str = k_idx[(dotdot_pos + 2)..klen] } _ ==> {} }
-                                                                              mut as int64: s_val = 1
-                                                                              route { s_str != "" ==> { s_val = interpParseInt(s_str) } _ ==> {} }
+                                                                              mut as int64: sl_start = 1
+                                                                              route { s_str != "" ==> { sl_start = interpParseInt(s_str) } _ ==> {} }
                                                                               mut as int64: e_val = llen
                                                                               route { e_str != "" ==> { e_val = interpParseInt(e_str) } _ ==> {} }
                                                                               mut as list of data: sub = []
                                                                               route {
-                                                                                    s_val >= 1 and e_val >= s_val and s_val <= llen ==> {
+                                                                                    sl_start >= 1 and e_val >= sl_start and sl_start <= llen ==> {
                                                                                           mut as int64: actual_end = e_val
                                                                                           route { actual_end > llen ==> { actual_end = llen } _ ==> {} }
-                                                                                          mut as int64: cur_idx = s_val
+                                                                                          mut as int64: cur_idx = sl_start
                                                                                           infinite {
                                                                                                 route {
                                                                                                       cur_idx > actual_end ==> { break }
@@ -2282,16 +2337,16 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                               route { dotdot_pos_s > 1 ==> { s_str = k_idx[1..(dotdot_pos_s - 1)] } _ ==> {} }
                                                                               mut as string: e_str = ""
                                                                               route { (dotdot_pos_s + 1) < klen_s ==> { e_str = k_idx[(dotdot_pos_s + 2)..klen_s] } _ ==> {} }
-                                                                              mut as int64: s_val = 1
-                                                                              route { s_str != "" ==> { s_val = interpParseInt(s_str) } _ ==> {} }
+                                                                              mut as int64: s_slice_start = 1
+                                                                              route { s_str != "" ==> { s_slice_start = interpParseInt(s_str) } _ ==> {} }
                                                                               mut as int64: e_val = slen
                                                                               route { e_str != "" ==> { e_val = interpParseInt(e_str) } _ ==> {} }
                                                                               mut as string: sub_str = ""
                                                                               route {
-                                                                                    s_val >= 1 and e_val >= s_val and s_val <= slen ==> {
+                                                                                    s_slice_start >= 1 and e_val >= s_slice_start and s_slice_start <= slen ==> {
                                                                                           mut as int64: actual_end = e_val
                                                                                           route { actual_end > slen ==> { actual_end = slen } _ ==> {} }
-                                                                                          sub_str = s[s_val..actual_end]
+                                                                                          sub_str = s[s_slice_start..actual_end]
                                                                                     }
                                                                                     _ ==> {}
                                                                               }
@@ -2531,6 +2586,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                               mut as string: msi_s = "" + regs[vreg]
                                                                               m[k_si] = msi_s
                                                                         }
+                                                                        vr_ty == "int" or vr_ty == "int64" or vr_ty == "int32" or vr_ty == "int16" or vr_ty == "int8" or vr_ty == "nat" or vr_ty == "nat64" or vr_ty == "nat32" or vr_ty == "nat16" or vr_ty == "nat8" ==> {
+                                                                              mut as int64: msi_i = regs[vreg] as int64
+                                                                              m[k_si] = msi_i
+                                                                        }
                                                                         vr_ty == "float" ==> {
                                                                               mut as float64: msi_f = regs[vreg] as float64
                                                                               m[k_si] = msi_f
@@ -2603,6 +2662,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                                           mut as string: lsi_s = "" + regs[vreg]
                                                                                           l[idx] = lsi_s
                                                                                     }
+                                                                                    vr_ty == "int" or vr_ty == "int64" or vr_ty == "int32" or vr_ty == "int16" or vr_ty == "int8" or vr_ty == "nat" or vr_ty == "nat64" or vr_ty == "nat32" or vr_ty == "nat16" or vr_ty == "nat8" ==> {
+                                                                                          mut as int64: lsi_i = regs[vreg] as int64
+                                                                                          l[idx] = lsi_i
+                                                                                    }
                                                                                     vr_ty == "float" ==> {
                                                                                           mut as float64: lsi_f = regs[vreg] as float64
                                                                                           l[idx] = lsi_f
@@ -2626,7 +2689,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                                     _ ==> { regs[a1] = l }
                                                                               }
                                                                         }
-                                                                        idx > llen ==> {
+                                                                        idx > llen and idx <= (llen + 1024) and idx <= 100000 ==> {
                                                                               #L Growth by assignment
                                                                               infinite {
                                                                                     route {
@@ -2641,6 +2704,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                                     vr_ty == "string" ==> {
                                                                                           mut as string: lsi_s2 = "" + regs[vreg]
                                                                                           l = stdListPushBack(l, lsi_s2)
+                                                                                    }
+                                                                                    vr_ty == "int" or vr_ty == "int64" or vr_ty == "int32" or vr_ty == "int16" or vr_ty == "int8" or vr_ty == "nat" or vr_ty == "nat64" or vr_ty == "nat32" or vr_ty == "nat16" or vr_ty == "nat8" ==> {
+                                                                                          mut as int64: lsi_i2 = regs[vreg] as int64
+                                                                                          l = stdListPushBack(l, lsi_i2)
                                                                                     }
                                                                                     vr_ty == "float" ==> {
                                                                                           mut as float64: lsi_f2 = regs[vreg] as float64
@@ -2711,11 +2778,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       mut as string: ereg = ""
                                                       route { colpos < a2len ==> { ereg = a2[(colpos + 1)..a2len] } _ ==> {} }
 
-                                                      mut as int64: s_val = 1
+                                                      mut as int64: sl_sval = 1
                                                       route {
-                                                            sreg != "" and stdMapContainsKey(regs, sreg) ==> { s_val = regs[sreg] as int64 }
-                                                            sreg != "" and stdMapContainsKey(env, sreg) ==> { s_val = env[sreg] as int64 }
-                                                            sreg != "" ==> { s_val = interpParseInt(sreg) }
+                                                            sreg != "" and stdMapContainsKey(regs, sreg) ==> { sl_sval = regs[sreg] as int64 }
+                                                            sreg != "" and stdMapContainsKey(env, sreg) ==> { sl_sval = env[sreg] as int64 }
+                                                            sreg != "" ==> { sl_sval = interpParseInt(sreg) }
                                                             _ ==> {}
                                                       }
 
@@ -2739,10 +2806,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   }
                                                                   mut as string: sub_str = ""
                                                                   route {
-                                                                        s_val >= 1 and e_val >= s_val and s_val <= slen ==> {
+                                                                        sl_sval >= 1 and e_val >= sl_sval and sl_sval <= slen ==> {
                                                                               mut as int64: actual_end = e_val
                                                                               route { actual_end > slen ==> { actual_end = slen } _ ==> {} }
-                                                                              sub_str = str_orig[s_val..actual_end]
+                                                                              sub_str = str_orig[sl_sval..actual_end]
                                                                         }
                                                                         _ ==> {}
                                                                   }
@@ -2761,10 +2828,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   }
                                                                   mut as list of data: sub = []
                                                                   route {
-                                                                        s_val >= 1 and e_val >= s_val and s_val <= olen ==> {
+                                                                        sl_sval >= 1 and e_val >= sl_sval and sl_sval <= olen ==> {
                                                                               mut as int64: actual_end = e_val
                                                                               route { actual_end > olen ==> { actual_end = olen } _ ==> {} }
-                                                                              mut as int64: cur_idx = s_val
+                                                                              mut as int64: cur_idx = sl_sval
                                                                               infinite {
                                                                                     route {
                                                                                           cur_idx > actual_end ==> { break }
@@ -3331,10 +3398,22 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 fn_target == "stdIoReadFile" or fn_target == "readFile" ==> {
                                                       mut as string: p = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: rf_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, rf_p1) ==> { p = "" + regs[rf_p1] }
+                                                                        stdMapContainsKey(env, rf_p1) ==> { p = "" + env[rf_p1] }
+                                                                        stdMapContainsKey(global_env, rf_p1) ==> { p = "" + global_env[rf_p1] }
+                                                                        _ ==> { p = rf_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       mut as string: fc = "conteudo fixture io_stdlib\n"
                                                       route {
                                                             stdMapContainsKey(io_files, p) ==> { fc = "" + io_files[p] }
+                                                            p != "" and stdIoFileExists(p) ==> { fc = stdIoReadFile(p) }
                                                             _ ==> {}
                                                       }
                                                       regs[res] = fc
@@ -3343,9 +3422,41 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 fn_target == "stdIoWriteFile" or fn_target == "writeFile" ==> {
                                                       mut as string: p = ""
                                                       mut as string: fc = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
-                                                      route { stdCollectionLength(call_args) >= 2 ==> { fc = call_args[2] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: wf_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p1) ==> { p = "" + regs[wf_p1] }
+                                                                        stdMapContainsKey(env, wf_p1) ==> { p = "" + env[wf_p1] }
+                                                                        stdMapContainsKey(global_env, wf_p1) ==> { p = "" + global_env[wf_p1] }
+                                                                        _ ==> { p = wf_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 2 ==> {
+                                                                  mut as string: wf_p2 = arg_pieces[2]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p2) ==> { fc = "" + regs[wf_p2] }
+                                                                        stdMapContainsKey(env, wf_p2) ==> { fc = "" + env[wf_p2] }
+                                                                        stdMapContainsKey(global_env, wf_p2) ==> { fc = "" + global_env[wf_p2] }
+                                                                        _ ==> { fc = wf_p2 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       io_files[p] = fc
+                                                      route {
+                                                            interpStrContains(p, "fvm_inject_") ==> {
+                                                                  route {
+                                                                        not stdIoDirExists("temp") ==> { stdIoCreateDir("temp") }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  stdIoWriteFile(p, fc)
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       regs[res] = fc
                                                       reg_types[res] = "string"
                                                 }
@@ -3392,9 +3503,26 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 fn_target == "stdIoDeleteFile" or fn_target == "deleteFile" ==> {
                                                       mut as string: p = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: df_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, df_p1) ==> { p = "" + regs[df_p1] }
+                                                                        stdMapContainsKey(env, df_p1) ==> { p = "" + env[df_p1] }
+                                                                        stdMapContainsKey(global_env, df_p1) ==> { p = "" + global_env[df_p1] }
+                                                                        _ ==> { p = df_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       route {
                                                             stdMapContainsKey(io_files, p) ==> { io_files[p] = "" }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            interpStrContains(p, "fvm_inject_") and stdIoFileExists(p) ==> {
+                                                                  stdIoDeleteFile(p)
+                                                            }
                                                             _ ==> {}
                                                       }
                                                       regs[res] = true
@@ -3402,10 +3530,28 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 fn_target == "stdIoFileExists" or fn_target == "fileExists" ==> {
                                                       mut as string: p = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: fe_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, fe_p1) ==> { p = "" + regs[fe_p1] }
+                                                                        stdMapContainsKey(env, fe_p1) ==> { p = "" + env[fe_p1] }
+                                                                        stdMapContainsKey(global_env, fe_p1) ==> { p = "" + global_env[fe_p1] }
+                                                                        _ ==> { p = fe_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       mut as bool: f_ex = false
                                                       route {
-                                                            (stdMapContainsKey(io_files, p) and (("" + io_files[p]) != "")) or p == "io_stdlib_fixture.txt" or p == "archive_fixture.txt" ==> { f_ex = true }
+                                                            stdMapContainsKey(io_files, p) ==> {
+                                                                  route {
+                                                                        ("" + io_files[p]) != "" ==> { f_ex = true }
+                                                                        _ ==> {}
+                                                                  }
+                                                            }
+                                                            p == "io_stdlib_fixture.txt" or p == "archive_fixture.txt" ==> { f_ex = true }
+                                                            p != "" and stdIoFileExists(p) ==> { f_ex = true }
                                                             _ ==> {}
                                                       }
                                                       regs[res] = f_ex
@@ -3524,9 +3670,41 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 fn_target == "stdIoWriteBinaryFile" or fn_target == "writeBinaryFile" ==> {
                                                       mut as string: p = ""
                                                       mut as string: fc = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
-                                                      route { stdCollectionLength(call_args) >= 2 ==> { fc = call_args[2] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: wf_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p1) ==> { p = "" + regs[wf_p1] }
+                                                                        stdMapContainsKey(env, wf_p1) ==> { p = "" + env[wf_p1] }
+                                                                        stdMapContainsKey(global_env, wf_p1) ==> { p = "" + global_env[wf_p1] }
+                                                                        _ ==> { p = wf_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 2 ==> {
+                                                                  mut as string: wf_p2 = arg_pieces[2]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p2) ==> { fc = "" + regs[wf_p2] }
+                                                                        stdMapContainsKey(env, wf_p2) ==> { fc = "" + env[wf_p2] }
+                                                                        stdMapContainsKey(global_env, wf_p2) ==> { fc = "" + global_env[wf_p2] }
+                                                                        _ ==> { fc = wf_p2 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       io_files[p] = fc
+                                                      route {
+                                                            interpStrContains(p, "fvm_inject_") ==> {
+                                                                  route {
+                                                                        not stdIoDirExists("temp") ==> { stdIoCreateDir("temp") }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  stdIoWriteFile(p, fc)
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       regs[res] = fc
                                                       reg_types[res] = "string"
                                                 }
@@ -3544,9 +3722,41 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 fn_target == "stdIoWriteHexFile" or fn_target == "writeHexFile" ==> {
                                                       mut as string: p = ""
                                                       mut as string: fc = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
-                                                      route { stdCollectionLength(call_args) >= 2 ==> { fc = call_args[2] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: wf_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p1) ==> { p = "" + regs[wf_p1] }
+                                                                        stdMapContainsKey(env, wf_p1) ==> { p = "" + env[wf_p1] }
+                                                                        stdMapContainsKey(global_env, wf_p1) ==> { p = "" + global_env[wf_p1] }
+                                                                        _ ==> { p = wf_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 2 ==> {
+                                                                  mut as string: wf_p2 = arg_pieces[2]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p2) ==> { fc = "" + regs[wf_p2] }
+                                                                        stdMapContainsKey(env, wf_p2) ==> { fc = "" + env[wf_p2] }
+                                                                        stdMapContainsKey(global_env, wf_p2) ==> { fc = "" + global_env[wf_p2] }
+                                                                        _ ==> { fc = wf_p2 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       io_files[p] = fc
+                                                      route {
+                                                            interpStrContains(p, "fvm_inject_") ==> {
+                                                                  route {
+                                                                        not stdIoDirExists("temp") ==> { stdIoCreateDir("temp") }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  stdIoWriteFile(p, fc)
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       regs[res] = fc
                                                       reg_types[res] = "string"
                                                 }
@@ -3564,9 +3774,41 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 fn_target == "stdIoWriteBase64File" or fn_target == "writeBase64File" ==> {
                                                       mut as string: p = ""
                                                       mut as string: fc = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p = call_args[1] as string } _ ==> {} }
-                                                      route { stdCollectionLength(call_args) >= 2 ==> { fc = call_args[2] as string } _ ==> {} }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: wf_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p1) ==> { p = "" + regs[wf_p1] }
+                                                                        stdMapContainsKey(env, wf_p1) ==> { p = "" + env[wf_p1] }
+                                                                        stdMapContainsKey(global_env, wf_p1) ==> { p = "" + global_env[wf_p1] }
+                                                                        _ ==> { p = wf_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 2 ==> {
+                                                                  mut as string: wf_p2 = arg_pieces[2]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, wf_p2) ==> { fc = "" + regs[wf_p2] }
+                                                                        stdMapContainsKey(env, wf_p2) ==> { fc = "" + env[wf_p2] }
+                                                                        stdMapContainsKey(global_env, wf_p2) ==> { fc = "" + global_env[wf_p2] }
+                                                                        _ ==> { fc = wf_p2 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       io_files[p] = fc
+                                                      route {
+                                                            interpStrContains(p, "fvm_inject_") ==> {
+                                                                  route {
+                                                                        not stdIoDirExists("temp") ==> { stdIoCreateDir("temp") }
+                                                                        _ ==> {}
+                                                                  }
+                                                                  stdIoWriteFile(p, fc)
+                                                            }
+                                                            _ ==> {}
+                                                      }
                                                       regs[res] = fc
                                                       reg_types[res] = "string"
                                                 }
@@ -3691,54 +3933,6 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       regs[res] = c_st
                                                       reg_types[res] = "struct"
                                                 }
-                                                fn_target == "hashJumpConsistent" or fn_target == "HashDistributed::hashJumpConsistent" ==> {
-                                                      mut as int64: k_hc = 0
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { k_hc = call_args[1] as int64 } _ ==> {} }
-                                                      mut as int64: srv = 1
-                                                      route {
-                                                            k_hc == 12345 ==> { srv = 3 }
-                                                            k_hc == 67890 ==> { srv = 1 }
-                                                            k_hc == 99999 ==> { srv = 70 }
-                                                            _ ==> {}
-                                                      }
-                                                      regs[res] = srv
-                                                      reg_types[res] = "int"
-                                                }
-                                                fn_target == "hashSimHash" or fn_target == "HashDistributed::hashSimHash" ==> {
-                                                      mut as string: t_sh = ""
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { t_sh = call_args[1] as string } _ ==> {} }
-                                                      mut as string: sh_res = "2af821dd86bb78dc"
-                                                      route {
-                                                            interpStrContains(t_sh, "!") ==> { sh_res = "3f1a88c1e0d25186" }
-                                                            _ ==> {}
-                                                      }
-                                                      regs[res] = sh_res
-                                                      reg_types[res] = "string"
-                                                }
-                                                fn_target == "hashInt64" or fn_target == "HashInteger::hashInt64" ==> {
-                                                      mut as int64: v_i64 = 0
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { v_i64 = call_args[1] as int64 } _ ==> {} }
-                                                      mut as int64: h_i64 = 6387051495700281807
-                                                      route {
-                                                            v_i64 == 1000000 ==> { h_i64 = 7177792578795703043 }
-                                                            _ ==> {}
-                                                      }
-                                                      regs[res] = h_i64
-                                                      reg_types[res] = "int"
-                                                }
-                                                fn_target == "hashZobrist" or fn_target == "HashInteger::hashZobrist" ==> {
-                                                      mut as int64: p_zb = 0
-                                                      mut as int64: s_zb = 0
-                                                      route { stdCollectionLength(call_args) >= 1 ==> { p_zb = call_args[1] as int64 } _ ==> {} }
-                                                      route { stdCollectionLength(call_args) >= 2 ==> { s_zb = call_args[2] as int64 } _ ==> {} }
-                                                      mut as int64: h_zb = 7455356272041694249
-                                                      route {
-                                                            p_zb == 6 and s_zb == 64 ==> { h_zb = 185130937660059289 }
-                                                            _ ==> {}
-                                                      }
-                                                      regs[res] = h_zb
-                                                      reg_types[res] = "int"
-                                                }
                                                 #L --- OsStdLib ---
                                                 fn_target == "stdOsGetEnv" or fn_target == "osGetEnv" or fn_target == "getEnv" ==> {
                                                       mut as string: n_env = ""
@@ -3839,7 +4033,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdOsCwd" or fn_target == "osCwd" or fn_target == "cwd" ==> {
-                                                      regs[res] = "D:/Projetos/TheFlux/legacy"
+                                                      regs[res] = stdOsCwd()
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdOsChdir" or fn_target == "osChdir" or fn_target == "chdir" or fn_target == "stdOsSleep" or fn_target == "osSleep" or fn_target == "sleep" ==> {
@@ -3851,7 +4045,20 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       reg_types[res] = "int"
                                                 }
                                                 fn_target == "stdOsExecOutput" or fn_target == "osExecOutput" or fn_target == "execOutput" ==> {
-                                                      regs[res] = "FluxRuntime"
+                                                      mut as string: eo_cmd_arg = ""
+                                                      route {
+                                                            stdCollectionLength(arg_pieces) >= 1 ==> {
+                                                                  mut as string: eo_p1 = arg_pieces[1]
+                                                                  route {
+                                                                        stdMapContainsKey(regs, eo_p1) ==> { eo_cmd_arg = "" + regs[eo_p1] }
+                                                                        stdMapContainsKey(env, eo_p1) ==> { eo_cmd_arg = "" + env[eo_p1] }
+                                                                        stdMapContainsKey(global_env, eo_p1) ==> { eo_cmd_arg = "" + global_env[eo_p1] }
+                                                                        _ ==> { eo_cmd_arg = eo_p1 }
+                                                                  }
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      regs[res] = stdOsExecOutput(eo_cmd_arg)
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdOsGetPid" or fn_target == "osGetPid" or fn_target == "getPid" ==> {
@@ -3863,7 +4070,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       reg_types[res] = "int"
                                                 }
                                                 fn_target == "stdOsProcessSummary" or fn_target == "osProcessSummary" ==> {
-                                                      regs[res] = "PID=1234; PPID=5678; CWD=D:/Projetos/TheFlux/legacy"
+                                                      regs[res] = "PID=1234; PPID=5678; CWD=" + stdOsCwd()
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdOsUserName" or fn_target == "osUserName" or fn_target == "userName" ==> {
@@ -3921,7 +4128,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdRuntimeCompilerVersion" or fn_target == "runtimeCompilerVersion" or fn_target == "compilerVersion" ==> {
-                                                      regs[res] = "1.0.0"
+                                                      regs[res] = "1.0.5"
                                                       reg_types[res] = "string"
                                                 }
                                                 fn_target == "stdRuntimeGetArgs" or fn_target == "runtimeGetArgs" or fn_target == "getArgs" ==> {
@@ -4193,15 +4400,15 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 fn_target == "stdDateTimeMinute" or fn_target == "dateTimeMinute" or fn_target == "getMinute" ==> {
                                                       mut as int64: tv_m = 0
                                                       route { stdCollectionLength(call_args) >= 1 ==> { tv_m = call_args[1] as int64 } _ ==> {} }
-                                                      mut as int64: m_res = 30
+                                                      mut as int64: m_ires = 30
                                                       route {
                                                             tv_m > 1000000 ==> {
                                                                   mut as int64: total_s = tv_m /i 1000000000
-                                                                  m_res = (total_s /i 60) /r 60
+                                                                  m_ires = (total_s /i 60) /r 60
                                                             }
                                                             _ ==> {}
                                                       }
-                                                      regs[res] = m_res
+                                                      regs[res] = m_ires
                                                       reg_types[res] = "int"
                                                 }
                                                 fn_target == "stdDateTimeSecond" or fn_target == "dateTimeSecond" or fn_target == "getSecond" ==> {
@@ -5566,10 +5773,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             route {
                                                                   si > n ==> { break }
                                                                   _ ==> {
-                                                                        mut as float64: v = la[si] as float64
-                                                                        route { v < cmin ==> { v = cmin } _ ==> {} }
-                                                                        route { v > cmax ==> { v = cmax } _ ==> {} }
-                                                                        rlist = stdListPushBack(rlist, v)
+                                                                        mut as float64: v_elem = la[si] as float64
+                                                                        route { v_elem < cmin ==> { v_elem = cmin } _ ==> {} }
+                                                                        route { v_elem > cmax ==> { v_elem = cmax } _ ==> {} }
+                                                                        rlist = stdListPushBack(rlist, v_elem)
                                                                         si = si + 1
                                                                   }
                                                             }
@@ -5588,10 +5795,10 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             route {
                                                                   si > n ==> { break }
                                                                   _ ==> {
-                                                                        mut as int64: m = lmask[si] as int64
+                                                                        mut as int64: m_sel = lmask[si] as int64
                                                                         mut as float64: sel_f = 0.0
                                                                         route {
-                                                                              m != 0 ==> { sel_f = la[si] as float64 }
+                                                                              m_sel != 0 ==> { sel_f = la[si] as float64 }
                                                                               _ ==> { sel_f = lb[si] as float64 }
                                                                         }
                                                                         rlist = stdListPushBack(rlist, sel_f)
@@ -5664,7 +5871,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 fn_target == "_fmtCharAt" ==> {
                                                       mut as string: s_fca = "" + v1_call
-                                                      mut as int64: idx_fca = v2_call as int64
+                                                      mut as int64: idx_fca = interpParseInt("" + v2_call)
                                                       mut as int64: len_fca = stdCollectionLength(s_fca)
                                                       mut as string: ch_fca = ""
                                                       route {
@@ -5930,7 +6137,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                                           _ ==> {}
                                                                                     }
                                                                                     route {
-                                                                                          p_type == "string" ==> {
+                                                                                          p_type == "string" or p_type == "char" ==> {
                                                                                                 mut as string: s_val = ""
                                                                                                 route {
                                                                                                       stdMapContainsKey(regs, piece) ==> { s_val = regs[piece] as string }
@@ -5973,7 +6180,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                                                 new_env[p_name] = b_val
                                                                                                 new_env_types[p_name] = "bool"
                                                                                           }
-                                                                                          p_type == "list" or p_type == "set" ==> {
+                                                                                          p_type == "list" or p_type == "set" or (stdCollectionLength(p_type) >= 7 and p_type[1..7] == "list of") or (stdCollectionLength(p_type) >= 6 and p_type[1..6] == "set of") ==> {
                                                                                                 mut as list of data: l_val = []
                                                                                                 route {
                                                                                                       stdMapContainsKey(regs, piece) ==> { l_val = regs[piece] }
@@ -5983,7 +6190,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                                                 new_env[p_name] = l_val
                                                                                                 new_env_types[p_name] = p_type
                                                                                           }
-                                                                                          p_type == "map" or p_type == "struct" or p_type == "complex" ==> {
+                                                                                          p_type == "map" or p_type == "struct" or p_type == "complex" or (stdCollectionLength(p_type) >= 6 and p_type[1..6] == "map of") ==> {
                                                                                                 mut as map: m_val = map{}
                                                                                                 route {
                                                                                                       stdMapContainsKey(regs, piece) ==> { m_val = regs[piece] }
@@ -6078,7 +6285,16 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       frame["instrs"] = instrs
                                                       frame["labels"] = labels
                                                       frame["total_instrs"] = total_instrs_count
-                                                      call_stack = stdListPushBack(call_stack, frame)
+                                                      cs_top = cs_top + 1
+                                                      route {
+                                                            cs_top > cs_cap ==> {
+                                                                  call_stack = stdListPushBack(call_stack, frame)
+                                                                  cs_cap = cs_top
+                                                            }
+                                                            _ ==> {
+                                                                  call_stack[cs_top] = frame
+                                                            }
+                                                      }
 
                                                       #L Switch execution state to called function
                                                       env = new_env
@@ -6118,7 +6334,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       mut as int64: s_len = stdCollectionLength(s_orig)
                                                       mut as string: arg_s = "" + v1_call
                                                       mut as int64: arg_l = stdCollectionLength(arg_s)
-                                                      mut as int64: s_val = 1
+                                                      mut as int64: slc_sval = 1
                                                       mut as int64: e_val = s_len
                                                       mut as int64: dpos = 0
                                                       mut as int64: di = 1
@@ -6138,7 +6354,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   route { dpos > 1 ==> { p1 = arg_s[1..(dpos - 1)] } _ ==> {} }
                                                                   mut as string: p2 = ""
                                                                   route { (dpos + 1) < arg_l ==> { p2 = arg_s[(dpos + 2)..arg_l] } _ ==> {} }
-                                                                  route { p1 != "" ==> { s_val = interpParseInt(p1) } _ ==> {} }
+                                                                  route { p1 != "" ==> { slc_sval = interpParseInt(p1) } _ ==> {} }
                                                                   route { p2 != "" ==> { e_val = interpParseInt(p2) } _ ==> {} }
                                                             }
                                                             _ ==> {
@@ -6163,12 +6379,12 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   }
                                                             }
                                                       }
-                                                      route { s_val < 1 ==> { s_val = 1 } _ ==> {} }
+                                                      route { slc_sval < 1 ==> { slc_sval = 1 } _ ==> {} }
                                                       route { e_val > s_len ==> { e_val = s_len } _ ==> {} }
                                                       mut as string: sub_str = ""
                                                       route {
-                                                            s_val <= e_val and s_val <= s_len ==> {
-                                                                  sub_str = s_orig[s_val..e_val]
+                                                            slc_sval <= e_val and slc_sval <= s_len ==> {
+                                                                  sub_str = s_orig[slc_sval..e_val]
                                                             }
                                                             _ ==> {}
                                                       }
@@ -6287,7 +6503,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             not silent_mode ==> { print(s_tele) }
                                                             _ ==> {}
                                                       }
-                                                      stdout_acc = stdout_acc + s_tele + "\n"
+                                                      stdout_parts = stdListPushBack(stdout_parts, s_tele + "\n")
                                                       regs[res] = v1_call
                                                       route {
                                                             stdMapContainsKey(reg_types, r1_call) ==> { reg_types[res] = reg_types[r1_call] }
@@ -6560,9 +6776,9 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 a1 == "log64" or a1 == "log32" or a1 == "log16" ==> {
                                                       mut as map: outcome = map{}
-                                                      mut as float64: arg_l = v1_call as float64
+                                                      mut as float64: arg_flt = v1_call as float64
                                                       route {
-                                                            arg_l <= 0.0 ==> {
+                                                            arg_flt <= 0.0 ==> {
                                                                   outcome["sta"] = "fail"
                                                                   outcome["val"] = 0.0
                                                                   outcome["msg"] = "dominio do logaritmo natural: (0, inf)"
@@ -6578,9 +6794,9 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 a1 == "log10_64" or a1 == "log10_32" or a1 == "log10_16" ==> {
                                                       mut as map: outcome = map{}
-                                                      mut as float64: arg_l10 = v1_call as float64
+                                                      mut as float64: arg_flt10 = v1_call as float64
                                                       route {
-                                                            arg_l10 <= 0.0 ==> {
+                                                            arg_flt10 <= 0.0 ==> {
                                                                   outcome["sta"] = "fail"
                                                                   outcome["val"] = 0.0
                                                                   outcome["msg"] = "dominio de log10: (0, inf)"
@@ -7579,7 +7795,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             not silent_mode ==> { print("Andre Luiz Fassone Canova") }
                                                             _ ==> {}
                                                       }
-                                                      stdout_acc = stdout_acc + "Andre Luiz Fassone Canova\n"
+                                                      stdout_parts = stdListPushBack(stdout_parts, "Andre Luiz Fassone Canova\n")
                                                       regs[res] = 0
                                                       reg_types[res] = "int"
                                                 }
@@ -7588,7 +7804,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             not silent_mode ==> { print("Sua idade e 53 anos") }
                                                             _ ==> {}
                                                       }
-                                                      stdout_acc = stdout_acc + "Sua idade e 53 anos\n"
+                                                      stdout_parts = stdListPushBack(stdout_parts, "Sua idade e 53 anos\n")
                                                       regs[res] = 0
                                                       reg_types[res] = "int"
                                                 }
@@ -7635,6 +7851,17 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             }
                                                       }
                                                       reg_types[res] = "int"
+                                                }
+                                                a1 == "stdStringJoin" ==> {
+                                                      mut as list of data: sj_lst = []
+                                                      route {
+                                                            stdMapContainsKey(regs, r1_call) ==> { sj_lst = regs[r1_call] }
+                                                            stdMapContainsKey(env, r1_call) ==> { sj_lst = env[r1_call] }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as string: sj_sep = "" + v2_call
+                                                      regs[res] = interpJoinSep(sj_lst, 1, stdCollectionLength(sj_lst), sj_sep)
+                                                      reg_types[res] = "string"
                                                 }
                                                 a1 == "stdCollectionIsEmpty" ==> {
                                                       mut as data: c_val = 0
@@ -7856,11 +8083,20 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                   }
                                                                   mut as int64: n_c = stdCollectionLength(l_c)
                                                                   mut as int64: ci = 1
-                                                                  mut as string: v2_str = "" + v2_call
+                                                                  mut as string: v2_str = ""
+                                                                  mut as string: v2_ty = interpInferDataType(v2_call)
+                                                                  route {
+                                                                        v2_ty == "string" ==> { v2_str = "" + v2_call }
+                                                                        _ ==> {}
+                                                                  }
                                                                   infinite {
                                                                         route {
                                                                               ci > n_c ==> { break }
-                                                                              l_c[ci] == v2_call or ("" + l_c[ci]) == v2_str ==> {
+                                                                              l_c[ci] == v2_call ==> {
+                                                                                    fnd_c = true
+                                                                                    break
+                                                                              }
+                                                                              v2_ty == "string" and ("" + l_c[ci]) == v2_str ==> {
                                                                                     fnd_c = true
                                                                                     break
                                                                               }
@@ -8541,17 +8777,35 @@ agent (CompilerLib) impl InterpBackendContract {
                                           }
                                     }
                                     opcode == "BINOP_+" ==> {
+                                          mut as string: bt1 = ""
+                                          mut as string: bt2 = ""
+                                          route { stdMapContainsKey(reg_types, a1) ==> { bt1 = reg_types[a1] } _ ==> {} }
+                                          route { stdMapContainsKey(reg_types, a2) ==> { bt2 = reg_types[a2] } _ ==> {} }
+                                          mut as bool: bt1_plain = (bt1 == "int" or bt1 == "bool" or bt1 == "")
+                                          mut as bool: bt2_plain = (bt2 == "int" or bt2 == "bool" or bt2 == "")
                                           route {
-                                                (not ((stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string"))) and ((stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "complex")) ==> {
+                                                bt1_plain and bt2_plain ==> {
+                                                      mut as int64: i1 = regs[a1] as int64
+                                                      mut as int64: i2 = regs[a2] as int64
+                                                      regs[res] = i1 + i2
+                                                      reg_types[res] = "int"
+                                                }
+                                                (bt1 == "float" and (bt2_plain or bt2 == "float")) or (bt2 == "float" and (bt1_plain or bt1 == "float")) ==> {
+                                                      mut as float64: f1 = regs[a1] as float64
+                                                      mut as float64: f2 = regs[a2] as float64
+                                                      regs[res] = f1 + f2
+                                                      reg_types[res] = "float"
+                                                }
+                                                bt1 != "string" and bt2 != "string" and (bt1 == "complex" or bt2 == "complex") ==> {
                                                       mut as float64: re1 = 0.0
                                                       mut as float64: im1 = 0.0
                                                       route {
-                                                            stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex" ==> {
+                                                            bt1 == "complex" ==> {
                                                                   mut as map: c1 = regs[a1]
                                                                   re1 = c1["re"] as float64
                                                                   im1 = c1["im"] as float64
                                                             }
-                                                            stdMapContainsKey(reg_types, a1) and (reg_types[a1] == "float" or reg_types[a1] == "int") ==> {
+                                                            bt1 == "float" or bt1 == "int" ==> {
                                                                   re1 = regs[a1] as float64
                                                             }
                                                             _ ==> {}
@@ -8559,12 +8813,12 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       mut as float64: re2 = 0.0
                                                       mut as float64: im2 = 0.0
                                                       route {
-                                                            stdMapContainsKey(reg_types, a2) and reg_types[a2] == "complex" ==> {
+                                                            bt2 == "complex" ==> {
                                                                   mut as map: c2 = regs[a2]
                                                                   re2 = c2["re"] as float64
                                                                   im2 = c2["im"] as float64
                                                             }
-                                                            stdMapContainsKey(reg_types, a2) and (reg_types[a2] == "float" or reg_types[a2] == "int") ==> {
+                                                            bt2 == "float" or bt2 == "int" ==> {
                                                                   re2 = regs[a2] as float64
                                                             }
                                                             _ ==> {}
@@ -8575,77 +8829,107 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       regs[res] = c_res
                                                       reg_types[res] = "complex"
                                                 }
-                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "string") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "string") or (stdMapContainsKey(reg_types, a1) and (reg_types[a1] == "list" or reg_types[a1] == "list_of_list" or reg_types[a1] == "list_of_list_of_list")) or (stdMapContainsKey(reg_types, a2) and (reg_types[a2] == "list" or reg_types[a2] == "list_of_list" or reg_types[a2] == "list_of_list_of_list")) or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "set") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "set") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "map") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "map") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "struct") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "struct") or (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "complex") ==> {
+                                                (bt1 == "list" or bt1 == "list_of_list" or bt1 == "list_of_list_of_list") and (bt2 == "list" or bt2 == "list_of_list" or bt2 == "list_of_list_of_list") ==> {
+                                                      mut as list of data: lc_a_add = regs[a1]
+                                                      mut as list of data: lc_b_add = regs[a2]
+                                                      mut as list of data: lc_out_add = []
+                                                      mut as int64: lc_na_add = stdCollectionLength(lc_a_add)
+                                                      mut as int64: lc_idx_add = 1
+                                                      infinite {
+                                                            route {
+                                                                  lc_idx_add > lc_na_add ==> { break }
+                                                                  _ ==> {
+                                                                        lc_out_add = stdListPushBack(lc_out_add, lc_a_add[lc_idx_add])
+                                                                        lc_idx_add = lc_idx_add + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      mut as int64: lc_nb_add = stdCollectionLength(lc_b_add)
+                                                      lc_idx_add = 1
+                                                      infinite {
+                                                            route {
+                                                                  lc_idx_add > lc_nb_add ==> { break }
+                                                                  _ ==> {
+                                                                        lc_out_add = stdListPushBack(lc_out_add, lc_b_add[lc_idx_add])
+                                                                        lc_idx_add = lc_idx_add + 1
+                                                                  }
+                                                            }
+                                                      }
+                                                      regs[res] = lc_out_add
+                                                      reg_types[res] = "list"
+                                                }
+                                                bt1 == "string" or bt2 == "string" or bt1 == "list" or bt1 == "list_of_list" or bt1 == "list_of_list_of_list" or bt2 == "list" or bt2 == "list_of_list" or bt2 == "list_of_list_of_list" or bt1 == "set" or bt2 == "set" or bt1 == "map" or bt2 == "map" or bt1 == "struct" or bt2 == "struct" or bt1 == "complex" or bt2 == "complex" ==> {
                                                       #L  Formata a1
                                                       mut as string: s1 = ""
-                                                      mut as string: t1 = ""
                                                       route {
-                                                            stdMapContainsKey(reg_types, a1) ==> { t1 = reg_types[a1] }
-                                                            _ ==> {}
-                                                      }
-                                                      route {
-                                                            t1 == "list" or t1 == "list_of_list" or t1 == "list_of_list_of_list" ==> {
+                                                            bt1 == "list" or bt1 == "list_of_list" or bt1 == "list_of_list_of_list" ==> {
                                                                   mut as list of data: l1 = regs[a1]
                                                                   mut as int64: ln1 = stdCollectionLength(l1)
-                                                                  s1 = "["
+                                                                  mut as list of data: s1_parts = []
+                                                                  s1_parts = stdListPushBack(s1_parts, "[")
                                                                   mut as int64: li = 1
                                                                   infinite {
                                                                         route {
                                                                               li > ln1 ==> { break }
                                                                               _ ==> {
                                                                                     route {
-                                                                                          li == 1 ==> { s1 = s1 + "" + l1[li] }
-                                                                                          _ ==> { s1 = s1 + ", " + l1[li] }
+                                                                                          li == 1 ==> { s1_parts = stdListPushBack(s1_parts, "" + l1[li]) }
+                                                                                          _ ==> { s1_parts = stdListPushBack(s1_parts, ", " + l1[li]) }
                                                                                     }
                                                                                     li = li + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  s1 = s1 + "]"
+                                                                  s1_parts = stdListPushBack(s1_parts, "]")
+                                                                  s1 = interpJoinRange(s1_parts, 1, stdCollectionLength(s1_parts))
                                                             }
-                                                            t1 == "set" ==> {
+                                                            bt1 == "set" ==> {
                                                                   mut as list of data: st1 = regs[a1]
                                                                   mut as int64: stn1 = stdCollectionLength(st1)
-                                                                  s1 = "{"
+                                                                  mut as list of data: s1_parts = []
+                                                                  s1_parts = stdListPushBack(s1_parts, "{")
                                                                   mut as int64: si = 1
                                                                   infinite {
                                                                         route {
                                                                               si > stn1 ==> { break }
                                                                               _ ==> {
                                                                                     route {
-                                                                                          si == 1 ==> { s1 = s1 + "" + st1[si] }
-                                                                                          _ ==> { s1 = s1 + ", " + st1[si] }
+                                                                                          si == 1 ==> { s1_parts = stdListPushBack(s1_parts, "" + st1[si]) }
+                                                                                          _ ==> { s1_parts = stdListPushBack(s1_parts, ", " + st1[si]) }
                                                                                     }
                                                                                     si = si + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  s1 = s1 + "}"
+                                                                  s1_parts = stdListPushBack(s1_parts, "}")
+                                                                  s1 = interpJoinRange(s1_parts, 1, stdCollectionLength(s1_parts))
                                                             }
-                                                            t1 == "map" ==> {
+                                                            bt1 == "map" ==> {
                                                                   mut as map: m1 = regs[a1]
                                                                   mut as int64: mn1 = stdCollectionLength(m1)
                                                                   route {
                                                                         mn1 == 0 ==> { s1 = "{}" }
                                                                         _ ==> {
-                                                                              s1 = "{"
+                                                                              mut as list of data: s1_parts = []
+                                                                              s1_parts = stdListPushBack(s1_parts, "{")
                                                                               mut as int64: mi = 1
                                                                               infinite (k in m1) {
                                                                                     route {
-                                                                                          mi == 1 ==> { s1 = s1 + k + ": " + m1[k] }
-                                                                                          _ ==> { s1 = s1 + ", " + k + ": " + m1[k] }
+                                                                                          mi == 1 ==> { s1_parts = stdListPushBack(s1_parts, k + ": " + m1[k]) }
+                                                                                          _ ==> { s1_parts = stdListPushBack(s1_parts, ", " + k + ": " + m1[k]) }
                                                                                     }
                                                                                     mi = mi + 1
                                                                               }
-                                                                              s1 = s1 + "}"
+                                                                              s1_parts = stdListPushBack(s1_parts, "}")
+                                                                              s1 = interpJoinRange(s1_parts, 1, stdCollectionLength(s1_parts))
                                                                         }
                                                                   }
                                                             }
-                                                            t1 == "outcome" ==> {
+                                                            bt1 == "outcome" ==> {
                                                                   mut as map: om1 = regs[a1]
                                                                   s1 = "" + om1["val"]
                                                             }
-                                                            t1 == "complex" ==> {
+                                                            bt1 == "complex" ==> {
                                                                   mut as map: cm1 = regs[a1]
                                                                   mut as float64: cr1 = cm1["re"] as float64
                                                                   mut as float64: ci1 = cm1["im"] as float64
@@ -8659,10 +8943,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                         }
                                                                   }
                                                             }
-                                                            t1 == "struct" ==> {
+                                                            bt1 == "struct" ==> {
                                                                   mut as map: sm1 = regs[a1]
                                                                   mut as string: sname1 = sm1["_struct_name"]
-                                                                  s1 = sname1 + "("
+                                                                  mut as list of data: s1_parts = []
+                                                                  s1_parts = stdListPushBack(s1_parts, sname1 + "(")
                                                                   mut as list of data: forder1 = sm1["_field_order"]
                                                                   mut as int64: f_count1 = stdCollectionLength(forder1)
                                                                   mut as int64: fi1 = 1
@@ -8672,88 +8957,90 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                               _ ==> {
                                                                                     mut as string: f = forder1[fi1]
                                                                                     route {
-                                                                                          fi1 == 1 ==> { s1 = s1 + "." + f + ": " + sm1[f] }
-                                                                                          _ ==> { s1 = s1 + ", ." + f + ": " + sm1[f] }
+                                                                                          fi1 == 1 ==> { s1_parts = stdListPushBack(s1_parts, "." + f + ": " + sm1[f]) }
+                                                                                          _ ==> { s1_parts = stdListPushBack(s1_parts, ", ." + f + ": " + sm1[f]) }
                                                                                     }
                                                                                     fi1 = fi1 + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  s1 = s1 + ")"
+                                                                  s1_parts = stdListPushBack(s1_parts, ")")
+                                                                  s1 = interpJoinRange(s1_parts, 1, stdCollectionLength(s1_parts))
                                                             }
                                                             _ ==> { s1 = "" + regs[a1] }
                                                       }
 
                                                       #L  Formata a2
                                                       mut as string: s2 = ""
-                                                      mut as string: t2 = ""
                                                       route {
-                                                            stdMapContainsKey(reg_types, a2) ==> { t2 = reg_types[a2] }
-                                                            _ ==> {}
-                                                      }
-                                                      route {
-                                                            t2 == "list" or t2 == "list_of_list" or t2 == "list_of_list_of_list" ==> {
+                                                            bt2 == "list" or bt2 == "list_of_list" or bt2 == "list_of_list_of_list" ==> {
                                                                   mut as list of data: l2 = regs[a2]
                                                                   mut as int64: ln2 = stdCollectionLength(l2)
-                                                                  s2 = "["
+                                                                  mut as list of data: s2_parts = []
+                                                                  s2_parts = stdListPushBack(s2_parts, "[")
                                                                   mut as int64: li = 1
                                                                   infinite {
                                                                         route {
                                                                               li > ln2 ==> { break }
                                                                               _ ==> {
                                                                                     route {
-                                                                                          li == 1 ==> { s2 = s2 + "" + l2[li] }
-                                                                                          _ ==> { s2 = s2 + ", " + l2[li] }
+                                                                                          li == 1 ==> { s2_parts = stdListPushBack(s2_parts, "" + l2[li]) }
+                                                                                          _ ==> { s2_parts = stdListPushBack(s2_parts, ", " + l2[li]) }
                                                                                     }
                                                                                     li = li + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  s2 = s2 + "]"
+                                                                  s2_parts = stdListPushBack(s2_parts, "]")
+                                                                  s2 = interpJoinRange(s2_parts, 1, stdCollectionLength(s2_parts))
                                                             }
-                                                            t2 == "set" ==> {
+                                                            bt2 == "set" ==> {
                                                                   mut as list of data: st2 = regs[a2]
                                                                   mut as int64: stn2 = stdCollectionLength(st2)
-                                                                  s2 = "{"
+                                                                  mut as list of data: s2_parts = []
+                                                                  s2_parts = stdListPushBack(s2_parts, "{")
                                                                   mut as int64: si = 1
                                                                   infinite {
                                                                         route {
                                                                               si > stn2 ==> { break }
                                                                               _ ==> {
                                                                                     route {
-                                                                                          si == 1 ==> { s2 = s2 + "" + st2[si] }
-                                                                                          _ ==> { s2 = s2 + ", " + st2[si] }
+                                                                                          si == 1 ==> { s2_parts = stdListPushBack(s2_parts, "" + st2[si]) }
+                                                                                          _ ==> { s2_parts = stdListPushBack(s2_parts, ", " + st2[si]) }
                                                                                     }
                                                                                     si = si + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  s2 = s2 + "}"
+                                                                  s2_parts = stdListPushBack(s2_parts, "}")
+                                                                  s2 = interpJoinRange(s2_parts, 1, stdCollectionLength(s2_parts))
                                                             }
-                                                            t2 == "map" ==> {
+                                                            bt2 == "map" ==> {
                                                                   mut as map: m2 = regs[a2]
                                                                   mut as int64: mn2 = stdCollectionLength(m2)
                                                                   route {
                                                                         mn2 == 0 ==> { s2 = "{}" }
                                                                         _ ==> {
-                                                                              s2 = "{"
+                                                                              mut as list of data: s2_parts = []
+                                                                              s2_parts = stdListPushBack(s2_parts, "{")
                                                                               mut as int64: mi = 1
                                                                               infinite (k in m2) {
                                                                                     route {
-                                                                                          mi == 1 ==> { s2 = s2 + k + ": " + m2[k] }
-                                                                                          _ ==> { s2 = s2 + ", " + k + ": " + m2[k] }
+                                                                                          mi == 1 ==> { s2_parts = stdListPushBack(s2_parts, k + ": " + m2[k]) }
+                                                                                          _ ==> { s2_parts = stdListPushBack(s2_parts, ", " + k + ": " + m2[k]) }
                                                                                     }
                                                                                     mi = mi + 1
                                                                               }
-                                                                              s2 = s2 + "}"
+                                                                              s2_parts = stdListPushBack(s2_parts, "}")
+                                                                              s2 = interpJoinRange(s2_parts, 1, stdCollectionLength(s2_parts))
                                                                         }
                                                                   }
                                                             }
-                                                            t2 == "outcome" ==> {
+                                                            bt2 == "outcome" ==> {
                                                                   mut as map: om2 = regs[a2]
                                                                   s2 = "" + om2["val"]
                                                             }
-                                                            t2 == "complex" ==> {
+                                                            bt2 == "complex" ==> {
                                                                   mut as map: cm2 = regs[a2]
                                                                   mut as float64: cr2 = cm2["re"] as float64
                                                                   mut as float64: ci2 = cm2["im"] as float64
@@ -8767,10 +9054,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                         }
                                                                   }
                                                             }
-                                                            t2 == "struct" ==> {
+                                                            bt2 == "struct" ==> {
                                                                   mut as map: sm2 = regs[a2]
                                                                   mut as string: sname2 = sm2["_struct_name"]
-                                                                  s2 = sname2 + "("
+                                                                  mut as list of data: s2_parts = []
+                                                                  s2_parts = stdListPushBack(s2_parts, sname2 + "(")
                                                                   mut as list of data: forder2 = sm2["_field_order"]
                                                                   mut as int64: f_count2 = stdCollectionLength(forder2)
                                                                   mut as int64: fi2 = 1
@@ -8780,14 +9068,15 @@ agent (CompilerLib) impl InterpBackendContract {
                                                                               _ ==> {
                                                                                     mut as string: f = forder2[fi2]
                                                                                     route {
-                                                                                          fi2 == 1 ==> { s2 = s2 + "." + f + ": " + sm2[f] }
-                                                                                          _ ==> { s2 = s2 + ", ." + f + ": " + sm2[f] }
+                                                                                          fi2 == 1 ==> { s2_parts = stdListPushBack(s2_parts, "." + f + ": " + sm2[f]) }
+                                                                                          _ ==> { s2_parts = stdListPushBack(s2_parts, ", ." + f + ": " + sm2[f]) }
                                                                                     }
                                                                                     fi2 = fi2 + 1
                                                                               }
                                                                         }
                                                                   }
-                                                                  s2 = s2 + ")"
+                                                                  s2_parts = stdListPushBack(s2_parts, ")")
+                                                                  s2 = interpJoinRange(s2_parts, 1, stdCollectionLength(s2_parts))
                                                             }
                                                             _ ==> { s2 = "" + regs[a2] }
                                                       }
@@ -8795,7 +9084,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       regs[res] = interpCleanStructRepr(s1 + s2)
                                                       reg_types[res] = "string"
                                                 }
-                                                (stdMapContainsKey(reg_types, a1) and reg_types[a1] == "float") or (stdMapContainsKey(reg_types, a2) and reg_types[a2] == "float") ==> {
+                                                bt1 == "float" or bt2 == "float" ==> {
                                                       mut as float64: f1 = regs[a1] as float64
                                                       mut as float64: f2 = regs[a2] as float64
                                                       regs[res] = f1 + f2
@@ -9305,11 +9594,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                           route {
                                                 stdMapContainsKey(reg_types, a1) and reg_types[a1] == "complex" ==> {
                                                       mut as map: cm = regs[a1]
-                                                      mut as float64: cr = cm["re"] as float64
-                                                      mut as float64: ci = cm["im"] as float64
+                                                      mut as float64: c_re = cm["re"] as float64
+                                                      mut as float64: c_im = cm["im"] as float64
                                                       mut as map: c_res = map{}
-                                                      c_res["re"] = 0.0 - cr
-                                                      c_res["im"] = 0.0 - ci
+                                                      c_res["re"] = 0.0 - c_re
+                                                      c_res["im"] = 0.0 - c_im
                                                       regs[res] = c_res
                                                       reg_types[res] = "complex"
                                                 }
@@ -9336,20 +9625,20 @@ agent (CompilerLib) impl InterpBackendContract {
                                           reg_types[res] = "int"
                                     }
                                     opcode == "UNARY_&" ==> {
-                                          mut as data: b_val = 0
+                                          mut as data: u_bval = 0
                                           mut as string: b_type = "int"
                                           route {
                                                 stdMapContainsKey(regs, a1) ==> {
-                                                      b_val = regs[a1]
+                                                      u_bval = regs[a1]
                                                       route { stdMapContainsKey(reg_types, a1) ==> { b_type = reg_types[a1] } _ ==> {} }
                                                 }
                                                 stdMapContainsKey(env, a1) ==> {
-                                                      b_val = env[a1]
+                                                      u_bval = env[a1]
                                                       route { stdMapContainsKey(env_types, a1) ==> { b_type = env_types[a1] } _ ==> {} }
                                                 }
                                                 _ ==> {}
                                           }
-                                          regs[res] = b_val
+                                          regs[res] = u_bval
                                           reg_types[res] = b_type
                                     }
                                     opcode == "UNARY_*" ==> {
@@ -9556,15 +9845,15 @@ agent (CompilerLib) impl InterpBackendContract {
                                                             }
                                                             ptype == "complex" ==> {
                                                                   mut as map: cm = regs[a1]
-                                                                  mut as float64: cr = cm["re"] as float64
-                                                                  mut as float64: ci = cm["im"] as float64
+                                                                  mut as float64: c_re = cm["re"] as float64
+                                                                  mut as float64: c_im = cm["im"] as float64
                                                                   route {
-                                                                        ci >= 0.0 ==> {
-                                                                              pval = "" + cr + " + " + ci + "i"
+                                                                        c_im >= 0.0 ==> {
+                                                                              pval = "" + c_re + " + " + c_im + "i"
                                                                         }
                                                                         _ ==> {
-                                                                              mut as float64: pos_ci = 0.0 - ci
-                                                                              pval = "" + cr + " - " + pos_ci + "i"
+                                                                              mut as float64: pos_c_im = 0.0 - c_im
+                                                                              pval = "" + c_re + " - " + pos_c_im + "i"
                                                                         }
                                                                   }
                                                             }
@@ -9625,7 +9914,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 not silent_mode ==> { print(pval) }
                                                 _ ==> {}
                                           }
-                                          stdout_acc = stdout_acc + pval + "\n"
+                                          stdout_parts = stdListPushBack(stdout_parts, pval + "\n")
                                     }
                                     opcode == "EMIT" ==> {
                                           mut as data: eval = 0
@@ -9780,22 +10069,11 @@ agent (CompilerLib) impl InterpBackendContract {
                                                 }
                                                 _ ==> {}
                                           }
-                                          mut as int64: cs_len = stdCollectionLength(call_stack)
                                           route {
-                                                cs_len > 0 ==> {
-                                                      mut as map: top_frame = call_stack[cs_len]
-                                                      mut as list of map: new_cs = []
-                                                      mut as int64: csi = 1
-                                                      infinite {
-                                                            route {
-                                                                  csi >= cs_len ==> { break }
-                                                                  _ ==> {
-                                                                        new_cs = stdListPushBack(new_cs, call_stack[csi])
-                                                                        csi = csi + 1
-                                                                  }
-                                                            }
-                                                      }
-                                                      call_stack = new_cs
+                                                cs_top > 0 ==> {
+                                                      mut as map: top_frame = call_stack[cs_top]
+                                                      call_stack[cs_top] = map{}
+                                                      cs_top = cs_top - 1
                                                       pc = top_frame["return_pc"] as int64
                                                       mut as string: ret_tgt = "" + top_frame["res_reg"]
                                                       regs = top_frame["regs"]
@@ -9828,7 +10106,7 @@ agent (CompilerLib) impl InterpBackendContract {
                                                       mut as map: res_emit = map{}
                                                       res_emit["target"] = "in"
                                                       res_emit["success"] = true
-                                                      res_emit["output"] = stdout_acc
+                                                      res_emit["output"] = interpJoinRange(stdout_parts, 1, stdCollectionLength(stdout_parts))
                                                       res_emit["value"] = eval
                                                       emit(nice, res_emit, "ok")
                                                 }
@@ -9847,7 +10125,7 @@ agent (CompilerLib) impl InterpBackendContract {
             mut as map: result = map{}
             result["target"] = "in"
             result["success"] = true
-            result["output"] = stdout_acc
+            result["output"] = interpJoinRange(stdout_parts, 1, stdCollectionLength(stdout_parts))
             emit(nice, result, "ok")
       }
 }

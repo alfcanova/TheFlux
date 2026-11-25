@@ -69,15 +69,24 @@ int64_t flux_std_compress_is_effective(const char *u, const char *c) {
     (void)u; (void)c;
     return 1;
 }
-char *flux_std_compress_stats(const char *u, const char *c) {
+void *flux_std_compress_stats(const char *u, const char *c) {
+    (void)c;
     int64_t u_len = u ? (int64_t)strlen(u) : 100;
     int64_t c_len = (u_len > 1) ? (u_len / 2) : 1;
     double ratio = 0.5;
     double savings = 50.0;
-    char buf[256];
-    snprintf(buf, sizeof(buf), "CompressStats(.uncompressed_size: %lld, .compressed_size: %lld, .ratio: %f, .savings_percent: %f)",
-             (long long)u_len, (long long)c_len, ratio, savings);
-    return strdup(buf);
+    int64_t ratio_bits = 0, savings_bits = 0;
+    memcpy(&ratio_bits, &ratio, sizeof(double));
+    memcpy(&savings_bits, &savings, sizeof(double));
+    void *m = flux_map_build(8);
+    if (m) {
+        flux_map_set(m, "_struct_name", 4, (int64_t)(uintptr_t)"CompressStats");
+        flux_map_set(m, "uncompressed_size", 2, u_len);
+        flux_map_set(m, "compressed_size", 2, c_len);
+        flux_map_set(m, "ratio", 3, ratio_bits);
+        flux_map_set(m, "savings_percent", 3, savings_bits);
+    }
+    return m;
 }
 int64_t flux_std_compress_is_format_supported(const char *fmt) { (void)fmt; return 1; }
 

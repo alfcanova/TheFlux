@@ -19,42 +19,140 @@ agent (HashStdLib) impl HashChecksumContract {
       #L Utilitarios Internos
       #L ==============================================================================
       op _ord (as string: ch) as int64 ==> {
-            mut as string: ascii_table = " !\"$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
             route {
+                  ch >= "a" and ch <= "z" ==> {
+                        route {
+                              ch == "a" ==> { emit(nice, 97, "ok") }
+                              ch == "b" ==> { emit(nice, 98, "ok") }
+                              ch == "c" ==> { emit(nice, 99, "ok") }
+                              ch == "d" ==> { emit(nice, 100, "ok") }
+                              ch == "e" ==> { emit(nice, 101, "ok") }
+                              ch == "f" ==> { emit(nice, 102, "ok") }
+                              ch == "g" ==> { emit(nice, 103, "ok") }
+                              ch == "h" ==> { emit(nice, 104, "ok") }
+                              ch == "i" ==> { emit(nice, 105, "ok") }
+                              ch == "j" ==> { emit(nice, 106, "ok") }
+                              ch == "k" ==> { emit(nice, 107, "ok") }
+                              ch == "l" ==> { emit(nice, 108, "ok") }
+                              ch == "m" ==> { emit(nice, 109, "ok") }
+                              ch == "n" ==> { emit(nice, 110, "ok") }
+                              ch == "o" ==> { emit(nice, 111, "ok") }
+                              ch == "p" ==> { emit(nice, 112, "ok") }
+                              ch == "q" ==> { emit(nice, 113, "ok") }
+                              ch == "r" ==> { emit(nice, 114, "ok") }
+                              ch == "s" ==> { emit(nice, 115, "ok") }
+                              ch == "t" ==> { emit(nice, 116, "ok") }
+                              ch == "u" ==> { emit(nice, 117, "ok") }
+                              ch == "v" ==> { emit(nice, 118, "ok") }
+                              ch == "w" ==> { emit(nice, 119, "ok") }
+                              ch == "x" ==> { emit(nice, 120, "ok") }
+                              ch == "y" ==> { emit(nice, 121, "ok") }
+                              ch == "z" ==> { emit(nice, 122, "ok") }
+                        }
+                  }
+                  ch >= "0" and ch <= "9" ==> {
+                        route {
+                              ch == "0" ==> { emit(nice, 48, "ok") }
+                              ch == "1" ==> { emit(nice, 49, "ok") }
+                              ch == "2" ==> { emit(nice, 50, "ok") }
+                              ch == "3" ==> { emit(nice, 51, "ok") }
+                              ch == "4" ==> { emit(nice, 52, "ok") }
+                              ch == "5" ==> { emit(nice, 53, "ok") }
+                              ch == "6" ==> { emit(nice, 54, "ok") }
+                              ch == "7" ==> { emit(nice, 55, "ok") }
+                              ch == "8" ==> { emit(nice, 56, "ok") }
+                              ch == "9" ==> { emit(nice, 57, "ok") }
+                        }
+                  }
+                  ch >= "A" and ch <= "Z" ==> {
+                        route {
+                              ch == "A" ==> { emit(nice, 65, "ok") }
+                              ch == "B" ==> { emit(nice, 66, "ok") }
+                              ch == "C" ==> { emit(nice, 67, "ok") }
+                              ch == "D" ==> { emit(nice, 68, "ok") }
+                              ch == "E" ==> { emit(nice, 69, "ok") }
+                              ch == "F" ==> { emit(nice, 70, "ok") }
+                              ch == "G" ==> { emit(nice, 71, "ok") }
+                              ch == "H" ==> { emit(nice, 72, "ok") }
+                              ch == "I" ==> { emit(nice, 73, "ok") }
+                              ch == "J" ==> { emit(nice, 74, "ok") }
+                              ch == "K" ==> { emit(nice, 75, "ok") }
+                              ch == "L" ==> { emit(nice, 76, "ok") }
+                              ch == "M" ==> { emit(nice, 77, "ok") }
+                              ch == "N" ==> { emit(nice, 78, "ok") }
+                              ch == "O" ==> { emit(nice, 79, "ok") }
+                              ch == "P" ==> { emit(nice, 80, "ok") }
+                              ch == "Q" ==> { emit(nice, 81, "ok") }
+                              ch == "R" ==> { emit(nice, 82, "ok") }
+                              ch == "S" ==> { emit(nice, 83, "ok") }
+                              ch == "T" ==> { emit(nice, 84, "ok") }
+                              ch == "U" ==> { emit(nice, 85, "ok") }
+                              ch == "V" ==> { emit(nice, 86, "ok") }
+                              ch == "W" ==> { emit(nice, 87, "ok") }
+                              ch == "X" ==> { emit(nice, 88, "ok") }
+                              ch == "Y" ==> { emit(nice, 89, "ok") }
+                              ch == "Z" ==> { emit(nice, 90, "ok") }
+                        }
+                  }
+                  ch == " " ==> { emit(nice, 32, "ok") }
+                  ch == "!" ==> { emit(nice, 33, "ok") }
+                  ch == "\"" ==> { emit(nice, 34, "ok") }
                   ch == "#" ==> { emit(nice, 35, "ok") }
+                  ch == "$" ==> { emit(nice, 36, "ok") }
+                  ch == "%" ==> { emit(nice, 37, "ok") }
+                  ch == "&" ==> { emit(nice, 38, "ok") }
+                  ch == "'" ==> { emit(nice, 39, "ok") }
+                  ch == "(" ==> { emit(nice, 40, "ok") }
+                  ch == ")" ==> { emit(nice, 41, "ok") }
+                  ch == "*" ==> { emit(nice, 42, "ok") }
+                  ch == "+" ==> { emit(nice, 43, "ok") }
+                  ch == "," ==> { emit(nice, 44, "ok") }
+                  ch == "-" ==> { emit(nice, 45, "ok") }
+                  ch == "." ==> { emit(nice, 46, "ok") }
+                  ch == "/" ==> { emit(nice, 47, "ok") }
+                  ch == ":" ==> { emit(nice, 58, "ok") }
+                  ch == ";" ==> { emit(nice, 59, "ok") }
+                  ch == "<" ==> { emit(nice, 60, "ok") }
+                  ch == "=" ==> { emit(nice, 61, "ok") }
+                  ch == ">" ==> { emit(nice, 62, "ok") }
+                  ch == "?" ==> { emit(nice, 63, "ok") }
+                  ch == "@" ==> { emit(nice, 64, "ok") }
+                  ch == "[" ==> { emit(nice, 91, "ok") }
+                  ch == "\\" ==> { emit(nice, 92, "ok") }
+                  ch == "]" ==> { emit(nice, 93, "ok") }
+                  ch == "^" ==> { emit(nice, 94, "ok") }
+                  ch == "_" ==> { emit(nice, 95, "ok") }
+                  ch == "`" ==> { emit(nice, 96, "ok") }
+                  ch == "{" ==> { emit(nice, 123, "ok") }
+                  ch == "|" ==> { emit(nice, 124, "ok") }
+                  ch == "}" ==> { emit(nice, 125, "ok") }
+                  ch == "~" ==> { emit(nice, 126, "ok") }
                   ch == "\n" ==> { emit(nice, 10, "ok") }
                   ch == "\t" ==> { emit(nice, 9, "ok") }
                   ch == "\r" ==> { emit(nice, 13, "ok") }
             }
-            mut as int64: found_code = 0
-            mut as int64: idx = 1
-            infinite (c in ascii_table) {
-                  route {
-                        c == ch and found_code == 0 ==> {
-                              mut as int64: code_val = 31 + idx
-                              route {
-                                    code_val >= 35 ==> { code_val = code_val + 1 }
-                              }
-                              found_code = code_val
-                        }
-                  }
-                  idx = idx + 1
-            }
-            emit(nice, found_code, "ok")
+            emit(nice, 0, "ok")
       }
 
       op _toHex32 (as int64: val) as string ==> {
-            mut as string: hex_digits = "0123456789abcdef"
-            mut as string: res = ""
+            mut as string: hx = "0123456789abcdef"
             mut as int64: v = val /r 4294967296
-            mut as int64: i = 1
-            infinite (i <= 8) {
-                  mut as int64: rem = v /r 16
-                  res = hex_digits[rem + 1] + res
-                  v = v /i 16
-                  i = i + 1
-            }
-            emit(nice, res, "ok")
+            mut as int64: d8 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d7 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d6 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d5 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d4 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d3 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d2 = (v /r 16) + 1
+            v = v /i 16
+            mut as int64: d1 = (v /r 16) + 1
+            emit(nice, hx[d1] + hx[d2] + hx[d3] + hx[d4] + hx[d5] + hx[d6] + hx[d7] + hx[d8], "ok")
       }
 
       #L ==============================================================================

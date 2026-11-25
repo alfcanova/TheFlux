@@ -32,8 +32,7 @@ agent (CompilerLib) impl OwnershipCheckerContract {
       op markSymbolAsMoved (as map: symtab, as string: var_name) as map ==> {
             mut as map: st = symtab
             mut as list of data: scopes = st["scopes"]
-            mut as int64: n = stdCollectionLength(scopes)
-            mut as int64: i = n
+            mut as int64: i = st["depth"]
             infinite {
                   route {
                         i < 1 ==> { break }

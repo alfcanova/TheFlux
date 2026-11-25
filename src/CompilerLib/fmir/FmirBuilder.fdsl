@@ -406,7 +406,7 @@ agent (CompilerLib) impl FmirBuilderContract {
                               _ ==> {
                                     tc = tc + 1
                                     res_reg = "%t" + tc
-                                    mod = fmirAddInstruction(mod, "NOP", "", "", res_reg)
+                                    mod = fmirAddInstruction(mod, "NOP", kind, val, res_reg)
                               }
                         }
                   }
@@ -1713,9 +1713,11 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                       }
                                                       mut as string: f_var = pval[1..(colpos - 1)]
                                                       mut as string: r_var = pval[(colpos + 1)..pvlen]
+                                                      mut as bool: is_rest_pat = false
                                                       route {
                                                             stdCollectionLength(r_var) >= 2 and r_var[1..2] == ".." ==> {
                                                                   r_var = r_var[3..stdCollectionLength(r_var)]
+                                                                  is_rest_pat = true
                                                             }
                                                             _ ==> {}
                                                       }
@@ -1745,7 +1747,14 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                                   mod = fmirAddInstruction(mod, "CONST_INT", "2", "", idx2_r)
                                                                   tc = tc + 1
                                                                   mut as string: r_val_r = "%t" + tc
-                                                                  mod = fmirAddInstruction(mod, "GET_SLICE", target_reg, idx2_r + ":", r_val_r)
+                                                                  route {
+                                                                        is_rest_pat ==> {
+                                                                              mod = fmirAddInstruction(mod, "GET_SLICE", target_reg, idx2_r + ":", r_val_r)
+                                                                        }
+                                                                        _ ==> {
+                                                                              mod = fmirAddInstruction(mod, "GET_INDEX", target_reg, idx2_r, r_val_r)
+                                                                        }
+                                                                  }
                                                                   mod = fmirAddInstruction(mod, "ALLOC", r_var, "", r_var)
                                                                   mod = fmirAddInstruction(mod, "STORE", r_val_r, "", r_var)
                                                             }
@@ -2271,6 +2280,26 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                                   fn_table[mval] = fn_table[use_val]
                                                             }
                                                             _ ==> {
+                                                                  mut as string: use_base = use_val
+                                                                  mut as int64: ub_len = stdCollectionLength(use_val)
+                                                                  mut as int64: ub_i = 1
+                                                                  mut as int64: ub_pos = 0
+                                                                  infinite {
+                                                                        route {
+                                                                              ub_i + 1 > ub_len ==> { break }
+                                                                              use_val[ub_i..(ub_i + 1)] == "::" ==> {
+                                                                                    ub_pos = ub_i + 2
+                                                                                    ub_i = ub_i + 2
+                                                                              }
+                                                                              _ ==> { ub_i = ub_i + 1 }
+                                                                        }
+                                                                  }
+                                                                  route {
+                                                                        ub_pos > 0 and ub_pos <= ub_len ==> {
+                                                                              use_base = use_val[ub_pos..ub_len]
+                                                                        }
+                                                                        _ ==> {}
+                                                                  }
                                                                   mut as int64: n_fk = stdCollectionLength(fn_keys)
                                                                   mut as int64: fki = 1
                                                                   infinite {
@@ -2279,8 +2308,9 @@ agent (CompilerLib) impl FmirBuilderContract {
                                                                               _ ==> {
                                                                                     mut as string: fk = "" + fn_keys[fki]
                                                                                     mut as map: fdesc = fn_table[fk]
+                                                                                    mut as string: fdesc_ag = "" + fdesc["agent"]
                                                                                     route {
-                                                                                          ("" + fdesc["agent"]) == use_val ==> {
+                                                                                          fdesc_ag == use_val or fdesc_ag == use_base ==> {
                                                                                                 fn_table[mval + "::" + fdesc["name"]] = fdesc
                                                                                           }
                                                                                           _ ==> {}
@@ -2404,19 +2434,21 @@ agent (CompilerLib) impl FmirBuilderContract {
                                           mod["name"] = p_name
                                           mut as list of data: stmts = astArenaNodeChildren(arena, pdid)
                                           mut as int64: n_stmts = stdCollectionLength(stmts)
+                                          mut as int64: p_tc = tc
                                           mut as int64: si = 1
                                           infinite {
                                                 route {
                                                       si > n_stmts ==> { break }
                                                       _ ==> {
                                                             mut as int64: sid = stmts[si]
-                                                            mut as map: s_res = fmirLowerStmt(arena, sid, mod, tc)
+                                                            mut as map: s_res = fmirLowerStmt(arena, sid, mod, p_tc)
                                                             mod = s_res["module"]
-                                                            tc = s_res["temp_counter"]
+                                                            p_tc = s_res["temp_counter"]
                                                             si = si + 1
                                                       }
                                                 }
                                           }
+                                          tc = p_tc
                                     }
                                     _ ==> {}
                               }

@@ -19,7 +19,10 @@ typedef struct {
 } FluxString;
 
 char *flux_str_concat(const char *a, const char *b);
+char *flux_str_concat3(const char *a, const char *b, const char *c);
+char *flux_str_concat4(const char *a, const char *b, const char *c, const char *d);
 char *flux_rt_str_slice(const char *s, int64_t start, int64_t end);
+char *flux_str_join(void *list_ptr, const char *sep);
 int64_t flux_str_len(const char *s);
 int64_t flux_str_utf8_len(const char *s);
 int flux_str_compare(const char *a, const char *b);

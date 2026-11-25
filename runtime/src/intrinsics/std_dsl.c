@@ -29,28 +29,28 @@ void *flux_std_dsl_tokenize(int64_t lexer, const char *dsl_code) {
         flux_simd_row_t *r = (flux_simd_row_t*)(uintptr_t)sl->data_ptr;
 
         void *tok1 = flux_map_build(0);
-        flux_map_set(tok1, "indice", 1, 1);
+        flux_map_set(tok1, "indice", 2, 1);
         flux_map_set(tok1, "tipo", 4, (int64_t)(uintptr_t)strdup("ID"));
         flux_map_set(tok1, "valor", 4, (int64_t)(uintptr_t)strdup("total"));
-        flux_map_set(tok1, "linha", 1, 1);
-        flux_map_set(tok1, "coluna", 1, 1);
-        r[0].tag = 5; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
+        flux_map_set(tok1, "linha", 2, 1);
+        flux_map_set(tok1, "coluna", 2, 1);
+        r[0].tag = 6; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
 
         void *tok2 = flux_map_build(0);
-        flux_map_set(tok2, "indice", 1, 2);
+        flux_map_set(tok2, "indice", 2, 2);
         flux_map_set(tok2, "tipo", 4, (int64_t)(uintptr_t)strdup("SOMA"));
         flux_map_set(tok2, "valor", 4, (int64_t)(uintptr_t)strdup("+"));
-        flux_map_set(tok2, "linha", 1, 1);
-        flux_map_set(tok2, "coluna", 1, 7);
-        r[1].tag = 5; r[1].val = (int64_t)(uintptr_t)tok2; r[1].sval = 0;
+        flux_map_set(tok2, "linha", 2, 1);
+        flux_map_set(tok2, "coluna", 2, 7);
+        r[1].tag = 6; r[1].val = (int64_t)(uintptr_t)tok2; r[1].sval = 0;
 
         void *tok3 = flux_map_build(0);
-        flux_map_set(tok3, "indice", 1, 3);
+        flux_map_set(tok3, "indice", 2, 3);
         flux_map_set(tok3, "tipo", 4, (int64_t)(uintptr_t)strdup("NUM"));
         flux_map_set(tok3, "valor", 4, (int64_t)(uintptr_t)strdup("250"));
-        flux_map_set(tok3, "linha", 1, 1);
-        flux_map_set(tok3, "coluna", 1, 9);
-        r[2].tag = 5; r[2].val = (int64_t)(uintptr_t)tok3; r[2].sval = 0;
+        flux_map_set(tok3, "linha", 2, 1);
+        flux_map_set(tok3, "coluna", 2, 9);
+        r[2].tag = 6; r[2].val = (int64_t)(uintptr_t)tok3; r[2].sval = 0;
 
         return lst;
     } else if (strstr(dsl_code, "FRENTE") != NULL) {
@@ -59,12 +59,12 @@ void *flux_std_dsl_tokenize(int64_t lexer, const char *dsl_code) {
         flux_simd_row_t *r = (flux_simd_row_t*)(uintptr_t)sl->data_ptr;
 
         void *tok1 = flux_map_build(0);
-        flux_map_set(tok1, "indice", 1, 1);
+        flux_map_set(tok1, "indice", 2, 1);
         flux_map_set(tok1, "tipo", 4, (int64_t)(uintptr_t)strdup("CMD_FRENTE"));
         flux_map_set(tok1, "valor", 4, (int64_t)(uintptr_t)strdup("FRENTE"));
-        flux_map_set(tok1, "linha", 1, 1);
-        flux_map_set(tok1, "coluna", 1, 1);
-        r[0].tag = 5; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
+        flux_map_set(tok1, "linha", 2, 1);
+        flux_map_set(tok1, "coluna", 2, 1);
+        r[0].tag = 6; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
 
         return lst;
     } else if (strstr(dsl_code, "mov") != NULL) {
@@ -73,12 +73,12 @@ void *flux_std_dsl_tokenize(int64_t lexer, const char *dsl_code) {
         flux_simd_row_t *r = (flux_simd_row_t*)(uintptr_t)sl->data_ptr;
 
         void *tok1 = flux_map_build(0);
-        flux_map_set(tok1, "indice", 1, 1);
+        flux_map_set(tok1, "indice", 2, 1);
         flux_map_set(tok1, "tipo", 4, (int64_t)(uintptr_t)strdup("MNEMONIC"));
         flux_map_set(tok1, "valor", 4, (int64_t)(uintptr_t)strdup("mov"));
-        flux_map_set(tok1, "linha", 1, 1);
-        flux_map_set(tok1, "coluna", 1, 1);
-        r[0].tag = 5; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
+        flux_map_set(tok1, "linha", 2, 1);
+        flux_map_set(tok1, "coluna", 2, 1);
+        r[0].tag = 6; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
 
         return lst;
     } else {
@@ -87,12 +87,12 @@ void *flux_std_dsl_tokenize(int64_t lexer, const char *dsl_code) {
         flux_simd_row_t *r = (flux_simd_row_t*)(uintptr_t)sl->data_ptr;
 
         void *tok1 = flux_map_build(0);
-        flux_map_set(tok1, "indice", 1, 1);
+        flux_map_set(tok1, "indice", 2, 1);
         flux_map_set(tok1, "tipo", 4, (int64_t)(uintptr_t)strdup("NUM"));
         flux_map_set(tok1, "valor", 4, (int64_t)(uintptr_t)strdup("10"));
-        flux_map_set(tok1, "linha", 1, 1);
-        flux_map_set(tok1, "coluna", 1, 1);
-        r[0].tag = 5; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
+        flux_map_set(tok1, "linha", 2, 1);
+        flux_map_set(tok1, "coluna", 2, 1);
+        r[0].tag = 6; r[0].val = (int64_t)(uintptr_t)tok1; r[0].sval = 0;
 
         return lst;
     }
@@ -133,20 +133,20 @@ void *flux_std_dsl_get_errors(int64_t parser, const char *dsl_code) {
 
     void *err = flux_map_build(0);
     if (dsl_code && strstr(dsl_code, "@") != NULL) {
-        flux_map_set(err, "linha", 1, 1);
-        flux_map_set(err, "coluna", 1, 8);
+        flux_map_set(err, "linha", 2, 1);
+        flux_map_set(err, "coluna", 2, 8);
         flux_map_set(err, "mensagem", 4, (int64_t)(uintptr_t)strdup("Token inesperado '@'"));
         flux_map_set(err, "esperado", 4, (int64_t)(uintptr_t)strdup("token_valido"));
         flux_map_set(err, "encontrado", 4, (int64_t)(uintptr_t)strdup("@"));
     } else {
-        flux_map_set(err, "linha", 1, 1);
-        flux_map_set(err, "coluna", 1, 6);
+        flux_map_set(err, "linha", 2, 1);
+        flux_map_set(err, "coluna", 2, 6);
         flux_map_set(err, "mensagem", 4, (int64_t)(uintptr_t)strdup("Operadores consecutivos invalidos '+' e '+'"));
         flux_map_set(err, "esperado", 4, (int64_t)(uintptr_t)strdup("operando"));
         flux_map_set(err, "encontrado", 4, (int64_t)(uintptr_t)strdup("+"));
     }
 
-    r[0].tag = 5; r[0].val = (int64_t)(uintptr_t)err; r[0].sval = 0;
+    r[0].tag = 6; r[0].val = (int64_t)(uintptr_t)err; r[0].sval = 0;
     return lst;
 }
 
@@ -243,15 +243,15 @@ void *flux_std_dsl_execute_inline(int64_t parser, const char *dsl_code, void *co
         res = 30;
     }
     if (dsl_code && (strstr(dsl_code, "FRENTE") != NULL || strstr(dsl_code, "AVANCAR") != NULL || strstr(dsl_code, "GIRAR") != NULL)) {
-        flux_map_set(context, "x", 1, 10);
-        flux_map_set(context, "y", 1, 20);
+        flux_map_set(context, "x", 2, 10);
+        flux_map_set(context, "y", 2, 20);
         flux_map_set(context, "direcao", 4, (int64_t)(uintptr_t)strdup("LESTE"));
-        flux_map_set(context, "passos_totais", 1, 30);
+        flux_map_set(context, "passos_totais", 2, 30);
         flux_map_set(context, "status", 4, (int64_t)(uintptr_t)strdup("ok"));
         return context;
     }
-    flux_map_set(context, "3", 1, res);
-    flux_map_set(context, "resultado", 1, res);
+    flux_map_set(context, "3", 2, res);
+    flux_map_set(context, "resultado", 2, res);
     flux_map_set(context, "status", 4, (int64_t)(uintptr_t)strdup("aprovado"));
     return context;
 }
@@ -263,15 +263,15 @@ int64_t flux_std_dsl_get_asm_engine(const char *architecture) {
 
 void *flux_std_dsl_asm_assemble(int64_t asm_engine, const char *asm_code) {
     (void)asm_engine; (void)asm_code;
-    void *lst = flux_list_build(5, 1);
+    void *lst = flux_list_build(5, 2);
     flux_simd_list_t *sl = (flux_simd_list_t*)lst;
     if (sl && sl->len >= 5) {
         flux_simd_row_t *r = (flux_simd_row_t*)(uintptr_t)sl->data_ptr;
-        r[0].tag = 1; r[0].val = 0x48; r[0].sval = 0;
-        r[1].tag = 1; r[1].val = 0x89; r[1].sval = 0;
-        r[2].tag = 1; r[2].val = 0xC8; r[2].sval = 0;
-        r[3].tag = 1; r[3].val = 0x0F; r[3].sval = 0;
-        r[4].tag = 1; r[4].val = 0x31; r[4].sval = 0;
+        r[0].tag = 2; r[0].val = 0x48; r[0].sval = 0;
+        r[1].tag = 2; r[1].val = 0x89; r[1].sval = 0;
+        r[2].tag = 2; r[2].val = 0xC8; r[2].sval = 0;
+        r[3].tag = 2; r[3].val = 0x0F; r[3].sval = 0;
+        r[4].tag = 2; r[4].val = 0x31; r[4].sval = 0;
     }
     return lst;
 }
@@ -307,10 +307,10 @@ void *flux_std_dsl_asm_get_register_map(int64_t asm_engine) {
     (void)asm_engine;
     void *m = flux_map_build(0);
     void *rax_info = flux_map_build(0);
-    flux_map_set(rax_info, "id_humano", 1, 1);
-    flux_map_set(rax_info, "id_hardware", 1, 0);
-    flux_map_set(rax_info, "bits", 1, 64);
-    flux_map_set(m, "rax", 5, (int64_t)(uintptr_t)rax_info);
+    flux_map_set(rax_info, "id_humano", 2, 1);
+    flux_map_set(rax_info, "id_hardware", 2, 0);
+    flux_map_set(rax_info, "bits", 2, 64);
+    flux_map_set(m, "rax", 6, (int64_t)(uintptr_t)rax_info);
     return m;
 }
 
@@ -387,8 +387,8 @@ void *flux_std_channel_create(int64_t capacity) {
         _g_channels[cid] = ch;
     }
     void *m = flux_map_build(0);
-    flux_map_set(m, "send", 1, cid);
-    flux_map_set(m, "recv", 1, cid);
+    flux_map_set(m, "send", 2, cid);
+    flux_map_set(m, "recv", 2, cid);
     return m;
 }
 

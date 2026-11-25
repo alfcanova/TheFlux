@@ -26,32 +26,31 @@ agent (CompilerLib) impl SymbolTableContract {
       op symbolTableEnterScope (as map: symtab) as map ==> {
             mut as map: st = symtab
             mut as list of data: scopes = st["scopes"]
+            mut as int64: depth = st["depth"] + 1
+            mut as int64: cap = stdCollectionLength(scopes)
             mut as map: new_scope = map{}
-            scopes = stdListPushBack(scopes, new_scope)
+            route {
+                  depth <= cap ==> {
+                        scopes[depth] = new_scope
+                  }
+                  _ ==> {
+                        scopes = stdListPushBack(scopes, new_scope)
+                  }
+            }
             st["scopes"] = scopes
-            st["depth"] = st["depth"] + 1
+            st["depth"] = depth
             emit(nice, st, "ok")
       }
 
       op symbolTableExitScope (as map: symtab) as map ==> {
             mut as map: st = symtab
-            mut as list of data: scopes = st["scopes"]
-            mut as int64: n = stdCollectionLength(scopes)
+            mut as int64: depth = st["depth"]
             route {
-                  n > 1 ==> {
-                        mut as list of data: new_scopes = []
-                        mut as int64: i = 1
-                        infinite {
-                              route {
-                                    i >= n ==> { break }
-                                    _ ==> {
-                                          new_scopes = stdListPushBack(new_scopes, scopes[i])
-                                          i = i + 1
-                                    }
-                              }
-                        }
-                        st["scopes"] = new_scopes
-                        st["depth"] = n - 1
+                  depth > 1 ==> {
+                        mut as list of data: scopes = st["scopes"]
+                        scopes[depth] = map{}
+                        st["scopes"] = scopes
+                        st["depth"] = depth - 1
                   }
                   _ ==> {}
             }
@@ -60,10 +59,10 @@ agent (CompilerLib) impl SymbolTableContract {
 
       op symbolTableInsert (as map: symtab, as string: name, as string: kind, as string: type_name, as bool: is_mut) as map ==> {
             mut as map: st = symtab
-            mut as list of data: scopes = st["scopes"]
-            mut as int64: n = stdCollectionLength(scopes)
+            mut as int64: n = st["depth"]
             route {
                   n > 0 ==> {
+                        mut as list of data: scopes = st["scopes"]
                         mut as map: cur_scope = scopes[n]
                         mut as map: sym_info = map{}
                         sym_info["name"] = name
@@ -82,8 +81,7 @@ agent (CompilerLib) impl SymbolTableContract {
 
       op symbolTableLookup (as map: symtab, as string: name) as map ==> {
             mut as list of data: scopes = symtab["scopes"]
-            mut as int64: n = stdCollectionLength(scopes)
-            mut as int64: i = n
+            mut as int64: i = symtab["depth"]
             infinite {
                   route {
                         i < 1 ==> {

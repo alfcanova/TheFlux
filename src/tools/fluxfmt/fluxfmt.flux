@@ -1,7 +1,7 @@
 #L ==============================================================================
 #L TheFlux Canonical Code Formatter: fluxfmt
 #L Arquivo: src/tools/fluxfmt/fluxfmt.flux
-#L Versao: 1.0.0
+#L Versao: 1.0.5
 #L ==============================================================================
 
 use RuntimeStdLib
@@ -12,7 +12,7 @@ use ListStdLib
 use MapStdLib
 
 function (fmtPrintHelp) () as int64 {
-      print("fluxfmt - Utilitario de Formatacao Canonica TheFlux (v1.0.0)")
+      print("fluxfmt - Utilitario de Formatacao Canonica TheFlux (v1.0.5)")
       print("")
       print("Sintaxe:")
       print("  fluxfmt [flags] [caminho ...]")
@@ -31,7 +31,7 @@ function (fmtPrintHelp) () as int64 {
       print("  -s, --simplify           Simplifica codigo (# -> #L, parenteses superfluos em rotas)")
       print("  -e, --all-errors         Reporta todos os erros lexicos/estruturais sem abortar cedo")
       print("  -r, --recursive          Percorre subdiretorios recursivamente")
-      print("  -v, --version            Exibe a versao (fluxfmt version 1.0.0)")
+      print("  -v, --version            Exibe a versao (fluxfmt version 1.0.5)")
       print("  -h, --help               Exibe esta mensagem de ajuda")
       print("")
       print("Exemplos:")
@@ -43,18 +43,100 @@ function (fmtPrintHelp) () as int64 {
 }
 
 function (fmtRepeatSpaces) (as int64: count) as string {
-      mut as string: out = ""
+      route {
+            count <= 0 ==> { emit(nice, "", "ok") }
+            count <= 64 ==> {
+                  mut as string: sp64 = "                                                                "
+                  emit(nice, sp64[1..count], "ok")
+            }
+            _ ==> {
+                  mut as string: out = ""
+                  mut as string: chunk = " "
+                  mut as int64: rem = count
+                  infinite {
+                        route {
+                              rem <= 0 ==> { break }
+                              _ ==> {
+                                    mut as int64: half = rem /i 2
+                                    route {
+                                          half * 2 != rem ==> { out = out + chunk }
+                                          _ ==> {}
+                                    }
+                                    rem = half
+                                    route {
+                                          rem > 0 ==> { chunk = chunk + chunk }
+                                          _ ==> {}
+                                    }
+                              }
+                        }
+                  }
+                  emit(nice, out, "ok")
+            }
+      }
+}
+
+#L Juncao linear O(N) via runtime C stdStringJoin com fallback divide-and-conquer para fatias
+function (fmtJoinRange) (as list of string: parts, as int64: lo, as int64: hi, as string: sep) as string {
+      route {
+            lo > hi ==> { emit(nice, "", "ok") }
+            lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+            lo == 1 and hi == stdCollectionLength(parts) ==> { emit(nice, stdStringJoin(parts, sep), "ok") }
+            _ ==> {
+                  mut as int64: mid = (lo + hi) /i 2
+                  mut as string: left = fmtJoinRange(parts, lo, mid, sep)
+                  mut as string: right = fmtJoinRange(parts, mid + 1, hi, sep)
+                  emit(nice, left + sep + right, "ok")
+            }
+      }
+}
+
+function (fmtFlushDiffParts) (as list of string: dst, as list of string: parts) as list of string {
+      mut as int64: np = stdCollectionLength(parts)
+      route {
+            np == 0 ==> { emit(nice, dst, "ok") }
+            _ ==> { emit(nice, stdListPushBack(dst, fmtJoinRange(parts, 1, np, "")), "ok") }
+      }
+}
+
+#L Remove '\r' por fatias inteiras de linha em vez de concatenacao caractere a caractere
+function (fmtStripCR) (as string: raw_src) as string {
+      mut as int64: n = stdCollectionLength(raw_src)
+      mut as list of string: chunks = []
+      mut as int64: seg_start = 1
       mut as int64: i = 1
       infinite {
             route {
-                  i > count ==> { break }
-                  _ ==> {
-                        out = out + " "
+                  i > n ==> { break }
+                  raw_src[i] == "\r" ==> {
+                        route {
+                              i > seg_start ==> {
+                                    chunks = stdListPushBack(chunks, raw_src[seg_start..(i - 1)])
+                              }
+                              _ ==> {}
+                        }
+                        seg_start = i + 1
                         i = i + 1
                   }
+                  _ ==> { i = i + 1 }
             }
       }
-      emit(nice, out, "ok")
+      route {
+            stdCollectionLength(chunks) == 0 and seg_start == 1 ==> {
+                  emit(nice, raw_src, "ok")
+            }
+            _ ==> {}
+      }
+      route {
+            seg_start <= n ==> {
+                  chunks = stdListPushBack(chunks, raw_src[seg_start..n])
+            }
+            _ ==> {}
+      }
+      mut as int64: nc = stdCollectionLength(chunks)
+      route {
+            nc == 0 ==> { emit(nice, "", "ok") }
+            _ ==> { emit(nice, fmtJoinRange(chunks, 1, nc, ""), "ok") }
+      }
 }
 
 function (fmtTrimRight) (as string: s) as string {
@@ -231,13 +313,20 @@ function (fmtMatchWildcard) (as string: name, as string: pat) as bool {
 
 function (fmtCharRank) (as string: ch) as int64 {
       mut as string: tbl = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-      mut as int64: tlen = stdCollectionLength(tbl)
-      mut as int64: idx = 1
+      mut as int64: lo = 1
+      mut as int64: hi = 95
       infinite {
             route {
-                  idx > tlen ==> { break }
-                  tbl[idx] == ch ==> { emit(nice, idx + 31, "ok") }
-                  _ ==> { idx = idx + 1 }
+                  lo > hi ==> { break }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        mut as string: mc = tbl[mid]
+                        route {
+                              mc == ch ==> { emit(nice, mid + 31, "ok") }
+                              ch < mc ==> { hi = mid - 1 }
+                              _ ==> { lo = mid + 1 }
+                        }
+                  }
             }
       }
       emit(nice, 255, "ok")
@@ -265,53 +354,75 @@ function (fmtStringLess) (as string: a, as string: b) as bool {
       emit(nice, la < lb, "ok")
 }
 
-function (fmtSortStrings) (as list of string: items) as list of string {
-      mut as int64: n = stdCollectionLength(items)
-      mut as list of string: sorted = []
-      mut as map: used = map{}
-      mut as int64: step = 1
+function (fmtMergeSortedStrings) (as list of string: a, as list of string: b) as list of string {
+      mut as list of string: merged = []
+      mut as int64: na = stdCollectionLength(a)
+      mut as int64: nb = stdCollectionLength(b)
+      mut as int64: ia = 1
+      mut as int64: ib = 1
       infinite {
             route {
-                  step > n ==> { break }
+                  ia > na or ib > nb ==> { break }
                   _ ==> {
-                        mut as int64: best_idx = 0
-                        mut as string: best_val = ""
-                        mut as int64: j = 1
-                        infinite {
-                              route {
-                                    j > n ==> { break }
-                                    _ ==> {
-                                          mut as string: kstr = "" + j
-                                          route {
-                                                not stdMapContainsKey(used, kstr) ==> {
-                                                      mut as string: cand = "" + items[j]
-                                                      route {
-                                                            best_idx == 0 or fmtStringLess(cand, best_val) ==> {
-                                                                  best_idx = j
-                                                                  best_val = cand
-                                                            }
-                                                            _ ==> {}
-                                                      }
-                                                }
-                                                _ ==> {}
-                                          }
-                                          j = j + 1
-                                    }
-                              }
-                        }
+                        mut as string: va = "" + a[ia]
+                        mut as string: vb = "" + b[ib]
                         route {
-                              best_idx > 0 ==> {
-                                    mut as string: bkey = "" + best_idx
-                                    used[bkey] = true
-                                    sorted = stdListPushBack(sorted, best_val)
+                              fmtStringLess(vb, va) ==> {
+                                    merged = stdListPushBack(merged, vb)
+                                    ib = ib + 1
                               }
-                              _ ==> {}
+                              _ ==> {
+                                    merged = stdListPushBack(merged, va)
+                                    ia = ia + 1
+                              }
                         }
-                        step = step + 1
                   }
             }
       }
-      emit(nice, sorted, "ok")
+      infinite {
+            route {
+                  ia > na ==> { break }
+                  _ ==> {
+                        merged = stdListPushBack(merged, "" + a[ia])
+                        ia = ia + 1
+                  }
+            }
+      }
+      infinite {
+            route {
+                  ib > nb ==> { break }
+                  _ ==> {
+                        merged = stdListPushBack(merged, "" + b[ib])
+                        ib = ib + 1
+                  }
+            }
+      }
+      emit(nice, merged, "ok")
+}
+
+function (fmtSortStringsRange) (as list of string: items, as int64: lo, as int64: hi) as list of string {
+      route {
+            lo > hi ==> {
+                  mut as list of string: empty = []
+                  emit(nice, empty, "ok")
+            }
+            lo == hi ==> {
+                  mut as list of string: single = []
+                  single = stdListPushBack(single, "" + items[lo])
+                  emit(nice, single, "ok")
+            }
+            _ ==> {
+                  mut as int64: mid = (lo + hi) /i 2
+                  mut as list of string: left = fmtSortStringsRange(items, lo, mid)
+                  mut as list of string: right = fmtSortStringsRange(items, mid + 1, hi)
+                  emit(nice, fmtMergeSortedStrings(left, right), "ok")
+            }
+      }
+}
+
+function (fmtSortStrings) (as list of string: items) as list of string {
+      mut as int64: n = stdCollectionLength(items)
+      emit(nice, fmtSortStringsRange(items, 1, n), "ok")
 }
 
 function (fmtJoinDirEntry) (as string: dir_path, as string: ent) as string {
@@ -1551,18 +1662,10 @@ function (fmtFormatSource) (as string: src, as bool: flag_simplify) as string {
             }
       }
 
-      mut as string: result = ""
-      mut as int64: oi = 1
-      infinite {
-            route {
-                  oi > final_n ==> { break }
-                  _ ==> {
-                        result = result + out_lines[oi] + "\n"
-                        oi = oi + 1
-                  }
-            }
+      route {
+            final_n < 1 ==> { emit(nice, "", "ok") }
+            _ ==> { emit(nice, fmtJoinRange(out_lines, 1, final_n, "\n") + "\n", "ok") }
       }
-      emit(nice, result, "ok")
 }
 
 function (fmtEndsWithNewline) (as string: s) as bool {
@@ -1621,16 +1724,17 @@ function (fmtGenerateDiff) (as string: file_path, as string: orig_src, as string
       route { na == 0 ==> { old_count = 0 } _ ==> {} }
       route { nb == 0 ==> { new_count = 0 } _ ==> {} }
 
-      mut as string: diff = "--- a/" + file_path + "\n"
-      diff = diff + "+++ b/" + file_path + "\n"
-      diff = diff + "@@ -" + ctx_start + "," + old_count + " +" + ctx_start + "," + new_count + " @@\n"
+      mut as list of string: diff_parts = []
+      diff_parts = stdListPushBack(diff_parts, "--- a/" + file_path + "\n")
+      diff_parts = stdListPushBack(diff_parts, "+++ b/" + file_path + "\n")
+      diff_parts = stdListPushBack(diff_parts, "@@ -" + ctx_start + "," + old_count + " +" + ctx_start + "," + new_count + " @@\n")
 
       mut as int64: ci = ctx_start
       infinite {
             route {
                   ci > pref ==> { break }
                   _ ==> {
-                        diff = diff + " " + a_lines[ci] + "\n"
+                        diff_parts = stdListPushBack(diff_parts, " " + a_lines[ci] + "\n")
                         ci = ci + 1
                   }
             }
@@ -1638,28 +1742,29 @@ function (fmtGenerateDiff) (as string: file_path, as string: orig_src, as string
 
       mut as int64: ai = pref + 1
       mut as int64: bi = pref + 1
-      mut as string: rem_buf = ""
-      mut as string: add_buf = ""
+      mut as list of string: rem_parts = []
+      mut as list of string: add_parts = []
       infinite {
             route {
                   ai > a_end and bi > b_end ==> { break }
                   ai <= a_end and bi <= b_end and ("" + a_lines[ai]) == ("" + b_lines[bi]) and (not ((ai == na or bi == nb) and (a_nl != b_nl))) ==> {
-                        diff = diff + rem_buf + add_buf
-                        rem_buf = ""
-                        add_buf = ""
-                        diff = diff + " " + a_lines[ai] + "\n"
+                        diff_parts = fmtFlushDiffParts(diff_parts, rem_parts)
+                        diff_parts = fmtFlushDiffParts(diff_parts, add_parts)
+                        rem_parts = []
+                        add_parts = []
+                        diff_parts = stdListPushBack(diff_parts, " " + a_lines[ai] + "\n")
                         ai = ai + 1
                         bi = bi + 1
                   }
                   ai <= a_end and (bi + 1 <= b_end) and ("" + a_lines[ai]) == ("" + b_lines[bi + 1]) ==> {
-                        add_buf = add_buf + "+" + b_lines[bi] + "\n"
+                        add_parts = stdListPushBack(add_parts, "+" + b_lines[bi] + "\n")
                         bi = bi + 1
                   }
                   bi <= b_end and (ai + 1 <= a_end) and ("" + a_lines[ai + 1]) == ("" + b_lines[bi]) ==> {
-                        rem_buf = rem_buf + "-" + a_lines[ai] + "\n"
+                        rem_parts = stdListPushBack(rem_parts, "-" + a_lines[ai] + "\n")
                         route {
                               ai == na and (not a_nl) ==> {
-                                    rem_buf = rem_buf + "\\ No newline at end of file\n"
+                                    rem_parts = stdListPushBack(rem_parts, "\\ No newline at end of file\n")
                               }
                               _ ==> {}
                         }
@@ -1668,10 +1773,10 @@ function (fmtGenerateDiff) (as string: file_path, as string: orig_src, as string
                   _ ==> {
                         route {
                               ai <= a_end ==> {
-                                    rem_buf = rem_buf + "-" + a_lines[ai] + "\n"
+                                    rem_parts = stdListPushBack(rem_parts, "-" + a_lines[ai] + "\n")
                                     route {
                                           ai == na and (not a_nl) ==> {
-                                                rem_buf = rem_buf + "\\ No newline at end of file\n"
+                                                rem_parts = stdListPushBack(rem_parts, "\\ No newline at end of file\n")
                                           }
                                           _ ==> {}
                                     }
@@ -1681,7 +1786,7 @@ function (fmtGenerateDiff) (as string: file_path, as string: orig_src, as string
                         }
                         route {
                               bi <= b_end ==> {
-                                    add_buf = add_buf + "+" + b_lines[bi] + "\n"
+                                    add_parts = stdListPushBack(add_parts, "+" + b_lines[bi] + "\n")
                                     bi = bi + 1
                               }
                               _ ==> {}
@@ -1689,20 +1794,21 @@ function (fmtGenerateDiff) (as string: file_path, as string: orig_src, as string
                   }
             }
       }
-      diff = diff + rem_buf + add_buf
+      diff_parts = fmtFlushDiffParts(diff_parts, rem_parts)
+      diff_parts = fmtFlushDiffParts(diff_parts, add_parts)
 
       mut as int64: k = 1
       infinite {
             route {
                   k > ctx_after ==> { break }
                   _ ==> {
-                        diff = diff + " " + a_lines[a_end + k] + "\n"
+                        diff_parts = stdListPushBack(diff_parts, " " + a_lines[a_end + k] + "\n")
                         k = k + 1
                   }
             }
       }
 
-      emit(nice, diff, "ok")
+      emit(nice, fmtJoinRange(diff_parts, 1, stdCollectionLength(diff_parts), ""), "ok")
 }
 
 function (fmtPrintWithoutExtraNewline) (as string: text) as int64 {
@@ -1820,7 +1926,7 @@ program (FluxFmt) {
                   stdOsExit(hrc)
             }
             flag_version ==> {
-                  print("fluxfmt version 1.0.0")
+                  print("fluxfmt version 1.0.5 (TheFlux Canonical Code Formatter)")
                   stdOsExit(0)
             }
             _ ==> {}
@@ -1896,19 +2002,7 @@ program (FluxFmt) {
                                     }
                               }
                               _ ==> {
-                                    mut as string: norm_orig = ""
-                                    mut as int64: rlen = stdCollectionLength(raw_src)
-                                    mut as int64: rpos = 1
-                                    infinite {
-                                          route {
-                                                rpos > rlen ==> { break }
-                                                raw_src[rpos] == "\r" ==> { rpos = rpos + 1 }
-                                                _ ==> {
-                                                      norm_orig = norm_orig + raw_src[rpos]
-                                                      rpos = rpos + 1
-                                                }
-                                          }
-                                    }
+                                    mut as string: norm_orig = fmtStripCR(raw_src)
 
                                     mut as string: formatted = fmtFormatSource(raw_src, flag_simplify)
                                     mut as bool: changed = (norm_orig != formatted)

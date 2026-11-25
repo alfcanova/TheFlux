@@ -337,7 +337,7 @@
   | Ciclo: 42
   | Primeira amostra: 4591870180066957722
   | === Data: atribuicao por indice ===
-  | Status atualizado: 140698421248113
+  | Status atualizado: 140695866335345
   | Total: 3
   | === Data: mutacao aninhada ===
   | Segunda amostra atualizada: 4598175219545276416
@@ -407,7 +407,7 @@ FALHA  ExampleOfError_OWN505_CollectionCannotBeImmutable.flux:   💡 Dica: Tipo
   | divisao decimal por zero
   | --- Operadores Aritmeticos Infixos por Zero ---
   | 0
-  | 2118362202112
+  | 1780950237184
   OK  ExampleOfError_RT701_DivisionByZero.flux
   | --- Logaritmo Natural com Argumento Zero ---
   | fail
@@ -944,7 +944,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | Sensor ativo: pressao
   | Sensor ativo: vibracao
   | === Set: conversoes nativas por cast ===
-  | Lista [5, 5, 6, 7, 7] como set: {1528393439376, 31244173394051169, 27303540898988115, 16044284129902692, 209044748894214, 5, 6, 7}
+  | Lista [5, 5, 6, 7, 7] como set: {5, 6, 7}
   | Set como lista: [temp, pressao, vibracao]
   OK  ExampleOfSet.flux
   | === ShortCircuit: despacho para o braco fail ===
@@ -2246,7 +2246,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   |   Exemplo: FormatJsonContract (JSON RFC 8259)
   | ==================================================
-  | 1. Parse JSON: {nome: 2472945844800, versao: 1, ativo: 1}
+  | 1. Parse JSON: {nome: 2216772205520, versao: 1, ativo: 1}
   | 2. Stringify JSON: {"nome": "Flux", "versao": 1, "ativo": 1}
   | 3. Valido (json_str): true
   | 4. Invalido: false
@@ -2260,7 +2260,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   |   Exemplo: FormatTomlContract (TOML)
   | ==================================================
-  | 1. Parse TOML: {titulo: 2794572518752, versao: 2, banco: {host: 2794572519392, porta: 5432}}
+  | 1. Parse TOML: {titulo: 2556951618912, versao: 2, banco: {host: 2556951619328, porta: 5432}}
   | 2. Stringify TOML: titulo = "Configuracao Flux"
   | versao = 2
   | 
@@ -2273,7 +2273,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   |   Exemplo: FormatYamlContract (YAML 1.2 Completo)
   | ==================================================
-  | 1. Parse YAML (Anchors & Merge Key): {default_config: {timeout: 30, retries: 3}, servidor: {<<: 2400721290784, host: 2400721315664, porta: 8080}}
+  | 1. Parse YAML (Anchors & Merge Key): {default_config: {timeout: 30, retries: 3}, servidor: {<<: 1529405647216, host: 1529405671344, porta: 8080}}
   | 2. Stringify YAML: default_config:
   |   timeout: 30
   |   retries: 3
@@ -2281,8 +2281,8 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   |   <<: *base
   |   host: 127.0.0.1
   |   porta: 8080
-  | 3. Bloco Literal: {descricao: 2400721355280}
-  | 4. Multi-documentos: [2400721355472, 2400721486768]
+  | 3. Bloco Literal: {descricao: 1529406055840}
+  | 4. Multi-documentos: [1529405390544, 1529405393872]
   | 5. Stringify All Docs: ---
   | app: Frontend
   | ---
@@ -2293,7 +2293,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   |   Exemplo: FsmAuditContract (Auditoria de FSM)
   | ==================================================
-  | 1. Trilha de Auditoria Gerada: [140701471760676, 140701471760685, 140701471760695]
+  | 1. Trilha de Auditoria Gerada: [140696528515229, 140696528515238, 140696528515248]
   | 2. Tamanho do Historico: 3
   |    Ultimo Estado Atingido: Aprovado
   | 3. Sequencia cronologica eh permitida pelas regras: true
@@ -2307,7 +2307,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 3. Estado Inicial: Rascunho
   | 4. Estados Finais: [Aprovado, Rejeitado]
   | 5. Todos os Estados: [Rascunho, EmAnalise, Aprovado, Rejeitado]
-  | 6. Eventos Unicos: [2238217911040, 2238217968624, 2238217910848, 2238217969040]
+  | 6. Eventos Unicos: [1844955920176, 1844955994000, 1844955920352, 1844955993264]
   OK  ExampleOfUseFsmStdLib_FsmDefinitionContract.flux
   | ==================================================
   |   Exemplo: FsmExecutionContract (Execucao de FSM)
@@ -2350,8 +2350,8 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   |    Pode transicionar 'Rascunho' via 'aprovar': false
   | 5. Proximo estado de 'Rascunho' + 'enviar': EmAnalise
   |    Proximo estado de 'Rascunho' + 'aprovar': ''
-  | 6. Eventos permitidos a partir de 'Rascunho': [1947475310592, 1947475276368]
-  |    Estados alcancaveis em 1 passo: [1947475275952, 1947475316608]
+  | 6. Eventos permitidos a partir de 'Rascunho': [2870097125520, 2870097126976]
+  |    Estados alcancaveis em 1 passo: [2870097128128, 2870097127552]
   | 7. De 'Rascunho' alcanca 'Aprovado': true
   |    De 'Rejeitado' alcanca 'Aprovado': false
   OK  ExampleOfUseFsmStdLib_FsmQueryContract.flux
@@ -2753,10 +2753,10 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 1. hashJumpConsistent(Chave=12345, Buckets=10) -> Servidor: 1
   |    hashJumpConsistent(Chave=67890, Buckets=10) -> Servidor: 1
   |    hashJumpConsistent(Chave=99999, Buckets=100) -> Servidor: 1
-  | 2. hashBloomIndices('flux_elemento', 4 hashes, tamanho 1000): 13172771022784
+  | 2. hashBloomIndices('flux_elemento', 4 hashes, tamanho 1000): 10944779435440
   | 3. SimHash #1: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef00123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef00123456789abcdef
   |    SimHash #2: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-  | 4. hashMinHash(4 assinaturas): 13172771024752
+  | 4. hashMinHash(4 assinaturas): 10944779432880
   OK  ExampleOfUseHashStdLib_HashDistributedContract.flux
   | ==================================================
   |   Exemplo: HashIntegerContract (Hashes para Inteiros)
@@ -3226,8 +3226,8 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 1. listChunk([10..50], 2): [[10, 20], [30, 40], [50]]
   | 2. listWindow([10..50], 3): [[10, 20, 30], [20, 30, 40], [30, 40, 50]]
   | 3. listFrequencies(tags): {flux: 3, ai: 2, lang: 1}
-  | 4. listCartesian([1, 2], ["A", "B"]): [[1, 140703010664656], [1, 140703010664658], [2, 140703010664656], [2, 140703010664658]]
-  | 5. listCombinations([a, b, c, d], 2): [[140703010664699, 140703010664701], [140703010664699, 140703010664703], [140703010664699, 140703010664705], [140703010664701, 140703010664703], [140703010664701, 140703010664705], [140703010664703, 140703010664705]]
+  | 4. listCartesian([1, 2], ["A", "B"]): [[1, 140701808857293], [1, 140701808857295], [2, 140701808857293], [2, 140701808857295]]
+  | 5. listCombinations([a, b, c, d], 2): [[140701808857336, 140701808857338], [140701808857336, 140701808857340], [140701808857336, 140701808857342], [140701808857338, 140701808857340], [140701808857338, 140701808857342], [140701808857340, 140701808857342]]
   OK  ExampleOfUseListStdLib_ListCombinatorContract.flux
   | ==================================================
   |   Exemplo: ListMutationContract (13 Operacoes)
@@ -3280,7 +3280,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 6. listRotateRight([1, 2, 3, 4, 5], 2): [4, 5, 1, 2, 3]
   | 7. listFlatten([[1, 2], [3], 4]): [1, 2, 3, 4]
   | 8. listPartition([1, 2, 3, 4, 5, 6, 7], 3): [[1, 2, 3], [4, 5, 6], [7]]
-  | 9. listZip([1, 2, 3], ["a", "b", "c"]): [[1, 140702678004145], [2, 140702678004147], [3, 140702678004149]]
+  | 9. listZip([1, 2, 3], ["a", "b", "c"]): [[1, 140695743701422], [2, 140695743701424], [3, 140695743701426]]
   | 10. listUnzip(zipped): [[1, 2, 3], [, , ]]
   OK  ExampleOfUseListStdLib_ListTransformContract.flux
   | ==================================================
@@ -3495,7 +3495,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 11. mapSingleton("id", 101): {id: 101}
   | 12. mapClone(m): {a: 10, b: 20, c: 30}
   | 13. mapToList(m): [a, b, c]
-  | 14. mapToSet(m): {2295835057328, 140703245025840, -1, a, b, c}
+  | 14. mapToSet(m): {a, b, c}
   | 15. mapToMap([["x", 1], ["y", 2]]): None
   | 16. mapToString(m): a: 10, b: 20, c: 30
   | 17. mapFromList([["k1", 10], ["k2", 20]]): None
@@ -3505,10 +3505,10 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   |   Exemplo: MapEntryContract (5 Operacoes)
   | ==================================================
-  | 1. mapFromEntries(pairs): {nome: 140700652155039, versao: 2026, status: 140700652155058}
+  | 1. mapFromEntries(pairs): {nome: 140702227370091, versao: 2026, status: 140702227370110}
   | 2. mapToEntries(m): [[nome, Flux], [versao, 2026], [status, ativo]]
   | 3. mapInvertMulti(notas): {80: [mat, qui], 90: [fis], 70: [bio]}
-  | 4. mapGroupListBy(usuarios, "tipo"): {admin: [1758095464736, 1758095466224], user: [1758095466368]}
+  | 4. mapGroupListBy(usuarios, "tipo"): {admin: [1865835288112, 1865835290416], user: [1865835290288]}
   | 5. mapSelectEntries(notas, ["mat", "qui"]): [[mat, 80], [qui, 80]]
   OK  ExampleOfUseMapStdLib_MapEntryContract.flux
   | ==================================================
@@ -3566,8 +3566,8 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 1. mapMerge(m1, m2): {a: 1, b: 20, c: 3}
   | 2. mapInvert(orig): {1: admin, 2: user}
   | 3. mapZip(["k1", "k2", "k3"], [100, 200, 300]): {k1: 100, k2: 200, k3: 300}
-  | 4. mapFilterKeys(full, ["id", "nome"]): {id: 10, nome: 140697015955740}
-  | 5. mapOmitKeys(full, ["senha"]): {id: 10, nome: 140697015955740, ativo: 1}
+  | 4. mapFilterKeys(full, ["id", "nome"]): {id: 10, nome: 140696407707880}
+  | 5. mapOmitKeys(full, ["senha"]): {id: 10, nome: 140696407707880, ativo: 1}
   OK  ExampleOfUseMapStdLib_MapTransformContract.flux
   | ==================================================
   |   Exemplo: MapUtilityContract (4 Operacoes)
@@ -4224,7 +4224,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   |   2.A. Polimorfismo Dinamico via OoStdLib
   | ==================================================
-  | 1. Zoologico contem [2135923594192, 2135923595008] elementos.
+  | 1. Zoologico contem [1807853362992, 1807853362096] elementos.
   | 
   | 2. Executando despacho dinamico:
   |    Animal do tipo Cachorro disparou metodo emitirSom
@@ -4439,9 +4439,9 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | Lista original (5 elementos): [maca, banana, cereja, damasco, figo]
   | 1. randomPickIndex (1..5): 4
   | 2. randomPick: figo
-  | 3. randomShuffle: [140698191335672, 140698191335665, 140698191335680, 140698191335653, 140698191335658]
-  | 4. randomSample(3 elementos sem repeticao): [140698191335658, 140698191335672, 140698191335680]
-  | 5. randomChoices(4 elementos com repeticao): [140698191335680, 140698191335680, 140698191335665, 140698191335680]
+  | 3. randomShuffle: [140700051902601, 140700051902594, 140700051902609, 140700051902582, 140700051902587]
+  | 4. randomSample(3 elementos sem repeticao): [140700051902587, 140700051902601, 140700051902609]
+  | 5. randomChoices(4 elementos com repeticao): [140700051902609, 140700051902609, 140700051902594, 140700051902609]
   | 6. randomWeightedChoice (loot drop): raro
   OK  ExampleOfUseRandomStdLib_RandomSequenceContract.flux
   | ==================================================
@@ -4458,16 +4458,16 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   |   Exemplo: RegexCaptureContract (Grupos de Captura)
   | ==================================================
   | 1. Grupos extraidos como lista (primeira ocorrencia): 
-  |    Prefixo capturado (G1):  140703023554761
-  |    Numero capturado  (G2):  140703023554761
+  |    Prefixo capturado (G1):  
+  |    Numero capturado  (G2):  
   | 2. Grupos capturados como mapa: 
-  |    Mapa completo:           {1: 140703023554761, 2: 140703023554761}
+  |    Mapa completo:           {1: 140698405933097, 2: 140698405933097}
   |    Grupo '1':               
   |    Grupo '2':               
   | 3. Todas as ocorrencias como listas aninhadas: 
   |    Lista total de grupos:   [[, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ], [, ]]
   | 4. Todas as ocorrencias como lista de mapas: 
-  |    Lista de mapas:          [{1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}, {1: 140703023554761, 2: 140703023554761}]
+  |    Lista de mapas:          [{1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}, {1: 140698405933097, 2: 140698405933097}]
   |    Primeira transacao ID:    
   |    Primeira transacao Val:   
   OK  ExampleOfUseRegexStdLib_RegexCaptureContract.flux
@@ -4701,7 +4701,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | ==================================================
   | 1. setUnionAll([{1, 2}, {2, 3}, {3, 4}]): {}
   | 2. setIntersectAll([{1, 2, 3}, {2, 3, 4}, {3, 5, 2}]): {}
-  | 3. setCartesianProduct({1, 2}, {"a", "b"}): [[1, 140698502037712], [1, 140698502037714], [2, 140698502037712], [2, 140698502037714]]
+  | 3. setCartesianProduct({1, 2}, {"a", "b"}): [[1, 140701303836877], [1, 140701303836879], [2, 140701303836877], [2, 140701303836879]]
   | 4. setPowerSet({1, 2, 3}): [0, 0, 0, 0, 0, 0, 0, 0]
   OK  ExampleOfUseSetStdLib_SetTransformContract.flux
   | ==================================================
@@ -4913,7 +4913,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 13. stringFromList(["T", "h", "e", "F", "l", "u", "x"]): TheFlux
   | 14. stringFromSet({"a", "b"}): ab
   | 15. stringFromString("TheFlux"): TheFlux
-  | 16. stringToSet("TheFlux"): {1664430786560, 31244173394051169, 27303540898988115, 16044284129902692, 250151880884230, 1664430692640, 1664430678528, T, h, e, F, l, u, x}
+  | 16. stringToSet("TheFlux"): {T, h, e, F, l, u, x}
   | 17. stringToMap("k1: 10, k2: 20"): {k1: 10, k2: 20}
   | 18. stringToString("TheFlux"): TheFlux
   OK  ExampleOfUseStringStdLib_StringBasicContract.flux
@@ -5010,7 +5010,7 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 1. Mapa extraido:
   |    id: TX-1001
   |    valor: 250.5
-  |    timestamp_ms: 2521012068864
+  |    timestamp_ms: 2163139262896
   | 2. Entradas [chave, valor]: [[id, TX-1001], [valor, 250.5], [timestamp_ms, 1726600000000]]
   | 3. Representacao textual: Transacao(.id: TX-1001, .valor: 250.5, .timestamp_ms: 1726600000000)
   | 4. Diferenca estrutural (diff):
@@ -5022,11 +5022,11 @@ FALHA  ExampleOfError_TYP413_ExpectComplexGotString.flux:   💡 Dica: Converta 
   | 1. Nome da struct: Transacao
   | 2. Campo id: TX-1001
   |    Campo valor: 250.5
-  | 3. Clone realizado: Transacao(.id: 2465244308288, .valor: 2465244318224, .timestamp_ms: 2465244319216)
+  | 3. Clone realizado: Transacao(.id: 1871437588576, .valor: 1871437588896, .timestamp_ms: 1871437586640)
   | 4. Original e clone sao iguais: false
   | 5. Struct alocada dinamicamente: Transacao(.id: , .valor: , .timestamp_ms: )
   | 6. Struct criada a partir de mapa: Transacao(.id: TX-2002, .valor: 999.99, .timestamp_ms: 1726600500000)
-  | 7. Campo valor atualizado: 140697658725018
+  | 7. Campo valor atualizado: 140702323581541
   OK  ExampleOfUseStructStdLib_StructCoreContract.flux
   | ==================================================
   |   Exemplo: StructIntrospectionContract

@@ -58,9 +58,21 @@ for f in examples/examples_*.flux; do
         echo "[ERRO] Binario bin/${base} nao foi gerado."
         exit 1
     fi
+    rm -f "bin/${base}.ll"
     TOTAL_EXAMPLES=$((TOTAL_EXAMPLES + 1))
 done
-echo "[OK] ${TOTAL_EXAMPLES} executores examples_* gerados com exito."
+if [ -f "examples/compliance.flux" ]; then
+    echo "    [*] Compilando examples/compliance.flux -> bin/compliance..."
+    rm -f "bin/compliance" "bin/compliance.exe" "bin/compliance.ll"
+    "${FLUXC_BIN}" --no-run --target llvm -o "bin/compliance" "examples/compliance.flux"
+    if [ ! -f "bin/compliance.exe" ] && [ ! -f "bin/compliance" ]; then
+        echo "[ERRO] Binario bin/compliance nao foi gerado."
+        exit 1
+    fi
+    rm -f "bin/compliance.ll"
+    TOTAL_EXAMPLES=$((TOTAL_EXAMPLES + 1))
+fi
+echo "[OK] ${TOTAL_EXAMPLES} executores examples_* e compliance gerados com exito."
 
 echo "=============================================================================="
 echo "[SUCESSO] Recompilacao concluida (${TOTAL_DRIVERS} drivers + ${TOTAL_EXAMPLES} suites)."

@@ -5,6 +5,7 @@
 
 contract (VmBackendContract) {
       op vmCompileFmir (as map: fmir_module) as map
+      op vmJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string
       op vmEscapeJson (as string: s) as string
       op vmSerializeStringList (as list of data: items) as string
       op vmSerializeInstrList (as list of data: instrs) as string
@@ -362,9 +363,20 @@ agent (CompilerLib) impl VmBackendContract {
             emit(nice, result, "ok")
       }
 
+      op vmJoinRange (as list of data: parts, as int64: lo, as int64: hi) as string ==> {
+            route {
+                  lo > hi ==> { emit(nice, "", "ok") }
+                  lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+                  _ ==> {
+                        mut as int64: mid = (lo + hi) /i 2
+                        emit(nice, vmJoinRange(parts, lo, mid) + vmJoinRange(parts, mid + 1, hi), "ok")
+                  }
+            }
+      }
+
       op vmEscapeJson (as string: s) as string ==> {
             mut as int64: slen = stdCollectionLength(s)
-            mut as string: res = ""
+            mut as list of data: parts = []
             mut as int64: chunk_start = 1
             mut as int64: idx = 1
             infinite {
@@ -372,7 +384,7 @@ agent (CompilerLib) impl VmBackendContract {
                         idx > slen ==> {
                               route {
                                     idx > chunk_start ==> {
-                                          res = res + s[chunk_start..(idx - 1)]
+                                          parts = stdListPushBack(parts, s[chunk_start..(idx - 1)])
                                     }
                                     _ ==> {}
                               }
@@ -384,17 +396,17 @@ agent (CompilerLib) impl VmBackendContract {
                                     ch == "\"" or ch == "\\" or ch == "\n" or ch == "\r" or ch == "\t" ==> {
                                           route {
                                                 idx > chunk_start ==> {
-                                                      res = res + s[chunk_start..(idx - 1)]
+                                                      parts = stdListPushBack(parts, s[chunk_start..(idx - 1)])
                                                 }
                                                 _ ==> {}
                                           }
                                           route {
-                                                ch == "\"" ==> { res = res + "\\" + "\"" }
-                                                ch == "\\" ==> { res = res + "\\" + "\\" }
-                                                ch == "\n" ==> { res = res + "\\" + "n" }
-                                                ch == "\r" ==> { res = res + "\\" + "r" }
-                                                ch == "\t" ==> { res = res + "\\" + "t" }
-                                                _ ==> { res = res + ch }
+                                                ch == "\"" ==> { parts = stdListPushBack(parts, "\\\"") }
+                                                ch == "\\" ==> { parts = stdListPushBack(parts, "\\\\") }
+                                                ch == "\n" ==> { parts = stdListPushBack(parts, "\\n") }
+                                                ch == "\r" ==> { parts = stdListPushBack(parts, "\\r") }
+                                                ch == "\t" ==> { parts = stdListPushBack(parts, "\\t") }
+                                                _ ==> { parts = stdListPushBack(parts, ch) }
                                           }
                                           chunk_start = idx + 1
                                     }
@@ -404,12 +416,13 @@ agent (CompilerLib) impl VmBackendContract {
                         }
                   }
             }
-            emit(nice, res, "ok")
+            emit(nice, vmJoinRange(parts, 1, stdCollectionLength(parts)), "ok")
       }
 
       op vmSerializeStringList (as list of data: items) as string ==> {
             mut as int64: n = stdCollectionLength(items)
-            mut as string: out = "["
+            mut as list of data: parts = []
+            parts = stdListPushBack(parts, "[")
             mut as int64: i = 1
             infinite {
                   route {
@@ -421,18 +434,19 @@ agent (CompilerLib) impl VmBackendContract {
                                     i < n ==> { sep = "," }
                                     _ ==> {}
                               }
-                              out = out + "\"" + item_s + "\"" + sep
+                              parts = stdListPushBack(parts, "\"" + item_s + "\"" + sep)
                               i = i + 1
                         }
                   }
             }
-            out = out + "]"
-            emit(nice, out, "ok")
+            parts = stdListPushBack(parts, "]")
+            emit(nice, vmJoinRange(parts, 1, stdCollectionLength(parts)), "ok")
       }
 
       op vmSerializeInstrList (as list of data: instrs) as string ==> {
             mut as int64: n = stdCollectionLength(instrs)
-            mut as string: out = "["
+            mut as list of data: parts = []
+            parts = stdListPushBack(parts, "[")
             mut as int64: i = 1
             infinite {
                   route {
@@ -448,13 +462,13 @@ agent (CompilerLib) impl VmBackendContract {
                                     i < n ==> { sep = "," }
                                     _ ==> {}
                               }
-                              out = out + "[\"" + op_s + "\",\"" + a1_s + "\",\"" + a2_s + "\",\"" + res_s + "\"]" + sep
+                              parts = stdListPushBack(parts, "[\"" + op_s + "\",\"" + a1_s + "\",\"" + a2_s + "\",\"" + res_s + "\"]" + sep)
                               i = i + 1
                         }
                   }
             }
-            out = out + "]"
-            emit(nice, out, "ok")
+            parts = stdListPushBack(parts, "]")
+            emit(nice, vmJoinRange(parts, 1, stdCollectionLength(parts)), "ok")
       }
 
       op vmCollectReachableFunctions (as map: fmir_module) as list of data ==> {
@@ -658,7 +672,8 @@ agent (CompilerLib) impl VmBackendContract {
 
             mut as list of data: sel_keys = vmCollectReachableFunctions(fmir_module)
             mut as int64: n_sel = stdCollectionLength(sel_keys)
-            mut as string: funcs_json = "["
+            mut as list of data: funcs_parts = []
+            funcs_parts = stdListPushBack(funcs_parts, "[")
             route {
                   n_sel > 0 and stdMapContainsKey(fmir_module, "functions") ==> {
                         mut as map: fn_table = fmir_module["functions"]
@@ -694,7 +709,7 @@ agent (CompilerLib) impl VmBackendContract {
                                                 fi < n_sel ==> { f_sep = "," }
                                                 _ ==> {}
                                           }
-                                          funcs_json = funcs_json + "{\"key\":\"" + f_key_s + "\",\"name\":\"" + f_name_s + "\",\"agent\":\"" + f_agent_s + "\",\"ret_type\":\"" + f_ret_s + "\",\"is_stdlib\":" + f_std_s + ",\"params\":" + f_params_s + ",\"param_types\":" + f_ptypes_s + ",\"instructions\":" + f_instrs_s + "}" + f_sep
+                                          funcs_parts = stdListPushBack(funcs_parts, "{\"key\":\"" + f_key_s + "\",\"name\":\"" + f_name_s + "\",\"agent\":\"" + f_agent_s + "\",\"ret_type\":\"" + f_ret_s + "\",\"is_stdlib\":" + f_std_s + ",\"params\":" + f_params_s + ",\"param_types\":" + f_ptypes_s + ",\"instructions\":" + f_instrs_s + "}" + f_sep)
                                           fi = fi + 1
                                     }
                               }
@@ -702,13 +717,15 @@ agent (CompilerLib) impl VmBackendContract {
                   }
                   _ ==> {}
             }
-            funcs_json = funcs_json + "]"
+            funcs_parts = stdListPushBack(funcs_parts, "]")
+            mut as string: funcs_json = vmJoinRange(funcs_parts, 1, stdCollectionLength(funcs_parts))
 
             mut as map: res = vmCompileFmir(fmir_module)
             mut as list of data: ops = res["ops"]
             mut as int64: n = stdCollectionLength(ops)
 
-            mut as string: ops_json = "[\n"
+            mut as list of data: ops_parts = []
+            ops_parts = stdListPushBack(ops_parts, "[\n")
             mut as int64: i = 1
             infinite {
                   route {
@@ -720,7 +737,8 @@ agent (CompilerLib) impl VmBackendContract {
                                     i < n ==> { comma = "," }
                                     _ ==> {}
                               }
-                              mut as string: entry = "    ["
+                              mut as list of data: ent_parts = []
+                              ent_parts = stdListPushBack(ent_parts, "    [")
                               mut as int64: k = 1
                               mut as int64: op_len = stdCollectionLength(op_tuple)
                               infinite {
@@ -736,29 +754,30 @@ agent (CompilerLib) impl VmBackendContract {
                                                 mut as string: op0 = "" + op_tuple[1]
                                                 route {
                                                       (op0 == "PUSH_INT" or op0 == "PUSH_FLOAT" or op0 == "PUSH_BOOL") and k == 1 ==> {
-                                                            entry = entry + "\"PUSH\"" + el_comma
+                                                            ent_parts = stdListPushBack(ent_parts, "\"PUSH\"" + el_comma)
                                                       }
                                                       (op0 == "PUSH_INT" or op0 == "PUSH_FLOAT" or op0 == "PUSH_BOOL") and k == 2 ==> {
-                                                            entry = entry + v_str + el_comma
+                                                            ent_parts = stdListPushBack(ent_parts, v_str + el_comma)
                                                       }
                                                       (op0 == "JMP" or op0 == "JZ" or op0 == "JNZ" or op0 == "PRINT" or op0 == "PRINTLN") and k == 2 ==> {
-                                                            entry = entry + v_str + el_comma
+                                                            ent_parts = stdListPushBack(ent_parts, v_str + el_comma)
                                                       }
                                                       _ ==> {
-                                                            entry = entry + "\"" + vmEscapeJson(v_str) + "\"" + el_comma
+                                                            ent_parts = stdListPushBack(ent_parts, "\"" + vmEscapeJson(v_str) + "\"" + el_comma)
                                                       }
                                                 }
                                                 k = k + 1
                                           }
                                     }
                               }
-                              entry = entry + "]" + comma + "\n"
-                              ops_json = ops_json + entry
+                              ent_parts = stdListPushBack(ent_parts, "]" + comma + "\n")
+                              ops_parts = stdListPushBack(ops_parts, vmJoinRange(ent_parts, 1, stdCollectionLength(ent_parts)))
                               i = i + 1
                         }
                   }
             }
-            ops_json = ops_json + "  ]"
+            ops_parts = stdListPushBack(ops_parts, "  ]")
+            mut as string: ops_json = vmJoinRange(ops_parts, 1, stdCollectionLength(ops_parts))
 
             mut as string: json = "{\n"
             json = json + "  \"version\": \"1.0.0\",\n"

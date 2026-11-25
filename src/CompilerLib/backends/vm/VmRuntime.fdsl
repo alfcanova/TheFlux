@@ -641,11 +641,12 @@ agent (CompilerLib) impl VmRuntimeContract {
 
       op vmExecuteStackOps (as list of data: ops) as map ==> {
             mut as int64: num_ops = stdCollectionLength(ops)
-            mut as map: stack_type = map{}
-            mut as map: stack_str = map{}
-            mut as map: stack_map = map{}
-            mut as map: stack_list = map{}
-            mut as map: stack_var = map{}
+            mut as list of data: stack_type = []
+            mut as list of data: stack_str = []
+            mut as list of data: stack_map = []
+            mut as list of data: stack_list = []
+            mut as list of data: stack_var = []
+            mut as int64: stack_cap = 0
             mut as int64: sp = 0
 
             mut as map: env_type = map{}
@@ -653,7 +654,8 @@ agent (CompilerLib) impl VmRuntimeContract {
             mut as map: env_map = map{}
             mut as map: env_list = map{}
 
-            mut as map: call_ret = map{}
+            mut as list of int64: call_ret = []
+            mut as int64: call_cap = 0
             mut as int64: csp = 0
             mut as string: stdout_acc = ""
 
@@ -678,16 +680,26 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "HALT" ==> { break }
                                     op_name == "PUSH" or op_name == "PUSH_INT" or op_name == "PUSH_FLOAT" or op_name == "PUSH_BOOL" ==> {
                                           sp = sp + 1
-                                          mut as string: sk = "s_" + sp
-                                          stack_var[sk] = ""
+                                          route {
+                                                sp > stack_cap ==> {
+                                                      stack_type = stdListPushBack(stack_type, "scalar")
+                                                      stack_str = stdListPushBack(stack_str, "")
+                                                      stack_map = stdListPushBack(stack_map, map{})
+                                                      stack_list = stdListPushBack(stack_list, [])
+                                                      stack_var = stdListPushBack(stack_var, "")
+                                                      stack_cap = sp
+                                                }
+                                                _ ==> {}
+                                          }
+                                          stack_var[sp] = ""
                                           route {
                                                 arg1 == "#tensor" ==> {
-                                                      stack_type[sk] = "map"
-                                                      stack_map[sk] = map{}
+                                                      stack_type[sp] = "map"
+                                                      stack_map[sp] = map{}
                                                 }
                                                 _ ==> {
-                                                      stack_type[sk] = "scalar"
-                                                      stack_str[sk] = arg1
+                                                      stack_type[sp] = "scalar"
+                                                      stack_str[sp] = arg1
                                                 }
                                           }
                                     }
@@ -697,16 +709,26 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "DUP" ==> {
                                           route {
                                                 sp > 0 ==> {
-                                                      mut as string: src_k = "s_" + sp
+                                                      mut as int64: src_i = sp
                                                       sp = sp + 1
-                                                      mut as string: dst_k = "s_" + sp
-                                                      mut as string: st = "" + stack_type[src_k]
-                                                      stack_type[dst_k] = st
-                                                      stack_var[dst_k] = "" + stack_var[src_k]
                                                       route {
-                                                            st == "map" ==> { stack_map[dst_k] = stack_map[src_k] }
-                                                            st == "list" ==> { stack_list[dst_k] = stack_list[src_k] }
-                                                            _ ==> { stack_str[dst_k] = "" + stack_str[src_k] }
+                                                            sp > stack_cap ==> {
+                                                                  stack_type = stdListPushBack(stack_type, "scalar")
+                                                                  stack_str = stdListPushBack(stack_str, "")
+                                                                  stack_map = stdListPushBack(stack_map, map{})
+                                                                  stack_list = stdListPushBack(stack_list, [])
+                                                                  stack_var = stdListPushBack(stack_var, "")
+                                                                  stack_cap = sp
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      mut as string: st = "" + stack_type[src_i]
+                                                      stack_type[sp] = st
+                                                      stack_var[sp] = "" + stack_var[src_i]
+                                                      route {
+                                                            st == "map" ==> { stack_map[sp] = stack_map[src_i] }
+                                                            st == "list" ==> { stack_list[sp] = stack_list[src_i] }
+                                                            _ ==> { stack_str[sp] = "" + stack_str[src_i] }
                                                       }
                                                 }
                                                 _ ==> {}
@@ -715,13 +737,12 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "DECLARE" or op_name == "STORE" ==> {
                                           route {
                                                 sp > 0 ==> {
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as string: st = "" + stack_type[sk]
+                                                      mut as string: st = "" + stack_type[sp]
                                                       env_type[arg1] = st
                                                       route {
-                                                            st == "map" ==> { env_map[arg1] = stack_map[sk] }
-                                                            st == "list" ==> { env_list[arg1] = stack_list[sk] }
-                                                            _ ==> { env_str[arg1] = "" + stack_str[sk] }
+                                                            st == "map" ==> { env_map[arg1] = stack_map[sp] }
+                                                            st == "list" ==> { env_list[arg1] = stack_list[sp] }
+                                                            _ ==> { env_str[arg1] = "" + stack_str[sp] }
                                                       }
                                                       sp = sp - 1
                                                 }
@@ -733,19 +754,29 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     }
                                     op_name == "LOAD" ==> {
                                           sp = sp + 1
-                                          mut as string: sk = "s_" + sp
+                                          route {
+                                                sp > stack_cap ==> {
+                                                      stack_type = stdListPushBack(stack_type, "scalar")
+                                                      stack_str = stdListPushBack(stack_str, "")
+                                                      stack_map = stdListPushBack(stack_map, map{})
+                                                      stack_list = stdListPushBack(stack_list, [])
+                                                      stack_var = stdListPushBack(stack_var, "")
+                                                      stack_cap = sp
+                                                }
+                                                _ ==> {}
+                                          }
                                           mut as string: vt = "scalar"
                                           route {
                                                 stdMapContainsKey(env_type, arg1) ==> { vt = "" + env_type[arg1] }
                                                 _ ==> {}
                                           }
-                                          stack_type[sk] = vt
-                                          stack_var[sk] = arg1
+                                          stack_type[sp] = vt
+                                          stack_var[sp] = arg1
                                           route {
-                                                vt == "map" ==> { stack_map[sk] = env_map[arg1] }
-                                                vt == "list" ==> { stack_list[sk] = env_list[arg1] }
-                                                stdMapContainsKey(env_str, arg1) ==> { stack_str[sk] = "" + env_str[arg1] }
-                                                _ ==> { stack_str[sk] = "0" }
+                                                vt == "map" ==> { stack_map[sp] = env_map[arg1] }
+                                                vt == "list" ==> { stack_list[sp] = env_list[arg1] }
+                                                stdMapContainsKey(env_str, arg1) ==> { stack_str[sp] = "" + env_str[arg1] }
+                                                _ ==> { stack_str[sp] = "0" }
                                           }
                                     }
                                     op_name == "MAKE_STRUCT" ==> {
@@ -793,7 +824,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                             mut as string: fval = ""
                                                             route {
                                                                   sp > 0 ==> {
-                                                                        fval = "" + stack_str["s_" + sp]
+                                                                        fval = "" + stack_str[sp]
                                                                         sp = sp - 1
                                                                   }
                                                                   _ ==> {}
@@ -804,24 +835,33 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                 }
                                           }
                                           sp = sp + 1
-                                          mut as string: sk = "s_" + sp
-                                          stack_type[sk] = "map"
-                                          stack_map[sk] = st_obj
-                                          stack_var[sk] = ""
+                                          route {
+                                                sp > stack_cap ==> {
+                                                      stack_type = stdListPushBack(stack_type, "scalar")
+                                                      stack_str = stdListPushBack(stack_str, "")
+                                                      stack_map = stdListPushBack(stack_map, map{})
+                                                      stack_list = stdListPushBack(stack_list, [])
+                                                      stack_var = stdListPushBack(stack_var, "")
+                                                      stack_cap = sp
+                                                }
+                                                _ ==> {}
+                                          }
+                                          stack_type[sp] = "map"
+                                          stack_map[sp] = st_obj
+                                          stack_var[sp] = ""
                                     }
                                     op_name == "FIELD_ACCESS" ==> {
                                           route {
                                                 sp > 0 ==> {
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as map: obj = stack_map[sk]
+                                                      mut as map: obj = stack_map[sp]
                                                       mut as string: fval = ""
                                                       route {
                                                             stdMapContainsKey(obj, arg1) ==> { fval = "" + obj[arg1] }
                                                             _ ==> {}
                                                       }
-                                                      stack_type[sk] = "scalar"
-                                                      stack_str[sk] = fval
-                                                      stack_var[sk] = ""
+                                                      stack_type[sp] = "scalar"
+                                                      stack_str[sp] = fval
+                                                      stack_var[sp] = ""
                                                 }
                                                 _ ==> {}
                                           }
@@ -829,13 +869,12 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "FIELD_SET" ==> {
                                           route {
                                                 sp >= 2 ==> {
-                                                      mut as string: fval = "" + stack_str["s_" + sp]
+                                                      mut as string: fval = "" + stack_str[sp]
                                                       sp = sp - 1
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as map: obj = stack_map[sk]
-                                                      mut as string: vname = "" + stack_var[sk]
+                                                      mut as map: obj = stack_map[sp]
+                                                      mut as string: vname = "" + stack_var[sp]
                                                       obj[arg1] = fval
-                                                      stack_map[sk] = obj
+                                                      stack_map[sp] = obj
                                                       route {
                                                             vname != "" ==> { env_map[vname] = obj }
                                                             _ ==> {}
@@ -846,60 +885,69 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     }
                                     op_name == "ENUM_NEW" ==> {
                                           sp = sp + 1
-                                          mut as string: sk = "s_" + sp
-                                          stack_type[sk] = "scalar"
-                                          stack_str[sk] = arg1 + "::" + arg2
-                                          stack_var[sk] = ""
+                                          route {
+                                                sp > stack_cap ==> {
+                                                      stack_type = stdListPushBack(stack_type, "scalar")
+                                                      stack_str = stdListPushBack(stack_str, "")
+                                                      stack_map = stdListPushBack(stack_map, map{})
+                                                      stack_list = stdListPushBack(stack_list, [])
+                                                      stack_var = stdListPushBack(stack_var, "")
+                                                      stack_cap = sp
+                                                }
+                                                _ ==> {}
+                                          }
+                                          stack_type[sp] = "scalar"
+                                          stack_str[sp] = arg1 + "::" + arg2
+                                          stack_var[sp] = ""
                                     }
                                     op_name == "MAKE_LIST" ==> {
                                           mut as int64: cnt = interpParseInt(arg1)
-                                          mut as map: tmp_items = map{}
-                                          mut as int64: ti = cnt
-                                          infinite {
-                                                route {
-                                                      ti < 1 ==> { break }
-                                                      _ ==> {
-                                                            mut as string: iv = ""
-                                                            route {
-                                                                  sp > 0 ==> {
-                                                                        iv = "" + stack_str["s_" + sp]
-                                                                        sp = sp - 1
-                                                                  }
-                                                                  _ ==> {}
-                                                            }
-                                                            tmp_items["i_" + ti] = iv
-                                                            ti = ti - 1
-                                                      }
-                                                }
-                                          }
+                                          mut as int64: base = sp - cnt
                                           mut as list of data: new_lst = []
                                           mut as int64: li = 1
                                           infinite {
                                                 route {
                                                       li > cnt ==> { break }
                                                       _ ==> {
-                                                            new_lst = stdListPushBack(new_lst, "" + tmp_items["i_" + li])
+                                                            mut as int64: src_i = base + li
+                                                            mut as string: iv = ""
+                                                            route {
+                                                                  src_i >= 1 ==> { iv = "" + stack_str[src_i] }
+                                                                  _ ==> {}
+                                                            }
+                                                            new_lst = stdListPushBack(new_lst, iv)
                                                             li = li + 1
                                                       }
                                                 }
                                           }
+                                          sp = base
+                                          route { sp < 0 ==> { sp = 0 } _ ==> {} }
                                           sp = sp + 1
-                                          mut as string: sk = "s_" + sp
-                                          stack_type[sk] = "list"
-                                          stack_list[sk] = new_lst
-                                          stack_var[sk] = ""
+                                          route {
+                                                sp > stack_cap ==> {
+                                                      stack_type = stdListPushBack(stack_type, "scalar")
+                                                      stack_str = stdListPushBack(stack_str, "")
+                                                      stack_map = stdListPushBack(stack_map, map{})
+                                                      stack_list = stdListPushBack(stack_list, [])
+                                                      stack_var = stdListPushBack(stack_var, "")
+                                                      stack_cap = sp
+                                                }
+                                                _ ==> {}
+                                          }
+                                          stack_type[sp] = "list"
+                                          stack_list[sp] = new_lst
+                                          stack_var[sp] = ""
                                     }
                                     op_name == "INDEX" ==> {
                                           route {
                                                 sp >= 2 ==> {
-                                                      mut as int64: idx_i = interpParseInt("" + stack_str["s_" + sp])
+                                                      mut as int64: idx_i = interpParseInt("" + stack_str[sp])
                                                       sp = sp - 1
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as list of data: lst = stack_list[sk]
+                                                      mut as list of data: lst = stack_list[sp]
                                                       mut as string: elem_s = "" + lst[idx_i]
-                                                      stack_type[sk] = "scalar"
-                                                      stack_str[sk] = elem_s
-                                                      stack_var[sk] = ""
+                                                      stack_type[sp] = "scalar"
+                                                      stack_str[sp] = elem_s
+                                                      stack_var[sp] = ""
                                                 }
                                                 _ ==> {}
                                           }
@@ -907,12 +955,11 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "SLICE" ==> {
                                           route {
                                                 sp >= 3 ==> {
-                                                      mut as int64: end_i = interpParseInt("" + stack_str["s_" + sp])
+                                                      mut as int64: end_i = interpParseInt("" + stack_str[sp])
                                                       sp = sp - 1
-                                                      mut as int64: start_i = interpParseInt("" + stack_str["s_" + sp])
+                                                      mut as int64: start_i = interpParseInt("" + stack_str[sp])
                                                       sp = sp - 1
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as list of data: lst = stack_list[sk]
+                                                      mut as list of data: lst = stack_list[sp]
                                                       mut as list of data: sub_lst = []
                                                       mut as int64: si = start_i
                                                       infinite {
@@ -924,16 +971,16 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                                   }
                                                             }
                                                       }
-                                                      stack_type[sk] = "list"
-                                                      stack_list[sk] = sub_lst
-                                                      stack_var[sk] = ""
+                                                      stack_type[sp] = "list"
+                                                      stack_list[sp] = sub_lst
+                                                      stack_var[sp] = ""
                                                 }
                                                 _ ==> {}
                                           }
                                     }
                                     op_name == "TSET" ==> {
                                           mut as int64: ndim = interpParseInt(arg1)
-                                          mut as string: tval = "" + stack_str["s_" + sp]
+                                          mut as string: tval = "" + stack_str[sp]
                                           sp = sp - 1
                                           mut as string: tkey = ""
                                           mut as int64: di = 1
@@ -941,7 +988,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                 route {
                                                       di > ndim ==> { break }
                                                       _ ==> {
-                                                            mut as string: idx_s = "" + stack_str["s_" + sp]
+                                                            mut as string: idx_s = "" + stack_str[sp]
                                                             sp = sp - 1
                                                             route {
                                                                   tkey == "" ==> { tkey = idx_s }
@@ -951,16 +998,15 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                       }
                                                 }
                                           }
-                                          mut as string: sk = "s_" + sp
-                                          mut as map: tobj = stack_map[sk]
-                                          mut as string: tvname = "" + stack_var[sk]
+                                          mut as map: tobj = stack_map[sp]
+                                          mut as string: tvname = "" + stack_var[sp]
                                           tobj[tkey] = tval
                                           route {
                                                 tvname != "" ==> { env_map[tvname] = tobj }
                                                 _ ==> {}
                                           }
-                                          stack_type[sk] = "scalar"
-                                          stack_str[sk] = tval
+                                          stack_type[sp] = "scalar"
+                                          stack_str[sp] = tval
                                     }
                                     op_name == "TGET" ==> {
                                           mut as int64: ndim = interpParseInt(arg1)
@@ -970,7 +1016,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                 route {
                                                       di > ndim ==> { break }
                                                       _ ==> {
-                                                            mut as string: idx_s = "" + stack_str["s_" + sp]
+                                                            mut as string: idx_s = "" + stack_str[sp]
                                                             sp = sp - 1
                                                             route {
                                                                   tkey == "" ==> { tkey = idx_s }
@@ -980,24 +1026,22 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                       }
                                                 }
                                           }
-                                          mut as string: sk = "s_" + sp
-                                          mut as map: tobj = stack_map[sk]
+                                          mut as map: tobj = stack_map[sp]
                                           mut as string: tval = "0.0"
                                           route {
                                                 stdMapContainsKey(tobj, tkey) ==> { tval = "" + tobj[tkey] }
                                                 _ ==> {}
                                           }
-                                          stack_type[sk] = "scalar"
-                                          stack_str[sk] = tval
-                                          stack_var[sk] = ""
+                                          stack_type[sp] = "scalar"
+                                          stack_str[sp] = tval
+                                          stack_var[sp] = ""
                                     }
                                     op_name == "ADD" or op_name == "SUB" or op_name == "MUL" or op_name == "DIV" or op_name == "REM" ==> {
                                           route {
                                                 sp >= 2 ==> {
-                                                      mut as string: rhs_s = "" + stack_str["s_" + sp]
+                                                      mut as string: rhs_s = "" + stack_str[sp]
                                                       sp = sp - 1
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as string: lhs_s = "" + stack_str[sk]
+                                                      mut as string: lhs_s = "" + stack_str[sp]
                                                       mut as bool: is_flt = interpStrContains(lhs_s, ".") or interpStrContains(rhs_s, ".")
                                                       route {
                                                             is_flt ==> {
@@ -1011,7 +1055,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                                         op_name == "DIV" ==> { rf_res = lf /f rf }
                                                                         _ ==> {}
                                                                   }
-                                                                  stack_str[sk] = "" + rf_res
+                                                                  stack_str[sp] = "" + rf_res
                                                             }
                                                             _ ==> {
                                                                   mut as int64: li = interpParseInt(lhs_s)
@@ -1025,10 +1069,10 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                                         op_name == "REM" ==> { ri_res = li /r ri }
                                                                         _ ==> {}
                                                                   }
-                                                                  stack_str[sk] = "" + ri_res
+                                                                  stack_str[sp] = "" + ri_res
                                                             }
                                                       }
-                                                      stack_type[sk] = "scalar"
+                                                      stack_type[sp] = "scalar"
                                                 }
                                                 _ ==> {}
                                           }
@@ -1036,10 +1080,9 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "EQ" or op_name == "NE" or op_name == "LT" or op_name == "LE" or op_name == "GT" or op_name == "GE" ==> {
                                           route {
                                                 sp >= 2 ==> {
-                                                      mut as string: rhs_s = "" + stack_str["s_" + sp]
+                                                      mut as string: rhs_s = "" + stack_str[sp]
                                                       sp = sp - 1
-                                                      mut as string: sk = "s_" + sp
-                                                      mut as string: lhs_s = "" + stack_str[sk]
+                                                      mut as string: lhs_s = "" + stack_str[sp]
                                                       mut as float64: lf = interpParseFloat(lhs_s)
                                                       mut as float64: rf = interpParseFloat(rhs_s)
                                                       mut as bool: b_res = false
@@ -1053,10 +1096,10 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                             _ ==> {}
                                                       }
                                                       route {
-                                                            b_res ==> { stack_str[sk] = "true" }
-                                                            _ ==> { stack_str[sk] = "false" }
+                                                            b_res ==> { stack_str[sp] = "true" }
+                                                            _ ==> { stack_str[sp] = "false" }
                                                       }
-                                                      stack_type[sk] = "scalar"
+                                                      stack_type[sp] = "scalar"
                                                 }
                                                 _ ==> {}
                                           }
@@ -1068,7 +1111,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "JZ" ==> {
                                           route {
                                                 sp > 0 ==> {
-                                                      mut as string: cond_s = "" + stack_str["s_" + sp]
+                                                      mut as string: cond_s = "" + stack_str[sp]
                                                       sp = sp - 1
                                                       route {
                                                             cond_s == "false" or cond_s == "0" or cond_s == "" ==> {
@@ -1084,7 +1127,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "JNZ" ==> {
                                           route {
                                                 sp > 0 ==> {
-                                                      mut as string: cond_s = "" + stack_str["s_" + sp]
+                                                      mut as string: cond_s = "" + stack_str[sp]
                                                       sp = sp - 1
                                                       route {
                                                             cond_s != "false" and cond_s != "0" and cond_s != "" ==> {
@@ -1102,7 +1145,15 @@ agent (CompilerLib) impl VmRuntimeContract {
                                           route {
                                                 a1_l > 0 and arg1[1] >= "0" and arg1[1] <= "9" ==> {
                                                       csp = csp + 1
-                                                      call_ret["c_" + csp] = ip + 1
+                                                      route {
+                                                            csp > call_cap ==> {
+                                                                  call_ret = stdListPushBack(call_ret, ip + 1)
+                                                                  call_cap = csp
+                                                            }
+                                                            _ ==> {
+                                                                  call_ret[csp] = ip + 1
+                                                            }
+                                                      }
                                                       ip = interpParseInt(arg1) + 1
                                                       jumped = true
                                                 }
@@ -1112,7 +1163,7 @@ agent (CompilerLib) impl VmRuntimeContract {
                                     op_name == "RET" ==> {
                                           route {
                                                 csp > 0 ==> {
-                                                      ip = call_ret["c_" + csp] as int64
+                                                      ip = call_ret[csp]
                                                       csp = csp - 1
                                                       jumped = true
                                                 }
@@ -1125,36 +1176,27 @@ agent (CompilerLib) impl VmRuntimeContract {
                                                 arg1 != "" ==> { n_pr = interpParseInt(arg1) }
                                                 _ ==> {}
                                           }
-                                          mut as map: pr_parts = map{}
-                                          mut as int64: pi = n_pr
-                                          infinite {
-                                                route {
-                                                      pi < 1 ==> { break }
-                                                      _ ==> {
-                                                            mut as string: pv = ""
-                                                            route {
-                                                                  sp > 0 ==> {
-                                                                        pv = "" + stack_str["s_" + sp]
-                                                                        sp = sp - 1
-                                                                  }
-                                                                  _ ==> {}
-                                                            }
-                                                            pr_parts["p_" + pi] = pv
-                                                            pi = pi - 1
-                                                      }
-                                                }
-                                          }
-                                          mut as string: out_line = ""
+                                          mut as int64: pbase = sp - n_pr
+                                          mut as list of data: pr_parts = []
                                           mut as int64: pj = 1
                                           infinite {
                                                 route {
                                                       pj > n_pr ==> { break }
                                                       _ ==> {
-                                                            out_line = out_line + pr_parts["p_" + pj]
+                                                            mut as int64: ps_i = pbase + pj
+                                                            mut as string: pv = ""
+                                                            route {
+                                                                  ps_i >= 1 ==> { pv = "" + stack_str[ps_i] }
+                                                                  _ ==> {}
+                                                            }
+                                                            pr_parts = stdListPushBack(pr_parts, pv)
                                                             pj = pj + 1
                                                       }
                                                 }
                                           }
+                                          sp = pbase
+                                          route { sp < 0 ==> { sp = 0 } _ ==> {} }
+                                          mut as string: out_line = vmJoinRange(pr_parts, 1, stdCollectionLength(pr_parts))
                                           print(out_line)
                                           stdout_acc = stdout_acc + out_line + "\n"
                                     }

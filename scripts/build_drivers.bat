@@ -56,9 +56,23 @@ for %%f in (examples\examples_*.flux) do (
         echo [ERRO] Binario bin\%%~nf.exe nao foi gerado.
         goto fail
     )
+    del /q /f "bin\%%~nf.ll" 2>nul
     set /a TOTAL_EXAMPLES+=1
 )
-echo [OK] !TOTAL_EXAMPLES! executores examples_*.exe gerados com exito.
+echo     [*] Compilando examples\compliance.flux -^> bin\compliance.exe...
+del /q /f "bin\compliance.exe" "bin\compliance.ll" 2>nul
+bin\fluxc.exe --no-run --target llvm -o "bin\compliance" "examples\compliance.flux"
+if errorlevel 1 (
+    echo [ERRO] Falha ao compilar examples\compliance.flux.
+    goto fail
+)
+if not exist "bin\compliance.exe" (
+    echo [ERRO] Binario bin\compliance.exe nao foi gerado.
+    goto fail
+)
+del /q /f "bin\compliance.ll" 2>nul
+set /a TOTAL_EXAMPLES+=1
+echo [OK] !TOTAL_EXAMPLES! executores de exemplos gerados com exito.
 
 echo ==============================================================================
 echo [SUCESSO] Recompilacao concluida (!TOTAL_DRIVERS! drivers + !TOTAL_EXAMPLES! suites).

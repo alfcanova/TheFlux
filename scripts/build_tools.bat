@@ -72,7 +72,7 @@ if errorlevel 1 (
 )
 if exist "scripts\patch_tool_ll.py" (
     python scripts\patch_tool_ll.py "bin\%OUT_NAME%.ll"
-    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o "bin\%OUT_NAME%.exe" "bin\%OUT_NAME%.ll" -Llib -lfluxcompiler -lfluxrt -ladvapi32 -lws2_32 -lkernel32
+    clang -O2 -Wno-deprecated-declarations -Wno-override-module -o "bin\%OUT_NAME%.exe" "bin\%OUT_NAME%.ll" -Llib -lfluxrt -ladvapi32 -lws2_32 -lkernel32
 )
 if not exist "bin\%OUT_NAME%.exe" (
     echo [ERRO] Binario bin\%OUT_NAME%.exe nao foi gerado.

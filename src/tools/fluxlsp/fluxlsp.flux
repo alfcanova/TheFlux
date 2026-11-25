@@ -1,19 +1,19 @@
 #L ==============================================================================
-#L TheFlux Tool: fluxlsp (v1.0.0)
+#L TheFlux Tool: fluxlsp (v1.0.5)
 #L Servidor de Linguagem (Language Server Protocol) e Suporte a IDEs
 #L Compativel com Visual Studio Code (JSON-RPC 2.0 / stdio) e Notepad++ (--xml)
 #L ==============================================================================
 
 function (lspPrintBanner) () as int64 {
       print("==============================================================================")
-      print("       TheFlux Language Server Protocol & IDE Support (v1.0.0)")
+      print("       TheFlux Language Server Protocol & IDE Support (v1.0.5)")
       print("       Servidor LSP Nativo para VS Code e Gerador Notepad++ UDL 2.1")
       print("==============================================================================")
       emit(nice, 0, "ok")
 }
 
 function (lspPrintHelp) () as int64 {
-      print("fluxlsp - Servidor LSP e Utilitario de Integracao com IDEs TheFlux (v1.0.0)")
+      print("fluxlsp - Servidor LSP e Utilitario de Integracao com IDEs TheFlux (v1.0.5)")
       print("")
       print("Sintaxe:")
       print("  fluxlsp [opcoes]")
@@ -40,7 +40,7 @@ function (lspPrintHelp) () as int64 {
 }
 
 function (lspPrintVersion) () as int64 {
-      print("fluxlsp version 1.0.0 (TheFlux Language Server Protocol & IDE Support)")
+      print("fluxlsp version 1.0.5 (TheFlux Language Server Protocol & IDE Support)")
       emit(nice, 0, "ok")
 }
 
@@ -122,28 +122,63 @@ function (lspIsWordChar) (as string: ch) as bool {
       emit(nice, false, "ok")
 }
 
+function (lspJoinRange) (as list of string: parts, as int64: lo, as int64: hi, as string: sep) as string {
+      route {
+            lo > hi ==> { emit(nice, "", "ok") }
+            lo == hi ==> { emit(nice, "" + parts[lo], "ok") }
+            lo == 1 and hi == stdCollectionLength(parts) ==> { emit(nice, stdStringJoin(parts, sep), "ok") }
+            _ ==> {
+                  mut as int64: mid = (lo + hi) /i 2
+                  mut as string: left = lspJoinRange(parts, lo, mid, sep)
+                  mut as string: right = lspJoinRange(parts, mid + 1, hi, sep)
+                  emit(nice, left + sep + right, "ok")
+            }
+      }
+}
+
 function (lspEscapeJson) (as string: s) as string {
       mut as int64: slen = stdCollectionLength(s)
-      mut as string: out = ""
+      mut as list of string: parts = []
+      mut as int64: chunk_start = 1
       mut as int64: i = 1
       infinite {
             route {
-                  i > slen ==> { break }
+                  i > slen ==> {
+                        route {
+                              i > chunk_start ==> {
+                                    parts = stdListPushBack(parts, s[chunk_start..(i - 1)])
+                              }
+                              _ ==> {}
+                        }
+                        break
+                  }
                   _ ==> {
                         mut as string: ch = s[i]
                         route {
-                              ch == "\\" ==> { out = out + "\\\\" }
-                              ch == "\"" ==> { out = out + "\\\"" }
-                              ch == "\n" ==> { out = out + "\\n" }
-                              ch == "\r" ==> { out = out + "\\r" }
-                              ch == "\t" ==> { out = out + "\\t" }
-                              _ ==> { out = out + ch }
+                              ch == "\\" or ch == "\"" or ch == "\n" or ch == "\r" or ch == "\t" ==> {
+                                    route {
+                                          i > chunk_start ==> {
+                                                parts = stdListPushBack(parts, s[chunk_start..(i - 1)])
+                                          }
+                                          _ ==> {}
+                                    }
+                                    route {
+                                          ch == "\\" ==> { parts = stdListPushBack(parts, "\\\\") }
+                                          ch == "\"" ==> { parts = stdListPushBack(parts, "\\\"") }
+                                          ch == "\n" ==> { parts = stdListPushBack(parts, "\\n") }
+                                          ch == "\r" ==> { parts = stdListPushBack(parts, "\\r") }
+                                          _ ==> { parts = stdListPushBack(parts, "\\t") }
+                                    }
+                                    chunk_start = i + 1
+                              }
+                              _ ==> {}
                         }
                         i = i + 1
                   }
             }
       }
-      emit(nice, out, "ok")
+      mut as int64: np = stdCollectionLength(parts)
+      emit(nice, lspJoinRange(parts, 1, np, ""), "ok")
 }
 
 function (lspExtractJsonString) (as string: json, as string: key) as string {
@@ -507,24 +542,8 @@ function (lspComputeDiagnostics) (as string: text) as string {
             _ ==> {}
       }
 
-      mut as string: out = "["
       mut as int64: nd = stdCollectionLength(diag_items)
-      mut as int64: k = 1
-      infinite {
-            route {
-                  k > nd ==> { break }
-                  _ ==> {
-                        out = out + diag_items[k]
-                        route {
-                              k < nd ==> { out = out + "," }
-                              _ ==> {}
-                        }
-                        k = k + 1
-                  }
-            }
-      }
-      out = out + "]"
-      emit(nice, out, "ok")
+      emit(nice, "[" + lspJoinRange(diag_items, 1, nd, ",") + "]", "ok")
 }
 
 function (lspGetHoverDoc) (as string: word) as string {
@@ -703,30 +722,49 @@ function (lspFindDefinition) (as string: text, as string: symbol, as string: uri
 function (lspFormatDocument) (as string: text) as string {
       mut as list of string: lines = lspSplitLines(text)
       mut as int64: n_lines = stdCollectionLength(lines)
-      mut as string: formatted = ""
+      mut as list of string: out_lines = []
       mut as int64: li = 1
       infinite {
             route {
                   li > n_lines ==> { break }
                   _ ==> {
                         mut as string: line = "" + lines[li]
-                        #L 1. Substitui tabs por 6 espacos
-                        mut as string: no_tabs = ""
+                        #L 1. Substitui tabs por 6 espacos (fatias contiguas em vez de char-a-char)
+                        mut as list of string: nt_parts = []
+                        mut as int64: nt_start = 1
                         mut as int64: llen = stdCollectionLength(line)
                         mut as int64: ti = 1
                         infinite {
                               route {
-                                    ti > llen ==> { break }
-                                    _ ==> {
-                                          mut as string: ch = line[ti]
+                                    ti > llen ==> {
                                           route {
-                                                ch == "\t" ==> { no_tabs = no_tabs + "      " }
-                                                _ ==> { no_tabs = no_tabs + ch }
+                                                ti > nt_start ==> {
+                                                      nt_parts = stdListPushBack(nt_parts, line[nt_start..(ti - 1)])
+                                                }
+                                                _ ==> {}
+                                          }
+                                          break
+                                    }
+                                    _ ==> {
+                                          route {
+                                                line[ti] == "\t" ==> {
+                                                      route {
+                                                            ti > nt_start ==> {
+                                                                  nt_parts = stdListPushBack(nt_parts, line[nt_start..(ti - 1)])
+                                                            }
+                                                            _ ==> {}
+                                                      }
+                                                      nt_parts = stdListPushBack(nt_parts, "      ")
+                                                      nt_start = ti + 1
+                                                }
+                                                _ ==> {}
                                           }
                                           ti = ti + 1
                                     }
                               }
                         }
+                        mut as int64: n_ntp = stdCollectionLength(nt_parts)
+                        mut as string: no_tabs = lspJoinRange(nt_parts, 1, n_ntp, "")
 
                         #L 2. Remove espacos excedentes a direita
                         mut as int64: nlen = stdCollectionLength(no_tabs)
@@ -787,12 +825,13 @@ function (lspFormatDocument) (as string: text) as string {
                               _ ==> {}
                         }
 
-                        formatted = formatted + clean_line + "\n"
+                        out_lines = stdListPushBack(out_lines, clean_line + "\n")
                         li = li + 1
                   }
             }
       }
-      emit(nice, formatted, "ok")
+      mut as int64: n_out = stdCollectionLength(out_lines)
+      emit(nice, lspJoinRange(out_lines, 1, n_out, ""), "ok")
 }
 
 function (lspGetDocumentSymbols) (as string: text) as string {
@@ -941,21 +980,8 @@ function (lspGetDocumentSymbols) (as string: text) as string {
             }
       }
 
-      mut as string: out = "["
       mut as int64: ns = stdCollectionLength(sym_items)
-      mut as int64: si = 1
-      infinite {
-            route {
-                  si > ns ==> { break }
-                  _ ==> {
-                        out = out + sym_items[si]
-                        route { si < ns ==> { out = out + "," } _ ==> {} }
-                        si = si + 1
-                  }
-            }
-      }
-      out = out + "]"
-      emit(nice, out, "ok")
+      emit(nice, "[" + lspJoinRange(sym_items, 1, ns, ",") + "]", "ok")
 }
 
 function (lspExtractWordAt) (as string: line_text, as int64: char_idx) as string {
@@ -1084,7 +1110,7 @@ function (lspWriteXml) (as string: target_path) as int64 {
 
 function (lspGetInitializeCapabilities) () as string {
       mut as string: cap = "{\"capabilities\":{\"textDocumentSync\":1,\"hoverProvider\":true,\"completionProvider\":{\"resolveProvider\":false,\"triggerCharacters\":[\".\",\":\",\"#\"]},\"definitionProvider\":true,\"documentFormattingProvider\":true,\"documentSymbolProvider\":true}"
-      cap = cap + ",\"serverInfo\":{\"name\":\"fluxlsp\",\"version\":\"1.0.0\"}}"
+      cap = cap + ",\"serverInfo\":{\"name\":\"fluxlsp\",\"version\":\"1.0.5\"}}"
       emit(nice, cap, "ok")
 }
 
